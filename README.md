@@ -31,17 +31,17 @@ Mojang's LevelDB from github (see below)
 
 The code uses Mojang's modified version of LevelDB.  Here's how to compile it (from the top dir of mcpe_viz):
 
-'> git clone https://github.com/Mojang/leveldb-mcpe.git
+`> git clone https://github.com/Mojang/leveldb-mcpe.git
 
-'> chdir leveldb-mcpe
+`> chdir leveldb-mcpe
 
-'> make
+`> make
 
 If all goes well, there will be a "libleveldb.a" in leveldb-mcpe/
 
 To get it to compile on Fedora, I found that I needed to do this from leveldb-mcpe/:
 
-'> ln -s /usr/include include/zlib
+`> ln -s /usr/include include/zlib
 
 If you have compile errors, check the README* files from leveldb-mcpe for prerequisites
 
@@ -49,7 +49,7 @@ If you have compile errors, check the README* files from leveldb-mcpe for prereq
 
 From the top directory of mcpe_viz:
 
-'> make
+`> make
 
 If all goes well, you will have "mcpe_viz" in build/
 
@@ -64,7 +64,7 @@ See "./mcpe_viz --help" for the most up-to-date usage info
 
 Here's an example invocation:
 
-'> ./mcpe_viz --grid --db /fs/d0/mcpe/another1/ --out /fs/d0/mcpe/output/mcpe_output8 > logfile
+`> ./mcpe_viz --grid --db /fs/d0/mcpe/another1/ --out /fs/d0/mcpe/output/mcpe_output8 > logfile
 
 This will read the leveldb from "/fs/d0/mcpe/another1" and name output files starting with "/fs/d0/mcpe/output/mcpe_output8", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "logfile".  The log file has a ton of interesting information about your world.  "grep" is your friend.
 

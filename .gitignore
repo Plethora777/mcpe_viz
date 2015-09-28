@@ -3,6 +3,7 @@ build/
 leveldb-mcpe/
 Backup/
 Research/
+*~
 
 # Compiled Object files
 *.slo

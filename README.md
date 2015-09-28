@@ -7,7 +7,7 @@ It can also:
 
 * Create images of individual layers of your world
 
-* Create movies of all layers from bedrock to build limit (FFMPEG required)
+* Create movies of all layers from bedrock to build limit (*ffmpeg* required)
 
 * Dump a *huge* amount of info about your world including:
   * For each 16x16 block chunk:
@@ -20,9 +20,9 @@ It can also:
 
 ## Requirements
 
-You know how to compile things :)
-Mojang's LevelDB from github (see below)
-[Optional] FFMPEG for creating movies
+* You know how to compile things :)
+* Mojang's LevelDB from github (see below)
+* [Optional] *ffmpeg* for creating movies
 
 
 ## How to compile
@@ -71,12 +71,17 @@ See "./mcpe_viz --help" for the most up-to-date usage info
 Here's an example invocation:
 
 ```
-> ./mcpe_viz --grid --db /fs/d0/mcpe/another1/ --out /fs/d0/mcpe/output/mcpe_output8 > logfile
+> ./mcpe_viz --grid --db /fs/d0/mcpe/another1/ --out /fs/d0/mcpe/output/mcpe_output8
 ```
 
-This will read the leveldb from "/fs/d0/mcpe/another1" and name output files starting with "/fs/d0/mcpe/output/mcpe_output8", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "logfile".  The log file has a ton of interesting information about your world.  "grep" is your friend.
+This will read the leveldb from "/fs/d0/mcpe/another1" and name output files starting with "/fs/d0/mcpe/output/mcpe_output8", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "mcpe_output8.log".  The log file has a *ton* of interesting information about your world.  "grep" is your friend.
 
 Please note that --db expects the directory which contains "level.dat".
+
+
+## CUSTOMIZATION
+
+You can copy mcpe_viz.xml to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to set custom colors for blocks and biomes.
 
 
 ## TODO

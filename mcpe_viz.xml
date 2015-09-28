@@ -1,0 +1,423 @@
+<xml>
+  // todo - would be cool to find a definitive list of colors for blocks
+  // todo - could rip images from apk and get an avg color?
+  
+  // mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+  <blocklist>
+    <block id="0x00" name="Air" color="0x0" />
+    <block id="0x01" name="Stone S" color="0xa0a0a0" />
+    <block id="0x02" name="Grass Block" color="0x1f953e" />
+    <block id="0x03" name="Dirt" color="0x96721a" /> 
+    <block id="0x04" name="Cobblestone" color="0xc0c0c0" />
+    <block id="0x05" name="Wooden Planks S" color="0x696a2d" />
+    <block id="0x06" name="Sapling S" color="0x8afb97" />
+    <block id="0x07" name="Bedrock" color="0x101010" />
+    <block id="0x08" name="Water S" color="0x616699" />
+    <block id="0x09" name="Stationary Water S" color="0x8b92dd" />
+    <block id="0x0A" name="Lava S" color="0xfc2a2a" />
+    <block id="0x0B" name="Stationary Lava S" color="0xfc2a2a" />
+    <block id="0x0C" name="Sand" color="0xede586" />
+    <block id="0x0D" name="Gravel" color="0x808080" />
+    <block id="0x0E" name="Gold Ore" color="0xfcd0fa" />
+    <block id="0x0F" name="Iron Ore" color="0xfcd0fa" />
+    <block id="0x10" name="Coal Ore" color="0xfcd0fa" />
+    <block id="0x11" name="Wood S B" color="0x916609" />
+    <block id="0x12" name="Leaves S B" color="0x184d1e" />
+    <block id="0x13" name="Sponge" color="0xb3ae61" />
+    <block id="0x14" name="Glass" color="0xe0e0e0" />
+    <block id="0x15" name="Lapis Lazuli Ore" color="0xb5c2d6" />
+    <block id="0x16" name="Lapis Lazuli Block" color="0x0547a9" />
+    <block id="0x18" name="Sandstone S B" color="0xfbf8b4" />
+    <block id="0x1A" name="Bed S" color="0xff0000" />
+    <block id="0x1B" name="Powered Rail" color="0xfe9c02" />
+    <block id="0x1E" name="Cobweb" color="0xd0d0d0" />
+    <block id="0x1F" name="Tall Grass" color="0x1f953e" />
+    <block id="0x20" name="Dead Bush" color="0x47461e" />
+    <block id="0x23" name="Wool S B" lookupColor="true" />
+    <block id="0x25" name="Dandelion" color="0xe8e98b" />
+    <block id="0x26" name="Flower S B" color="0xe98b9a" />
+    <block id="0x27" name="Brown Mushroom" color="0xcaa762" />
+    <block id="0x28" name="Red Mushroom" color="0xfe9c9c" />
+    <block id="0x29" name="Block of Gold" color="0xfcfe50" />
+    <block id="0x2A" name="Block of Iron" color="0xdddddb" />
+    <block id="0x2B" name="Double Stone Slab S" color="0x909090" />
+    <block id="0x2C" name="Stone Slab S B" color="0x909090" />
+    <block id="0x2D" name="Bricks" color="0x9a0b18" />
+    <block id="0x2E" name="TNT" color="0xee6f66" />
+    <block id="0x2F" name="Bookshelf" color="0xa27826" />
+    <block id="0x30" name="Moss Stone" color="0x8a9e90" />
+    <block id="0x31" name="Obsidian" color="0xc2a6c1" />
+    <block id="0x32" name="Torch" color="0xffff00" />
+    <block id="0x33" name="Fire" color="0xff1d32" />
+    <block id="0x34" name="Monster Spawner E" color="0x930a91" />
+    <block id="0x35" name="Oak Wood Stairs S" color="0x696a2d" />
+    <block id="0x36" name="Chest E" color="0xb3914f" />
+    <block id="0x38" name="Diamond Ore" color="0x77dcd8" />
+    <block id="0x39" name="Block of Diamond" color="0x83f0ec" />
+    <block id="0x3A" name="Crafting Table" color="0x202020" />
+    <block id="0x3B" name="Seeds D" color="0x3ebf59" />
+    <block id="0x3C" name="Farmland D" color="0x646325" />
+    <block id="0x3D" name="Furnace S E" color="0x303030" />
+    <block id="0x3E" name="Burning Furnace S E" color="0xc69b9b" />
+    <block id="0x3F" name="Sign I S E" /> //todo
+    <block id="0x40" name="Wooden Door I S" color="0x77602e" />
+    <block id="0x41" name="Ladder" /> //todo
+    <block id="0x42" name="Rail" color="0x866e3b" /> // todo - tough to choose a good color here, silver/gray is not enough contrast to stone etc
+    <block id="0x43" name="Cobblestone Stairs D" color="0xd0d0d0" />
+    <block id="0x44" name="Wall Sign I S E" /> //todo
+    <block id="0x47" name="Iron Door S" /> // todo
+    <block id="0x49" name="Redstone Ore" color="0xeb7979" />
+    <block id="0x4A" name="Glowing Redstone Ore" color="0xeb7979" />
+    <block id="0x4E" name="Snow (layer)" color="0xc0c0c0" />
+    <block id="0x4F" name="Ice" color="0x0cf5ed" />
+    <block id="0x50" name="Snow" color="0xf0f0f0" />
+    <block id="0x51" name="Cactus" color="0x116713" />
+    <block id="0x52" name="Clay (block)" color="0x91aeb4" />
+    <block id="0x53" name="Sugar Cane" color="0x4ee547" />
+    <block id="0x55" name="Fence" color="0x606060" />
+    <block id="0x56" name="Pumpkin S" color="0xfbad26" />
+    <block id="0x57" name="Netherrack" color="0xc6475f" />
+    <block id="0x58" name="Soul Sand" color="0x9f6969" />
+    <block id="0x59" name="Glowstone" color="0xfbfe03" />
+    <block id="0x5A" name="Portal" color="0xffa0ff" />
+    <block id="0x5B" name="Jack o'Lantern S" color="0xfd9501" />
+    <block id="0x5C" name="Cake S" /> // todo
+    <block id="0x5F" name="Invisible Bedrock" color="0x161616" />
+    <block id="0x60" name="Trapdoor S" /> //todo
+    <block id="0x61" name="Monster Egg" /> //todo
+    <block id="0x62" name="Stone Brick D B" color="0xb6b6b0" />
+    <block id="0x63" name="Brown Mushroom (block)" color="0xcaa762" />
+    <block id="0x64" name="Red Mushroom (block)" color="0xfe9c9c" />
+    <block id="0x65" name="Iron Bars" /> // todo
+    <block id="0x66" name="Glass Pane" color="0xd0d0d0" />
+    <block id="0x67" name="Melon" color="0x73d86c" />
+    <block id="0x68" name="Pumpkin Stem S" color="0xa6a96f" />
+    <block id="0x69" name="Melon Stem S" color="0xa6a96f" />
+    <block id="0x6A" name="Vines D" color="0x265e2c" />
+    <block id="0x6B" name="Fence Gate S" color="0x57553b" />
+    <block id="0x6C" name="Brick Stairs S" color="0xa41e2a" />
+    <block id="0x6D" name="Stone Brick Stairs S" color="0xa0a09a" />
+    <block id="0x6E" name="Mycelium" color="0xbbbbb9" />
+    <block id="0x6F" name="Lily Pad" color="0x66a16a" />
+    <block id="0x70" name="Nether Brick" color="0x712e2e" />
+    <block id="0x71" name="Nether Brick Fence" color="0x8c3939" />
+    <block id="0x72" name="Nether Brick Stairs S" color="0xa74949" />
+    <block id="0x73" name="Nether Wart" color="0xa81031" />
+    <block id="0x74" name="Enchantment Table E" /> // todo
+    <block id="0x75" name="Brewing Stand I S E" /> // todo
+    <block id="0x78" name="End Portal Frame" /> // todo
+    <block id="0x79" name="End Stone" /> // todo
+    <block id="0x7E" name="Cake (Mystery) S" /> // todo
+    <block id="0x7F" name="Cocoa I S" /> // todo
+    <block id="0x80" name="Sandstone Stairs S" color="0xcecb89" />
+    <block id="0x81" name="Emerald Ore" color="0x77d17d" />
+    <block id="0x85" name="Block of Emerald" color="0x6dbc73" />
+    <block id="0x86" name="Spruce Wood Stairs S" color="0x696a2d" />
+    <block id="0x87" name="Birch Wood Stairs S" color="0x696a2d" />
+    <block id="0x88" name="Jungle Wood Stairs S" color="0x696a2d" />
+    <block id="0x8B" name="Cobblestone Wall S" color="0xb0b0b0" />
+    <block id="0x8C" name="Flower Pot I S E" /> // todo
+    <block id="0x8D" name="Carrots I S" color="0xe8a03a" /> 
+    <block id="0x8E" name="Potato I S" color="0xb4af1c" />
+    <block id="0x8F" name="Mob head I S E" /> //todo
+    <block id="0x90" name="Anvil S B" /> // todo
+    <block id="0x98" name="Block of Redstone" color="0xcd5c5c" />
+    <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
+    <block id="0x9B" name="Block of Quartz S B" color="0xffffff" />
+    <block id="0x9C" name="Quartz Stairs S" color="0xe8e7e7" />
+    <block id="0x9D" name="Wooden Double Slab S" color="0x696a2d" />
+    <block id="0x9E" name="Wooden Slab S B" color="0x696a2d" />
+    <block id="0x9F" name="Stained Clay S B" lookupColor="true" />
+    <block id="0xA1" name="Acacia Leaves S B" color="0x88b486" />
+    <block id="0xA2" name="Acacia Wood S B" color="0x696a2d" />
+    <block id="0xA3" name="Acacia Wood Stairs S" color="0x696a2d" />
+    <block id="0xA4" name="Dark Oak Wood Stairs S" color="0x696a2d" />
+    <block id="0xAA" name="Hay Bale" color="0xd8d385" /> 
+    <block id="0xAB" name="Carpet S B" lookupColor="true" />
+    <block id="0xAC" name="Hardened Clay" color="0xb75252" /> 
+    <block id="0xAD" name="Block of Coal" color="0x5c5c5c" />
+    <block id="0xAE" name="Packed Ice" color="0x02cffd" />
+    <block id="0xAF" name="Sunflower" /> // todo
+    <block id="0xB7" name="Spruce Fence Gate" /> // todo
+    <block id="0xB8" name="Birch Fence Gate" /> // todo
+    <block id="0xB9" name="Jungle Fence Gate" /> // todo
+    <block id="0xBA" name="Dark Oak Fence Gate" /> // todo
+    <block id="0xBB" name="Acacia Fence Gate" /> // todo
+    <block id="0xC6" name="Grass Path" color="0xb86335" />
+    <block id="0xF3" name="Podzol" color="0x45390a" />
+    <block id="0xF4" name="Beetroot I S" color="0xd03388" />
+    <block id="0xF5" name="Stone Cutter" />  // todo
+    <block id="0xF6" name="Glowing Obsidian" /> // todo
+    <block id="0xF7" name="Nether Reactor Core" /> // todo
+    <block id="0xF8" name="Update Game Block (update!) [note 1]" /> // todo
+    <block id="0xF9" name="Update Game Block (ate!upd)" /> // todo
+    <block id="0xFF" name="info_reserved6" /> // todo
+  </blocklist>
+
+  // mostly from: http://minecraft.gamepedia.com/Data_values#Wool.2C_Stained_Clay.2C_Stained_Glass_and_Carpet
+  // from wiki - for wool + clay + carpet + stained glass
+  <standardcolorlist>
+    <standardcolor id="0x0" color="0xDDDDDD" />
+    <standardcolor id="0x1" color="0xDB7D3E" />
+    <standardcolor id="0x2" color="0xB350BC" />
+    <standardcolor id="0x3" color="0x6B8AC9" />
+    <standardcolor id="0x4" color="0xB1A627" />
+    <standardcolor id="0x5" color="0x41AE38" />
+    <standardcolor id="0x6" color="0xD08499" />
+    <standardcolor id="0x7" color="0x404040" />
+    <standardcolor id="0x8" color="0x9AA1A1" />
+    <standardcolor id="0x9" color="0x2E6E89" />
+    <standardcolor id="0xa" color="0x7E3DB5" />
+    <standardcolor id="0xb" color="0x2E388D" />
+    <standardcolor id="0xc" color="0x4F321F" />
+    <standardcolor id="0xd" color="0x35461B" />
+    <standardcolor id="0xe" color="0x963430" />
+    <standardcolor id="0xf" color="0x191616" />
+  </standardcolorlist>
+
+  // mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+  <itemlist>
+    <item id="0x100" name="Iron Shovel D" />
+    <item id="0x101" name="Iron Pickaxe D" />
+    <item id="0x102" name="Iron Axe D" />
+    <item id="0x103" name="Flint and Steel D" />
+    <item id="0x104" name="Apple" />
+    <item id="0x105" name="Bow D" />
+    <item id="0x106" name="Arrow" />
+    <item id="0x107" name="Coal B" />
+    <item id="0x108" name="Diamond" />
+    <item id="0x109" name="Iron Ingot" />
+    <item id="0x10A" name="Gold Ingot" />
+    <item id="0x10B" name="Iron Sword D" />
+    <item id="0x10C" name="Wooden Sword D" />
+    <item id="0x10D" name="Wooden Shovel D" />
+    <item id="0x10E" name="Wooden Pickaxe D" />
+    <item id="0x10F" name="Wooden Axe D" />
+    <item id="0x110" name="Stone Sword D" />
+    <item id="0x111" name="Stone Shovel D" />
+    <item id="0x112" name="Stone Pickaxe D" />
+    <item id="0x113" name="Stone Axe D" />
+    <item id="0x114" name="Diamond Sword D" />
+    <item id="0x115" name="Diamond Shovel D" />
+    <item id="0x116" name="Diamond Pickaxe D" />
+    <item id="0x117" name="Diamond Axe D" />
+    <item id="0x118" name="Stick" />
+    <item id="0x119" name="Bowl" />
+    <item id="0x11A" name="Mushroom Stew" />
+    <item id="0x11B" name="Gold Sword D" />
+    <item id="0x11C" name="Gold Shovel D" />
+    <item id="0x11D" name="Gold Pickaxe D" />
+    <item id="0x11E" name="Gold Axe D" />
+    <item id="0x11F" name="String" />
+    <item id="0x120" name="Feather" />
+    <item id="0x121" name="Gunpowder" />
+    <item id="0x122" name="Wooden Hoe D" />
+    <item id="0x123" name="Stone Hoe D" />
+    <item id="0x124" name="Iron Hoe D" />
+    <item id="0x125" name="Diamond Hoe D" />
+    <item id="0x126" name="Gold Hoe" />
+    <item id="0x127" name="Seeds" />
+    <item id="0x128" name="Wheat" />
+    <item id="0x129" name="Bread" />
+    <item id="0x12A" name="Leather Cap D" />
+    <item id="0x12B" name="Leather Tunic D" />
+    <item id="0x12C" name="Leather Pants D" />
+    <item id="0x12D" name="Leather Boots D" />
+    <item id="0x12E" name="Chain Helmet D" />
+    <item id="0x12F" name="Chain Chestplate D" />
+    <item id="0x130" name="Chain Leggings D" />
+    <item id="0x131" name="Chain Boots D" />
+    <item id="0x132" name="Iron Helmet D" />
+    <item id="0x133" name="Iron Chestplate D" />
+    <item id="0x134" name="Iron Leggings D" />
+    <item id="0x135" name="Iron Boots D" />
+    <item id="0x136" name="Diamond Helmet D" />
+    <item id="0x137" name="Diamond Chestplate D" />
+    <item id="0x138" name="Diamond Leggings D" />
+    <item id="0x139" name="Diamond Boots D" />
+    <item id="0x13A" name="Golden Helmet D" />
+    <item id="0x13B" name="Golden Chestplate D" />
+    <item id="0x13C" name="Golden Leggings D" />
+    <item id="0x13D" name="Golden Boots D" />
+    <item id="0x13E" name="Flint" />
+    <item id="0x13F" name="Raw Porkchop" />
+    <item id="0x140" name="Cooked Porkchop" />
+    <item id="0x141" name="Painting" />
+    <item id="0x142" name="Golden Apple B" />
+    <item id="0x143" name="Sign" />
+    <item id="0x144" name="Wooden Door" />
+    <item id="0x145" name="Bucket" />
+    <item id="0x148" name="Minecart" />
+    <item id="0x149" name="Saddle" />
+    <item id="0x14A" name="Iron Door" />
+    <item id="0x14B" name="Redstone" />
+    <item id="0x14C" name="Snowball" />
+    <item id="0x14D" name="Boat" />
+    <item id="0x14E" name="Leather" />
+    <item id="0x150" name="Brick" />
+    <item id="0x151" name="Clay" />
+    <item id="0x152" name="Sugar Cane" />
+    <item id="0x153" name="Paper" />
+    <item id="0x154" name="Book" />
+    <item id="0x155" name="Slimeball" />
+    <item id="0x158" name="Egg" />
+    <item id="0x159" name="Compass" />
+    <item id="0x15A" name="Fishing Rod" />
+    <item id="0x15B" name="Clock" />
+    <item id="0x15C" name="Glowstone Dust" />
+    <item id="0x15D" name="Raw Fish" />
+    <item id="0x15E" name="Cooked Fish" />
+    <item id="0x15F" name="Dye B" />
+    <item id="0x160" name="Bone" />
+    <item id="0x161" name="Sugar" />
+    <item id="0x162" name="Cake" />
+    <item id="0x163" name="Bed" />
+    <item id="0x165" name="Cookie" />
+    <item id="0x167" name="Shears" />
+    <item id="0x168" name="Melon" />
+    <item id="0x169" name="Pumpkin Seeds" />
+    <item id="0x16A" name="Melon Seeds" />
+    <item id="0x16B" name="Raw Beef" />
+    <item id="0x16C" name="Steak" />
+    <item id="0x16D" name="Raw Chicken" />
+    <item id="0x16E" name="Cooked Chicken" />
+    <item id="0x16F" name="Rotten Flesh" />
+    <item id="0x170" name="Blaze Rod" />
+    <item id="0x171" name="Ghast Tear" />
+    <item id="0x172" name="Gold Nugget" />
+    <item id="0x173" name="Nether Wart" />
+    <item id="0x174" name="Potion" />
+    <item id="0x175" name="Spider Eye" />
+    <item id="0x176" name="Fermented Spider Eye" />
+    <item id="0x177" name="Blaze Powder" />
+    <item id="0x178" name="Magma Cream" />
+    <item id="0x179" name="Brewing Stand" />
+    <item id="0x17A" name="Glistering Melon" />
+    <item id="0x17F" name="Spawn Egg B" />
+    <item id="0x180" name="Bottle o' Enchanting" />
+    <item id="0x184" name="Emerald" />
+    <item id="0x186" name="Flower Pot" />
+    <item id="0x187" name="Carrot" />
+    <item id="0x188" name="Potato" />
+    <item id="0x189" name="Baked Potato" />
+    <item id="0x18A" name="Poisonous Potato" />
+    <item id="0x18C" name="Golden Carrot" />
+    <item id="0x18D" name="Mob head" />
+    <item id="0x190" name="Pumpkin Pie" />
+    <item id="0x193" name="Enchanted Book" />
+    <item id="0x195" name="Nether Brick" />
+    <item id="0x196" name="Nether Quartz" />
+    <item id="0x19E" name="Rabbit's Foot" />
+    <item id="0x1B6" name="Splash Potion" />
+    <item id="0x1C9" name="Beetroot" />
+    <item id="0x1CA" name="Beetroot Seeds" />
+    <item id="0x1CB" name="Beetroot Soup" />
+  </itemlist>
+
+  // mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+  <entitylist>
+    <entity id="0x0A" name="Chicken" />
+    <entity id="0x0B" name="Cow" />
+    <entity id="0x0C" name="Pig" />
+    <entity id="0x0D" name="Sheep" />
+    <entity id="0x0E" name="Wolf" />
+    <entity id="0x0F" name="Villager" />
+    <entity id="0x10" name="Mooshroom" />
+    <entity id="0x11" name="Squid" />
+    <entity id="0x13" name="Bat" />
+    <entity id="0x14" name="Iron Golem" />
+    <entity id="0x15" name="Snow Golem" />
+    <entity id="0x16" name="Ocelot" />
+    <entity id="0x20" name="Zombie" />
+    <entity id="0x21" name="Creeper" />
+    <entity id="0x22" name="Skeleton" />
+    <entity id="0x23" name="Spider" />
+    <entity id="0x24" name="Zombie Pigman" />
+    <entity id="0x25" name="Slime" />
+    <entity id="0x26" name="Enderman" />
+    <entity id="0x27" name="Silverfish" />
+    <entity id="0x28" name="Cave Spider" />
+    <entity id="0x29" name="Ghast" />
+    <entity id="0x2A" name="Magma Cube" />
+    <entity id="0x2B" name="Blaze" />
+    <entity id="0x2C" name="Zombie Villager" />
+    <entity id="0x3F" name="The Player" />
+    <entity id="0x40" name="Dropped item" />
+    <entity id="0x41" name="Primed TNT" />
+    <entity id="0x42" name="Falling block" />
+    <entity id="0x4D" name="Fishing Rod hook" />
+    <entity id="0x50" name="Shot arrow" />
+    <entity id="0x51" name="Thrown snowball" />
+    <entity id="0x52" name="Thrown egg" />
+    <entity id="0x53" name="Painting" />
+    <entity id="0x54" name="Minecart" />
+    <entity id="0x55" name="Ghast fireball" />
+    <entity id="0x5A" name="Boat" />
+  </entitylist>
+
+  <biomelist>
+    <biome id="0x00" name="Ocean" color="0x8b92dd" />
+    <biome id="0x01" name="Plains" color="0x1f953e" />
+    <biome id="0x02" name="Desert" color="0xede586" />
+    <biome id="0x03" name="Extreme Hills" color="0xc0c0c0" />
+    <biome id="0x04" name="Forest" color="0x184d1e" />
+    <biome id="0x05" name="Taiga" color="0x7fae7c" />
+    <biome id="0x06" name="Swampland" color="0x694268" />
+    <biome id="0x07" name="River" color="0x616699" />
+    <biome id="0x08" name="Hell" color="0xfe4141" />
+    <biome id="0x09" name="The End" color="0xd1d28a" />
+    <biome id="0x0a" name="FrozenOcean" color="0x0cf5ed" />
+    <biome id="0x0b" name="FrozenRiver" color="0x0cf5ed" />
+    <biome id="0x0c" name="Ice Plains" color="0xf0f0f0" />
+    <biome id="0x0d" name="Ice Mountains" color="0xc0c0c0" />
+    <biome id="0x0e" name="MushroomIsland" color="0xfe9c9c" />
+    <biome id="0x0f" name="MushroomIslandShore" color="0xfe9c9c" />
+    <biome id="0x10" name="Beach" color="0xffd37e" />
+    <biome id="0x11" name="DesertHills" color="0xd6cd63" />
+    <biome id="0x12" name="ForestHills" color="0x2e6535" />
+    <biome id="0x13" name="TaigaHills" color="0x8ead8c" />
+    <biome id="0x14" name="Extreme Hills Edge" color="0xd0d0d0" />
+    <biome id="0x15" name="Jungle" color="0x04a51e" />
+    <biome id="0x16" name="JungleHills" color="0x036c14" />
+    <biome id="0x17" name="JungleEdge" color="0x21ab38" />
+    <biome id="0x18" name="Deep Ocean" color="0x3644d8" />
+    <biome id="0x19" name="Stone Beach" color="0xa0a0a0" />
+    <biome id="0x1a" name="Cold Beach" color="0xc0c0c0" />
+    <biome id="0x1b" name="Birch Forest" color="0x8af98f" />
+    <biome id="0x1c" name="Birch Forest Hills" color="0x90e294" />
+    <biome id="0x1d" name="Roofed Forest" color="0x1f7b23" />
+    <biome id="0x1e" name="Cold Taiga" color="0xc7dac5" />
+    <biome id="0x1f" name="Cold Taiga Hills" color="0xb5c9b4" />
+    <biome id="0x20" name="Mega Taiga" color="0x45390a" />
+    <biome id="0x21" name="Mega Taiga Hills" color="0x76641b" />
+    <biome id="0x22" name="Extreme Hills+" color="0xc8c8c8" />
+    <biome id="0x23" name="Savanna" color="0x80b21f" />
+    <biome id="0x24" name="Savanna Plateau" color="0x9ac548" />
+    <biome id="0x25" name="Mesa" color="0xb75252" />
+    <biome id="0x26" name="Mesa Plateau F" color="0xb76666" />
+    <biome id="0x27" name="Mesa Plateau" color="0xb87474" />
+    <biome id="0x7f" name="The Void[upcoming]" color="0x202020" />
+    <biome id="0x80" name="Plains M" color="0x2faf51" />
+    <biome id="0x81" name="Sunflower Plains" color="0xf8f12c" />
+    <biome id="0x82" name="Desert M" color="0xb8b270" />
+    <biome id="0x83" name="Extreme Hills M" color="0xb8b8b8" />
+    <biome id="0x84" name="Flower Forest" color="0xcd98c9" />
+    <biome id="0x85" name="Taiga M" color="0x84c280" />
+    <biome id="0x86" name="Swampland M" color="0x936396" />
+    <biome id="0x8c" name="Ice Plains Spikes" color="0x02cffd" />
+    <biome id="0x95" name="Jungle M" color="0x14e736" />
+    <biome id="0x97" name="JungleEdge M" color="0x3ada54" />
+    <biome id="0x9b" name="Birch Forest M" color="0x9de2a0" />
+    <biome id="0x9c" name="Birch Forest Hills M" color="0x83bb85" />
+    <biome id="0x9d" name="Roofed Forest M" color="0x15901a" />
+    <biome id="0x9e" name="Cold Taiga M" color="0xbdd9ba" />
+    <biome id="0xa0" name="Mega Spruce Taiga" color="0x538a4d" />
+    <biome id="0xa1" name="Redwood Taiga Hills M" color="0x576c54" />
+    <biome id="0xa2" name="Extreme Hills+ M" color="0xc8c8c8" />
+    <biome id="0xa3" name="Savanna M" color="0x96b25e" />
+    <biome id="0xa4" name="Savanna Plateau M" color="0x7f9652" />
+    <biome id="0xa5" name="Mesa (Bryce)" color="0xd18383" />
+    <biome id="0xa6" name="Mesa Plateau F M" color="0xd19292" />
+    <biome id="0xa7" name="Mesa Plateau M" color="0xb87e7e" />
+  </biomelist>
+</xml>

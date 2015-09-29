@@ -10,10 +10,7 @@
   
   g++ --std=c++11 -DDLLX= -I. -Ileveldb-mcpe/include -I.. -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -c mcpe_viz.cc -o mcpe_viz.o ; g++ -pthread mcpe_viz.o leveldb-mcpe/libleveldb.a -lz -o mcpe_viz 
 
-
   todo
-
-  ** use container classes to populate an object with NBT content so that we can parse this info
 
   ** cmdline options:
   filtering stuff w/ decimal or hex (e.g. torches)
@@ -37,6 +34,17 @@
 #include <getopt.h>
 #include "leveldb/db.h"
 #include "leveldb/zlib_compressor.h"
+
+// nbt lib stuff
+#include "io/stream_reader.h"
+//#ifdef NBT_HAVE_ZLIB
+//#include "io/izlibstream.h"
+//#endif
+#include "nbt_tags.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 
 
 // all user options are stored here
@@ -108,8 +116,6 @@ public:
 
 Control control;
 
-static const std::string kFnCfg = "~/.mcpe_viz/mcpe_viz.cfg";
-static const std::string kFnXml = "~/.mcpe_viz/mcpe_viz.xml";
 
 namespace leveldb {
   namespace {
@@ -135,11 +141,12 @@ namespace leveldb {
     
     int32_t colorInfo[16];
 
-    // todobig - magic numbers - get these from .dat file
-    int spawnX = 64;
-    int spawnZ = 0;
+    // these are read from level.dat
+    int worldSpawnX = 0;
+    int worldSpawnY = 0;
+    int worldSpawnZ = 0;
 
-    std::vector<int> blockHighlightList;
+    std::vector<int> blockForceTopList[kWorldIdCount];
     std::vector<int> blockHideList[kWorldIdCount];
 
     
@@ -262,18 +269,15 @@ namespace leveldb {
       
       // highlight blocks - that is, force them to be in topblock
       // for example, mob spawners:
-      //blockHighlightList.push_back(0x34);
-      // todo - cmdline option
-
+      //blockForceTopList[0].push_back(0x34);
+      //blockForceTopList[1].push_back(0x34);
 
       // hide certain blocks from topBlock
-      // todo - cmdline option
-
       // topBlock in the nether is nuts.  So that we can see some interesting info, let's hide: bedrock netherrack lava
-      blockHideList[kWorldIdNether].push_back(0x07);
-      blockHideList[kWorldIdNether].push_back(0x57);
-      blockHideList[kWorldIdNether].push_back(0x0a);
-      blockHideList[kWorldIdNether].push_back(0x0b);
+      //blockHideList[kWorldIdNether].push_back(0x07);
+      //blockHideList[kWorldIdNether].push_back(0x57);
+      //blockHideList[kWorldIdNether].push_back(0x0a);
+      //blockHideList[kWorldIdNether].push_back(0x0b);
     }
 
     class MyChunkList {
@@ -463,8 +467,8 @@ namespace leveldb {
 	      if ( (wx == 0) && (wz == 0) ) {
 		fprintf(stderr,"Info: World (0, 0) is at image (%d,%d)\n", ix,iz);
 	      }
-	      if ( (wx == spawnX) && (wz == spawnZ) ) {
-		fprintf(stderr,"Info: World Spawn (%d, %d) is at image (%d, %d)\n", spawnX, spawnZ, ix, iz);
+	      if ( (wx == worldSpawnX) && (wz == worldSpawnZ) ) {
+		fprintf(stderr,"Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
 	      }
 	    }
 	  }
@@ -636,7 +640,8 @@ namespace leveldb {
       sprintf(s,"ERROR: Unknown biome id (%d)",idv);
       return std::string(s);
     }
-    
+
+    // todo - keep this to use with new nbt lib?
     int printIdTag(FILE *fout, int nbtMode, bool idTagFlag, int idv) {
       if ( idTagFlag ) {
 	if ( idv >= 0 ) {
@@ -665,277 +670,151 @@ namespace leveldb {
       return 0;
     }
 
-    int parseNbtPart(FILE *fout, const char* hdr, const int nbtMode, const char* buf, int buflen, int &i,
-		     uint8_t tagId, int &indent, bool readHeaderFlag) {
-      int ret = 0;
-      bool showTypeFlag = false;
-      bool idTagFlag = false;
+
+    // helper types for NBT
+    typedef std::pair<std::string, std::unique_ptr<nbt::tag> > MyTag;
+    typedef std::vector< MyTag > MyTagList;
+
+    int parseNbtTag( const char* hdr, int& indent, const MyTag& t ) {
+
+      fprintf(control.fpLog,"%s[%s] ", makeIndent(indent,hdr).c_str(), t.first.c_str());
+
+      nbt::tag_type tagType = t.second->get_type();
       
-      if ( readHeaderFlag ) {
-
-	// read tag id
-	int16_t nameLen;
-	if ( i >= buflen ) {
-	  fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (tagid)\n",i,buflen);
-	  return -1;
-	}
-	tagId = buf[i++];
-	if ( tagId == 0 ) {
-	  //if ( --indent < 0 ) { indent=0; }
-	  //fprintf(fout,"%sTAG_End\n", makeIndent(indent,hdr).c_str());
-	  return 1;
-	}
-
-	// sanity check
-	if ( (tagId >= 0) && (tagId <= 11) ) {
-	} else {
-	  fprintf(fout,"ERROR: Invalid NBT tag id (%d)\n",(int)tagId);
-	  return -1;
-	}
-
-	// read name length
-	if ( (i+(int)sizeof(nameLen)) > buflen ) {
-	  fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (namelen)\n",i,buflen);
-	  return -1;
-	}
-	memcpy(&nameLen, &buf[i], sizeof(nameLen));
-	i+=sizeof(nameLen);
-
-	// read name
-	std::string name;
-	if ( (i+nameLen) <= buflen ) {
-	  name.append(&buf[i],nameLen);
-	  i+=nameLen;
-	} else {
-	  fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d readlen=%d (name)\n",i,buflen,nameLen);
-	  return -1;
-	}
-
-	if ( name.compare("id") == 0 ) {
-	  idTagFlag = true;
-	}
-	
-	fprintf(fout,"%s[%s] ",makeIndent(indent,hdr).c_str(),name.c_str());
-      } else {
-	fprintf(fout,"%s",makeIndent(indent,hdr).c_str());
-      }
-      
-      // spec from: http://minecraft.gamepedia.com/NBT_format
-      switch ( tagId ) {
-      case 0:
-	// END
-	ret = 1;
+      switch ( tagType ) {
+      case nbt::tag_type::End:
+	fprintf(control.fpLog,"TAG_END\n");
 	break;
-      case 1:
-	// BYTE
+      case nbt::tag_type::Byte:
 	{
-	  int8_t v;
-	  if ( (i+(int)sizeof(v)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (byte)\n",i,buflen);
-	    return -1;
-	  }
-	  v = buf[i++];
-	  fprintf(fout,"[%d]%s", v, (showTypeFlag ? " BYTE" : ""));
-	  printIdTag(fout, nbtMode, idTagFlag, (int)v);
-	  fprintf(fout,"\n");
+	  nbt::tag_byte v = t.second->as<nbt::tag_byte>();
+	  fprintf(control.fpLog,"%d (byte)\n", v.get());
 	}
 	break;
-      case 2:
-	// SHORT
+      case nbt::tag_type::Short:
 	{
-	  int16_t v;
-	  if ( (i+(int)sizeof(v)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (short)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&v,&buf[i],sizeof(v));
-	  i+=sizeof(v);
-	  fprintf(fout,"[%d]%s", v, (showTypeFlag ? " SHORT" : ""));
-	  printIdTag(fout, nbtMode, idTagFlag, (int)v);
-	  fprintf(fout,"\n");
+	  nbt::tag_short v = t.second->as<nbt::tag_short>();
+	  fprintf(control.fpLog,"%d (short)\n", v.get());
 	}
 	break;
-      case 3:
-	// INT
+      case nbt::tag_type::Int:
 	{
-	  int32_t v;
-	  if ( (i+(int)sizeof(v)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (int)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&v,&buf[i],sizeof(v));
-	  i+=sizeof(v);
-	  fprintf(fout,"[%d]%s", v, (showTypeFlag ? " INT" : ""));
-	  printIdTag(fout, nbtMode, idTagFlag, (int)v);
-	  fprintf(fout,"\n");
+	  nbt::tag_int v = t.second->as<nbt::tag_int>();
+	  fprintf(control.fpLog,"%d (int)\n", v.get());
 	}
 	break;
-      case 4:
-	// LONG
+      case nbt::tag_type::Long:
 	{
-	  int64_t v;
-	  if ( (i+(int)sizeof(v)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (long)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&v,&buf[i],sizeof(v));
-	  i+=sizeof(v);
-	  fprintf(fout,"[%ld]%s\n", v, (showTypeFlag ? " LONG" : ""));
+	  nbt::tag_long v = t.second->as<nbt::tag_long>();
+	  fprintf(control.fpLog,"%ld (long)\n", v.get());
 	}
 	break;
-      case 5:
-	// FLOAT
+      case nbt::tag_type::Float:
 	{
-	  float v;
-	  if ( (i+(int)sizeof(v)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (float)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&v,&buf[i],sizeof(v));
-	  i+=sizeof(v);
-	  fprintf(fout,"[%f]%s\n", v, (showTypeFlag ? " FLOAT" : ""));
+	  nbt::tag_float v = t.second->as<nbt::tag_float>();
+	  fprintf(control.fpLog,"%f (float)\n", v.get());
 	}
 	break;
-      case 6:
-	// DOUBLE
+      case nbt::tag_type::Double:
 	{
-	  double v;
-	  if ( (i+(int)sizeof(v)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (double)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&v,&buf[i],sizeof(v));
-	  i+=sizeof(v);
-	  fprintf(fout,"[%lf]%s\n", v, (showTypeFlag ? " DOUBLE" : ""));
+	  nbt::tag_double v = t.second->as<nbt::tag_double>();
+	  fprintf(control.fpLog,"%lf (double)\n", v.get());
 	}
 	break;
-      case 7:
-	// BYTE ARRAY
+      case nbt::tag_type::Byte_Array:
 	{
-	  int32_t len;
-	  if ( (i+(int)sizeof(len)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (byte array len)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&len,&buf[i],sizeof(len));
-	  i+=sizeof(len);
-
-	  if ( ((i+len) > buflen) || (len < 0) ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (byte array)\n",i,buflen);
-	    return -1;
-	  }
-	  char* vbuf = new char[len+1];
-	  memset(vbuf,0,len+1);
-	  memcpy(vbuf,&buf[i],len);
-	  i+=len;
-	  fprintf(fout,"[");
-	  for (int n=0; n < len; n++) {
-	    if ( n > 0 ) { fprintf(fout," "); }
-	    fprintf(fout,"%02x",(int)vbuf[n]);
-	  }
-	  fprintf(fout,"] BYTE ARRAY (len=%d)\n", len);
-	  delete [] vbuf;
+	  // todo nbt::tag_double v = t.second->as<nbt::tag_double>();
+	  fprintf(control.fpLog,"[TODO] (byte array)\n");
 	}
 	break;
-      case 8:
-	// STRING
+      case nbt::tag_type::String:
 	{
-	  int16_t len;
-	  if ( (i+(int)sizeof(len)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (string len)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&len,&buf[i],sizeof(len));
-	  i+=sizeof(len);
-
-	  if ( ((i+len) > buflen) || (len < 0) ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (string) (len=%d)\n",i,buflen,len);
-	    return -1;
-	  }
-	  char* vbuf = new char[len+1];
-	  memcpy(vbuf,&buf[i],len);
-	  i+=len;
-	  vbuf[len]=0;
-	  fprintf(fout,"[%s]%s\n", vbuf, (showTypeFlag ? " STRING" : ""));
-	  delete [] vbuf;
+	  nbt::tag_string v = t.second->as<nbt::tag_string>();
+	  fprintf(control.fpLog,"'%s' (string)\n", v.get().c_str());
 	}
 	break;
-
-      case 9:
-	// LIST
+      case nbt::tag_type::List:
 	{
-	  if ( (i) >= buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (list tagid)\n",i,buflen);
-	    return -1;
-	  }
-	  uint8_t listTagId = buf[i++];
-
-	  int32_t listSize;
-	  if ( (i+(int)sizeof(listSize)) > buflen ) {
-	    fprintf(fout,"ERROR: buffer exceeded i=%d buflen=%d (list size)\n",i,buflen);
-	    return -1;
-	  }
-	  memcpy(&listSize,&buf[i],sizeof(listSize));
-	  i+=sizeof(listSize);
-	  fprintf(fout,"LIST (t=%d n=%d) {\n", listTagId,listSize);
+	  nbt::tag_list v = t.second->as<nbt::tag_list>();
+	  fprintf(control.fpLog,"LIST {\n");
 	  indent++;
-	  for (int lct=0; lct < listSize; lct++) {
-	    if ( parseNbtPart(fout,hdr,nbtMode,buf,buflen,i,listTagId,indent, false) < 0 ) {
-	      ret = -1;
-	      break;
-	    }
+	  for ( auto it=v.begin(); it != v.end(); ++it ) {
+	    std::unique_ptr<nbt::tag> t = it->get().clone();
+	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), std::move(t) ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
-	  fprintf(fout,"%s} LIST\n",makeIndent(indent,hdr).c_str());
+	  fprintf(control.fpLog,"%s} LIST\n", makeIndent(indent,hdr).c_str());
 	}
 	break;
-	
-      case 10:
-	// COMPOUND
+      case nbt::tag_type::Compound:
 	{
-	  fprintf(fout,"COMPOUND {\n");
+	  nbt::tag_compound v = t.second->as<nbt::tag_compound>();
+	  fprintf(control.fpLog,"COMPOUND {\n");
 	  indent++;
-	  bool done = false;
-	  while ( ! done ) {
-	    int xret = parseNbtPart(fout,hdr,nbtMode,buf,buflen,i,-1,indent, true);
-	    if ( xret < 0 ) {
-	      ret = -1;
-	      done = true;
-	    }
-	    else if ( xret > 0 ) {
-	      done = true;
-	    }
-	  }
-	  if ( ret < 0 ) {
-	    fprintf(fout,"ERROR: Processing compound and we got ret=%d\n",ret);
+	  for ( auto it=v.begin(); it != v.end(); ++it ) {
+	    std::unique_ptr<nbt::tag> t = it->second.get().clone();
+	    parseNbtTag( hdr, indent, std::make_pair( it->first, std::move(t) ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
-	  fprintf(fout,"%s} COMPOUND\n",makeIndent(indent,hdr).c_str());
+	  fprintf(control.fpLog,"%s} COMPOUND\n", makeIndent(indent,hdr).c_str());
 	}
 	break;
-	
+      case nbt::tag_type::Int_Array:
+	{
+	  // todo nbt::tag_double v = t.second->as<nbt::tag_double>();
+	  fprintf(control.fpLog,"[TODO] (int array)\n");
+	}
+	break;
       default:
-	fprintf(fout,"ERROR: UNKNOWN TAG ID (%d) BAILING OUT\n",tagId);
-	ret = -1;
+	fprintf(control.fpLog,"[ERROR: Unknown tag type = %d]\n", (int)tagType);
 	break;
-      }
-
-      return ret;
-    }
-    
-    int parseNbt( FILE *fout, const char* hdr, const int nbtMode, const char* buf, int buflen ) {
-      int i=0;
-      int indent = 0;
-      bool stopProcessingFlag = false;
-      while ( (i < buflen) && !stopProcessingFlag ) {
-	if ( parseNbtPart(fout, hdr, nbtMode, buf, buflen, i, -1, indent, true) < 0 ) {
-	  stopProcessingFlag = true;
-	}
       }
 
       return 0;
     }
+
     
+    int parseNbt( const char* hdr, const char* buf, int bufLen, MyTagList& tagList ) {
+      int indent=0;
+      fprintf(control.fpLog,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
+      
+      std::istringstream is(std::string(buf,bufLen));
+      nbt::io::stream_reader reader(is, endian::little);
+
+      // remove all elements from taglist
+      tagList.clear();
+      
+      // read all tags
+      MyTag t;
+      bool done = false;
+      std::istream& pis = reader.get_istr();
+      while ( !done && (pis) && (!pis.eof()) ) {
+	try {
+	  t = reader.read_tag();
+	  tagList.push_back(std::move(t));
+	}
+	catch (std::exception& e) {
+	  // check for eof which means all is well
+	  if ( ! pis.eof() ) {
+	    fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s)\n"
+		    , e.what()
+		    , pis.eof() ? "true" : "false"
+		    , (pis) ? "true" : "false"
+		    );
+	  }
+	  done = true;
+	}
+      }
+      
+      // iterate over the tags
+      for ( auto itt = tagList.begin(); itt != tagList.end(); ++itt ) {
+	parseNbtTag( hdr, indent, *itt );
+      }
+      
+      fprintf(control.fpLog,"%sNBT Decode End (%d tags)\n",makeIndent(indent,hdr).c_str(), (int)tagList.size());
+
+      return 0;
+    }
     
     int myParseInt32_T(const char* p, int startByte) {
       int ret;
@@ -1015,7 +894,7 @@ namespace leveldb {
 
     int printKeyValue(const char* key, int key_size, const char* value, int value_size, bool printKeyAsStringFlag) {
       fprintf(control.fpLog,"WARNING: Unknown key size (%d) k=[%s][", key_size, 
-	     (printKeyAsStringFlag ? key : "(SKIPPED)"));
+	      (printKeyAsStringFlag ? key : "(SKIPPED)"));
       for (int i=0; i < key_size; i++) {
 	if ( i > 0 ) { fprintf(control.fpLog," "); }
 	fprintf(control.fpLog,"%02x",((int)key[i] & 0xff));
@@ -1030,7 +909,7 @@ namespace leveldb {
     }
     
     Status parseDb ( const std::string fname ) {
-      // todobig - leveldb read-only? snapshot? copy to temp location before opening (for safety)?
+      // todobig - leveldb read-only? snapshot?
       leveldb::DB* db;
       leveldb::Options options;
       options.compressors[0] = new leveldb::ZlibCompressor();
@@ -1104,6 +983,7 @@ namespace leveldb {
       }
 
       fprintf(stderr,"Parse all leveldb records\n");
+      MyTagList tagList;
       recordCt = 0;
       for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
 
@@ -1130,33 +1010,39 @@ namespace leveldb {
 	if ( strncmp(key,"BiomeData",key_size) == 0 ) {
 	  // 0x61 +"BiomeData" -- snow accum? -- overworld only?
 	  fprintf(control.fpLog,"BiomeData value:\n");
-	  parseNbt(control.fpLog, "BiomeData: ", kNbtModePlain, value, value_size );
+	  parseNbt("BiomeData: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
 	else if ( strncmp(key,"Overworld",key_size) == 0 ) {
 	  //  0x64 +"Overworld" -- "LimboEntities"? -- overworld only?
 	  fprintf(control.fpLog,"Overworld value:\n");
-	  parseNbt(control.fpLog, "Overworld: ", kNbtModePlain, value, value_size );
+	  parseNbt("Overworld: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
 	else if ( strncmp(key,"~local_player",key_size) == 0 ) {
 	  // 0x72 +"~local_player" -- player info?? ?? -- nether only?
 	  fprintf(control.fpLog,"Local Player value:\n");
-	  parseNbt(control.fpLog, "Local Player: ", kNbtModeItem, value, value_size );
+	  parseNbt("Local Player: ", value, value_size, tagList);
+	  // todo - parse tagList? 
 	}
 	else if ( strncmp(key,"player_",key_size) == 0 ) {
 	  fprintf(control.fpLog,"Remote Player value:\n");
-	  parseNbt(control.fpLog, "Remote Player: ", kNbtModeItem, value, value_size );
+	  parseNbt("Remote Player: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
 	else if ( strncmp(key,"villages",key_size) == 0 ) {
 	  fprintf(control.fpLog,"Villages value:\n");
-	  parseNbt(control.fpLog, "villages: ", kNbtModePlain, value, value_size );
+	  parseNbt("villages: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
 	else if ( strncmp(key,"Nether",key_size) == 0 ) {
 	  fprintf(control.fpLog,"Nether value:\n");
-	  parseNbt(control.fpLog, "Nether: ", kNbtModePlain, value, value_size );
+	  parseNbt("Nether: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
 	else if ( strncmp(key,"portals",key_size) == 0 ) {
 	  fprintf(control.fpLog,"portals value:\n");
-	  parseNbt(control.fpLog, "portals: ", kNbtModePlain, value, value_size );
+	  parseNbt("portals: ", value, value_size, tagList);
 	}
 			 
 	else if ( key_size == 9 || key_size == 13 ) {
@@ -1224,7 +1110,7 @@ namespace leveldb {
 		  histo[blockId]++;
 		  if ( topBlock[cz][cx] == 0 ||
 		       vectorContains(blockHideList[chunkWorldId], topBlock[cz][cx]) ||
-		       vectorContains(blockHighlightList, blockId) ) {
+		       vectorContains(blockForceTopList[chunkWorldId], blockId) ) {
 		    topBlock[cz][cx] = blockId;
 		    topData[cz][cx] = getBlockData(value, cx,cz,cy);
 		    topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
@@ -1296,18 +1182,21 @@ namespace leveldb {
 
 	  case 0x31:
 	    fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", worldName.c_str());
-	    parseNbt(control.fpLog, "0x31-te: ", kNbtModeItem, value, value_size );
+	    parseNbt("0x31-te: ", value, value_size, tagList);
+	    // todo - parse tagList?
 	    break;
 
 	  case 0x32:
 	    fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", worldName.c_str());
-	    parseNbt(control.fpLog, "0x32-e: ", kNbtModeEntity, value, value_size );
+	    parseNbt("0x32-e: ", value, value_size, tagList);
+	    // todo - parse tagList?
 	    break;
 
 	  case 0x33:
 	    // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
 	    fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", worldName.c_str());
-	    parseNbt(control.fpLog, "0x33-tick: ", kNbtModePlain, value, value_size );
+	    parseNbt("0x33-tick: ", value, value_size, tagList);
+	    // todo - parse tagList?
 	    break;
 
 	  case 0x34:
@@ -1342,11 +1231,12 @@ namespace leveldb {
 
 	  default:
 	    fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", worldName.c_str(),
-		   key_size, chunkType, value_size);
+		    key_size, chunkType, value_size);
 	    printKeyValue(key,key_size,value,value_size,true);
 	    if ( false ) {
 	      if ( value_size > 10 ) {
-		parseNbt(control.fpLog, "UNK: ", kNbtModePlain, value, value_size );
+		parseNbt("UNK: ", value, value_size, tagList);
+		// todo - parse tagList?
 	      }
 	    }
 	    break;
@@ -1357,7 +1247,8 @@ namespace leveldb {
 	  printKeyValue(key,key_size,value,value_size,true);
 	  // try to nbt decode
 	  fprintf(control.fpLog,"WARNING: Attempting NBT Decode:\n");
-	  parseNbt(control.fpLog, "WARNING: ", kNbtModePlain, value, value_size);
+	  parseNbt("WARNING: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
       }
       fprintf(stderr,"Read %d records\n", recordCt);
@@ -1418,7 +1309,6 @@ namespace leveldb {
       return 0;
     }
 
-    
     int parseLevelFile(const std::string fname) {
       FILE *fp = fopen(fname.c_str(), "rb");
       if(!fp) {
@@ -1438,10 +1328,22 @@ namespace leveldb {
 	char* buf = new char[bufLen];
 	fread(buf,1,bufLen,fp);
 	fclose(fp);
+
+	MyTagList tagList;
+	ret = parseNbt("level.dat: ", buf, bufLen, tagList);
 	
-	ret = parseNbt(control.fpLog, "level.dat: ", kNbtModePlain, buf, bufLen);
+	if ( ret == 0 ) {
+	  nbt::tag_compound tc = tagList[0].second->as<nbt::tag_compound>();
+
+	  worldSpawnX = tc["SpawnX"].as<nbt::tag_int>().get();
+	  worldSpawnY = tc["SpawnY"].as<nbt::tag_int>().get();
+	  worldSpawnZ = tc["SpawnZ"].as<nbt::tag_int>().get();
+	  fprintf(stderr, "Found World Spawn: x=%d y=%d z=%d\n", worldSpawnX, worldSpawnY, worldSpawnZ);
+	}
 
 	delete [] buf;
+      } else {
+	fclose(fp);
       }
       
       return ret;
@@ -1458,7 +1360,83 @@ namespace leveldb {
     }
     
     int doParseConfigFile ( const std::string fn ) {
-      // todobig - what to put in cfg file?
+      if ( ! file_exists(fn.c_str()) ) {
+	return -1;
+      }
+
+      // todo - this should use streams
+      
+      FILE *fp = fopen(fn.c_str(), "r");
+      if ( ! fp ) {
+	fprintf(stderr,"ERROR: Failed to open file (%s)\n", fn.c_str());
+	return 1;
+      }
+
+      fprintf(stderr,"Reading config from %s\n", fn.c_str());
+      
+      char buf[1025], *p;
+      while ( !feof(fp) ) {
+	memset(buf,0,1025);
+	fgets(buf,1024,fp);
+
+	// remove comments and newlines
+	if ( (p=strchr(buf,'#')) ) {
+	  *p = 0;
+	}
+	if ( (p=strchr(buf,'\n')) ) {
+	  *p = 0;
+	}
+	if ( (p=strchr(buf,'\r')) ) {
+	  *p = 0;
+	}
+	
+	if ( (p=strstr(buf,"hide-top:")) ) {
+	  int worldId = -1;
+	  int blockId = -1;
+	  int pass = false;
+	  if ( sscanf(&p[9],"%d 0x%x", &worldId, &blockId) == 2 ) {
+	    pass = true;
+	  }
+	  else if ( sscanf(&p[9],"%d %d", &worldId, &blockId) == 2 ) {
+	    pass = true;
+	  }
+	  if ( pass ) {
+	    // add to hide list
+	    fprintf(stderr,"INFO: Adding 'hide-top' block: worldId=%d blockId=%d (0x%x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
+	    blockHideList[worldId].push_back(blockId);
+	  } else {
+	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide-top': [%s]\n", buf);
+	  }
+	}
+
+	else if ( (p=strstr(buf,"force-top:")) ) {
+	  int worldId = -1;
+	  int blockId = -1;
+	  int pass = false;
+	  if ( sscanf(&p[10],"%d 0x%x", &worldId, &blockId) == 2 ) {
+	    pass = true;
+	  }
+	  else if ( sscanf(&p[10],"%d %d", &worldId, &blockId) == 2 ) {
+	    pass = true;
+	  }
+	  if ( pass ) {
+	    // add to hide list
+	    fprintf(stderr,"INFO: Adding 'force-top' block: worldId=%d blockId=%d (0x%x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
+	    blockForceTopList[worldId].push_back(blockId);
+	  } else {
+	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide': [%s]\n", buf);
+	  }
+	}
+
+	else {
+	  if ( strlen(buf) > 0 ) {
+	    fprintf(stderr,"WARNING: Unparsed config line: [%s]\n",buf);
+	  }
+	}
+	
+      }
+
+      fclose(fp);
       return 0;
     }
     
@@ -1480,7 +1458,9 @@ namespace leveldb {
       }
 
       // default config file
-      if ( doParseConfigFile( kFnCfg ) == 0 ) {
+      std::string fnHome = getenv("HOME");
+      fnHome += "/.mcpe_viz/mcpe_viz.cfg";
+      if ( doParseConfigFile( fnHome ) == 0 ) {
 	return 0;
       }
 
@@ -1497,7 +1477,7 @@ namespace leveldb {
 	return 0;
       }
 
-      fprintf(stderr,"WARNING: Did not find a valid config file\n");
+      //fprintf(stderr,"WARNING: Did not find a valid config file\n");
       return -1;
     }
 
@@ -1509,7 +1489,7 @@ namespace leveldb {
       xmlChar* prop = xmlGetProp(cur,p);
       if ( prop ) {
 	// see if it is hexadecimal
-	if ( sscanf((char*)prop,"%x",&ret) == 1 ) {
+	if ( sscanf((char*)prop,"0x%x",&ret) == 1 ) {
 	  xmlFree(prop);
 	  valid=true;
 	  return ret;
@@ -1756,6 +1736,7 @@ namespace leveldb {
 	return 1;
       }
 
+      // todobig - use verboseflag to show all items as they are processed
       fprintf(stderr,"Reading XML from %s\n", fn.c_str());
       
       int ret = 2;
@@ -1767,6 +1748,7 @@ namespace leveldb {
 	cur = cur->next;
       }
 
+      // todo - valgrind reports that this does NOT free everyhing it uses
       xmlFreeDoc(doc);
       return ret;
     }
@@ -1790,7 +1772,9 @@ namespace leveldb {
       }
 
       // default config file
-      ret = doParseXml( kFnXml );
+      std::string fnHome = getenv("HOME");
+      fnHome += "/.mcpe_viz/mcpe_viz.xml";
+      ret = doParseXml( fnHome );
       if ( ret >= 0 ) {
 	return ret;
       }
@@ -1823,20 +1807,20 @@ void print_usage(const char* fn) {
   fprintf(stderr,"Usage:\n\n");
   fprintf(stderr,"  %s [required parameters] [options]\n\n",fn);
   fprintf(stderr,"Required Parameters:\n"
-	  "  --db dir                 Directory for leveldb\n"
+	  "  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
 	  "  --out fn-part            Filename base for output file(s)\n"
 	  "\n"
 	  );
   fprintf(stderr,"Options:\n"
-	  "  --xml fn                 XML file containing data definitions\n"
-	  "  --log fn                 Send log to a file\n"
-	  "\n"
 	  "  --grid                   Display chunk grid on top of world\n"
 	  "  --biome                  Createa a biome map image\n"
 	  "\n"
 	  "  --movie                  Create movie of layers of overworld\n"
 	  "  --movie-nether           Create movie of layers of nether\n"
 	  "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
+	  "\n"
+	  "  --xml fn                 XML file containing data definitions\n"
+	  "  --log fn                 Send log to a file\n"
 	  "\n"
 	  // todo - re-enable when we use these:
 	  //"  --verbose                verbose output\n"
@@ -1969,8 +1953,7 @@ int main ( int argc, char **argv ) {
     return -1;
   }
   
-  // todo
-  //  leveldb::parseConfigFile(argv);
+  leveldb::parseConfigFile(argv);
   
   ret = leveldb::parseLevelFile(std::string(control.dirLeveldb + "/level.dat"));
   if ( ret != 0 ) {

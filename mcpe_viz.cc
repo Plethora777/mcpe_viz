@@ -5,32 +5,38 @@
   GPL'ed code - see LICENSE
 
   This requires Mojang's modified LevelDB library! (see README.md for details)
+  This requires libnbt++ (see README.md for details)
 
   To build it, use cmake or do something like this:
   
   g++ --std=c++11 -DDLLX= -I. -Ileveldb-mcpe/include -I.. -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -c mcpe_viz.cc -o mcpe_viz.o ; g++ -pthread mcpe_viz.o leveldb-mcpe/libleveldb.a -lz -o mcpe_viz 
 
+
   todo
 
   ** cmdline options:
-  filtering stuff w/ decimal or hex (e.g. torches)
-  highlighting per world
-  presets for filtering?
   save set of slices
   save a particular slice
   draw text on slice files (e.g. Y)
-  logfiles for overworld + nether + unknown
+  separate logfiles for overworld + nether + unknown
 
   ** maps/instructions to get from point A (e.g. spawn) to biome type X (in blocks but also in landmark form: over 2 seas left at the birch forest etc)
-  
+
+
+  todo win32 build
+
+  * leveldb close() issue
+  * leveldb -O2 build issue
+  * leveldb fread_nolock issue
+
   */
 
 #include <stdio.h>
 #include <libgen.h>
 #include <map>
 #include <vector>
-#include <libxml/xmlreader.h>
 #include <png.h>
+#include <libxml/xmlreader.h>
 #include <getopt.h>
 #include "leveldb/db.h"
 #include "leveldb/zlib_compressor.h"
@@ -45,80 +51,99 @@
 #include <fstream>
 #include <sstream>
 
-
-
-// all user options are stored here
-class Control {
-public:
-  std::string dirLeveldb;
-  std::string fnOutputBase;
-  std::string fnCfg;
-  std::string fnXml;
-  std::string fnLog;
-  bool doMovieFlag;
-  bool doMovieNetherFlag;
-  bool doGridFlag;
-  bool doBiomeImageFlag;
-  bool shortRunFlag;
-  bool verboseFlag;
-  bool quietFlag;
-  int movieX, movieY, movieW, movieH;
-
-  bool fpLogNeedCloseFlag;
-  FILE *fpLog;
-  
-  Control() {
-    fpLog = stdout;
-    init();
+#ifndef htobe32
+// borrowed from /usr/include/bits/byteswap.h
+// todo - doesn't check host endianness
+#define htobe32(x) \
+  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |	\
+   (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+/*
+int32_t htobe32(int32_t src) {
+  // todobig - more efficient
+  char *ps, *pd;
+  int32_t dst;
+  ps = (char*)&src;
+  pd = (char*)&dst;
+  for (int i=0; i<3; i++) {
+    pd[i] = ps[3-i];
   }
-  ~Control() {
-    if ( fpLogNeedCloseFlag ) {
-      fclose(fpLog);
-    }
-  }
-  
-  void init() {
-    dirLeveldb = "";
-    fnXml = "";
-    fnOutputBase = "";
-    fnLog = "";
-    doMovieFlag = false;
-    doMovieNetherFlag = false;
-    doGridFlag = false;
-    doBiomeImageFlag = false;
-    shortRunFlag = false;
-    verboseFlag = false;
-    quietFlag = false;
-    movieX = movieY = movieW = movieH = 0;
-    fpLogNeedCloseFlag = false;
-    fpLog = stdout;
-  }
-  void setupOutput() {
-    if ( fnLog.compare("-") == 0 ) {
-      fpLog = stdout;
-      fpLogNeedCloseFlag = false;
-    }
-    else {
-      if ( fnLog.size() == 0 ) {
-	fnLog = fnOutputBase + ".log";
-      }
-      fpLog = fopen(fnLog.c_str(), "w");
-      if ( fpLog ) {
-	fpLogNeedCloseFlag = true;
-      } else {
-	fprintf(stderr,"ERROR: Failed to create output log file (%s).  Reverting to stdout...\n", fnLog.c_str());
-	fpLog = stdout;
-	fpLogNeedCloseFlag = false;
-      }
-    }
-  }
-};
-
-Control control;
+  return dst;
+}
+*/
+#endif
 
 
-namespace leveldb {
+namespace mcpe_viz {
   namespace {
+
+    // all user options are stored here
+    class Control {
+    public:
+      std::string dirLeveldb;
+      std::string fnOutputBase;
+      std::string fnCfg;
+      std::string fnXml;
+      std::string fnLog;
+      bool doMovieFlag;
+      bool doMovieNetherFlag;
+      bool doGridFlag;
+      bool doBiomeImageFlag;
+      bool shortRunFlag;
+      bool verboseFlag;
+      bool quietFlag;
+      int movieX, movieY, movieW, movieH;
+
+      bool fpLogNeedCloseFlag;
+      FILE *fpLog;
+  
+      Control() {
+	fpLog = stdout;
+	init();
+      }
+      ~Control() {
+	if ( fpLogNeedCloseFlag ) {
+	  fclose(fpLog);
+	}
+      }
+  
+      void init() {
+	dirLeveldb = "";
+	fnXml = "";
+	fnOutputBase = "";
+	fnLog = "";
+	doMovieFlag = false;
+	doMovieNetherFlag = false;
+	doGridFlag = false;
+	doBiomeImageFlag = false;
+	shortRunFlag = false;
+	verboseFlag = false;
+	quietFlag = false;
+	movieX = movieY = movieW = movieH = 0;
+	fpLogNeedCloseFlag = false;
+	fpLog = stdout;
+      }
+      void setupOutput() {
+	if ( fnLog.compare("-") == 0 ) {
+	  fpLog = stdout;
+	  fpLogNeedCloseFlag = false;
+	}
+	else {
+	  if ( fnLog.size() == 0 ) {
+	    fnLog = fnOutputBase + ".log";
+	  }
+	  fpLog = fopen(fnLog.c_str(), "w");
+	  if ( fpLog ) {
+	    fpLogNeedCloseFlag = true;
+	  } else {
+	    fprintf(stderr,"ERROR: Failed to create output log file (%s).  Reverting to stdout...\n", fnLog.c_str());
+	    fpLog = stdout;
+	    fpLogNeedCloseFlag = false;
+	  }
+	}
+      }
+    };
+
+    Control control;
 
     static const std::string version("mcpe_viz v0.0.1 by Plethora777");
 
@@ -777,7 +802,7 @@ namespace leveldb {
     int parseNbt( const char* hdr, const char* buf, int bufLen, MyTagList& tagList ) {
       int indent=0;
       fprintf(control.fpLog,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
-      
+
       std::istringstream is(std::string(buf,bufLen));
       nbt::io::stream_reader reader(is, endian::little);
 
@@ -908,7 +933,7 @@ namespace leveldb {
       return 0;
     }
     
-    Status parseDb ( const std::string fname ) {
+    leveldb::Status parseDb ( const std::string fname ) {
       // todobig - leveldb read-only? snapshot?
       leveldb::DB* db;
       leveldb::Options options;
@@ -944,7 +969,7 @@ namespace leveldb {
       // pre-scan keys to get min/max chunks so that we can provide image coordinates for chunks
       fprintf(stderr,"Pre-scan keys to get world boundaries\n");
       for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-	Slice skey = iter->key();
+	leveldb::Slice skey = iter->key();
 	int key_size = skey.size();
 	const char* key = skey.data();
 
@@ -988,11 +1013,11 @@ namespace leveldb {
       for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
 
 	// note: we get the raw buffer early to avoid overhead (maybe?)
-	Slice skey = iter->key();
+	leveldb::Slice skey = iter->key();
 	int key_size = (int)skey.size();
 	const char* key = skey.data();
 
-	Slice svalue = iter->value();
+	leveldb::Slice svalue = iter->value();
 	int value_size = svalue.size();
 	const char* value = svalue.data();
 
@@ -1044,6 +1069,7 @@ namespace leveldb {
 	else if ( strncmp(key,"portals",key_size) == 0 ) {
 	  fprintf(control.fpLog,"portals value:\n");
 	  parseNbt("portals: ", value, value_size, tagList);
+	  // todo - parse tagList?
 	}
 			 
 	else if ( key_size == 9 || key_size == 13 ) {
@@ -1261,7 +1287,7 @@ namespace leveldb {
 
       delete db;
 
-      return Status::OK();
+      return leveldb::Status::OK();
     }
 
     int generateImages() {
@@ -1459,12 +1485,15 @@ namespace leveldb {
       }
 
       // default config file
-      std::string fnHome = getenv("HOME");
-      fnHome += "/.mcpe_viz/mcpe_viz.cfg";
-      if ( doParseConfigFile( fnHome ) == 0 ) {
-	return 0;
+      // todo - how to support on win32?
+      if ( getenv("HOME") ) {
+	std::string fnHome = getenv("HOME");
+	fnHome += "/.mcpe_viz/mcpe_viz.cfg";
+	if ( doParseConfigFile( fnHome ) == 0 ) {
+	  return 0;
+	}
       }
-
+      
       // same dir as exec
       fn = dirname(argv[0]);
       fn += "/mcpe_viz.cfg";
@@ -1773,11 +1802,14 @@ namespace leveldb {
       }
 
       // default config file
-      std::string fnHome = getenv("HOME");
-      fnHome += "/.mcpe_viz/mcpe_viz.xml";
-      ret = doParseXml( fnHome );
-      if ( ret >= 0 ) {
-	return ret;
+      // todo - how to support on win32?
+      if ( getenv("HOME") ) {
+	std::string fnHome = getenv("HOME");
+	fnHome += "/.mcpe_viz/mcpe_viz.xml";
+	ret = doParseXml( fnHome );
+	if ( ret >= 0 ) {
+	  return ret;
+	}
       }
 
       // same dir as exec
@@ -1799,11 +1831,6 @@ namespace leveldb {
       return -1;
     }
     
-    
-  }  // namespace
-}  // namespace leveldb
-
-
 void print_usage(const char* fn) {
   fprintf(stderr,"Usage:\n\n");
   fprintf(stderr,"  %s [required parameters] [options]\n\n",fn);
@@ -1936,35 +1963,40 @@ int parse_args ( int argc, char **argv, Control& control ) {
   return errct;
 }
 
+    
+  }  // namespace
+}  // namespace leveldb
+
+
 
 int main ( int argc, char **argv ) {
 
-  fprintf(stderr,"%s\n",leveldb::version.c_str());
+  fprintf(stderr,"%s\n",mcpe_viz::version.c_str());
   
-  int ret = parse_args(argc, argv, control);
+  int ret = mcpe_viz::parse_args(argc, argv, mcpe_viz::control);
   if (ret != 0) {
-    print_usage(basename(argv[0]));
+    mcpe_viz::print_usage(basename(argv[0]));
     return ret;
   }
 
-  ret = leveldb::parseXml(argv);
+  ret = mcpe_viz::parseXml(argv);
   if ( ret != 0 ) {
     fprintf(stderr,"ERROR: Failed to parse an XML file.  Exiting...\n");
     fprintf(stderr,"** Hint: Make sure that mcpe_viz.xml is in any of: current dir, exec dir, ~/.mcpe_viz/\n");
     return -1;
   }
   
-  leveldb::parseConfigFile(argv);
+  mcpe_viz::parseConfigFile(argv);
   
-  ret = leveldb::parseLevelFile(std::string(control.dirLeveldb + "/level.dat"));
+  ret = mcpe_viz::parseLevelFile(std::string(mcpe_viz::control.dirLeveldb + "/level.dat"));
   if ( ret != 0 ) {
     fprintf(stderr,"ERROR: Failed to parse level.dat file.  Exiting...\n");
     return -1;
   }
   
-  leveldb::initBlockInfo();
-  leveldb::parseDb(std::string(control.dirLeveldb+"/db"));
-  leveldb::generateImages();
+  mcpe_viz::initBlockInfo();
+  mcpe_viz::parseDb(std::string(mcpe_viz::control.dirLeveldb+"/db"));
+  mcpe_viz::generateImages();
   
   fprintf(stderr,"Done.\n");
 

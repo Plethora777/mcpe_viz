@@ -1,5 +1,5 @@
 # MCPE Viz
-Plethora777, 2015.9.26
+Plethora777 -- 2015.9.26
 
 MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files (LevelDB).  It creates overview images from the world files, and reports *lots* of details on your world.
 
@@ -19,12 +19,16 @@ It can also:
   * For each world type (e.g. overworld, nether):
     * Histogram of biomes (per-block column)
 
+## Experimental win32 build
+
+I used mingw32 to build a win32 executable.  It is lightly tested :)  You can find the exe and required dll's in mcpe_viz.win32.zip
+
 
 ## Requirements
 
 * You know how to compile things :)
-* Mojang's LevelDB from github (see below)
-* libnbt++ from github (see below)
+* Mojang's LevelDB from github (see below) (https://github.com/Mojang/leveldb-mcpe.git)
+* libnbt++ from github (see below) (https://github.com/ljfa-ag/libnbtplusplus.git)
 * [Optional] *ffmpeg* for creating movies
 
 
@@ -80,11 +84,11 @@ If all goes well, you will have "mcpe_viz" in build/
 
 ## Usage
 
-*** DO NOT RUN THIS ON YOUR ORIGINAL MCPE DATA FILES ***
+**DO NOT RUN THIS ON YOUR ORIGINAL MCPE DATA FILES**
 
-*** DO NOT RUN THIS ON YOUR ONLY BACKUP OF MCPE DATA FILES ***
+**DO NOT RUN THIS ON YOUR ONLY BACKUP OF MCPE DATA FILES**
 
-MAKE A COPY OF YOUR DATA AND RUN THIS AGAINST THAT COPY ONLY!
+**MAKE A COPY OF YOUR DATA AND RUN THIS AGAINST THAT COPY ONLY!**
 
 See "./mcpe_viz --help" for the most up-to-date usage info
 

@@ -2,35 +2,79 @@ cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
   VERSION 0.0.1)
 
-# choose one of these:
-# todo - use these based on "options"?
-# regular
-add_definitions(-Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG)
+option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
+option(MCPE_VIZ_DEUBG "Build debug version" OFF)
+option(MCPE_VIZ_PROFILE "Build profile version" OFF)
 
-# debug/valgrind
-# add_definitions(-Wall -O0 -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG)
-# set(CMAKE_BUILD_TYPE Debug)
+if(MCPE_VIZ_WIN32)
 
-# gprof profiling
-# add_definitions(-Wall -pg -O0 -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG)
-# set(CMAKE_BUILD_TYPE Debug)
-# set(CMAKE_EXE_LINKER_FLAGS -pg)
+  # win32 build
+  add_definitions(-Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_WIN -DOS_WINDOWS -DWIN32 -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
 
-# end choose
+elseif(MCPE_VIZ_DEBUG)
 
-include_directories(leveldb-mcpe/include libnbtplusplus/include libnbtplusplus/build .)
+  # debug/valgrind
+  add_definitions(-Wall -O0 -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG)
+  set(CMAKE_BUILD_TYPE Debug)
+
+elseif(MCPE_VIZ_PROFILE)
+
+  # gprof profiling
+  add_definitions(-Wall -pg -O0 -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG)
+  set(CMAKE_BUILD_TYPE Debug)
+  # set(CMAKE_EXE_LINKER_FLAGS -pg)
+
+else()
+
+  # default linux build
+  add_definitions(-Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG)
+
+endif()
+
+add_executable(mcpe_viz mcpe_viz.cc)
 
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
-
 find_package(LibXml2 REQUIRED)
-include_directories(${LIBXML2_INCLUDE_DIR})
 
-add_executable(mcpe_viz mcpe_viz.cc)
-target_link_libraries(mcpe_viz ${PROJECT_SOURCE_DIR}/leveldb-mcpe/libleveldb.a ${PROJECT_SOURCE_DIR}/libnbtplusplus/build/libnbt++.a ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
+# todo - threads?
+include_directories(${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} leveldb-mcpe/include libnbtplusplus/include)
+
+if(MCPE_VIZ_WIN32)
+  include_directories(libnbtplusplus/wbuild .)
+  target_link_libraries(mcpe_viz
+    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/wbuild/libleveldb.a
+    ${PROJECT_SOURCE_DIR}/libnbtplusplus/wbuild/libnbt++.a
+    ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
+  set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)
+  set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_END_STATIC 1)
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+else()
+  include_directories(libnbtplusplus/build .)
+  target_link_libraries(mcpe_viz
+    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/libleveldb.a
+    ${PROJECT_SOURCE_DIR}/libnbtplusplus/build/libnbt++.a
+    ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
+endif()
 
 # copy the xml file - kind of ugly
 configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.xml mcpe_viz.xml COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.cfg mcpe_viz.cfg COPYONLY)
 
+if(MCPE_VIZ_WIN32)
+  # package win32 w/ required dll's
+  # todo
+  configure_file(${PROJECT_SOURCE_DIR}/README.md README.md COPYONLY)
+  configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE COPYONLY)
+  add_custom_target(create_zip ALL COMMAND
+    ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win32.zip" --format=zip
+    "./mcpe_viz.exe"
+    "./mcpe_viz.cfg"
+    "./mcpe_viz.xml"
+    "./*.dll"
+    "./README.md"
+    "./LICENSE"
+    DEPENDS mcpe_viz.exe
+    )
+endif()

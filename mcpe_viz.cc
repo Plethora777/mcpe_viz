@@ -321,7 +321,7 @@ namespace leveldb {
 	  }
 	}
 
-	fprintf(control.fpLog,"\nGLobal Biome Histogram:\n");
+	fprintf(control.fpLog,"\nGlobal Biome Histogram:\n");
 	for (int i=0; i < 256; i++) {
 	  if ( histoGlobalBiome[worldId][i] > 0 ) {
 	    fprintf(control.fpLog,"hg-globalbiome: %02x %6d\n", i, histoGlobalBiome[worldId][i]);
@@ -483,7 +483,7 @@ namespace leveldb {
 	} else {
 	  for (int i=0; i < 256; i++) {
 	    if ( blockInfo[i].colorSetNeedCount ) {
-	      fprintf(stderr,"Need pixel color for: %x '%s' (%d)\n", i, blockInfo[i].name.c_str(), blockInfo[i].colorSetNeedCount);
+	      fprintf(stderr,"Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfo[i].name.c_str(), blockInfo[i].colorSetNeedCount);
 	    }
 	  }
 	}
@@ -1025,7 +1025,8 @@ namespace leveldb {
 	  parseNbt("Local Player: ", value, value_size, tagList);
 	  // todo - parse tagList? 
 	}
-	else if ( strncmp(key,"player_",key_size) == 0 ) {
+	else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
+	  // todo - key contains player id (e.g. "player_-1234")
 	  fprintf(control.fpLog,"Remote Player value:\n");
 	  parseNbt("Remote Player: ", value, value_size, tagList);
 	  // todo - parse tagList?
@@ -1073,7 +1074,7 @@ namespace leveldb {
 	  histoChunkType[chunkWorldId][chunkType]++;
 
 	  r = worldName + "-chunk: ";
-	  sprintf(tmpstring,"%d %d (t=%x)", chunkX, chunkZ, chunkType);
+	  sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
 	  r += tmpstring;
 	  if ( true ) {
 	    // show approximate image coordinates for chunk
@@ -1265,7 +1266,7 @@ namespace leveldb {
 
     int generateImages() {
 
-      fprintf(control.fpLog,"Report for Overworld:\n");
+      fprintf(control.fpLog,"\nReport for Overworld:\n");
       chunkList[kWorldIdOverworld].myreport(kWorldIdOverworld);
       
       fprintf(stderr,"Generate Image for Overworld\n");
@@ -1282,7 +1283,7 @@ namespace leveldb {
       }
 
 
-      fprintf(control.fpLog,"Report for Nether:\n");
+      fprintf(control.fpLog,"\nReport for Nether:\n");
       chunkList[kWorldIdNether].myreport(kWorldIdNether);
 
       fprintf(stderr,"Generate Image for Nether\n");

@@ -1,11 +1,13 @@
 # my stuff
 build/
 wbuild/
+wbuild64/
 leveldb-mcpe/
 libnbtplusplus/
 Backup/
 Research/
 *~
+update_win.sh
 
 # Compiled Object files
 *.slo

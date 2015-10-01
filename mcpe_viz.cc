@@ -145,7 +145,7 @@ namespace mcpe_viz {
 
     Control control;
 
-    static const std::string version("mcpe_viz v0.0.1 by Plethora777");
+    static const std::string version("mcpe_viz v0.0.2 by Plethora777");
 
     // world types
     enum {
@@ -266,7 +266,11 @@ namespace mcpe_viz {
       uint8_t blocks[16][16];
       uint8_t data[16][16];
       uint8_t biome[16][16];
+
+      // todobig - hideous hack to make win32 work - win32 chokes when we allocate too much mem
+#ifndef OS_WIN
       uint8_t blocks_all[16][16][128];
+#endif
       uint8_t topBlockY[16][16];
       MyChunk(int cx, int cz,
 	      const uint8_t* b, const uint8_t* d, const uint8_t* xbiome, const uint8_t* b_all, const uint8_t* tby) {
@@ -276,7 +280,9 @@ namespace mcpe_viz {
 	memcpy(data, d, 16*16);
 	memcpy(biome, xbiome, 16*16);
 	// todo - we could skip blocks_all if we are not doing a movie
+#ifndef OS_WIN
 	memcpy(blocks_all, b_all, 16*16*128);
+#endif
 	memcpy(topBlockY, tby, 16*16);
       }
     };
@@ -555,8 +561,14 @@ namespace mcpe_viz {
 
 		if ( (ix >= cropX) && (ix < (cropX + cropW)) &&
 		     (iz >= cropZ) && (iz < (cropZ + cropH)) ) {
-		     
+
+		  // todo - hideous hack for win32
+		  // todobig - perhaps it would be a lot wiser to not copy this info, and instead get from leveldb
+#ifdef OS_WIN
+		  int blockid = 0; 
+#else
 		  int blockid = (*it)->blocks_all[cx][cz][cy];
+#endif
 		
 		  if ( blockid == 0 && ( cy > (*it)->topBlockY[cz][cx] ) ) {
 		    // special handling for air -- keep existing value if we are above top block
@@ -1203,7 +1215,8 @@ namespace mcpe_viz {
 	    // store chunk
 	    chunkList[chunkWorldId].putChunk(chunkX, chunkZ,
 					     &topBlock[0][0], &topData[0][0],
-					     &blockBiome[0][0], (const uint8_t*)value, &topBlockY[0][0]);
+					     &blockBiome[0][0], (const uint8_t*)value,
+					     &topBlockY[0][0]);
 
 	    break;
 
@@ -1429,7 +1442,7 @@ namespace mcpe_viz {
 	  }
 	  if ( pass ) {
 	    // add to hide list
-	    fprintf(stderr,"INFO: Adding 'hide-top' block: worldId=%d blockId=%d (0x%x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
+	    fprintf(stderr,"INFO: Adding 'hide-top' block: worldId=%d blockId=%3d (0x%02x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
 	    blockHideList[worldId].push_back(blockId);
 	  } else {
 	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide-top': [%s]\n", buf);
@@ -1448,7 +1461,7 @@ namespace mcpe_viz {
 	  }
 	  if ( pass ) {
 	    // add to hide list
-	    fprintf(stderr,"INFO: Adding 'force-top' block: worldId=%d blockId=%d (0x%x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
+	    fprintf(stderr,"INFO: Adding 'force-top' block: worldId=%d blockId=%3d (0x%02x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
 	    blockForceTopList[worldId].push_back(blockId);
 	  } else {
 	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide': [%s]\n", buf);

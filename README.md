@@ -23,6 +23,7 @@ It can also:
 
 I used mingw32 to build a win32 executable.  It is lightly tested :)  You can find the exe and required dll's in mcpe_viz.win32.zip
 
+Note: movies are not supported on win32
 
 ## Requirements
 

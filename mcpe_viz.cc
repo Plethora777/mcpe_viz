@@ -632,6 +632,7 @@ namespace mcpe_viz {
 	leveldb::ReadOptions readOptions;
 	readOptions.fill_cache=false; // may improve performance?
 
+	std::string svalue;
 	const char* pchunk = nullptr;
 	int pchunkX = 0;
 	int pchunkZ = 0;
@@ -652,7 +653,6 @@ namespace mcpe_viz {
 
 		if ( (ix >= cropX) && (ix < (cropX + cropW)) &&
 		     (iz >= cropZ) && (iz < (cropZ + cropH)) ) {
-
 
 		  if ( pchunk==nullptr || (pchunkX != (*it)->chunkX) || (pchunkZ != (*it)->chunkZ) ) {
 		    // get the chunk
@@ -679,7 +679,6 @@ namespace mcpe_viz {
 		      break;
 		    }
 		    leveldb::Slice key(keybuf,keybuflen);
-		    std::string svalue;
 		    leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
 		    assert(dstatus.ok());
 		    pchunk = svalue.data();
@@ -696,7 +695,7 @@ namespace mcpe_viz {
 		  } else {
 		    
 		    if ( blockInfo[blockid].lookupColorFlag ) {
-		      int blockdata = (*it)->data[cz][cx];
+		      int blockdata = getBlockData(pchunk, cx,cz,cy);
 		      color = colorInfo[blockdata];
 		    } else {
 		      color = blockInfo[blockid].color;

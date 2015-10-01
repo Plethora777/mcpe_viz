@@ -91,6 +91,7 @@ namespace mcpe_viz {
       bool doMovieNetherFlag;
       bool doGridFlag;
       bool doBiomeImageFlag;
+      bool doGrassImageFlag;
       bool shortRunFlag;
       bool verboseFlag;
       bool quietFlag;
@@ -121,6 +122,7 @@ namespace mcpe_viz {
 	doMovieNetherFlag = false;
 	doGridFlag = false;
 	doBiomeImageFlag = false;
+	doGrassImageFlag = false;
 	shortRunFlag = false;
 	verboseFlag = false;
 	quietFlag = false;
@@ -169,6 +171,12 @@ namespace mcpe_viz {
       kNbtModeItem = 200
     };
 
+    enum {
+      kImageModeTerrain = 0,
+      kImageModeBiome = 1,
+      kImageModeGrass = 2
+    };
+    
     int histoChunkType[kWorldIdCount][256];
     int histoGlobalBiome[kWorldIdCount][256];
     
@@ -349,15 +357,15 @@ namespace mcpe_viz {
       int chunkX, chunkZ;
       uint8_t blocks[16][16];
       uint8_t data[16][16];
-      uint8_t biome[16][16];
+      uint32_t grassAndBiome[16][16];
       uint8_t topBlockY[16][16];
       MyChunk(int cx, int cz,
-	      const uint8_t* b, const uint8_t* d, const uint8_t* xbiome, const uint8_t* tby) {
+	      const uint8_t* b, const uint8_t* d, const uint32_t* xgrassAndBiome, const uint8_t* tby) {
 	chunkX=cx;
 	chunkZ=cz;
 	memcpy(blocks, b, 16*16);
 	memcpy(data, d, 16*16);
-	memcpy(biome, xbiome, 16*16);
+	memcpy(grassAndBiome, xgrassAndBiome, 16*16*sizeof(uint32_t));
 	memcpy(topBlockY, tby, 16*16);
       }
     };
@@ -395,7 +403,7 @@ namespace mcpe_viz {
 
       void putChunk ( int chunkX, int chunkZ,
 		      const uint8_t* topBlock, const uint8_t* blockData,
-		      const uint8_t* blockBiome, const uint8_t* topBlockY) {
+		      const uint32_t* grassAndBiome, const uint8_t* topBlockY) {
 	chunkCount++;
 	
 	minChunkX = std::min(minChunkX, chunkX);
@@ -404,7 +412,7 @@ namespace mcpe_viz {
 	maxChunkX = std::max(maxChunkX, chunkX);
 	maxChunkZ = std::max(maxChunkZ, chunkZ);
 
-	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, blockBiome, topBlockY));
+	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY));
 	list.push_back( std::move(tmp) );
       }
 
@@ -488,7 +496,7 @@ namespace mcpe_viz {
       }
 
 
-      void generateImage(const std::string fname, bool biomeImageFlag = false) {
+      void generateImage(const std::string fname, int imageMode = kImageModeTerrain) {
 	const int chunkOffsetX = -minChunkX;
 	const int chunkOffsetZ = -minChunkZ;
 	
@@ -514,10 +522,9 @@ namespace mcpe_viz {
 	  for (int cz=0; cz < 16; cz++) {
 	    for (int cx=0; cx < 16; cx++) {
 
-	      if ( biomeImageFlag ) {
-
+	      if ( imageMode == kImageModeBiome ) {
 		// get biome color
-		int biomeId = (*it)->biome[cx][cz] & 0xff;
+		int biomeId = (*it)->grassAndBiome[cx][cz] & 0xff;
 		try { 
 		  if ( biomeInfo.at(biomeId) ) {
 		    color = biomeInfo[biomeId]->color;
@@ -527,8 +534,13 @@ namespace mcpe_viz {
 		  fprintf(stderr,"ERROR: Unkown biome %d 0x%x\n", biomeId, biomeId);
 		  color = htobe32(0xff2020);
 		}
-		
-	      } else {
+	      }
+	      else if ( imageMode == kImageModeGrass ) {
+		// get grass color
+		int32_t grassColor = (*it)->grassAndBiome[cx][cz] >> 8;
+		color = htobe32(grassColor);
+	      }
+	      else {
 		// regular image
 		int blockid = (*it)->blocks[cz][cx];
 		
@@ -584,8 +596,7 @@ namespace mcpe_viz {
 
 	delete [] buf;
 
-	if ( biomeImageFlag ) {
-	} else {
+	if ( imageMode == kImageModeTerrain ) {
 	  for (int i=0; i < 256; i++) {
 	    if ( blockInfo[i].colorSetNeedCount ) {
 	      fprintf(stderr,"Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfo[i].name.c_str(), blockInfo[i].colorSetNeedCount);
@@ -1004,7 +1015,7 @@ namespace mcpe_viz {
       int histoBiome[256];
       uint8_t topBlock[16][16];
       uint8_t topData[16][16];
-      uint8_t blockBiome[16][16];
+      uint32_t grassAndBiome[16][16];
       uint8_t topSkyLight[16][16];
       uint8_t topBlockLight[16][16];
       uint8_t topBlockY[16][16];
@@ -1185,7 +1196,7 @@ namespace mcpe_viz {
 	    memset(histoBiome,0,256*sizeof(int));
 	    memset(topBlock,0, 16*16*sizeof(uint8_t));
 	    memset(topData,0, 16*16*sizeof(uint8_t));
-	    memset(blockBiome,0, 16*16*sizeof(uint8_t));
+	    memset(grassAndBiome,0, 16*16*sizeof(uint32_t));
 	    memset(topSkyLight,0, 16*16*sizeof(uint8_t));
 	    memset(topBlockLight,0, 16*16*sizeof(uint8_t));
 
@@ -1221,10 +1232,11 @@ namespace mcpe_viz {
 	    fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
 	    for (int cz=0; cz<16; cz++) {
 	      for (int cx=0; cx<16; cx++) {
-		int biomeId = (int)(colData2[cz][cx] & 0xFF);
+		int32_t rawData = colData2[cz][cx];
+		int biomeId = (int)(rawData & 0xFF);
 		histoBiome[biomeId]++;
 		histoGlobalBiome[chunkWorldId][biomeId]++;
-		blockBiome[cz][cx] = biomeId;
+		grassAndBiome[cz][cx] = rawData;
 		fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
 	      }
 	      fprintf(control.fpLog,"\n");
@@ -1263,7 +1275,7 @@ namespace mcpe_viz {
 	    // store chunk
 	    chunkList[chunkWorldId].putChunk(chunkX, chunkZ,
 					     &topBlock[0][0], &topData[0][0],
-					     &blockBiome[0][0], &topBlockY[0][0]);
+					     &grassAndBiome[0][0], &topBlockY[0][0]);
 
 	    break;
 
@@ -1360,7 +1372,11 @@ namespace mcpe_viz {
 
       if ( control.doBiomeImageFlag ) {
 	fprintf(stderr,"Generate Biome Image for Overworld\n");
-	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.biome.png"), true);
+	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.biome.png"), kImageModeBiome);
+      }
+      if ( control.doGrassImageFlag ) {
+	fprintf(stderr,"Generate Biome Image for Overworld\n");
+	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.grass.png"), kImageModeGrass);
       }
 
       // reset
@@ -1377,7 +1393,11 @@ namespace mcpe_viz {
 
       if ( control.doBiomeImageFlag ) {
 	fprintf(stderr,"Generate Biome Image for Nether\n");
-	chunkList[kWorldIdNether].generateImage(std::string(control.fnOutputBase + ".nether.biome.png"), true);
+	chunkList[kWorldIdNether].generateImage(std::string(control.fnOutputBase + ".nether.biome.png"), kImageModeBiome);
+      }
+      if ( control.doGrassImageFlag ) {
+	fprintf(stderr,"Generate Grass Image for Nether\n");
+	chunkList[kWorldIdNether].generateImage(std::string(control.fnOutputBase + ".nether.grass.png"), kImageModeGrass);
       }
 
       // todo - could do a special nether output with all pixels 8x8 (could help w/ portal stuff)
@@ -1902,6 +1922,7 @@ namespace mcpe_viz {
       fprintf(stderr,"Options:\n"
 	      "  --grid                   Display chunk grid on top of world\n"
 	      "  --biome                  Createa a biome map image\n"
+	      "  --grass                  Createa a grass color map image\n"
 	      "\n"
 	      "  --movie                  Create movie of layers of overworld\n"
 	      "  --movie-nether           Create movie of layers of nether\n"
@@ -1927,6 +1948,7 @@ namespace mcpe_viz {
 	{"log", required_argument, NULL, 'L'},
     
 	{"biome", no_argument, NULL, 'B'},
+	{"grass", no_argument, NULL, 'g'},
     
 	{"movie", no_argument, NULL, 'M'},
 	{"movie-nether", no_argument, NULL, 'N'},
@@ -1974,6 +1996,9 @@ namespace mcpe_viz {
 
 	case 'B':
 	  control.doBiomeImageFlag = true;
+	  break;
+	case 'g':
+	  control.doGrassImageFlag = true;
 	  break;
       
 	case '*':

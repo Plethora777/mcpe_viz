@@ -9,6 +9,8 @@ It can also:
 
 * Create an image of the biomes in your world
 
+* Create an image of the grass color in your world (it's pretty interesting!)
+
 * Create movies of all layers from bedrock to build limit (*ffmpeg* required)
 
 * Dump a *huge* amount of info about your world including:

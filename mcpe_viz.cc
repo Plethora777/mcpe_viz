@@ -11,6 +11,8 @@
   
   g++ --std=c++11 -DDLLX= -I. -Ileveldb-mcpe/include -I.. -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -c mcpe_viz.cc -o mcpe_viz.o ; g++ -pthread mcpe_viz.o leveldb-mcpe/libleveldb.a -lz -o mcpe_viz 
 
+  todobig
+  * convert all printf-style stuff to streams
 
   todo
 
@@ -25,9 +27,11 @@
 
   todo win32 build
 
+  * how to support movies -- ffmpeg location
   * leveldb close() issue
   * leveldb -O2 build issue
   * leveldb fread_nolock issue
+  * log file: change end line to CRLF?
 
   */
 
@@ -53,23 +57,22 @@
 
 #ifndef htobe32
 // borrowed from /usr/include/bits/byteswap.h
-// todo - doesn't check host endianness
-#define htobe32(x) \
-  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |	\
-   (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
 /*
-int32_t htobe32(int32_t src) {
-  // todobig - more efficient
-  char *ps, *pd;
+  #define htobe32(x)						\
+  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |	\
+  (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+*/
+// todo - doesn't check host endianness
+inline int32_t htobe32(const int32_t src) {
   int32_t dst;
-  ps = (char*)&src;
-  pd = (char*)&dst;
-  for (int i=0; i<3; i++) {
-    pd[i] = ps[3-i];
-  }
+  const char* ps = (char*)&src;
+  char* pd = (char*)&dst;
+  pd[0]=ps[3];
+  pd[1]=ps[2];
+  pd[2]=ps[1];
+  pd[3]=ps[0];
   return dst;
 }
-*/
 #endif
 
 
@@ -95,9 +98,12 @@ namespace mcpe_viz {
 
       bool fpLogNeedCloseFlag;
       FILE *fpLog;
+
+      // todobig - switch to streams
+      //      std::filebuf fbLog;
+      //      std::ostream olog;
   
       Control() {
-	fpLog = stdout;
 	init();
       }
       ~Control() {
@@ -121,6 +127,8 @@ namespace mcpe_viz {
 	movieX = movieY = movieW = movieH = 0;
 	fpLogNeedCloseFlag = false;
 	fpLog = stdout;
+	// olog will default to stdout
+	// todo - olog.rdbuf(std::cout.rdbuf());
       }
       void setupOutput() {
 	if ( fnLog.compare("-") == 0 ) {
@@ -145,7 +153,7 @@ namespace mcpe_viz {
 
     Control control;
 
-    static const std::string version("mcpe_viz v0.0.2 by Plethora777");
+    static const std::string version("mcpe_viz v0.0.3 by Plethora777");
 
     // world types
     enum {
@@ -174,7 +182,83 @@ namespace mcpe_viz {
     std::vector<int> blockForceTopList[kWorldIdCount];
     std::vector<int> blockHideList[kWorldIdCount];
 
+
+    int myParseInt32_T(const char* p, int startByte) {
+      int ret;
+      memcpy(&ret, &p[startByte], 4);
+      return ret;
+    }
+
+    int myParseInt8(const char* p, int startByte) {
+      return (p[startByte] & 0xff);
+    }
+
+    inline int _calcOffset(int x, int z, int y) {
+      // todo - correct calc here? shouldn't it be z*16?!
+      return (((x*16) + z)*128) + y;
+    }
     
+    inline int _calcOffset(int x, int z) {
+      // todo - correct calc here? shouldn't it be z*16?!
+      return (x*16) + z;
+    }
+
+    int getBlockId(const char* p, int x, int z, int y) {
+      return (p[_calcOffset(x,z,y)] & 0xff);
+    }
+
+    int getBlockData(const char* p, int x, int z, int y) {
+      int off =  _calcOffset(x,z,y);
+      int off2 = off / 2;
+      int mod2 = off % 2;
+      int v = p[32768 + off2];
+      if ( mod2 == 0 ) {
+	return v & 0x0f;
+      } else {
+	return (v & 0xf0) >> 4;
+      }
+    }
+
+    int getBlockSkyLight(const char* p, int x, int z, int y) {
+      int off =  _calcOffset(x,z,y);
+      int off2 = off / 2;
+      int mod2 = off % 2;
+      int v = p[32768 + 16384 + off2];
+      if ( mod2 == 0 ) {
+	return v & 0x0f;
+      } else {
+	return (v & 0xf0) >> 4;
+      }
+    }
+
+    int getBlockBlockLight(const char* p, int x, int z, int y) {
+      int off =  _calcOffset(x,z,y);
+      int off2 = off / 2;
+      int mod2 = off % 2;
+      int v = p[32768 + 16384 + 16384 + off2];
+      if ( mod2 == 0 ) {
+	return v & 0x0f;
+      } else {
+	return (v & 0xf0) >> 4;
+      }
+    }
+
+    // todo - rename
+    int8_t getColData1(const char *buf, int x, int z) {
+      int off = _calcOffset(x,z);
+      int8_t v = buf[32768 + 16384 + 16384 + 16384 + off];
+      return v;
+    }
+
+    // todo - rename
+    int32_t getColData2(const char *buf, int x, int z) {
+      int off = _calcOffset(x,z) * 4;
+      int32_t v;
+      memcpy(&v,&buf[32768 + 16384 + 16384 + 16384 + 256 + off],4);
+      return v;
+    }
+
+
     // todo - rename classes more sanely
     class MyBlock {
     public:
@@ -266,23 +350,14 @@ namespace mcpe_viz {
       uint8_t blocks[16][16];
       uint8_t data[16][16];
       uint8_t biome[16][16];
-
-      // todobig - hideous hack to make win32 work - win32 chokes when we allocate too much mem
-#ifndef OS_WIN
-      uint8_t blocks_all[16][16][128];
-#endif
       uint8_t topBlockY[16][16];
       MyChunk(int cx, int cz,
-	      const uint8_t* b, const uint8_t* d, const uint8_t* xbiome, const uint8_t* b_all, const uint8_t* tby) {
+	      const uint8_t* b, const uint8_t* d, const uint8_t* xbiome, const uint8_t* tby) {
 	chunkX=cx;
 	chunkZ=cz;
 	memcpy(blocks, b, 16*16);
 	memcpy(data, d, 16*16);
 	memcpy(biome, xbiome, 16*16);
-	// todo - we could skip blocks_all if we are not doing a movie
-#ifndef OS_WIN
-	memcpy(blocks_all, b_all, 16*16*128);
-#endif
 	memcpy(topBlockY, tby, 16*16);
       }
     };
@@ -320,8 +395,7 @@ namespace mcpe_viz {
 
       void putChunk ( int chunkX, int chunkZ,
 		      const uint8_t* topBlock, const uint8_t* blockData,
-		      const uint8_t* blockBiome, const uint8_t* blocks_all,
-		      const uint8_t* topBlockY) {
+		      const uint8_t* blockBiome, const uint8_t* topBlockY) {
 	chunkCount++;
 	
 	minChunkX = std::min(minChunkX, chunkX);
@@ -330,7 +404,7 @@ namespace mcpe_viz {
 	maxChunkX = std::max(maxChunkX, chunkX);
 	maxChunkZ = std::max(maxChunkZ, chunkZ);
 
-	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, blockBiome, blocks_all, topBlockY));
+	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, blockBiome, topBlockY));
 	list.push_back( std::move(tmp) );
       }
 
@@ -520,7 +594,7 @@ namespace mcpe_viz {
 	}
       }
 
-      void generateImageSlices(const std::string fname, const std::string fnameTmpBase, bool netherFlag) {
+      void generateImageSlices(const std::string fname, const std::string fnameTmpBase, int worldId) {
 	const int chunkOffsetX = -minChunkX;
 	const int chunkOffsetZ = -minChunkZ;
 	
@@ -530,7 +604,7 @@ namespace mcpe_viz {
 	//const int imageH = chunkH * 16;
 
 	int divisor = 1;
-	if ( netherFlag ) { 
+	if ( worldId == 1 ) { 
 	  // if nether, we divide coordinates by 8
 	  divisor = 8; 
 	}
@@ -544,6 +618,23 @@ namespace mcpe_viz {
 	memset(buf, 0, cropW*cropH*3);
 
 	std::vector<std::string> fileList;
+
+	// todobig - we *could* write image data to flat files during parseDb and then convert these flat files into png here
+
+	// todobig - leveldb read-only? snapshot?
+	leveldb::DB* db;
+	leveldb::Options options;
+	options.compressors[0] = new leveldb::ZlibCompressor();
+	options.create_if_missing = false;
+	leveldb::Status status = leveldb::DB::Open(options, std::string(mcpe_viz::control.dirLeveldb+"/db"), &db);
+	assert(status.ok());
+
+	leveldb::ReadOptions readOptions;
+	readOptions.fill_cache=false; // may improve performance?
+
+	const char* pchunk = nullptr;
+	int pchunkX = 0;
+	int pchunkZ = 0;
 	
 	int32_t color;
 	const char *pcolor = (const char*)&color;
@@ -552,7 +643,7 @@ namespace mcpe_viz {
 	  for ( auto it = list.begin() ; it != list.end(); ++it) {
 	    int imageX = ((*it)->chunkX + chunkOffsetX) * 16;
 	    int imageZ = ((*it)->chunkZ + chunkOffsetZ) * 16;
-	    
+
 	    for (int cz=0; cz < 16; cz++) {
 	      for (int cx=0; cx < 16; cx++) {
 
@@ -562,14 +653,43 @@ namespace mcpe_viz {
 		if ( (ix >= cropX) && (ix < (cropX + cropW)) &&
 		     (iz >= cropZ) && (iz < (cropZ + cropH)) ) {
 
-		  // todo - hideous hack for win32
-		  // todobig - perhaps it would be a lot wiser to not copy this info, and instead get from leveldb
-#ifdef OS_WIN
-		  int blockid = 0; 
-#else
-		  int blockid = (*it)->blocks_all[cx][cz][cy];
-#endif
-		
+
+		  if ( pchunk==nullptr || (pchunkX != (*it)->chunkX) || (pchunkZ != (*it)->chunkZ) ) {
+		    // get the chunk
+		    // construct key
+		    char keybuf[20];
+		    int keybuflen;
+		    int32_t kx = (*it)->chunkX, kz=(*it)->chunkZ, kw=worldId;
+		    uint8_t kt=0x30;
+		    switch (worldId) {
+		    case 0:
+		      //overworld
+		      memcpy(&keybuf[0],&kx,sizeof(int32_t));
+		      memcpy(&keybuf[4],&kz,sizeof(int32_t));
+		      memcpy(&keybuf[8],&kt,sizeof(uint8_t));
+		      keybuflen=9;
+		      break;
+		    default:
+		      // nether
+		      memcpy(&keybuf[0],&kx,sizeof(int32_t));
+		      memcpy(&keybuf[4],&kz,sizeof(int32_t));
+		      memcpy(&keybuf[8],&kw,sizeof(int32_t));
+		      memcpy(&keybuf[12],&kt,sizeof(uint8_t));
+		      keybuflen=13;
+		      break;
+		    }
+		    leveldb::Slice key(keybuf,keybuflen);
+		    std::string svalue;
+		    leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
+		    assert(dstatus.ok());
+		    pchunk = svalue.data();
+		    pchunkX = (*it)->chunkX;
+		    pchunkZ = (*it)->chunkZ;
+		  }
+		 
+		  // todobig - some kind of issue with blank pixels at chunk corners (see slice 001)
+		  int blockid = getBlockId(pchunk, cx,cz,cy);
+
 		  if ( blockid == 0 && ( cy > (*it)->topBlockY[cz][cx] ) ) {
 		    // special handling for air -- keep existing value if we are above top block
 		    // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
@@ -581,7 +701,7 @@ namespace mcpe_viz {
 		    } else {
 		      color = blockInfo[blockid].color;
 		    }
-		    
+		  
 		    // do grid lines
 		    if ( control.doGridFlag && (cx==0 || cz==0) ) {
 		      if ( ((*it)->chunkX == 0) && ((*it)->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
@@ -591,7 +711,7 @@ namespace mcpe_viz {
 			color = htobe32(0xc1ffc4);
 		      }
 		    }
-		    
+		  
 #if 0
 		    // copy rgb pixel into output image
 		    int ix = (imageX + cx);
@@ -623,13 +743,15 @@ namespace mcpe_viz {
 	}
 
 	delete [] buf;
+
+	delete db;
 	
 	// "ffmpeg" method
 	std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";	
 	fnameTmp += fnameTmpBase;
 	fnameTmp += ".%03d.png";
 	
-	std::string cmdline = std::string("/usr/bin/ffmpeg -y -framerate 1 -i " + fnameTmp + " -c:v libx264 -r 30 ");
+	std::string cmdline = std::string("ffmpeg -y -framerate 1 -i " + fnameTmp + " -c:v libx264 -r 30 ");
 	cmdline += fname;
 	int ret = system(cmdline.c_str());
 	if ( ret != 0 ) {
@@ -743,7 +865,8 @@ namespace mcpe_viz {
       case nbt::tag_type::Long:
 	{
 	  nbt::tag_long v = t.second->as<nbt::tag_long>();
-	  fprintf(control.fpLog,"%ld (long)\n", v.get());
+	  // note: silly work around for linux vs win32 weirdness
+	  fprintf(control.fpLog,"%lld (long)\n", (long long int)v.get());
 	}
 	break;
       case nbt::tag_type::Float:
@@ -853,82 +976,6 @@ namespace mcpe_viz {
       return 0;
     }
     
-    int myParseInt32_T(const char* p, int startByte) {
-      int ret;
-      memcpy(&ret, &p[startByte], 4);
-      return ret;
-    }
-
-    int myParseInt8(const char* p, int startByte) {
-      return (p[startByte] & 0xff);
-    }
-
-    inline int _calcOffset(int x, int z, int y) {
-      // todo - correct calc here? shouldn't it be z*16?!
-      return (((x*16) + z)*128) + y;
-    }
-    
-    inline int _calcOffset(int x, int z) {
-      // todo - correct calc here? shouldn't it be z*16?!
-      return (x*16) + z;
-    }
-
-    int getBlockId(const char* p, int x, int z, int y) {
-      return (p[_calcOffset(x,z,y)] & 0xff);
-    }
-
-    int getBlockData(const char* p, int x, int z, int y) {
-      int off =  _calcOffset(x,z,y);
-      int off2 = off / 2;
-      int mod2 = off % 2;
-      int v = p[32768 + off2];
-      if ( mod2 == 0 ) {
-	return v & 0x0f;
-      } else {
-	return (v & 0xf0) >> 4;
-      }
-    }
-
-    int getBlockSkyLight(const char* p, int x, int z, int y) {
-      int off =  _calcOffset(x,z,y);
-      int off2 = off / 2;
-      int mod2 = off % 2;
-      int v = p[32768 + 16384 + off2];
-      if ( mod2 == 0 ) {
-	return v & 0x0f;
-      } else {
-	return (v & 0xf0) >> 4;
-      }
-    }
-
-    int getBlockBlockLight(const char* p, int x, int z, int y) {
-      int off =  _calcOffset(x,z,y);
-      int off2 = off / 2;
-      int mod2 = off % 2;
-      int v = p[32768 + 16384 + 16384 + off2];
-      if ( mod2 == 0 ) {
-	return v & 0x0f;
-      } else {
-	return (v & 0xf0) >> 4;
-      }
-    }
-
-    // todo - rename
-    int8_t getColData1(const char *buf, int x, int z) {
-      int off = _calcOffset(x,z);
-      int8_t v = buf[32768 + 16384 + 16384 + 16384 + off];
-      return v;
-    }
-
-    // todo - rename
-    int32_t getColData2(const char *buf, int x, int z) {
-      int off = _calcOffset(x,z) * 4;
-      int32_t v;
-      memcpy(&v,&buf[32768 + 16384 + 16384 + 16384 + 256 + off],4);
-      return v;
-    }
-
-
     int printKeyValue(const char* key, int key_size, const char* value, int value_size, bool printKeyAsStringFlag) {
       fprintf(control.fpLog,"WARNING: Unknown key size (%d) k=[%s][", key_size, 
 	      (printKeyAsStringFlag ? key : "(SKIPPED)"));
@@ -975,7 +1022,9 @@ namespace mcpe_viz {
 	minChunkX[i]=maxChunkX[i]=minChunkZ[i]=maxChunkZ[i]=0;
       }
 
-      leveldb::Iterator* iter = db->NewIterator(leveldb::ReadOptions());
+      leveldb::ReadOptions readOptions;
+      readOptions.fill_cache=false; // may improve performance since we are scanning the whole thing
+      leveldb::Iterator* iter = db->NewIterator(readOptions);
       int recordCt = 0;
       
       // pre-scan keys to get min/max chunks so that we can provide image coordinates for chunks
@@ -1215,8 +1264,7 @@ namespace mcpe_viz {
 	    // store chunk
 	    chunkList[chunkWorldId].putChunk(chunkX, chunkZ,
 					     &topBlock[0][0], &topData[0][0],
-					     &blockBiome[0][0], (const uint8_t*)value,
-					     &topBlockY[0][0]);
+					     &blockBiome[0][0], &topBlockY[0][0]);
 
 	    break;
 
@@ -1338,12 +1386,12 @@ namespace mcpe_viz {
       
       if ( control.doMovieFlag ) {
 	fprintf(stderr,"Generate movie for Overworld\n");
-	chunkList[kWorldIdOverworld].generateImageSlices(std::string(control.fnOutputBase + ".overworld.mp4"),"overworld", false);
+	chunkList[kWorldIdOverworld].generateImageSlices(std::string(control.fnOutputBase + ".overworld.mp4"),"overworld", 0);
       }
 
       if ( control.doMovieNetherFlag ) {
 	fprintf(stderr,"Generate movie for Nether\n");
-	chunkList[kWorldIdNether].generateImageSlices(std::string(control.fnOutputBase + ".nether.mp4"),"nether", true);
+	chunkList[kWorldIdNether].generateImageSlices(std::string(control.fnOutputBase + ".nether.mp4"),"nether", 1);
       }
       
       return 0;
@@ -1844,137 +1892,137 @@ namespace mcpe_viz {
       return -1;
     }
     
-void print_usage(const char* fn) {
-  fprintf(stderr,"Usage:\n\n");
-  fprintf(stderr,"  %s [required parameters] [options]\n\n",fn);
-  fprintf(stderr,"Required Parameters:\n"
-	  "  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
-	  "  --out fn-part            Filename base for output file(s)\n"
-	  "\n"
-	  );
-  fprintf(stderr,"Options:\n"
-	  "  --grid                   Display chunk grid on top of world\n"
-	  "  --biome                  Createa a biome map image\n"
-	  "\n"
-	  "  --movie                  Create movie of layers of overworld\n"
-	  "  --movie-nether           Create movie of layers of nether\n"
-	  "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
-	  "\n"
-	  "  --xml fn                 XML file containing data definitions\n"
-	  "  --log fn                 Send log to a file\n"
-	  "\n"
-	  // todo - re-enable when we use these:
-	  //"  --verbose                verbose output\n"
-	  //"  --quiet                  supress normal output, continue to output warning and error messages\n"
-	  "  --help                   this info\n"
-	  );
-}
-
-int parse_args ( int argc, char **argv, Control& control ) {
-
-  static struct option longoptlist[] = {
-    {"db", required_argument, NULL, 'D'},
-    {"out", required_argument, NULL, 'O'},
-
-    {"xml", required_argument, NULL, 'X'},
-    {"log", required_argument, NULL, 'L'},
-    
-    {"biome", no_argument, NULL, 'B'},
-    
-    {"movie", no_argument, NULL, 'M'},
-    {"movie-nether", no_argument, NULL, 'N'},
-    {"movie-dim", required_argument, NULL, '*'},
-
-    {"grid", no_argument, NULL, 'G'},
-
-    {"shortrun", no_argument, NULL, '$'}, // this is just for testing
-    
-    {"verbose", no_argument, NULL, 'v'},
-    {"quiet", no_argument, NULL, 'q'},
-    {"help", no_argument, NULL, 'H'},
-    {NULL, no_argument, NULL, 0}
-  };
-
-  int option_index = 0;
-  int optc;
-  int errct=0;
-
-  control.init();
-
-  while ((optc = getopt_long_only (argc, argv, "", longoptlist, &option_index)) != -1) {
-    switch (optc) {
-    case 'O':
-      control.fnOutputBase = optarg;
-      break;      
-    case 'X':
-      control.fnXml = optarg;
-      break;      
-    case 'L':
-      control.fnLog = optarg;
-      break;      
-    case 'D':
-      control.dirLeveldb = optarg;
-      break;      
-    case 'M':
-      control.doMovieFlag = true;
-      break;
-    case 'N':
-      control.doMovieNetherFlag = true;
-      break;
-    case 'G':
-      control.doGridFlag = true;
-      break;
-
-    case 'B':
-      control.doBiomeImageFlag = true;
-      break;
-      
-    case '*':
-      // movie dimensions
-      if ( sscanf(optarg,"%d,%d,%d,%d", &control.movieX, &control.movieY, &control.movieW, &control.movieH) == 4 ) {
-	// good
-      } else {
-	fprintf(stderr,"ERROR: Failed to parse --movie-dim\n");
-	errct++;
-      }
-      break;
-
-    case '$':
-      control.shortRunFlag = true;
-      break;
-      
-    case 'v': 
-      control.verboseFlag = true; 
-      break;
-    case 'q':
-      control.quietFlag = true;
-      //setLogLevelMask ( klogWarning | klogError | klogFatalError ); // set immediately
-      break;
-
-      /* Usage */
-    default:
-      fprintf(stderr,"ERROR: Unrecognized option: '%c'\n",optc);
-    case 'H':
-      return -1;
+    void print_usage(const char* fn) {
+      fprintf(stderr,"Usage:\n\n");
+      fprintf(stderr,"  %s [required parameters] [options]\n\n",fn);
+      fprintf(stderr,"Required Parameters:\n"
+	      "  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
+	      "  --out fn-part            Filename base for output file(s)\n"
+	      "\n"
+	      );
+      fprintf(stderr,"Options:\n"
+	      "  --grid                   Display chunk grid on top of world\n"
+	      "  --biome                  Createa a biome map image\n"
+	      "\n"
+	      "  --movie                  Create movie of layers of overworld\n"
+	      "  --movie-nether           Create movie of layers of nether\n"
+	      "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
+	      "\n"
+	      "  --xml fn                 XML file containing data definitions\n"
+	      "  --log fn                 Send log to a file\n"
+	      "\n"
+	      // todo - re-enable when we use these:
+	      //"  --verbose                verbose output\n"
+	      //"  --quiet                  supress normal output, continue to output warning and error messages\n"
+	      "  --help                   this info\n"
+	      );
     }
-  }
 
-  // verify/test args
-  if ( control.dirLeveldb.length() <= 0 ) {
-    errct++;
-    fprintf(stderr,"ERROR: Must specify --db\n");
-  }
-  if ( control.fnOutputBase.length() <= 0 ) {
-    errct++;
-    fprintf(stderr,"ERROR: Must specify --out\n");
-  }
+    int parse_args ( int argc, char **argv, Control& control ) {
 
-  if ( errct <= 0 ) {
-    control.setupOutput();
-  }
+      static struct option longoptlist[] = {
+	{"db", required_argument, NULL, 'D'},
+	{"out", required_argument, NULL, 'O'},
+
+	{"xml", required_argument, NULL, 'X'},
+	{"log", required_argument, NULL, 'L'},
     
-  return errct;
-}
+	{"biome", no_argument, NULL, 'B'},
+    
+	{"movie", no_argument, NULL, 'M'},
+	{"movie-nether", no_argument, NULL, 'N'},
+	{"movie-dim", required_argument, NULL, '*'},
+
+	{"grid", no_argument, NULL, 'G'},
+
+	{"shortrun", no_argument, NULL, '$'}, // this is just for testing
+    
+	{"verbose", no_argument, NULL, 'v'},
+	{"quiet", no_argument, NULL, 'q'},
+	{"help", no_argument, NULL, 'H'},
+	{NULL, no_argument, NULL, 0}
+      };
+
+      int option_index = 0;
+      int optc;
+      int errct=0;
+
+      control.init();
+
+      while ((optc = getopt_long_only (argc, argv, "", longoptlist, &option_index)) != -1) {
+	switch (optc) {
+	case 'O':
+	  control.fnOutputBase = optarg;
+	  break;      
+	case 'X':
+	  control.fnXml = optarg;
+	  break;      
+	case 'L':
+	  control.fnLog = optarg;
+	  break;      
+	case 'D':
+	  control.dirLeveldb = optarg;
+	  break;      
+	case 'M':
+	  control.doMovieFlag = true;
+	  break;
+	case 'N':
+	  control.doMovieNetherFlag = true;
+	  break;
+	case 'G':
+	  control.doGridFlag = true;
+	  break;
+
+	case 'B':
+	  control.doBiomeImageFlag = true;
+	  break;
+      
+	case '*':
+	  // movie dimensions
+	  if ( sscanf(optarg,"%d,%d,%d,%d", &control.movieX, &control.movieY, &control.movieW, &control.movieH) == 4 ) {
+	    // good
+	  } else {
+	    fprintf(stderr,"ERROR: Failed to parse --movie-dim\n");
+	    errct++;
+	  }
+	  break;
+
+	case '$':
+	  control.shortRunFlag = true;
+	  break;
+      
+	case 'v': 
+	  control.verboseFlag = true; 
+	  break;
+	case 'q':
+	  control.quietFlag = true;
+	  //setLogLevelMask ( klogWarning | klogError | klogFatalError ); // set immediately
+	  break;
+
+	  /* Usage */
+	default:
+	  fprintf(stderr,"ERROR: Unrecognized option: '%c'\n",optc);
+	case 'H':
+	  return -1;
+	}
+      }
+
+      // verify/test args
+      if ( control.dirLeveldb.length() <= 0 ) {
+	errct++;
+	fprintf(stderr,"ERROR: Must specify --db\n");
+      }
+      if ( control.fnOutputBase.length() <= 0 ) {
+	errct++;
+	fprintf(stderr,"ERROR: Must specify --out\n");
+      }
+
+      if ( errct <= 0 ) {
+	control.setupOutput();
+      }
+    
+      return errct;
+    }
 
     
   }  // namespace

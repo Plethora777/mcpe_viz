@@ -11,8 +11,11 @@
   
   g++ --std=c++11 -DDLLX= -I. -Ileveldb-mcpe/include -I.. -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -c mcpe_viz.cc -o mcpe_viz.o ; g++ -pthread mcpe_viz.o leveldb-mcpe/libleveldb.a -lz -o mcpe_viz 
 
+
   todobig
+
   * convert all printf-style stuff to streams
+
 
   todo
 
@@ -21,16 +24,20 @@
   save a particular slice
   draw text on slice files (e.g. Y)
   separate logfiles for overworld + nether + unknown
+  options to reduce log file detail
 
-  ** maps/instructions to get from point A (e.g. spawn) to biome type X (in blocks but also in landmark form: over 2 seas left at the birch forest etc)
+  ** maps/instructions to get from point A (e.g. spawn) to biome type X (in blocks but also in landmark form: over 2 seas left at the birch forest etc); same for items and entities
+
+  ** map icons for interesting things (e.g. player, remote player, villagers, item X, entity X, etc)
+  
+  ** openlayers / google maps ui -- ability to hover over a pixel and get info (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)")
 
 
   todo win32 build
 
-  * how to support movies -- ffmpeg location
-  * leveldb close() issue
-  * leveldb -O2 build issue
-  * leveldb fread_nolock issue
+  * leveldb close() issue -- link fails on missing stream stuff
+  * leveldb -O2 build issue -- link fails on missing stream stuff
+  * leveldb fread_nolock issue -- link fails; forcing msvcrXXX.a crashes on windows
   * log file: change end line to CRLF?
 
   */
@@ -56,6 +63,7 @@
 #include <sstream>
 
 #ifndef htobe32
+// note: this is only used on win32 builds
 // borrowed from /usr/include/bits/byteswap.h
 /*
   #define htobe32(x)						\
@@ -171,6 +179,7 @@ namespace mcpe_viz {
       kNbtModeItem = 200
     };
 
+    // output image types
     enum {
       kImageModeTerrain = 0,
       kImageModeBiome = 1,
@@ -183,9 +192,9 @@ namespace mcpe_viz {
     int32_t colorInfo[16];
 
     // these are read from level.dat
-    int worldSpawnX = 0;
-    int worldSpawnY = 0;
-    int worldSpawnZ = 0;
+    int32_t worldSpawnX = 0;
+    int32_t worldSpawnY = 0;
+    int32_t worldSpawnZ = 0;
 
     std::vector<int> blockForceTopList[kWorldIdCount];
     std::vector<int> blockHideList[kWorldIdCount];
@@ -484,9 +493,7 @@ namespace mcpe_viz {
 	png_write_image(png, row_pointers);
 	png_write_end(png, NULL);
 
-	// todo - png_destroy_xxx calls here?
 	png_destroy_write_struct(&png, &info);
-	//png_destroy_info_struct(&png, &info);
 
 	free(row_pointers);
       
@@ -697,7 +704,6 @@ namespace mcpe_viz {
 		    pchunkZ = (*it)->chunkZ;
 		  }
 		 
-		  // todobig - some kind of issue with blank pixels at chunk corners (see slice 001)
 		  int blockid = getBlockId(pchunk, cx,cz,cy);
 
 		  if ( blockid == 0 && ( cy > (*it)->topBlockY[cz][cx] ) ) {
@@ -768,7 +774,7 @@ namespace mcpe_viz {
 	  fprintf(stderr,"Failed to create movie ret=(%d) cmd=(%s)\n",ret,cmdline.c_str());
 	}
 
-	// todo - delete temp files? cmdline option to NOT delete
+	// todo - delete temp slice files? cmdline option to NOT delete
 	
       }
       
@@ -1004,11 +1010,16 @@ namespace mcpe_viz {
     
     leveldb::Status parseDb ( const std::string fname ) {
       // todobig - leveldb read-only? snapshot?
+      // todobig - oddly these fprintf's appear to fix the win32 crash... 
+      fprintf(stderr,"parseDb start\n"); fflush(stderr); // todo debug
       leveldb::DB* db;
       leveldb::Options options;
       options.compressors[0] = new leveldb::ZlibCompressor();
       options.create_if_missing = false;
+      fprintf(stderr,"Before DB Open\n"); fflush(stderr); // todo debug
       leveldb::Status status = leveldb::DB::Open(options, fname, &db);
+      fprintf(stderr,"DB Open Status: %s\n", status.ToString().c_str());
+      fflush(stderr);
       assert(status.ok());
 
       int histo[256];
@@ -1263,6 +1274,7 @@ namespace mcpe_viz {
 	    }
 	    // todo - grass-color is in high 3 bytes of coldata2
 	    // todo - need to show this?
+	    // todo - what does "dirty" mean? is the wiki correct? is it something else?
 	    fprintf(control.fpLog,"Column Data (dirty?:biome):\n");
 	    for (int cz=0; cz<16; cz++) {
 	      for (int cx=0; cx<16; cx++) {
@@ -1375,7 +1387,7 @@ namespace mcpe_viz {
 	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.biome.png"), kImageModeBiome);
       }
       if ( control.doGrassImageFlag ) {
-	fprintf(stderr,"Generate Biome Image for Overworld\n");
+	fprintf(stderr,"Generate Grass Image for Overworld\n");
 	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.grass.png"), kImageModeGrass);
       }
 
@@ -1565,7 +1577,7 @@ namespace mcpe_viz {
       }
 
       // default config file
-      // todo - how to support on win32?
+      // todo - how to support on win32? %HOMEPATH%?
       if ( getenv("HOME") ) {
 	std::string fnHome = getenv("HOME");
 	fnHome += "/.mcpe_viz/mcpe_viz.cfg";
@@ -1656,7 +1668,7 @@ namespace mcpe_viz {
       return s;
     }
     
-    int doParseXML_blocklist(xmlDocPtr doc, xmlNodePtr cur) {
+    int doParseXML_blocklist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
@@ -1694,7 +1706,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int doParseXML_standardcolorlist(xmlDocPtr doc, xmlNodePtr cur) {
+    int doParseXML_standardcolorlist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"standardcolor") == 0 ) {
@@ -1720,7 +1732,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int doParseXML_itemlist(xmlDocPtr doc, xmlNodePtr cur) {
+    int doParseXML_itemlist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"item") == 0 ) {
@@ -1746,7 +1758,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int doParseXML_entitylist(xmlDocPtr doc, xmlNodePtr cur) {
+    int doParseXML_entitylist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"entity") == 0 ) {
@@ -1772,7 +1784,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int doParseXML_biomelist(xmlDocPtr doc, xmlNodePtr cur) {
+    int doParseXML_biomelist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"biome") == 0 ) {
@@ -1803,26 +1815,26 @@ namespace mcpe_viz {
       return 0;
     }
     
-    int doParseXML_xml(xmlDocPtr doc, xmlNodePtr cur) {
+    int doParseXML_xml(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 
 	// todo - should count warning/errors and return this info
 	
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"blocklist") == 0 ) {
-	  doParseXML_blocklist(doc,cur);
+	  doParseXML_blocklist(cur);
 	}
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"standardcolorlist") == 0 ) {
-	  doParseXML_standardcolorlist(doc,cur);
+	  doParseXML_standardcolorlist(cur);
 	}
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"itemlist") == 0 ) {
-	  doParseXML_itemlist(doc,cur);
+	  doParseXML_itemlist(cur);
 	}
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"entitylist") == 0 ) {
-	  doParseXML_entitylist(doc,cur);
+	  doParseXML_entitylist(cur);
 	}
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"biomelist") == 0 ) {
-	  doParseXML_biomelist(doc,cur);
+	  doParseXML_biomelist(cur);
 	}
 	
 	cur = cur->next;
@@ -1853,13 +1865,16 @@ namespace mcpe_viz {
       cur = xmlDocGetRootElement(doc);
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"xml") == 0 ) {
-	  ret = doParseXML_xml(doc,cur);
+	  ret = doParseXML_xml(cur);
 	}
 	cur = cur->next;
       }
 
       // todo - valgrind reports that this does NOT free everyhing it uses
       xmlFreeDoc(doc);
+
+      xmlCleanupParser();
+      
       return ret;
     }
 
@@ -1882,7 +1897,7 @@ namespace mcpe_viz {
       }
 
       // default config file
-      // todo - how to support on win32?
+      // todo - how to support on win32? %HOMEPATH%?
       if ( getenv("HOME") ) {
 	std::string fnHome = getenv("HOME");
 	fnHome += "/.mcpe_viz/mcpe_viz.xml";

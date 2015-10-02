@@ -1,8 +1,14 @@
 <xml>
   // todo - would be cool to find a definitive list of colors for blocks
   // todo - could rip images from apk and get an avg color?
-  
+
   // mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+  // 
+  // blocklist: mcpe blocks
+  // id -- mcpe block id (hex)
+  // name -- name of block
+  // color -- RGB color (hex)
+  // lookupColor -- flag to indicate we should use block data to lookup a standard color (e.g. stained clay)
   <blocklist>
     <block id="0x00" name="Air" color="0x0" />
     <block id="0x01" name="Stone S" color="0xa0a0a0" />
@@ -156,6 +162,10 @@
 
   // mostly from: http://minecraft.gamepedia.com/Data_values#Wool.2C_Stained_Clay.2C_Stained_Glass_and_Carpet
   // from wiki - for wool + clay + carpet + stained glass
+  //
+  // standardcolorlist: standard mcpe colors for wool, s.clay, carpet, and (some day :) stained glass
+  // id -- mcpe color id (hex)
+  // color -- RGB color (hex)
   <standardcolorlist>
     <standardcolor id="0x0" color="0xDDDDDD" />
     <standardcolor id="0x1" color="0xDB7D3E" />
@@ -176,6 +186,10 @@
   </standardcolorlist>
 
   // mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+  //
+  // itemlist: mcpe items (TODO - there are TONS of unknowns here)
+  // id -- mcpe item id (hex)
+  // name -- name of item
   <itemlist>
     <item id="0x100" name="Iron Shovel D" />
     <item id="0x101" name="Iron Pickaxe D" />
@@ -315,6 +329,10 @@
   </itemlist>
 
   // mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+  //
+  // entitylist: mcpe entities (TODO - there are TONS of unknowns here)
+  // id -- mcpe entity id (hex)
+  // name -- name of entity
   <entitylist>
     <entity id="0x0A" name="Chicken" />
     <entity id="0x0B" name="Cow" />
@@ -355,6 +373,12 @@
     <entity id="0x5A" name="Boat" />
   </entitylist>
 
+  // mostly from: http://minecraft.gamepedia.com/Data_values#Biome_IDs
+  //
+  // biomelist: mcpe biomes
+  // id -- mcpe biome id (hex)
+  // name -- name of entity
+  // color -- RGB color (hex)
   <biomelist>
     <biome id="0x00" name="Ocean" color="0x8b92dd" />
     <biome id="0x01" name="Plains" color="0x1f953e" />

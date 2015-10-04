@@ -9,14 +9,15 @@
   // name -- name of block
   // color -- RGB color (hex)
   // lookupColor -- flag to indicate we should use block data to lookup a standard color (e.g. stained clay)
+  // solid -- flag for solid/non-solid (default is solid)
   <blocklist>
-    <block id="0x00" name="Air" color="0x0" />
+    <block id="0x00" name="Air" color="0x0" solid="0" />
     <block id="0x01" name="Stone S" color="0xa0a0a0" />
     <block id="0x02" name="Grass Block" color="0x1f953e" />
     <block id="0x03" name="Dirt" color="0x96721a" /> 
     <block id="0x04" name="Cobblestone" color="0xc0c0c0" />
     <block id="0x05" name="Wooden Planks S" color="0x696a2d" />
-    <block id="0x06" name="Sapling S" color="0x8afb97" />
+    <block id="0x06" name="Sapling S" color="0x8afb97" solid="0" />
     <block id="0x07" name="Bedrock" color="0x101010" />
     <block id="0x08" name="Water S" color="0x616699" />
     <block id="0x09" name="Stationary Water S" color="0x8b92dd" />
@@ -28,130 +29,131 @@
     <block id="0x0F" name="Iron Ore" color="0xfcd0fa" />
     <block id="0x10" name="Coal Ore" color="0xfcd0fa" />
     <block id="0x11" name="Wood S B" color="0x916609" />
-    <block id="0x12" name="Leaves S B" color="0x184d1e" />
+    <block id="0x12" name="Leaves S B" color="0x184d1e" solid="0" />
     <block id="0x13" name="Sponge" color="0xb3ae61" />
     <block id="0x14" name="Glass" color="0xe0e0e0" />
     <block id="0x15" name="Lapis Lazuli Ore" color="0xb5c2d6" />
     <block id="0x16" name="Lapis Lazuli Block" color="0x0547a9" />
     <block id="0x18" name="Sandstone S B" color="0xfbf8b4" />
-    <block id="0x1A" name="Bed S" color="0xff0000" />
-    <block id="0x1B" name="Powered Rail" color="0xfe9c02" />
-    <block id="0x1E" name="Cobweb" color="0xd0d0d0" />
-    <block id="0x1F" name="Tall Grass" color="0x1f953e" />
-    <block id="0x20" name="Dead Bush" color="0x47461e" />
+    <block id="0x1A" name="Bed S" color="0xff0000" solid="0" />
+    <block id="0x1B" name="Powered Rail" color="0xfe9c02" solid="0" />
+    <block id="0x1E" name="Cobweb" color="0xd0d0d0" solid="0" />
+    <block id="0x1F" name="Tall Grass" color="0x1f953e" solid="0" />
+    <block id="0x20" name="Dead Bush" color="0x47461e" solid="0" />
     <block id="0x23" name="Wool S B" lookupColor="true" />
-    <block id="0x25" name="Dandelion" color="0xe8e98b" />
-    <block id="0x26" name="Flower S B" color="0xe98b9a" />
-    <block id="0x27" name="Brown Mushroom" color="0xcaa762" />
-    <block id="0x28" name="Red Mushroom" color="0xfe9c9c" />
+    <block id="0x25" name="Dandelion" color="0xe8e98b" solid="0" />
+    <block id="0x26" name="Flower S B" color="0xe98b9a" solid="0" />
+    <block id="0x27" name="Brown Mushroom" color="0xcaa762" solid="0" />
+    <block id="0x28" name="Red Mushroom" color="0xfe9c9c" solid="0" />
     <block id="0x29" name="Block of Gold" color="0xfcfe50" />
     <block id="0x2A" name="Block of Iron" color="0xdddddb" />
     <block id="0x2B" name="Double Stone Slab S" color="0x909090" />
-    <block id="0x2C" name="Stone Slab S B" color="0x909090" />
+    <block id="0x2C" name="Stone Slab S B" color="0x909090" solid="0" />
     <block id="0x2D" name="Bricks" color="0x9a0b18" />
-    <block id="0x2E" name="TNT" color="0xee6f66" />
+    <block id="0x2E" name="TNT" color="0xee6f66" solid="0" />
     <block id="0x2F" name="Bookshelf" color="0xa27826" />
     <block id="0x30" name="Moss Stone" color="0x8a9e90" />
     <block id="0x31" name="Obsidian" color="0xc2a6c1" />
-    <block id="0x32" name="Torch" color="0xffff00" />
-    <block id="0x33" name="Fire" color="0xff1d32" />
+    <block id="0x32" name="Torch" color="0xffff00" solid="0" />
+    <block id="0x33" name="Fire" color="0xff1d32" solid="0" />
     <block id="0x34" name="Monster Spawner E" color="0x930a91" />
-    <block id="0x35" name="Oak Wood Stairs S" color="0x696a2d" />
-    <block id="0x36" name="Chest E" color="0xb3914f" />
+    <block id="0x35" name="Oak Wood Stairs S" color="0x696a2d" solid="0" />
+    <block id="0x36" name="Chest E" color="0xb3914f" solid="0" /> 
     <block id="0x38" name="Diamond Ore" color="0x77dcd8" />
     <block id="0x39" name="Block of Diamond" color="0x83f0ec" />
     <block id="0x3A" name="Crafting Table" color="0x202020" />
-    <block id="0x3B" name="Seeds D" color="0x3ebf59" />
-    <block id="0x3C" name="Farmland D" color="0x646325" />
+    <block id="0x3B" name="Seeds D" color="0x3ebf59" solid="0" />
+    <block id="0x3C" name="Farmland D" color="0x646325" solid="0" />
     <block id="0x3D" name="Furnace S E" color="0x303030" />
-    <block id="0x3E" name="Burning Furnace S E" color="0xc69b9b" />
-    <block id="0x3F" name="Sign I S E" /> //todo
-    <block id="0x40" name="Wooden Door I S" color="0x77602e" />
-    <block id="0x41" name="Ladder" /> //todo
-    <block id="0x42" name="Rail" color="0x866e3b" /> // todo - tough to choose a good color here, silver/gray is not enough contrast to stone etc
-    <block id="0x43" name="Cobblestone Stairs D" color="0xd0d0d0" />
-    <block id="0x44" name="Wall Sign I S E" /> //todo
-    <block id="0x47" name="Iron Door S" /> // todo
+    <block id="0x3E" name="Burning Furnace S E" color="0xc69b9b" solid="0" />
+    <block id="0x3F" name="Sign I S E" solid="0" /> //todo
+    <block id="0x40" name="Wooden Door I S" color="0x77602e" solid="0" />
+    <block id="0x41" name="Ladder" solid="0" /> //todo
+    <block id="0x42" name="Rail" color="0x866e3b" solid="0" /> // todo - tough to choose a good color here, silver/gray is not enough contrast to stone etc
+    <block id="0x43" name="Cobblestone Stairs D" color="0xd0d0d0" solid="0" />
+    <block id="0x44" name="Wall Sign I S E" solid="0" /> //todo
+    <block id="0x47" name="Iron Door S" solid="0" /> // todo
     <block id="0x49" name="Redstone Ore" color="0xeb7979" />
     <block id="0x4A" name="Glowing Redstone Ore" color="0xeb7979" />
-    <block id="0x4E" name="Snow (layer)" color="0xc0c0c0" />
+    <block id="0x4E" name="Snow (layer)" color="0xc0c0c0" solid="0" />
     <block id="0x4F" name="Ice" color="0x0cf5ed" />
     <block id="0x50" name="Snow" color="0xf0f0f0" />
-    <block id="0x51" name="Cactus" color="0x116713" />
+    <block id="0x51" name="Cactus" color="0x116713" solid="0" />
     <block id="0x52" name="Clay (block)" color="0x91aeb4" />
-    <block id="0x53" name="Sugar Cane" color="0x4ee547" />
-    <block id="0x55" name="Fence" color="0x606060" />
-    <block id="0x56" name="Pumpkin S" color="0xfbad26" />
+    <block id="0x53" name="Sugar Cane" color="0x4ee547" solid="0" />
+    <block id="0x55" name="Fence" color="0x606060" solid="0" />
+    <block id="0x56" name="Pumpkin S" color="0xfbad26" /> 
     <block id="0x57" name="Netherrack" color="0xc6475f" />
     <block id="0x58" name="Soul Sand" color="0x9f6969" />
     <block id="0x59" name="Glowstone" color="0xfbfe03" />
-    <block id="0x5A" name="Portal" color="0xffa0ff" />
+    <block id="0x5A" name="Portal" color="0xffa0ff" solid="0" />
     <block id="0x5B" name="Jack o'Lantern S" color="0xfd9501" />
-    <block id="0x5C" name="Cake S" /> // todo
+    <block id="0x5C" name="Cake S" solid="0" /> // todo
     <block id="0x5F" name="Invisible Bedrock" color="0x161616" />
-    <block id="0x60" name="Trapdoor S" /> //todo
+    <block id="0x60" name="Trapdoor S" solid="0" /> //todo
     <block id="0x61" name="Monster Egg" /> //todo
     <block id="0x62" name="Stone Brick D B" color="0xb6b6b0" />
     <block id="0x63" name="Brown Mushroom (block)" color="0xcaa762" />
     <block id="0x64" name="Red Mushroom (block)" color="0xfe9c9c" />
-    <block id="0x65" name="Iron Bars" /> // todo
-    <block id="0x66" name="Glass Pane" color="0xd0d0d0" />
+    <block id="0x65" name="Iron Bars" solid="0" /> // todo
+    <block id="0x66" name="Glass Pane" color="0xd0d0d0" solid="0" />
     <block id="0x67" name="Melon" color="0x73d86c" />
-    <block id="0x68" name="Pumpkin Stem S" color="0xa6a96f" />
-    <block id="0x69" name="Melon Stem S" color="0xa6a96f" />
-    <block id="0x6A" name="Vines D" color="0x265e2c" />
-    <block id="0x6B" name="Fence Gate S" color="0x57553b" />
-    <block id="0x6C" name="Brick Stairs S" color="0xa41e2a" />
-    <block id="0x6D" name="Stone Brick Stairs S" color="0xa0a09a" />
+    <block id="0x68" name="Pumpkin Stem S" color="0xa6a96f" solid="0" />
+    <block id="0x69" name="Melon Stem S" color="0xa6a96f" solid="0" />
+    <block id="0x6A" name="Vines D" color="0x265e2c" solid="0" />
+    <block id="0x6B" name="Fence Gate S" color="0x57553b" solid="0" />
+    <block id="0x6C" name="Brick Stairs S" color="0xa41e2a" solid="0" />
+    <block id="0x6D" name="Stone Brick Stairs S" color="0xa0a09a" solid="0" />
     <block id="0x6E" name="Mycelium" color="0xbbbbb9" />
-    <block id="0x6F" name="Lily Pad" color="0x66a16a" />
+    <block id="0x6F" name="Lily Pad" color="0x66a16a" solid="0" />
     <block id="0x70" name="Nether Brick" color="0x712e2e" />
-    <block id="0x71" name="Nether Brick Fence" color="0x8c3939" />
-    <block id="0x72" name="Nether Brick Stairs S" color="0xa74949" />
-    <block id="0x73" name="Nether Wart" color="0xa81031" />
-    <block id="0x74" name="Enchantment Table E" /> // todo
-    <block id="0x75" name="Brewing Stand I S E" /> // todo
+    <block id="0x71" name="Nether Brick Fence" color="0x8c3939" solid="0" />
+    <block id="0x72" name="Nether Brick Stairs S" color="0xa74949" solid="0" />
+    <block id="0x73" name="Nether Wart" color="0xa81031" solid="0" />
+    <block id="0x74" name="Enchantment Table E" solid="0" /> // todo
+    <block id="0x75" name="Brewing Stand I S E" solid="0" /> // todo
     <block id="0x78" name="End Portal Frame" /> // todo
     <block id="0x79" name="End Stone" /> // todo
-    <block id="0x7E" name="Cake (Mystery) S" /> // todo
-    <block id="0x7F" name="Cocoa I S" /> // todo
-    <block id="0x80" name="Sandstone Stairs S" color="0xcecb89" />
+    <block id="0x7E" name="Cake (Mystery) S" solid="0" /> // todo
+    <block id="0x7F" name="Cocoa I S" solid="0" /> // todo
+    <block id="0x80" name="Sandstone Stairs S" color="0xcecb89" solid="0" />
     <block id="0x81" name="Emerald Ore" color="0x77d17d" />
     <block id="0x85" name="Block of Emerald" color="0x6dbc73" />
-    <block id="0x86" name="Spruce Wood Stairs S" color="0x696a2d" />
-    <block id="0x87" name="Birch Wood Stairs S" color="0x696a2d" />
-    <block id="0x88" name="Jungle Wood Stairs S" color="0x696a2d" />
-    <block id="0x8B" name="Cobblestone Wall S" color="0xb0b0b0" />
-    <block id="0x8C" name="Flower Pot I S E" /> // todo
-    <block id="0x8D" name="Carrots I S" color="0xe8a03a" /> 
-    <block id="0x8E" name="Potato I S" color="0xb4af1c" />
+    <block id="0x86" name="Spruce Wood Stairs S" color="0x696a2d" solid="0" />
+    <block id="0x87" name="Birch Wood Stairs S" color="0x696a2d" solid="0" />
+    <block id="0x88" name="Jungle Wood Stairs S" color="0x696a2d" solid="0" />
+    <block id="0x8B" name="Cobblestone Wall S" color="0xb0b0b0" solid="0" />
+    <block id="0x8C" name="Flower Pot I S E" solid="0" /> // todo
+    <block id="0x8D" name="Carrots I S" color="0xe8a03a" solid="0" /> 
+    <block id="0x8E" name="Potato I S" color="0xb4af1c" solid="0" />
     <block id="0x8F" name="Mob head I S E" /> //todo
-    <block id="0x90" name="Anvil S B" /> // todo
+    // note: on the MCPE page anvil is listed as 0x90; in the data files (and the MC page) it is 0x91
+    <block id="0x91" name="Anvil S B" solid="0" /> // todo
     <block id="0x98" name="Block of Redstone" color="0xcd5c5c" />
     <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
     <block id="0x9B" name="Block of Quartz S B" color="0xffffff" />
-    <block id="0x9C" name="Quartz Stairs S" color="0xe8e7e7" />
+    <block id="0x9C" name="Quartz Stairs S" color="0xe8e7e7" solid="0" />
     <block id="0x9D" name="Wooden Double Slab S" color="0x696a2d" />
-    <block id="0x9E" name="Wooden Slab S B" color="0x696a2d" />
+    <block id="0x9E" name="Wooden Slab S B" color="0x696a2d" solid="0" />
     <block id="0x9F" name="Stained Clay S B" lookupColor="true" />
-    <block id="0xA1" name="Acacia Leaves S B" color="0x88b486" />
+    <block id="0xA1" name="Acacia Leaves S B" color="0x88b486" solid="0" />
     <block id="0xA2" name="Acacia Wood S B" color="0x696a2d" />
-    <block id="0xA3" name="Acacia Wood Stairs S" color="0x696a2d" />
-    <block id="0xA4" name="Dark Oak Wood Stairs S" color="0x696a2d" />
+    <block id="0xA3" name="Acacia Wood Stairs S" color="0x696a2d" solid="0" />
+    <block id="0xA4" name="Dark Oak Wood Stairs S" color="0x696a2d" solid="0" />
     <block id="0xAA" name="Hay Bale" color="0xd8d385" /> 
-    <block id="0xAB" name="Carpet S B" lookupColor="true" />
+    <block id="0xAB" name="Carpet S B" lookupColor="true" solid="0" />
     <block id="0xAC" name="Hardened Clay" color="0xb75252" /> 
     <block id="0xAD" name="Block of Coal" color="0x5c5c5c" />
     <block id="0xAE" name="Packed Ice" color="0x02cffd" />
-    <block id="0xAF" name="Sunflower" /> // todo
-    <block id="0xB7" name="Spruce Fence Gate" /> // todo
-    <block id="0xB8" name="Birch Fence Gate" /> // todo
-    <block id="0xB9" name="Jungle Fence Gate" /> // todo
-    <block id="0xBA" name="Dark Oak Fence Gate" /> // todo
-    <block id="0xBB" name="Acacia Fence Gate" /> // todo
+    <block id="0xAF" name="Sunflower" solid="0" /> // todo
+    <block id="0xB7" name="Spruce Fence Gate" solid="0" /> // todo
+    <block id="0xB8" name="Birch Fence Gate" solid="0" /> // todo
+    <block id="0xB9" name="Jungle Fence Gate" solid="0" /> // todo
+    <block id="0xBA" name="Dark Oak Fence Gate" solid="0" /> // todo
+    <block id="0xBB" name="Acacia Fence Gate" solid="0" /> // todo
     <block id="0xC6" name="Grass Path" color="0xb86335" />
     <block id="0xF3" name="Podzol" color="0x45390a" />
-    <block id="0xF4" name="Beetroot I S" color="0xd03388" />
+    <block id="0xF4" name="Beetroot I S" color="0xd03388" solid="0" />
     <block id="0xF5" name="Stone Cutter" />  // todo
     <block id="0xF6" name="Glowing Obsidian" /> // todo
     <block id="0xF7" name="Nether Reactor Core" /> // todo

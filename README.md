@@ -1,5 +1,5 @@
 # MCPE Viz
-Plethora777 -- 2015.9.26
+by Plethora777
 
 MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files (LevelDB).  It creates overview images from the world files, and reports *lots* of details on your world.
 
@@ -11,6 +11,8 @@ It can also:
 
 * Create an image of the grass color in your world (it's pretty interesting!)
 
+* Create an image of block light in your world (like an image from space at night)
+
 * Create movies of all layers from bedrock to build limit (*ffmpeg* required)
 
 * Dump a *huge* amount of info about your world including:
@@ -21,11 +23,10 @@ It can also:
   * For each world type (e.g. overworld, nether):
     * Histogram of biomes (per-block column)
 
-## Experimental win32 build
+## Experimental win32 and win64 builds
 
-I used mingw32 to build a win32 executable.  It is lightly tested :)  You can find the exe and required dll's in mcpe_viz.win32.zip
+I used mingw to build win32 and win64 executables.  They are lightly tested :)  You can find the exe and required dll's in mcpe_viz.win32.zip and mcpe_viz.win64.zip
 
-Note: movies are not supported on win32
 
 ## Requirements
 
@@ -108,11 +109,11 @@ Please note that --db expects the directory which contains "level.dat".
 
 ## CUSTOMIZATION
 
-You can copy mcpe_viz.cfg to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to customize the way mcpe_viz works.
+You can copy mcpe_viz.cfg to ~/.mcpe_viz/mcpe_viz.cfg and then edit that file to customize the way mcpe_viz works.
 
 You can copy mcpe_viz.xml to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to set custom colors for blocks and biomes.
 
 
 ## TODO
 
-This is just a quick and dirty tool that I made so that I could get an overview of one of my MCPE worlds.  The code is a bit messy and there is lots still todo.  Search on 'todo' in the code to see what needs attention.
+There is lots still todo.  Search on 'todo' in the code to see what needs attention.

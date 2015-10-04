@@ -7,14 +7,24 @@
   This requires Mojang's modified LevelDB library! (see README.md for details)
   This requires libnbt++ (see README.md for details)
 
-  To build it, use cmake or do something like this:
-  
-  g++ --std=c++11 -DDLLX= -I. -Ileveldb-mcpe/include -I.. -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -c mcpe_viz.cc -o mcpe_viz.o ; g++ -pthread mcpe_viz.o leveldb-mcpe/libleveldb.a -lz -o mcpe_viz 
+  To build it, use cmake
 
 
   todobig
 
+  * use "solid" info from block info to do something? could it fix the light map?
+
+  * update block xml w/ transparency info - bool or int? or just solid/nonsolid?
+  * use this transparency (or something else? e.g. spawnable flag?) to determine which block is the top block for purposes of the light map
+  * go and look at wiki to see the type of info that is stored per block
+
+  * produce another light map that shows areas that ARE spawnable? (e.g. use this to make an area 100% mob spawn proof)
+
+
   * convert all printf-style stuff to streams
+
+  ** openlayers ui -- ability to hover over a pixel and get info (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)"); switch image layers
+  ** create vector layers to store info about items and entities; controls to filter display of these
 
 
   todo
@@ -30,15 +40,16 @@
 
   ** map icons for interesting things (e.g. player, remote player, villagers, item X, entity X, etc)
   
-  ** openlayers / google maps ui -- ability to hover over a pixel and get info (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)")
 
+  todo win32/win64 build
 
-  todo win32 build
-
+  * immediate crash if using -O2?
   * leveldb close() issue -- link fails on missing stream stuff
   * leveldb -O2 build issue -- link fails on missing stream stuff
   * leveldb fread_nolock issue -- link fails; forcing msvcrXXX.a crashes on windows
   * log file: change end line to CRLF?
+
+  ** osx build?
 
   */
 
@@ -61,6 +72,9 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+#include <sys/stat.h>
+
 
 #ifndef htobe32
 // note: this is only used on win32 builds
@@ -87,6 +101,13 @@ inline int32_t htobe32(const int32_t src) {
 namespace mcpe_viz {
   namespace {
 
+    static const std::string version("mcpe_viz v0.0.4 by Plethora777");
+
+    enum {
+      kDoOutputNone = -2,
+      kDoOutputAll = -1
+    };
+      
     // all user options are stored here
     class Control {
     public:
@@ -95,11 +116,16 @@ namespace mcpe_viz {
       std::string fnCfg;
       std::string fnXml;
       std::string fnLog;
-      bool doMovieFlag;
-      bool doMovieNetherFlag;
-      bool doGridFlag;
-      bool doBiomeImageFlag;
-      bool doGrassImageFlag;
+      bool doDetailParseFlag;
+      int doMovie;
+      int doGrid;
+      int doImageBiome;
+      int doImageGrass;
+      int doImageHeightCol;
+      int doImageHeightColGrayscale;
+      // todo height using topBlockY
+      int doImageBlockLight;
+      int doImageSkyLight;
       bool shortRunFlag;
       bool verboseFlag;
       bool quietFlag;
@@ -108,10 +134,6 @@ namespace mcpe_viz {
       bool fpLogNeedCloseFlag;
       FILE *fpLog;
 
-      // todobig - switch to streams
-      //      std::filebuf fbLog;
-      //      std::ostream olog;
-  
       Control() {
 	init();
       }
@@ -126,20 +148,25 @@ namespace mcpe_viz {
 	fnXml = "";
 	fnOutputBase = "";
 	fnLog = "";
-	doMovieFlag = false;
-	doMovieNetherFlag = false;
-	doGridFlag = false;
-	doBiomeImageFlag = false;
-	doGrassImageFlag = false;
+	doDetailParseFlag = false;
+
+	doMovie = kDoOutputNone;
+	doGrid = kDoOutputNone;
+	doImageBiome = kDoOutputNone;
+	doImageGrass = kDoOutputNone;
+	doImageHeightCol = kDoOutputNone;
+	doImageHeightColGrayscale = kDoOutputNone;
+	doImageBlockLight = kDoOutputNone;
+	doImageSkyLight = kDoOutputNone;
+	
 	shortRunFlag = false;
 	verboseFlag = false;
 	quietFlag = false;
 	movieX = movieY = movieW = movieH = 0;
 	fpLogNeedCloseFlag = false;
 	fpLog = stdout;
-	// olog will default to stdout
-	// todo - olog.rdbuf(std::cout.rdbuf());
       }
+
       void setupOutput() {
 	if ( fnLog.compare("-") == 0 ) {
 	  fpLog = stdout;
@@ -163,8 +190,7 @@ namespace mcpe_viz {
 
     Control control;
 
-    static const std::string version("mcpe_viz v0.0.3 by Plethora777");
-
+    
     // world types
     enum {
       kWorldIdOverworld = 0,
@@ -183,24 +209,25 @@ namespace mcpe_viz {
     enum {
       kImageModeTerrain = 0,
       kImageModeBiome = 1,
-      kImageModeGrass = 2
+      kImageModeGrass = 2,
+      kImageModeHeightCol = 3,
+      kImageModeHeightColGrayscale = 4,
+      kImageModeBlockLight = 5,
+      kImageModeSkyLight = 6
     };
     
-    int histoChunkType[kWorldIdCount][256];
-    int histoGlobalBiome[kWorldIdCount][256];
-    
-    int32_t colorInfo[16];
+    int32_t standardColorInfo[16];
 
     // these are read from level.dat
     int32_t worldSpawnX = 0;
     int32_t worldSpawnY = 0;
     int32_t worldSpawnZ = 0;
 
-    std::vector<int> blockForceTopList[kWorldIdCount];
-    std::vector<int> blockHideList[kWorldIdCount];
+    // palettes
+    int32_t palRedBlackGreen[256];
 
-
-    int myParseInt32_T(const char* p, int startByte) {
+    
+    int myParseInt32(const char* p, int startByte) {
       int ret;
       memcpy(&ret, &p[startByte], 4);
       return ret;
@@ -210,6 +237,77 @@ namespace mcpe_viz {
       return (p[startByte] & 0xff);
     }
 
+
+    // note: super super old hsl2rgb code; origin unknown
+    double _hue_to_rgb(double m1, double m2, double h) {
+      while (h < 1.0) { h += 1.0; }
+      while (h > 1.0) { h -= 1.0; }
+      if ((h * 6.0) < 1.0) {
+	return m1+(m2-m1)*h*6.0;
+      }
+      if ((h * 2.0) < 1.0) {
+	return m2;
+      }
+      if ((h * 3.0) < 2.0) {
+	return m1+(m2-m1)*(2.0/3.0 - h)*6.0;
+      }
+      return m1;
+    }
+
+    int _clamp(int v, int minv, int maxv) {
+      if ( v < minv ) return minv;
+      if ( v > maxv ) return maxv;
+      return v;
+    }
+    
+    int hsl2rgb ( double h, double s, double l, int &r, int &g, int &b ) {
+      double m2;
+      if (l <= 0.5) {
+	m2 = l * (s+1.0);
+      } else {
+	m2 = l + s - l * s;
+      }
+      double m1 = l * 2.0 - m2;
+      double tr = _hue_to_rgb(m1,m2, h + 1.0/3.0);
+      double tg = _hue_to_rgb(m1,m2, h);
+      double tb = _hue_to_rgb(m1,m2, h - 1.0/3.0);
+      r = _clamp((int)(tr * 255.0), 0, 255);
+      g = _clamp((int)(tg * 255.0), 0, 255);
+      b = _clamp((int)(tb * 255.0), 0, 255);
+      return 0;
+    }
+
+    int makeHslRamp ( int *pal, int start, int stop, double h1, double h2, double s1, double s2, double l1, double l2 ) {
+      double steps = stop-start+1;
+      double dh = (h2 - h1) / steps;
+      double ds = (s2 - s1) / steps;
+      double dl = (l2 - l1) / steps;
+      double h=h1,s=s1,l=l1;
+      int r,g,b;
+      for ( int i=start; i<=stop; i++ ) {
+	hsl2rgb(h,s,l, r,g,b);
+	int c = ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+	pal[i] = c;
+	h+=dh;
+	s+=ds;
+	l+=dl;
+      }
+      return 0;
+    }
+    
+    void makePalettes() {
+      // create red-green ramp; red to black and then black to green
+      makeHslRamp(palRedBlackGreen,  0,  63, 0.0,0.0, 0.9,0.9, 0.8,0.1);
+      makeHslRamp(palRedBlackGreen, 64, 127, 0.4,0.4, 0.9,0.9, 0.1,0.8);
+      // force 63 (sea level) to gray
+      palRedBlackGreen[63]=0x202020;
+      // fill 128..255 with purple (we should never see this color)
+      for (int i=128; i < 256; i++) {
+	palRedBlackGreen[i] = 0xff00ff;
+      }
+    }
+
+    
     inline int _calcOffset(int x, int z, int y) {
       // todo - correct calc here? shouldn't it be z*16?!
       return (((x*16) + z)*128) + y;
@@ -220,11 +318,11 @@ namespace mcpe_viz {
       return (x*16) + z;
     }
 
-    int getBlockId(const char* p, int x, int z, int y) {
+    uint8_t getBlockId(const char* p, int x, int z, int y) {
       return (p[_calcOffset(x,z,y)] & 0xff);
     }
 
-    int getBlockData(const char* p, int x, int z, int y) {
+    uint8_t getBlockData(const char* p, int x, int z, int y) {
       int off =  _calcOffset(x,z,y);
       int off2 = off / 2;
       int mod2 = off % 2;
@@ -236,7 +334,8 @@ namespace mcpe_viz {
       }
     }
 
-    int getBlockSkyLight(const char* p, int x, int z, int y) {
+    // todo - this appears to actually be a block opacity value? (e.g. glass is 0xf, water is semi (0xc) and an opaque block is 0x0)
+    uint8_t getBlockSkyLight(const char* p, int x, int z, int y) {
       int off =  _calcOffset(x,z,y);
       int off2 = off / 2;
       int mod2 = off % 2;
@@ -248,7 +347,8 @@ namespace mcpe_viz {
       }
     }
 
-    int getBlockBlockLight(const char* p, int x, int z, int y) {
+    // todo - block light is light value from torches et al -- super cool looking as an image, but it looks like block light is probably stored in air blocks which are above top block
+    uint8_t getBlockBlockLight(const char* p, int x, int z, int y) {
       int off =  _calcOffset(x,z,y);
       int off2 = off / 2;
       int mod2 = off % 2;
@@ -260,34 +360,35 @@ namespace mcpe_viz {
       }
     }
 
-    // todo - rename
-    int8_t getColData1(const char *buf, int x, int z) {
+    // todo - height of top *solid* block? (e.g. a glass block will NOT be the top block here)
+    uint8_t getColData1(const char *buf, int x, int z) {
       int off = _calcOffset(x,z);
       int8_t v = buf[32768 + 16384 + 16384 + 16384 + off];
       return v;
     }
 
-    // todo - rename
+    // todo - this is 4-bytes: lsb is biome, the high 3-bytes are RGB grass color
     int32_t getColData2(const char *buf, int x, int z) {
       int off = _calcOffset(x,z) * 4;
       int32_t v;
       memcpy(&v,&buf[32768 + 16384 + 16384 + 16384 + 256 + off],4);
       return v;
     }
-
-
-    // todo - rename classes more sanely
+    
+    
     class MyBlock {
     public:
       std::string name;
       int32_t color;
       bool lookupColorFlag;
       bool colorSetFlag;
+      bool solidFlag;
       int colorSetNeedCount;
       MyBlock() {
 	name = "(unknown)";
 	setColor(0xff00ff); // purple
 	lookupColorFlag = false;
+	solidFlag = true;
 	colorSetFlag = false;
 	colorSetNeedCount = 0;
       }
@@ -301,10 +402,15 @@ namespace mcpe_viz {
 	colorSetFlag = true;
 	return *this;
       }
-      MyBlock& setLookupColor() {
-	lookupColorFlag = true;
+      MyBlock& setLookupColorFlag(bool f) {
+	lookupColorFlag = f;
 	return *this;
       }
+      MyBlock& setSolidFlag(bool f) {
+	solidFlag = f;
+	return *this;
+      }
+      bool isSolid() { return solidFlag; }
     };
 
     MyBlock blockInfo[256];
@@ -323,6 +429,9 @@ namespace mcpe_viz {
       }
     };
 
+    std::map<int, std::unique_ptr<MyItem> > itemInfo;
+
+
     class MyEntity {
     public:
       std::string name;
@@ -334,6 +443,9 @@ namespace mcpe_viz {
 	return *this;
       }
     };
+
+    std::map<int, std::unique_ptr<MyEntity> > entityInfo;
+
 
     class MyBiome {
     public:
@@ -361,6 +473,9 @@ namespace mcpe_viz {
       }
     };
 
+    std::map<int, std::unique_ptr<MyBiome> > biomeInfo;
+
+
     class MyChunk {
     public:
       int chunkX, chunkZ;
@@ -368,51 +483,70 @@ namespace mcpe_viz {
       uint8_t data[16][16];
       uint32_t grassAndBiome[16][16];
       uint8_t topBlockY[16][16];
+      uint8_t heightCol[16][16];
+      uint8_t topLight[16][16];
       MyChunk(int cx, int cz,
-	      const uint8_t* b, const uint8_t* d, const uint32_t* xgrassAndBiome, const uint8_t* tby) {
+	      const uint8_t* b, const uint8_t* d, const uint32_t* xgrassAndBiome, const uint8_t* tby, const uint8_t* height,
+	      const uint8_t* light) {
 	chunkX=cx;
 	chunkZ=cz;
 	memcpy(blocks, b, 16*16);
 	memcpy(data, d, 16*16);
 	memcpy(grassAndBiome, xgrassAndBiome, 16*16*sizeof(uint32_t));
 	memcpy(topBlockY, tby, 16*16);
+	memcpy(heightCol, height, 16*16);
+	memcpy(topLight, light, 16*16);
       }
     };
 
-    std::map<int, std::unique_ptr<MyItem> > itemInfo;
-    std::map<int, std::unique_ptr<MyEntity> > entityInfo;
-    std::map<int, std::unique_ptr<MyBiome> > biomeInfo;
-
-    void initBlockInfo() {
-      // clear histograms
-      for (int i=0; i < kWorldIdCount; i++) {
-	memset(histoChunkType[i],0,256*sizeof(int));
-	memset(histoGlobalBiome[i],0,256*sizeof(int));
-      }
-      
-      // highlight blocks - that is, force them to be in topblock
-      // for example, mob spawners:
-      //blockForceTopList[0].push_back(0x34);
-      //blockForceTopList[1].push_back(0x34);
-
-      // hide certain blocks from topBlock
-      // topBlock in the nether is nuts.  So that we can see some interesting info, let's hide: bedrock netherrack lava
-      //blockHideList[kWorldIdNether].push_back(0x07);
-      //blockHideList[kWorldIdNether].push_back(0x57);
-      //blockHideList[kWorldIdNether].push_back(0x0a);
-      //blockHideList[kWorldIdNether].push_back(0x0b);
-    }
 
     class MyChunkList {
     public:
+      std::string name;
+      int worldId;
       std::vector< std::unique_ptr<MyChunk> > list;
       int minChunkX = 0, maxChunkX = 0;
       int minChunkZ = 0, maxChunkZ = 0;
+      bool chunkBoundsValid;
       int chunkCount = 0;
 
+      int histoChunkType[256];
+      int histoGlobalBiome[256];
+
+      std::vector<int> blockForceTopList;
+      std::vector<int> blockHideList;
+      
+      MyChunkList() {
+	name = "(UNKNOWN)";
+	worldId = -1;
+	chunkBoundsValid = false;
+	memset(histoChunkType,0,256*sizeof(int));
+	memset(histoGlobalBiome,0,256*sizeof(int));
+      }
+
+      void setName(std::string s) {
+	name = s;
+      }
+      
+      void clearChunkBounds() {
+	minChunkX = minChunkZ = maxChunkX = maxChunkZ = 0;
+	chunkBoundsValid = false;
+      }
+
+      void setChunkBoundsValid() {
+	chunkBoundsValid = true;
+      }
+      
+      void addToChunkBounds(int chunkX, int chunkZ) {
+	minChunkX = std::min(minChunkX, chunkX);
+	maxChunkX = std::max(maxChunkX, chunkX);
+	minChunkZ = std::min(minChunkZ, chunkZ);
+	maxChunkZ = std::max(maxChunkZ, chunkZ);
+      }
+      
       void putChunk ( int chunkX, int chunkZ,
 		      const uint8_t* topBlock, const uint8_t* blockData,
-		      const uint32_t* grassAndBiome, const uint8_t* topBlockY) {
+		      const uint32_t* grassAndBiome, const uint8_t* topBlockY, const uint8_t* height, const uint8_t* topLight) {
 	chunkCount++;
 	
 	minChunkX = std::min(minChunkX, chunkX);
@@ -421,13 +555,24 @@ namespace mcpe_viz {
 	maxChunkX = std::max(maxChunkX, chunkX);
 	maxChunkZ = std::max(maxChunkZ, chunkZ);
 
-	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY));
+	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY, height, topLight));
 	list.push_back( std::move(tmp) );
       }
 
+      
+      bool checkDoForWorld(int v) {
+	if ( v == kDoOutputAll ) {
+	  return true;
+	}
+	if ( v == worldId ) {
+	  return true;
+	}
+	return false;
+      }
+      
     
-      void myreport(int worldId) {
-	fprintf(control.fpLog,"\nStatistics:\n");
+      void doOutputStats() {
+	fprintf(control.fpLog,"\n%s Statistics:\n", name.c_str());
 	fprintf(control.fpLog,"chunk-count: %d\n", chunkCount);
 	fprintf(control.fpLog,"Min-dim:  %d %d\n", minChunkX, minChunkZ);
 	fprintf(control.fpLog,"Max-dim:  %d %d\n", maxChunkX, maxChunkZ);
@@ -438,15 +583,15 @@ namespace mcpe_viz {
 
 	fprintf(control.fpLog,"\nGlobal Chunk Type Histogram:\n");
 	for (int i=0; i < 256; i++) {
-	  if ( histoChunkType[worldId][i] > 0 ) {
-	    fprintf(control.fpLog,"hg-chunktype: %02x %6d\n", i, histoChunkType[worldId][i]);
+	  if ( histoChunkType[i] > 0 ) {
+	    fprintf(control.fpLog,"hg-chunktype: %02x %6d\n", i, histoChunkType[i]);
 	  }
 	}
 
 	fprintf(control.fpLog,"\nGlobal Biome Histogram:\n");
 	for (int i=0; i < 256; i++) {
-	  if ( histoGlobalBiome[worldId][i] > 0 ) {
-	    fprintf(control.fpLog,"hg-globalbiome: %02x %6d\n", i, histoGlobalBiome[worldId][i]);
+	  if ( histoGlobalBiome[i] > 0 ) {
+	    fprintf(control.fpLog,"hg-globalbiome: %02x %6d\n", i, histoGlobalBiome[i]);
 	  }
 	}
       }
@@ -524,11 +669,12 @@ namespace mcpe_viz {
 
 	  int worldX = (*it)->chunkX * 16;
 	  int worldZ = (*it)->chunkZ * 16;
-
 	  
 	  for (int cz=0; cz < 16; cz++) {
 	    for (int cx=0; cx < 16; cx++) {
 
+	      // todo - this conditional inside an inner loop, not so good
+	      
 	      if ( imageMode == kImageModeBiome ) {
 		// get biome color
 		int biomeId = (*it)->grassAndBiome[cx][cz] & 0xff;
@@ -547,13 +693,35 @@ namespace mcpe_viz {
 		int32_t grassColor = (*it)->grassAndBiome[cx][cz] >> 8;
 		color = htobe32(grassColor);
 	      }
+	      else if ( imageMode == kImageModeHeightCol ) {
+		// get height value and use red-black-green palette
+		uint8_t c = (*it)->heightCol[cx][cz];
+		color = htobe32(palRedBlackGreen[c]);
+	      }
+	      else if ( imageMode == kImageModeHeightColGrayscale ) {
+		// get height value and make it grayscale
+		uint8_t c = (*it)->heightCol[cx][cz];
+		color = htobe32( (c << 16) | (c << 8) | c );
+	      }
+	      else if ( imageMode == kImageModeBlockLight ) {
+		// get block light value and expand it (is only 4-bits)
+		// todobig - why z/x here and x/z everywhere else... hmmm
+		uint8_t c = ((*it)->topLight[cz][cx] & 0x0f) << 4;
+		color = htobe32( (c << 16) | (c << 8) | c );
+	      }
+	      else if ( imageMode == kImageModeSkyLight ) {
+		// get sky light value and expand it (is only 4-bits)
+		// todobig - why z/x here and x/z everywhere else... hmmm
+		uint8_t c = ((*it)->topLight[cz][cx] & 0xf0);
+		color = htobe32( (c << 16) | (c << 8) | c );
+	      }
 	      else {
 		// regular image
 		int blockid = (*it)->blocks[cz][cx];
 		
 		if ( blockInfo[blockid].lookupColorFlag ) {
 		  int blockdata = (*it)->data[cz][cx];
-		  color = colorInfo[blockdata];
+		  color = standardColorInfo[blockdata];
 		} else {
 		  color = blockInfo[blockid].color;
 		  if ( ! blockInfo[blockid].colorSetFlag ) {
@@ -563,7 +731,7 @@ namespace mcpe_viz {
 	      }
 
 	      // do grid lines
-	      if ( control.doGridFlag && (cx==0 || cz==0) ) {
+	      if ( checkDoForWorld(control.doGrid) && (cx==0 || cz==0) ) {
 		if ( ((*it)->chunkX == 0) && ((*it)->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
 		  color = htobe32(0xeb3333);
 		} else {
@@ -584,15 +752,17 @@ namespace mcpe_viz {
 	      memcpy(&buf[ ((imageZ + cz) * imageW + (imageX + cx)) * 3], &pcolor[1], 3);
 #endif
 
-	      int ix = (imageX + cx);
-	      int iz = (imageZ + cz);
-	      int wx = (worldX + cx);
-	      int wz = (worldZ + cz);
-	      if ( (wx == 0) && (wz == 0) ) {
-		fprintf(stderr,"Info: World (0, 0) is at image (%d,%d)\n", ix,iz);
-	      }
-	      if ( (wx == worldSpawnX) && (wz == worldSpawnZ) ) {
-		fprintf(stderr,"Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
+	      if ( worldId == 0 && imageMode == kImageModeTerrain ) {
+		int ix = (imageX + cx);
+		int iz = (imageZ + cz);
+		int wx = (worldX + cx);
+		int wz = (worldZ + cz);
+		if ( (wx == 0) && (wz == 0) ) {
+		  fprintf(stderr,"Info: World (0, 0) is at image (%d,%d)\n", ix,iz);
+		}
+		if ( (wx == worldSpawnX) && (wz == worldSpawnZ) ) {
+		  fprintf(stderr,"Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
+		}
 	      }
 	    }
 	  }
@@ -612,7 +782,7 @@ namespace mcpe_viz {
 	}
       }
 
-      void generateImageSlices(const std::string fname, const std::string fnameTmpBase, int worldId) {
+      void generateMovie(leveldb::DB* db, const std::string fname) {
 	const int chunkOffsetX = -minChunkX;
 	const int chunkOffsetZ = -minChunkZ;
 	
@@ -622,7 +792,7 @@ namespace mcpe_viz {
 	//const int imageH = chunkH * 16;
 
 	int divisor = 1;
-	if ( worldId == 1 ) { 
+	if ( worldId == kWorldIdNether ) { 
 	  // if nether, we divide coordinates by 8
 	  divisor = 8; 
 	}
@@ -639,14 +809,6 @@ namespace mcpe_viz {
 
 	// todobig - we *could* write image data to flat files during parseDb and then convert these flat files into png here
 
-	// todobig - leveldb read-only? snapshot?
-	leveldb::DB* db;
-	leveldb::Options options;
-	options.compressors[0] = new leveldb::ZlibCompressor();
-	options.create_if_missing = false;
-	leveldb::Status status = leveldb::DB::Open(options, std::string(mcpe_viz::control.dirLeveldb+"/db"), &db);
-	assert(status.ok());
-
 	leveldb::ReadOptions readOptions;
 	readOptions.fill_cache=false; // may improve performance?
 
@@ -658,6 +820,7 @@ namespace mcpe_viz {
 	int32_t color;
 	const char *pcolor = (const char*)&color;
 	for (int cy=0; cy < 128; cy++) {
+	  // todo - make this part a func so that user can ask for specific slices from the cmdline?
 	  fprintf(stderr,"  Layer %d\n", cy);
 	  for ( auto it = list.begin() ; it != list.end(); ++it) {
 	    int imageX = ((*it)->chunkX + chunkOffsetX) * 16;
@@ -704,7 +867,7 @@ namespace mcpe_viz {
 		    pchunkZ = (*it)->chunkZ;
 		  }
 		 
-		  int blockid = getBlockId(pchunk, cx,cz,cy);
+		  uint8_t blockid = getBlockId(pchunk, cx,cz,cy);
 
 		  if ( blockid == 0 && ( cy > (*it)->topBlockY[cz][cx] ) ) {
 		    // special handling for air -- keep existing value if we are above top block
@@ -712,14 +875,14 @@ namespace mcpe_viz {
 		  } else {
 		    
 		    if ( blockInfo[blockid].lookupColorFlag ) {
-		      int blockdata = getBlockData(pchunk, cx,cz,cy);
-		      color = colorInfo[blockdata];
+		      uint8_t blockdata = getBlockData(pchunk, cx,cz,cy);
+		      color = standardColorInfo[blockdata];
 		    } else {
 		      color = blockInfo[blockid].color;
 		    }
 		  
 		    // do grid lines
-		    if ( control.doGridFlag && (cx==0 || cz==0) ) {
+		    if ( checkDoForWorld(control.doGrid) && (cx==0 || cz==0) ) {
 		      if ( ((*it)->chunkX == 0) && ((*it)->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
 			// highlight (0,0)
 			color = htobe32(0xeb3333);
@@ -748,7 +911,7 @@ namespace mcpe_viz {
 
 	  // output the image
 	  std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";
-	  fnameTmp += fnameTmpBase;
+	  fnameTmp += name;
 	  fnameTmp += ".";
 	  char xtmp[100];
 	  sprintf(xtmp,"%03d",cy);
@@ -760,13 +923,13 @@ namespace mcpe_viz {
 
 	delete [] buf;
 
-	delete db;
-	
 	// "ffmpeg" method
 	std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";	
-	fnameTmp += fnameTmpBase;
+	fnameTmp += name;
 	fnameTmp += ".%03d.png";
-	
+
+	// todo - ffmpeg on win32? need bin path option?
+	// todo - provide other user options for ffmpeg cmd line params?
 	std::string cmdline = std::string("ffmpeg -y -framerate 1 -i " + fnameTmp + " -c:v libx264 -r 30 ");
 	cmdline += fname;
 	int ret = system(cmdline.c_str());
@@ -777,11 +940,53 @@ namespace mcpe_viz {
 	// todo - delete temp slice files? cmdline option to NOT delete
 	
       }
-      
+
+      int doOutput(leveldb::DB* db) {
+	fprintf(stderr,"Do Output: %s\n",name.c_str());
+
+	doOutputStats();
+	
+	fprintf(stderr,"Generate Image\n");
+	generateImage(std::string(control.fnOutputBase + "." + name + ".map.png"));
+	
+	if ( checkDoForWorld(control.doImageBiome) ) {
+	  fprintf(stderr,"Generate Biome Image\n");
+	  generateImage(std::string(control.fnOutputBase + "." + name + ".biome.png"), kImageModeBiome);
+	}
+	if ( checkDoForWorld(control.doImageGrass) ) {
+	  fprintf(stderr,"Generate Grass Image\n");
+	  generateImage(std::string(control.fnOutputBase + "." + name + ".grass.png"), kImageModeGrass);
+	}
+	if ( checkDoForWorld(control.doImageHeightCol) ) {
+	  fprintf(stderr,"Generate Height Col Image\n");
+	  generateImage(std::string(control.fnOutputBase + "." + name + ".height_col.png"), kImageModeHeightCol);
+	}
+	if ( checkDoForWorld(control.doImageHeightColGrayscale) ) {
+	  fprintf(stderr,"Generate Height Col (grayscale) Image\n");
+	  generateImage(std::string(control.fnOutputBase + "." + name + ".height_col_grayscale.png"), kImageModeHeightColGrayscale);
+	}
+	if ( checkDoForWorld(control.doImageBlockLight) ) {
+	  fprintf(stderr,"Generate Block Light Image\n");
+	  generateImage(std::string(control.fnOutputBase + "." + name + ".light_block.png"), kImageModeBlockLight);
+	}
+	if ( checkDoForWorld(control.doImageSkyLight) ) {
+	  fprintf(stderr,"Generate Sky Light Image\n");
+	  generateImage(std::string(control.fnOutputBase + "." + name + ".light_sky.png"), kImageModeSkyLight);
+	}
+
+	if ( checkDoForWorld(control.doMovie) ) {
+	  fprintf(stderr,"Generate movie\n");
+	  generateMovie(db, std::string(control.fnOutputBase + "." + name + ".mp4"));
+	}
+	
+	// reset
+	for (int i=0; i < 256; i++) {
+	  blockInfo[i].colorSetNeedCount = 0;
+	}
+
+	return 0;
+      }
     };
-    
-    
-    MyChunkList chunkList[kWorldIdCount];
 
     
     bool vectorContains( std::vector<int> &v, int i ) {
@@ -792,6 +997,7 @@ namespace mcpe_viz {
       }
       return false;
     }
+
     
     std::string makeIndent(int indent, const char* hdr) {
       std::string s;
@@ -802,6 +1008,7 @@ namespace mcpe_viz {
       return s;
     }
 
+    
     std::string getBiomeName(int idv) {
       char s[256];
       try { 
@@ -816,6 +1023,7 @@ namespace mcpe_viz {
       return std::string(s);
     }
 
+    
     // todo - keep this to use with new nbt lib?
     int printIdTag(FILE *fout, int nbtMode, bool idTagFlag, int idv) {
       if ( idTagFlag ) {
@@ -863,26 +1071,26 @@ namespace mcpe_viz {
       case nbt::tag_type::Byte:
 	{
 	  nbt::tag_byte v = t.second->as<nbt::tag_byte>();
-	  fprintf(control.fpLog,"%d (byte)\n", v.get());
+	  fprintf(control.fpLog,"%d 0x%x (byte)\n", v.get(), v.get());
 	}
 	break;
       case nbt::tag_type::Short:
 	{
 	  nbt::tag_short v = t.second->as<nbt::tag_short>();
-	  fprintf(control.fpLog,"%d (short)\n", v.get());
+	  fprintf(control.fpLog,"%d 0x%x (short)\n", v.get(), v.get());
 	}
 	break;
       case nbt::tag_type::Int:
 	{
 	  nbt::tag_int v = t.second->as<nbt::tag_int>();
-	  fprintf(control.fpLog,"%d (int)\n", v.get());
+	  fprintf(control.fpLog,"%d 0x%x (int)\n", v.get(), v.get());
 	}
 	break;
       case nbt::tag_type::Long:
 	{
 	  nbt::tag_long v = t.second->as<nbt::tag_long>();
 	  // note: silly work around for linux vs win32 weirdness
-	  fprintf(control.fpLog,"%lld (long)\n", (long long int)v.get());
+	  fprintf(control.fpLog,"%lld 0x%llx (long)\n", (long long int)v.get(), (long long int)v.get());
 	}
 	break;
       case nbt::tag_type::Float:
@@ -899,8 +1107,14 @@ namespace mcpe_viz {
 	break;
       case nbt::tag_type::Byte_Array:
 	{
-	  // todo nbt::tag_double v = t.second->as<nbt::tag_double>();
-	  fprintf(control.fpLog,"[TODO] (byte array)\n");
+	  nbt::tag_byte_array v = t.second->as<nbt::tag_byte_array>();
+	  fprintf(control.fpLog,"[");
+	  int i=0;
+	  for (auto itt = v.begin(); itt != v.end(); ++itt) {
+	    if ( i++ > 0 ) { fprintf(control.fpLog," "); }
+	    fprintf(control.fpLog,"%02x", (int)(*itt));
+	  }
+	  fprintf(control.fpLog,"] (hex byte array)\n");
 	}
 	break;
       case nbt::tag_type::String:
@@ -937,8 +1151,14 @@ namespace mcpe_viz {
 	break;
       case nbt::tag_type::Int_Array:
 	{
-	  // todo nbt::tag_double v = t.second->as<nbt::tag_double>();
-	  fprintf(control.fpLog,"[TODO] (int array)\n");
+	  nbt::tag_int_array v = t.second->as<nbt::tag_int_array>();
+	  fprintf(control.fpLog,"[");
+	  int i=0;
+	  for (auto itt = v.begin(); itt != v.end(); ++itt) {
+	    if ( i++ > 0 ) { fprintf(control.fpLog," "); }
+	    fprintf(control.fpLog,"%x", (*itt));
+	  }
+	  fprintf(control.fpLog,"] (hex int array)\n");
 	}
 	break;
       default:
@@ -1007,427 +1227,457 @@ namespace mcpe_viz {
       fprintf(control.fpLog,"]\n");
       return 0;
     }
+
     
-    leveldb::Status parseDb ( const std::string fname ) {
-      // todobig - leveldb read-only? snapshot?
-      // todobig - oddly these fprintf's appear to fix the win32 crash... 
-      fprintf(stderr,"parseDb start\n"); fflush(stderr); // todo debug
+    class MyWorld {
+    public:
       leveldb::DB* db;
-      leveldb::Options options;
-      options.compressors[0] = new leveldb::ZlibCompressor();
-      options.create_if_missing = false;
-      fprintf(stderr,"Before DB Open\n"); fflush(stderr); // todo debug
-      leveldb::Status status = leveldb::DB::Open(options, fname, &db);
-      fprintf(stderr,"DB Open Status: %s\n", status.ToString().c_str());
-      fflush(stderr);
-      assert(status.ok());
-
-      int histo[256];
-      int histoBiome[256];
-      uint8_t topBlock[16][16];
-      uint8_t topData[16][16];
-      uint32_t grassAndBiome[16][16];
-      uint8_t topSkyLight[16][16];
-      uint8_t topBlockLight[16][16];
-      uint8_t topBlockY[16][16];
-      int8_t colData1[16][16];
-      int32_t colData2[16][16];
-
-      char tmpstring[256];
-
-      int chunkX=-1, chunkZ=-1, chunkWorldId=-1, chunkType=-1;
+      leveldb::Options dbOptions;
+      leveldb::ReadOptions dbReadOptions;
       
-      int minChunkX[kWorldIdCount], maxChunkX[kWorldIdCount];
-      int minChunkZ[kWorldIdCount], maxChunkZ[kWorldIdCount];
-      for (int i=0; i < kWorldIdCount; i++) {
-	minChunkX[i]=maxChunkX[i]=minChunkZ[i]=maxChunkZ[i]=0;
+      MyChunkList chunkList[kWorldIdCount];
+      
+      MyWorld() {
+	db = nullptr;
+	dbOptions.compressors[0] = new leveldb::ZlibCompressor();
+	dbOptions.create_if_missing = false;
+	dbReadOptions.fill_cache = false;
+	for (int i=0; i < kWorldIdCount; i++) {
+	  chunkList[i].worldId = i;
+	  chunkList[i].clearChunkBounds();
+	}
+	chunkList[kWorldIdOverworld].setName("overworld");
+	chunkList[kWorldIdNether].setName("nether");
+      }
+      ~MyWorld() {
+	dbClose();
+	delete dbOptions.compressors[0];
+      }
+      
+      int dbOpen(std::string dirDb) {
+	// todobig - leveldb read-only? snapshot?
+	fprintf(stderr,"DB Open: dir=%s\n",dirDb.c_str());
+	leveldb::Status status = leveldb::DB::Open(dbOptions, std::string(dirDb+"/db"), &db);
+	fprintf(stderr,"DB Open Status: %s\n", status.ToString().c_str()); fflush(stderr);
+	assert(status.ok());
+	dbReadOptions.fill_cache=false; // may improve performance?
+	return 0;
+      }
+      int dbClose() {
+	if ( db != nullptr ) {
+	  delete db;
+	  db = nullptr;
+	}
+	return 0;
       }
 
-      leveldb::ReadOptions readOptions;
-      readOptions.fill_cache=false; // may improve performance since we are scanning the whole thing
-      leveldb::Iterator* iter = db->NewIterator(readOptions);
-      int recordCt = 0;
-      
-      // pre-scan keys to get min/max chunks so that we can provide image coordinates for chunks
-      fprintf(stderr,"Pre-scan keys to get world boundaries\n");
-      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-	leveldb::Slice skey = iter->key();
-	int key_size = skey.size();
-	const char* key = skey.data();
-
-	++recordCt;
-	if ( control.shortRunFlag && recordCt > 100 ) {
-	  break;
+      int calcChunkBounds() {
+	// see if we already calculated bounds
+	bool passFlag = true;
+	for (int i=0; i < kWorldIdCount; i++) {
+	  if ( ! chunkList[i].chunkBoundsValid ) {
+	    passFlag = false;
+	  }
 	}
+	if ( passFlag ) {
+	  return 0;
+	}
+
+	// clear bounds
+	for (int i=0; i < kWorldIdCount; i++) {
+	  chunkList[i].clearChunkBounds();
+	}
+
+	int chunkX=-1, chunkZ=-1, chunkWorldId=-1, chunkType=-1;
 	
-	if ( key_size == 9 ) {
-	  chunkX = myParseInt32_T(key, 0);
-	  chunkZ = myParseInt32_T(key, 4);
-	  chunkType = myParseInt8(key, 8);
+	fprintf(stderr,"Scan keys to get world boundaries\n");
+	int recordCt = 0;
+	leveldb::Iterator* iter = db->NewIterator(dbReadOptions);
+	for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+	  leveldb::Slice skey = iter->key();
+	  int key_size = skey.size();
+	  const char* key = skey.data();
 	  
-	  // sanity checks
-	  if ( chunkType == 0x30 ) {
-	    minChunkX[0] = std::min(minChunkX[0], chunkX);
-	    minChunkZ[0] = std::min(minChunkZ[0], chunkZ);
-	    maxChunkX[0] = std::max(maxChunkX[0], chunkX);
-	    maxChunkZ[0] = std::max(maxChunkZ[0], chunkZ);
+	  ++recordCt;
+	  if ( control.shortRunFlag && recordCt > 1000 ) {
+	    break;
 	  }
-	}
-	else if ( key_size == 13 ) {
-	  chunkX = myParseInt32_T(key, 0);
-	  chunkZ = myParseInt32_T(key, 4);
-	  chunkWorldId = myParseInt32_T(key, 8);
-	  chunkType = myParseInt8(key, 12);
 	  
-	  // sanity checks
-	  if ( chunkType == 0x30 ) {
-	    minChunkX[chunkWorldId] = std::min(minChunkX[chunkWorldId], chunkX);
-	    minChunkZ[chunkWorldId] = std::min(minChunkZ[chunkWorldId], chunkZ);
-	    maxChunkX[chunkWorldId] = std::max(maxChunkX[chunkWorldId], chunkX);
-	    maxChunkZ[chunkWorldId] = std::max(maxChunkZ[chunkWorldId], chunkZ);
-	  }
-	}
-      }
-
-      fprintf(stderr,"Parse all leveldb records\n");
-      MyTagList tagList;
-      recordCt = 0;
-      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-
-	// note: we get the raw buffer early to avoid overhead (maybe?)
-	leveldb::Slice skey = iter->key();
-	int key_size = (int)skey.size();
-	const char* key = skey.data();
-
-	leveldb::Slice svalue = iter->value();
-	int value_size = svalue.size();
-	const char* value = svalue.data();
-
-	++recordCt;
-	if ( control.shortRunFlag && recordCt > 100 ) {
-	  break;
-	}
-	if ( (recordCt % 10000) == 0 ) {
-	  fprintf(stderr, "  Reading records: %d\n", recordCt);
-	}
-
-	std::string r;
-	fprintf(control.fpLog,"\n");
-
-	if ( strncmp(key,"BiomeData",key_size) == 0 ) {
-	  // 0x61 +"BiomeData" -- snow accum? -- overworld only?
-	  fprintf(control.fpLog,"BiomeData value:\n");
-	  parseNbt("BiomeData: ", value, value_size, tagList);
-	  // todo - parse tagList?
-	}
-	else if ( strncmp(key,"Overworld",key_size) == 0 ) {
-	  //  0x64 +"Overworld" -- "LimboEntities"? -- overworld only?
-	  fprintf(control.fpLog,"Overworld value:\n");
-	  parseNbt("Overworld: ", value, value_size, tagList);
-	  // todo - parse tagList?
-	}
-	else if ( strncmp(key,"~local_player",key_size) == 0 ) {
-	  // 0x72 +"~local_player" -- player info?? ?? -- nether only?
-	  fprintf(control.fpLog,"Local Player value:\n");
-	  parseNbt("Local Player: ", value, value_size, tagList);
-	  // todo - parse tagList? 
-	}
-	else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
-	  // todo - key contains player id (e.g. "player_-1234")
-	  fprintf(control.fpLog,"Remote Player value:\n");
-	  parseNbt("Remote Player: ", value, value_size, tagList);
-	  // todo - parse tagList?
-	}
-	else if ( strncmp(key,"villages",key_size) == 0 ) {
-	  fprintf(control.fpLog,"Villages value:\n");
-	  parseNbt("villages: ", value, value_size, tagList);
-	  // todo - parse tagList?
-	}
-	else if ( strncmp(key,"Nether",key_size) == 0 ) {
-	  fprintf(control.fpLog,"Nether value:\n");
-	  parseNbt("Nether: ", value, value_size, tagList);
-	  // todo - parse tagList?
-	}
-	else if ( strncmp(key,"portals",key_size) == 0 ) {
-	  fprintf(control.fpLog,"portals value:\n");
-	  parseNbt("portals: ", value, value_size, tagList);
-	  // todo - parse tagList?
-	}
-			 
-	else if ( key_size == 9 || key_size == 13 ) {
-
-	  // this is probably a record we want to parse
-
-	  std::string worldName;
 	  if ( key_size == 9 ) {
-	    chunkX = myParseInt32_T(key, 0);
-	    chunkZ = myParseInt32_T(key, 4);
-	    chunkWorldId = 0; // forced for overworld
+	    chunkX = myParseInt32(key, 0);
+	    chunkZ = myParseInt32(key, 4);
 	    chunkType = myParseInt8(key, 8);
-	    worldName = "overworld";
-	  }
-	  else if ( key_size == 13 ) {
-	    chunkX = myParseInt32_T(key, 0);
-	    chunkZ = myParseInt32_T(key, 4);
-	    chunkWorldId = myParseInt32_T(key, 8);
-	    chunkType = myParseInt8(key, 12);
-	    worldName = "nether";
-
-	    // check for new world id's
-	    if ( chunkWorldId != 1 ) {
-	      fprintf(stderr, "HEY! Found new chunkWorldId=0x%x\n", chunkWorldId);
+	    
+	    // sanity checks
+	    if ( chunkType == 0x30 ) {
+	      chunkList[0].addToChunkBounds(chunkX, chunkZ);
 	    }
 	  }
-	  
-	  histoChunkType[chunkWorldId][chunkType]++;
-
-	  r = worldName + "-chunk: ";
-	  sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
-	  r += tmpstring;
-	  if ( true ) {
-	    // show approximate image coordinates for chunk
-	    int chunkOffsetX = -minChunkX[chunkWorldId];
-	    int chunkOffsetZ = -maxChunkZ[chunkWorldId];
-	    int imageX = (chunkX + chunkOffsetX) * 16;
-	    int imageZ = (chunkZ + chunkOffsetZ) * 16;
-	    int ix = (imageX);
-	    int iz = (imageZ);
-	    sprintf(tmpstring," (image %d %d)",ix,iz);
-	    r+=tmpstring;
+	  else if ( key_size == 13 ) {
+	    chunkX = myParseInt32(key, 0);
+	    chunkZ = myParseInt32(key, 4);
+	    chunkWorldId = myParseInt32(key, 8);
+	    chunkType = myParseInt8(key, 12);
+	    
+	    // sanity checks
+	    if ( chunkType == 0x30 ) {
+	      chunkList[chunkWorldId].addToChunkBounds(chunkX, chunkZ);
+	    }
 	  }
-	  r += "\n";
-	  fprintf(control.fpLog,r.c_str());
+	}
 
-	  switch ( chunkType ) {
-	  case 0x30:
-	    // terrain data
+	assert(iter->status().ok());  // Check for any errors found during the scan
+	delete iter;
 
-	    // clear data
-	    memset(histo,0,256*sizeof(int));
-	    memset(histoBiome,0,256*sizeof(int));
-	    memset(topBlock,0, 16*16*sizeof(uint8_t));
-	    memset(topData,0, 16*16*sizeof(uint8_t));
-	    memset(grassAndBiome,0, 16*16*sizeof(uint32_t));
-	    memset(topSkyLight,0, 16*16*sizeof(uint8_t));
-	    memset(topBlockLight,0, 16*16*sizeof(uint8_t));
+	// mark bounds valid
+	for (int i=0; i < kWorldIdCount; i++) {
+	  chunkList[i].setChunkBoundsValid();
+	}
 
-	    // iterate over chunk area, get data etc
-	    for (int cy=127; cy >= 0; cy--) {
-	      for ( int cz=0; cz < 16; cz++ ) {
-		for ( int cx=0; cx < 16; cx++) {
-		  int blockId = getBlockId(value, cx,cz,cy);
-		  histo[blockId]++;
-		  if ( topBlock[cz][cx] == 0 ||
-		       vectorContains(blockHideList[chunkWorldId], topBlock[cz][cx]) ||
-		       vectorContains(blockForceTopList[chunkWorldId], blockId) ) {
-		    topBlock[cz][cx] = blockId;
-		    topData[cz][cx] = getBlockData(value, cx,cz,cy);
-		    topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
-		    topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
-		    topBlockY[cz][cx] = cy;
+	return 0;
+      }
+      
+      leveldb::Status parseDb () {
+	int histo[256];
+	int histoBiome[256];
+	uint8_t topBlock[16][16];
+	uint8_t topData[16][16];
+	uint32_t grassAndBiome[16][16];
+	uint8_t topSkyLight[16][16];
+	uint8_t topLight[16][16];
+	uint8_t topBlockY[16][16];
+	uint8_t topBlockLight[16][16];
+	uint8_t colData1[16][16];
+	int32_t colData2[16][16];
+
+	char tmpstring[256];
+
+	int chunkX=-1, chunkZ=-1, chunkWorldId=-1, chunkType=-1;
+      
+	calcChunkBounds();
+	
+	fprintf(stderr,"Parse all leveldb records\n");
+	MyTagList tagList;
+	int recordCt = 0;
+	leveldb::Iterator* iter = db->NewIterator(dbReadOptions);
+	for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+
+	  // note: we get the raw buffer early to avoid overhead (maybe?)
+	  leveldb::Slice skey = iter->key();
+	  int key_size = (int)skey.size();
+	  const char* key = skey.data();
+
+	  leveldb::Slice svalue = iter->value();
+	  int value_size = svalue.size();
+	  const char* value = svalue.data();
+
+	  ++recordCt;
+	  if ( control.shortRunFlag && recordCt > 1000 ) {
+	    break;
+	  }
+	  if ( (recordCt % 10000) == 0 ) {
+	    fprintf(stderr, "  Reading records: %d\n", recordCt);
+	  }
+
+	  std::string r;
+	  fprintf(control.fpLog,"\n");
+
+	  if ( strncmp(key,"BiomeData",key_size) == 0 ) {
+	    // 0x61 +"BiomeData" -- snow accum? -- overworld only?
+	    fprintf(control.fpLog,"BiomeData value:\n");
+	    parseNbt("BiomeData: ", value, value_size, tagList);
+	    // todo - parse tagList?
+	  }
+	  else if ( strncmp(key,"Overworld",key_size) == 0 ) {
+	    fprintf(control.fpLog,"Overworld value:\n");
+	    parseNbt("Overworld: ", value, value_size, tagList);
+	    // todo - parse tagList?
+	  }
+	  else if ( strncmp(key,"~local_player",key_size) == 0 ) {
+	    fprintf(control.fpLog,"Local Player value:\n");
+	    parseNbt("Local Player: ", value, value_size, tagList);
+	    // todo - parse tagList?
+	    // todo - interesting tags: BedPositionX/Y/Z; Pos; Rotation
+	    // todo - parse entity function?
+	  }
+	  else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
+	    // note: key contains player id (e.g. "player_-1234")
+	    std::string playerRemoteId = &key[strlen("player_")];
+	    fprintf(control.fpLog,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
+	    parseNbt("Remote Player: ", value, value_size, tagList);
+	    // todo - parse tagList? similar to local player
+	  }
+	  else if ( strncmp(key,"villages",key_size) == 0 ) {
+	    fprintf(control.fpLog,"Villages value:\n");
+	    parseNbt("villages: ", value, value_size, tagList);
+	    // todo - parse tagList?
+	  }
+	  else if ( strncmp(key,"Nether",key_size) == 0 ) {
+	    fprintf(control.fpLog,"Nether value:\n");
+	    parseNbt("Nether: ", value, value_size, tagList);
+	    // todo - parse tagList?
+	  }
+	  else if ( strncmp(key,"portals",key_size) == 0 ) {
+	    fprintf(control.fpLog,"portals value:\n");
+	    parseNbt("portals: ", value, value_size, tagList);
+	    // todo - parse tagList?
+	  }
+			 
+	  else if ( key_size == 9 || key_size == 13 ) {
+
+	    // this is probably a record we want to parse
+
+	    std::string worldName; // todo - could use name from chunkList
+	    if ( key_size == 9 ) {
+	      chunkX = myParseInt32(key, 0);
+	      chunkZ = myParseInt32(key, 4);
+	      chunkWorldId = 0; // forced for overworld
+	      chunkType = myParseInt8(key, 8);
+	      worldName = "overworld";
+	    }
+	    else if ( key_size == 13 ) {
+	      chunkX = myParseInt32(key, 0);
+	      chunkZ = myParseInt32(key, 4);
+	      chunkWorldId = myParseInt32(key, 8);
+	      chunkType = myParseInt8(key, 12);
+	      worldName = "nether";
+
+	      // check for new world id's
+	      if ( chunkWorldId != 1 ) {
+		fprintf(stderr, "HEY! Found new chunkWorldId=0x%x\n", chunkWorldId);
+	      }
+	    }
+	  
+	    chunkList[chunkWorldId].histoChunkType[chunkType]++;
+
+	    r = worldName + "-chunk: ";
+	    sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
+	    r += tmpstring;
+	    if ( true ) {
+	      // show approximate image coordinates for chunk
+	      int chunkOffsetX = -chunkList[chunkWorldId].minChunkX;
+	      int chunkOffsetZ = -chunkList[chunkWorldId].maxChunkZ;
+	      int imageX = (chunkX + chunkOffsetX) * 16;
+	      int imageZ = (chunkZ + chunkOffsetZ) * 16;
+	      int ix = (imageX);
+	      int iz = (imageZ);
+	      sprintf(tmpstring," (image %d %d)",ix,iz);
+	      r+=tmpstring;
+	    }
+	    r += "\n";
+	    fprintf(control.fpLog,r.c_str());
+
+	    switch ( chunkType ) {
+	    case 0x30:
+	      // terrain data
+
+	      // clear data
+	      memset(histo,0,256*sizeof(int));
+	      memset(histoBiome,0,256*sizeof(int));
+	      memset(topBlock,0, 16*16*sizeof(uint8_t));
+	      memset(topData,0, 16*16*sizeof(uint8_t));
+	      memset(grassAndBiome,0, 16*16*sizeof(uint32_t));
+	      memset(topSkyLight,0, 16*16*sizeof(uint8_t));
+	      memset(topBlockLight,0, 16*16*sizeof(uint8_t));
+	      memset(topLight,0, 16*16*sizeof(uint8_t));
+	      
+	      // iterate over chunk area, get data etc
+	      for (int cy=127; cy >= 0; cy--) {
+		for ( int cz=0; cz < 16; cz++ ) {
+		  for ( int cx=0; cx < 16; cx++) {
+		    uint8_t blockId = getBlockId(value, cx,cz,cy);
+		    histo[blockId]++;
+		    if ( topBlock[cz][cx] == 0 ||
+			 vectorContains(chunkList[chunkWorldId].blockHideList, topBlock[cz][cx]) ||
+			 vectorContains(chunkList[chunkWorldId].blockForceTopList, blockId) ) {
+		      topBlock[cz][cx] = blockId;
+		      topData[cz][cx] = getBlockData(value, cx,cz,cy);
+		      topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
+		      topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
+		      topBlockY[cz][cx] = cy;
+		    }
+
+		    // todo - testing
+#if 1
+		    // todo - this does not quite work yet; need to get block light on block above first n SOLID block
+		    if ( topBlock[cz][cx] == 0 ) {
+		      // note: we store blocklight from air block ABOVE top block; use this for block light image
+		      uint8_t sl = getBlockSkyLight(value, cx,cz,cy);
+		      uint8_t bl = getBlockBlockLight(value, cx,cz,cy);	
+		      // we combine the light nibbles into a byte
+		      topLight[cz][cx] = (sl << 4) | bl;
+		    }
+#endif
 		  }
 		}
 	      }
-	    }
 
-	    memset(colData1, 0, 16*16*sizeof(uint8_t));
-	    memset(colData2, 0, 16*16*sizeof(int32_t));
-	    for (int cz=0; cz < 16; cz++) {
-	      for (int cx=0; cx < 16; cx++) {
-		colData1[cz][cx] = getColData1(value, cx,cz);
-		colData2[cz][cx] = getColData2(value, cx,cz);
+	      memset(colData1, 0, 16*16*sizeof(uint8_t));
+	      memset(colData2, 0, 16*16*sizeof(int32_t));
+	      for (int cz=0; cz < 16; cz++) {
+		for (int cx=0; cx < 16; cx++) {
+		  colData1[cz][cx] = getColData1(value, cx,cz);
+		  colData2[cz][cx] = getColData2(value, cx,cz);
+
+#if 0
+		  // todo - testing idea about lighting - get lighting from top solid block - result is part good part crazy
+		  int ty = colData1[cz][cx];
+		  uint8_t sl = getBlockSkyLight(value, cx,cz,ty);
+		  uint8_t bl = getBlockBlockLight(value, cx,cz,ty);
+		  topLight[cz][cx] = (sl << 4) | bl;
+#endif
+		}
 	      }
-	    }
 
-	    // print chunk info
-	    fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
-	    for (int cz=0; cz<16; cz++) {
-	      for (int cx=0; cx<16; cx++) {
-		int32_t rawData = colData2[cz][cx];
-		int biomeId = (int)(rawData & 0xFF);
-		histoBiome[biomeId]++;
-		histoGlobalBiome[chunkWorldId][biomeId]++;
-		grassAndBiome[cz][cx] = rawData;
-		fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
+	    
+	      // print chunk info
+	      fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
+	      for (int cz=0; cz<16; cz++) {
+		for (int cx=0; cx<16; cx++) {
+		  int32_t rawData = colData2[cz][cx];
+		  int biomeId = (int)(rawData & 0xFF);
+		  histoBiome[biomeId]++;
+		  chunkList[chunkWorldId].histoGlobalBiome[biomeId]++;
+		  grassAndBiome[cz][cx] = rawData;
+		  fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
+		}
+		fprintf(control.fpLog,"\n");
 	      }
-	      fprintf(control.fpLog,"\n");
-	    }
-	    fprintf(control.fpLog,"Block Histogram:\n");
-	    for (int i=0; i < 256; i++) {
-	      if ( histo[i] > 0 ) {
-		fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", worldName.c_str(), i, histo[i], blockInfo[i].name.c_str());
+	      fprintf(control.fpLog,"Block Histogram:\n");
+	      for (int i=0; i < 256; i++) {
+		if ( histo[i] > 0 ) {
+		  fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", worldName.c_str(), i, histo[i], blockInfo[i].name.c_str());
+		}
 	      }
-	    }
-	    fprintf(control.fpLog,"Biome Histogram:\n");
-	    for (int i=0; i < 256; i++) {
-	      if ( histoBiome[i] > 0 ) {
-		std::string biomeName( getBiomeName(i) );
-		fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", worldName.c_str(), i, histoBiome[i], biomeName.c_str());
+	      fprintf(control.fpLog,"Biome Histogram:\n");
+	      for (int i=0; i < 256; i++) {
+		if ( histoBiome[i] > 0 ) {
+		  std::string biomeName( getBiomeName(i) );
+		  fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", worldName.c_str(), i, histoBiome[i], biomeName.c_str());
+		}
 	      }
-	    }
-	    fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
-	    for (int cz=0; cz<16; cz++) {
-	      for (int cx=0; cx<16; cx++) {
-		fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cz][cx], (int)topBlockLight[cz][cx]);
+	      fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
+	      for (int cz=0; cz<16; cz++) {
+		for (int cx=0; cx<16; cx++) {
+		  fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cz][cx], (int)topBlockLight[cz][cx]);
+		}
+		fprintf(control.fpLog,"\n");
 	      }
-	      fprintf(control.fpLog,"\n");
-	    }
-	    // todo - grass-color is in high 3 bytes of coldata2
-	    // todo - need to show this?
-	    // todo - what does "dirty" mean? is the wiki correct? is it something else?
-	    fprintf(control.fpLog,"Column Data (dirty?:biome):\n");
-	    for (int cz=0; cz<16; cz++) {
-	      for (int cx=0; cx<16; cx++) {
-		int biomeId = (int)(colData2[cz][cx] & 0xFF);
-		fprintf(control.fpLog,"%x:%02x ", (int)colData1[cz][cx], biomeId);
+	      // todo - grass-color is in high 3 bytes of coldata2
+	      // todo - need to show this?
+	      fprintf(control.fpLog,"Column Data (height-col:biome):\n");
+	      for (int cz=0; cz<16; cz++) {
+		for (int cx=0; cx<16; cx++) {
+		  int biomeId = (int)(colData2[cz][cx] & 0xFF);
+		  fprintf(control.fpLog,"%x:%02x ", (int)colData1[cz][cx], biomeId);
+		}
+		fprintf(control.fpLog,"\n");
 	      }
-	      fprintf(control.fpLog,"\n");
+
+	      // store chunk
+	      chunkList[chunkWorldId].putChunk(chunkX, chunkZ,
+					       &topBlock[0][0], &topData[0][0],
+					       &grassAndBiome[0][0], &topBlockY[0][0],
+					       &colData1[0][0], &topLight[0][0]);
+
+	      break;
+
+	    case 0x31:
+	      fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", worldName.c_str());
+	      parseNbt("0x31-te: ", value, value_size, tagList);
+	      // todo - parse tagList?
+	      break;
+
+	    case 0x32:
+	      fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", worldName.c_str());
+	      parseNbt("0x32-e: ", value, value_size, tagList);
+	      // todo - parse tagList?
+	      break;
+
+	    case 0x33:
+	      // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
+	      fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", worldName.c_str());
+	      parseNbt("0x33-tick: ", value, value_size, tagList);
+	      // todo - parse tagList?
+	      break;
+
+	    case 0x34:
+	      fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", worldName.c_str());
+	      printKeyValue(key,key_size,value,value_size,false);
+	      /* 
+		 0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
+		 -- there are 206 of these in "another1" world
+		 -- something to do with snow?
+		 -- to examine data:
+		 cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
+	      */
+	      break;
+
+	    case 0x35:
+	      fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", worldName.c_str());
+	      printKeyValue(key,key_size,value,value_size,false);
+	      /*
+		0x35 ?? -- both worlds -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
+		-- there are 2907 in "another1"
+		-- to examine data:
+		cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
+	      */
+	      break;
+
+	    case 0x76:
+	      {
+		// this record is not very interesting we usually hide it
+		// todo - it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
+		if ( control.verboseFlag || (value[0] != 2) ) { 
+		  fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", worldName.c_str(), (int)(value[0]));
+		}
+	      }
+	      break;
+
+	    default:
+	      fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", worldName.c_str(),
+		      key_size, chunkType, value_size);
+	      printKeyValue(key,key_size,value,value_size,true);
+	      if ( false ) {
+		if ( value_size > 10 ) {
+		  parseNbt("UNK: ", value, value_size, tagList);
+		  // todo - parse tagList?
+		}
+	      }
+	      break;
 	    }
-
-	    // store chunk
-	    chunkList[chunkWorldId].putChunk(chunkX, chunkZ,
-					     &topBlock[0][0], &topData[0][0],
-					     &grassAndBiome[0][0], &topBlockY[0][0]);
-
-	    break;
-
-	  case 0x31:
-	    fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", worldName.c_str());
-	    parseNbt("0x31-te: ", value, value_size, tagList);
-	    // todo - parse tagList?
-	    break;
-
-	  case 0x32:
-	    fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", worldName.c_str());
-	    parseNbt("0x32-e: ", value, value_size, tagList);
-	    // todo - parse tagList?
-	    break;
-
-	  case 0x33:
-	    // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
-	    fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", worldName.c_str());
-	    parseNbt("0x33-tick: ", value, value_size, tagList);
-	    // todo - parse tagList?
-	    break;
-
-	  case 0x34:
-	    fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", worldName.c_str());
-	    printKeyValue(key,key_size,value,value_size,false);
-	    /* 
-	       0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
-	       -- there are 206 of these in "another1" world
-	       -- something to do with snow?
-	       -- to examine data:
-	       cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
-	    */
-	    break;
-
-	  case 0x35:
-	    fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", worldName.c_str());
-	    printKeyValue(key,key_size,value,value_size,false);
-	    /*
-	      0x35 ?? -- both worlds -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
-	      -- there are 2907 in "another1"
-	      -- to examine data:
-	      cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
-	    */
-	    break;
-
-	  case 0x76:
-	    {
-	      const char* d = value;
-	      fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", worldName.c_str(), (int)(d[0]));
-	    }
-	    break;
-
-	  default:
-	    fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", worldName.c_str(),
-		    key_size, chunkType, value_size);
+	  }
+	  else {
+	    fprintf(control.fpLog,"WARNING: Unknown key size (%d)\n", key_size);
 	    printKeyValue(key,key_size,value,value_size,true);
-	    if ( false ) {
-	      if ( value_size > 10 ) {
-		parseNbt("UNK: ", value, value_size, tagList);
-		// todo - parse tagList?
-	      }
-	    }
-	    break;
+	    // try to nbt decode
+	    fprintf(control.fpLog,"WARNING: Attempting NBT Decode:\n");
+	    parseNbt("WARNING: ", value, value_size, tagList);
+	    // todo - parse tagList?
 	  }
 	}
-	else {
-	  fprintf(control.fpLog,"WARNING: Unknown key size (%d)\n", key_size);
-	  printKeyValue(key,key_size,value,value_size,true);
-	  // try to nbt decode
-	  fprintf(control.fpLog,"WARNING: Attempting NBT Decode:\n");
-	  parseNbt("WARNING: ", value, value_size, tagList);
-	  // todo - parse tagList?
+	fprintf(stderr,"Read %d records\n", recordCt);
+	fprintf(stderr,"Status: %s\n", iter->status().ToString().c_str());
+      
+	assert(iter->status().ok());  // Check for any errors found during the scan
+
+	delete iter;
+
+	return leveldb::Status::OK();
+      }
+      
+      int doOutput() {
+	calcChunkBounds();
+	for (int i=0; i < kWorldIdCount; i++) {
+	  chunkList[i].doOutput(db);
 	}
+	return 0;
       }
-      fprintf(stderr,"Read %d records\n", recordCt);
-      fprintf(stderr,"Status: %s\n", iter->status().ToString().c_str());
-      
-      assert(iter->status().ok());  // Check for any errors found during the scan
+    };
 
-      delete iter;
+    MyWorld myWorld;
 
-      delete db;
-
-      return leveldb::Status::OK();
-    }
-
-    int generateImages() {
-
-      fprintf(control.fpLog,"\nReport for Overworld:\n");
-      chunkList[kWorldIdOverworld].myreport(kWorldIdOverworld);
-      
-      fprintf(stderr,"Generate Image for Overworld\n");
-      chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.png"));
-
-      if ( control.doBiomeImageFlag ) {
-	fprintf(stderr,"Generate Biome Image for Overworld\n");
-	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.biome.png"), kImageModeBiome);
-      }
-      if ( control.doGrassImageFlag ) {
-	fprintf(stderr,"Generate Grass Image for Overworld\n");
-	chunkList[kWorldIdOverworld].generateImage(std::string(control.fnOutputBase + ".overworld.grass.png"), kImageModeGrass);
-      }
-
-      // reset
-      for (int i=0; i < 256; i++) {
-	blockInfo[i].colorSetNeedCount = 0;
-      }
-
-
-      fprintf(control.fpLog,"\nReport for Nether:\n");
-      chunkList[kWorldIdNether].myreport(kWorldIdNether);
-
-      fprintf(stderr,"Generate Image for Nether\n");
-      chunkList[kWorldIdNether].generateImage(std::string(control.fnOutputBase + ".nether.png"));
-
-      if ( control.doBiomeImageFlag ) {
-	fprintf(stderr,"Generate Biome Image for Nether\n");
-	chunkList[kWorldIdNether].generateImage(std::string(control.fnOutputBase + ".nether.biome.png"), kImageModeBiome);
-      }
-      if ( control.doGrassImageFlag ) {
-	fprintf(stderr,"Generate Grass Image for Nether\n");
-	chunkList[kWorldIdNether].generateImage(std::string(control.fnOutputBase + ".nether.grass.png"), kImageModeGrass);
-      }
-
-      // todo - could do a special nether output with all pixels 8x8 (could help w/ portal stuff)
-      
-      
-      if ( control.doMovieFlag ) {
-	fprintf(stderr,"Generate movie for Overworld\n");
-	chunkList[kWorldIdOverworld].generateImageSlices(std::string(control.fnOutputBase + ".overworld.mp4"),"overworld", 0);
-      }
-
-      if ( control.doMovieNetherFlag ) {
-	fprintf(stderr,"Generate movie for Nether\n");
-	chunkList[kWorldIdNether].generateImageSlices(std::string(control.fnOutputBase + ".nether.mp4"),"nether", 1);
-      }
-      
-      return 0;
-    }
-
+    
     int parseLevelFile(const std::string fname) {
       FILE *fp = fopen(fname.c_str(), "rb");
       if(!fp) {
@@ -1468,15 +1718,31 @@ namespace mcpe_viz {
       return ret;
     }
 
-    int file_exists(const char* fn) {
-      FILE *fp;
-      fp = fopen(fn,"rb");
-      if ( fp ) {
-	fclose(fp);
-	return 1;
+    
+    int parseLevelName(const std::string fname) {
+      FILE *fp = fopen(fname.c_str(), "r");
+      if(!fp) {
+	return -1;
       }
+
+      char buf[1025];
+      memset(buf,0,1025);
+      fgets(buf,1024,fp);
+
+      fprintf(stderr,"Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+      fprintf(control.fpLog,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+      fclose(fp);
+
       return 0;
     }
+
+    
+    int file_exists(const char* fn) {
+      struct stat buf;
+      int ret = stat(fn, &buf);
+      return (ret == 0);
+    }
+
     
     int doParseConfigFile ( const std::string fn ) {
       if ( ! file_exists(fn.c_str()) ) {
@@ -1519,10 +1785,14 @@ namespace mcpe_viz {
 	  else if ( sscanf(&p[9],"%d %d", &worldId, &blockId) == 2 ) {
 	    pass = true;
 	  }
+	  // check worldId
+	  if ( worldId < kWorldIdOverworld || worldId >= kWorldIdCount ) {
+	    pass = false;
+	  }
 	  if ( pass ) {
 	    // add to hide list
 	    fprintf(stderr,"INFO: Adding 'hide-top' block: worldId=%d blockId=%3d (0x%02x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
-	    blockHideList[worldId].push_back(blockId);
+	    myWorld.chunkList[worldId].blockHideList.push_back(blockId);
 	  } else {
 	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide-top': [%s]\n", buf);
 	  }
@@ -1538,10 +1808,14 @@ namespace mcpe_viz {
 	  else if ( sscanf(&p[10],"%d %d", &worldId, &blockId) == 2 ) {
 	    pass = true;
 	  }
+	  // check worldId
+	  if ( worldId < kWorldIdOverworld || worldId >= kWorldIdCount ) {
+	    pass = false;
+	  }
 	  if ( pass ) {
 	    // add to hide list
 	    fprintf(stderr,"INFO: Adding 'force-top' block: worldId=%d blockId=%3d (0x%02x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
-	    blockForceTopList[worldId].push_back(blockId);
+	    myWorld.chunkList[worldId].blockForceTopList.push_back(blockId);
 	  } else {
 	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide': [%s]\n", buf);
 	  }
@@ -1558,6 +1832,7 @@ namespace mcpe_viz {
       fclose(fp);
       return 0;
     }
+
     
     int parseConfigFile( char** argv ) {
       // parse cfg files in this order:
@@ -1565,8 +1840,6 @@ namespace mcpe_viz {
       // -- master dir
       // -- exec dir
       // -- local dir
-
-
       std::string fn;
 
       // as specified on cmdline
@@ -1604,7 +1877,6 @@ namespace mcpe_viz {
     }
 
 
-    // xml helper funcs
     int xmlGetInt(xmlNodePtr cur, const xmlChar* p, bool &valid) {
       valid=false;
       int ret;
@@ -1630,8 +1902,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    // xml helper funcs
-    bool xmlGetBool(xmlNodePtr cur, const xmlChar* p, bool &valid) {
+    bool xmlGetBool(xmlNodePtr cur, const xmlChar* p, bool defaultValue, bool &valid) {
       valid = false;
       xmlChar* prop = xmlGetProp(cur,p);
       if ( prop ) {
@@ -1650,12 +1921,16 @@ namespace mcpe_viz {
 	  xmlFree(prop);
 	  return false;
 	}
+	if ( strcasecmp((char*)prop,"0") ) {
+	  valid = true;
+	  xmlFree(prop);
+	  return false;
+	}
 	xmlFree(prop);
       }
-      return false;
+      return defaultValue;
     }
     
-    // xml helper funcs
     std::string xmlGetString(xmlNodePtr cur, const xmlChar* p, bool &valid) {
       valid = false;
       std::string s("(EMPTY)");
@@ -1673,12 +1948,13 @@ namespace mcpe_viz {
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
 
-	  bool idValid, nameValid, colorValid, lookupColorFlagValid;
+	  bool idValid, nameValid, colorValid, lookupColorFlagValid, solidFlagValid;
 	  
 	  int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	  int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
-	  bool lookupColorFlag = xmlGetBool(cur, (const xmlChar*)"lookupColor", lookupColorFlagValid);
+	  bool lookupColorFlag = xmlGetBool(cur, (const xmlChar*)"lookupColor", false, lookupColorFlagValid);
+	  bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
 
 	  // create data
 	  if ( idValid && nameValid ) {
@@ -1686,11 +1962,8 @@ namespace mcpe_viz {
 	    if ( colorValid ) {
 	      b.setColor(color);
 	    }
-	    if ( lookupColorFlagValid ) {
-	      if ( lookupColorFlag ) {
-		b.setLookupColor();
-	      }
-	    }
+	    b.setLookupColorFlag(lookupColorFlag);
+	    b.setSolidFlag(solidFlag);
 	  } else {
 	    // todo error
 	    fprintf(stderr,"WARNING: Did not find valid id and name for block: (0x%x) (%s) (0x%x) (%s)\n"
@@ -1718,7 +1991,7 @@ namespace mcpe_viz {
 
 	  // create data
 	  if ( idValid && colorValid ) {
-	    colorInfo[id] = htobe32(color);
+	    standardColorInfo[id] = htobe32(color);
 	  } else {
 	    // todo error
 	    fprintf(stderr,"WARNING: Did not find valid id and color for standardcolor: (0x%x) (0x%x)\n"
@@ -1841,8 +2114,6 @@ namespace mcpe_viz {
       }
       return 0;
     }
-
-
     
     int doParseXml( const std::string fn ) {
       xmlDocPtr doc;
@@ -1870,9 +2141,7 @@ namespace mcpe_viz {
 	cur = cur->next;
       }
 
-      // todo - valgrind reports that this does NOT free everyhing it uses
       xmlFreeDoc(doc);
-
       xmlCleanupParser();
       
       return ret;
@@ -1884,7 +2153,6 @@ namespace mcpe_viz {
       // -- master dir
       // -- exec dir
       // -- local dir
-
       std::string fn;
       int ret;
 
@@ -1935,24 +2203,50 @@ namespace mcpe_viz {
 	      "\n"
 	      );
       fprintf(stderr,"Options:\n"
-	      "  --grid                   Display chunk grid on top of world\n"
-	      "  --biome                  Createa a biome map image\n"
-	      "  --grass                  Createa a grass color map image\n"
+	      "  --detail                 Log extensive details about the world to the log file\n"
 	      "\n"
-	      "  --movie                  Create movie of layers of overworld\n"
-	      "  --movie-nether           Create movie of layers of nether\n"
+	      "  (note: [wid] is optional world-id - if not specified, do all worlds; 0=Overworld; 1=Nether)\n"
+	      "  --grid [wid]             Display chunk grid on top of world\n"
+	      "\n"
+	      "  --all-image [wid]        Create all image types\n"
+	      "  --biome [wid]            Create a biome map image\n"
+	      "  --grass [wid]            Create a grass color map image\n"
+	      "  --height-col [wid]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
+	      "  --height-col-gs [wid]    Create a height column map image (grayscale)\n"
+	      "  --blocklight [wid]       Create a block light map image\n"
+	      "  --skylight [wid]         Create a sky light map image\n"
+	      "\n"
+	      "  --movie [wid]            Create movie of layers of overworld\n"
 	      "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
 	      "\n"
 	      "  --xml fn                 XML file containing data definitions\n"
 	      "  --log fn                 Send log to a file\n"
 	      "\n"
 	      // todo - re-enable when we use these:
-	      //"  --verbose                verbose output\n"
+	      "  --verbose                verbose output\n"
 	      //"  --quiet                  supress normal output, continue to output warning and error messages\n"
 	      "  --help                   this info\n"
 	      );
     }
 
+    // todo rename
+    int parseWorldIdOptArg(const char* arg) {
+      if ( arg ) {
+	// sanity check
+	int wid = atoi(arg);
+	if ( wid >= kWorldIdOverworld && wid < kWorldIdCount ) {
+	  return wid;
+	} else {
+	  fprintf(stderr,"ERROR: Invalid world-id supplied (%d), defaulting to Overworld only\n", wid);
+	  wid=kWorldIdOverworld;
+	}
+	return wid;
+      } else {
+	// if no arg, we want output for all worlds
+	return kDoOutputAll;
+      }
+    }
+    
     int parse_args ( int argc, char **argv, Control& control ) {
 
       static struct option longoptlist[] = {
@@ -1961,15 +2255,21 @@ namespace mcpe_viz {
 
 	{"xml", required_argument, NULL, 'X'},
 	{"log", required_argument, NULL, 'L'},
-    
-	{"biome", no_argument, NULL, 'B'},
-	{"grass", no_argument, NULL, 'g'},
-    
-	{"movie", no_argument, NULL, 'M'},
-	{"movie-nether", no_argument, NULL, 'N'},
-	{"movie-dim", required_argument, NULL, '*'},
 
-	{"grid", no_argument, NULL, 'G'},
+	{"detail", no_argument, NULL, '@'},
+	
+	{"all-image", optional_argument, NULL, 'A'},
+	{"biome", optional_argument, NULL, 'B'},
+	{"grass", optional_argument, NULL, 'g'},
+	{"height-col", optional_argument, NULL, 'd'},
+	{"height-col-gs", optional_argument, NULL, '#'},
+	{"blocklight", optional_argument, NULL, 'b'},
+	{"skylight", optional_argument, NULL, 's'},
+    
+	{"movie", optional_argument, NULL, 'M'},
+	{"movie-dim", required_argument, NULL, '*'},
+	
+	{"grid", optional_argument, NULL, 'G'},
 
 	{"shortrun", no_argument, NULL, '$'}, // this is just for testing
     
@@ -1998,24 +2298,46 @@ namespace mcpe_viz {
 	  break;      
 	case 'D':
 	  control.dirLeveldb = optarg;
-	  break;      
-	case 'M':
-	  control.doMovieFlag = true;
 	  break;
-	case 'N':
-	  control.doMovieNetherFlag = true;
+	case '@':
+	  control.doDetailParseFlag = true;
 	  break;
+
 	case 'G':
-	  control.doGridFlag = true;
+	  control.doGrid = parseWorldIdOptArg(optarg);
 	  break;
 
 	case 'B':
-	  control.doBiomeImageFlag = true;
+	  control.doImageBiome = parseWorldIdOptArg(optarg);
 	  break;
 	case 'g':
-	  control.doGrassImageFlag = true;
+	  control.doImageGrass = parseWorldIdOptArg(optarg);
+	  break;
+	case 'd':
+	  control.doImageHeightCol = parseWorldIdOptArg(optarg);
+	  break;
+	case '#':
+	  control.doImageHeightColGrayscale = parseWorldIdOptArg(optarg);
+	  break;
+	case 'b':
+	  control.doImageBlockLight = parseWorldIdOptArg(optarg);
+	  break;
+	case 's':
+	  control.doImageSkyLight = parseWorldIdOptArg(optarg);
+	  break;
+
+	case 'A':
+	  control.doImageBiome = parseWorldIdOptArg(optarg);
+	  control.doImageGrass = parseWorldIdOptArg(optarg);
+	  control.doImageHeightCol = parseWorldIdOptArg(optarg);
+	  control.doImageHeightColGrayscale = parseWorldIdOptArg(optarg);
+	  control.doImageBlockLight = parseWorldIdOptArg(optarg);
+	  control.doImageSkyLight = parseWorldIdOptArg(optarg);
 	  break;
       
+	case 'M':
+	  control.doMovie = parseWorldIdOptArg(optarg);
+	  break;
 	case '*':
 	  // movie dimensions
 	  if ( sscanf(optarg,"%d,%d,%d,%d", &control.movieX, &control.movieY, &control.movieW, &control.movieH) == 4 ) {
@@ -2063,7 +2385,6 @@ namespace mcpe_viz {
       return errct;
     }
 
-    
   }  // namespace
 }  // namespace leveldb
 
@@ -2091,12 +2412,28 @@ int main ( int argc, char **argv ) {
   ret = mcpe_viz::parseLevelFile(std::string(mcpe_viz::control.dirLeveldb + "/level.dat"));
   if ( ret != 0 ) {
     fprintf(stderr,"ERROR: Failed to parse level.dat file.  Exiting...\n");
+    fprintf(stderr,"** Hint: --db must point to the dir which contains level.dat\n");
     return -1;
   }
+
+  ret = mcpe_viz::parseLevelName(std::string(mcpe_viz::control.dirLeveldb + "/levelname.txt"));
+  if ( ret != 0 ) {
+    fprintf(stderr,"WARNING: Failed to parse levelname.txt file.\n");
+    fprintf(stderr,"** Hint: --db must point to the dir which contains levelname.txt\n");
+  }
   
-  mcpe_viz::initBlockInfo();
-  mcpe_viz::parseDb(std::string(mcpe_viz::control.dirLeveldb+"/db"));
-  mcpe_viz::generateImages();
+  mcpe_viz::makePalettes();
+
+  mcpe_viz::myWorld.dbOpen(std::string(mcpe_viz::control.dirLeveldb));
+
+  // todo - we must do this, for now - we could get clever about this later
+  if ( true || mcpe_viz::control.doDetailParseFlag ) {
+    mcpe_viz::myWorld.parseDb();
+  }
+
+  mcpe_viz::myWorld.doOutput();
+
+  mcpe_viz::myWorld.dbClose();
   
   fprintf(stderr,"Done.\n");
 

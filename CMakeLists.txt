@@ -1,50 +1,61 @@
 cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
-  VERSION 0.0.3)
+  VERSION 0.0.4)
 
 option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
 option(MCPE_VIZ_WIN64 "Build win64 using mingw" OFF)
 option(MCPE_VIZ_DEBUG "Build debug version" OFF)
 option(MCPE_VIZ_PROFILE "Build profile version" OFF)
 
+# todo - we used to have -std=c++0x in addition to -std=c++11 (leveldb lib compile seems to want that flag)
+
 if(MCPE_VIZ_WIN32)
 
   # win32 build
   if(MCPE_VIZ_DEBUG)
-    add_definitions(-g -Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_WIN -DOS_WINDOWS -DWIN32 -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+    message("Build: WIN32 DEBUG")
+    add_definitions(-g -Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN32 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
     set(CMAKE_BUILD_TYPE Debug)
   else()
-    add_definitions(-Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_WIN -DOS_WINDOWS -DWIN32 -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+    message("Build: WIN32")
+    # todo - can -O2 work?
+    add_definitions(-Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN32 -O1 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
   endif()
   
 elseif(MCPE_VIZ_WIN64)
 
   # win64 build
   if(MCPE_VIZ_DEBUG)
-    add_definitions(-g -Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_WIN -DOS_WINDOWS -DWIN64 -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
+    message("Build: WIN64 DEBUG")
+    add_definitions(-g -Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN64 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
     set(CMAKE_BUILD_TYPE Debug)
   else()
-    add_definitions(-Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_WIN -DOS_WINDOWS -DWIN64 -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
+    message("Build: WIN64")
+    # todo - can -O2 work?
+    add_definitions(-Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN64 -O1 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
   endif()
   
 else()
   if(MCPE_VIZ_DEBUG)
     
     # debug/valgrind
-    add_definitions(-Wall -O0 -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG)
+    message("Build: DEBUG")
+    add_definitions(-Wall -O0 -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread)
     set(CMAKE_BUILD_TYPE Debug)
     
   elseif(MCPE_VIZ_PROFILE)
     
     # gprof profiling
-    add_definitions(-Wall -pg -O0 -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -DNDEBUG)
+    message("Build: PROFILE")
+    add_definitions(-Wall -pg -O0 -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread)
     set(CMAKE_BUILD_TYPE Debug)
-    # set(CMAKE_EXE_LINKER_FLAGS -pg)
+    set(CMAKE_EXE_LINKER_FLAGS -pg)
     
   else()
     
     # default linux build
-    add_definitions(-Wall -std=c++11 -DDLLX= -std=c++0x -fno-builtin-memcmp -pthread -DOS_LINUX -DLEVELDB_PLATFORM_POSIX -DLEVELDB_ATOMIC_PRESENT -O2 -DNDEBUG)
+    message("Build: REGULAR")
+    add_definitions(-Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -O2)
     
   endif()
 endif()

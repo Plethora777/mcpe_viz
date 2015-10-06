@@ -448,7 +448,7 @@
   </biomelist>
 
   // note that values do NOT match: http://minecraft.gamepedia.com/Data_values#Enchantment_IDs
-  // these values were reverse engineered from MCPE directly
+  // these values were reverse engineered by me from MCPE directly
   // todo - post these to mcpe wiki
   <enchantmentlist>
     <enchantment id="0x00" name="Protection" officialName="protection" />

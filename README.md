@@ -25,6 +25,8 @@ It can also:
   * For each world type (e.g. overworld, nether):
     * Histogram of biomes (per-block column)
 
+Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
+
 
 ## Experimental win32 and win64 builds
 
@@ -52,14 +54,14 @@ This will read the leveldb from "./mcpe/another1" and name output files starting
 Please note that --db expects the directory which contains "level.dat".
 
 
-## CUSTOMIZATION
+## Customization
 
 You can copy mcpe_viz.cfg to ~/.mcpe_viz/mcpe_viz.cfg and then edit that file to customize the way mcpe_viz works.
 
 You can copy mcpe_viz.xml to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to set custom colors for blocks and biomes.
 
 
-## Compiling it from source
+## Compiling from source
 
 If you just want to run the software on windows, see above :)  If you would like to compile it for Linux (or Windows), read on.
 

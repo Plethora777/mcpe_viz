@@ -127,7 +127,7 @@
     <block id="0x8D" name="Carrots I S" color="0xe8a03a" solid="0" /> 
     <block id="0x8E" name="Potato I S" color="0xb4af1c" solid="0" />
     <block id="0x8F" name="Mob head I S E" /> //todo
-    // note: on the MCPE page anvil is listed as 0x90; in the data files (and the MC page) it is 0x91
+    // todo - note: on the MCPE page anvil is listed as 0x90; in the data files (and the MC page) it is 0x91
     <block id="0x91" name="Anvil S B" solid="0" /> // todo
     <block id="0x98" name="Block of Redstone" color="0xcd5c5c" />
     <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
@@ -446,4 +446,35 @@
     <biome id="0xa6" name="Mesa Plateau F M" color="0xd19292" />
     <biome id="0xa7" name="Mesa Plateau M" color="0xb87e7e" />
   </biomelist>
+
+  // note that values do NOT match: http://minecraft.gamepedia.com/Data_values#Enchantment_IDs
+  // these values were reverse engineered from MCPE directly
+  // todo - post these to mcpe wiki
+  <enchantmentlist>
+    <enchantment id="0x00" name="Protection" officialName="protection" />
+    <enchantment id="0x01" name="Fire Protection" officialName="fire_protection" />
+    <enchantment id="0x02" name="Feather Falling" officialName="feather_falling" />
+    <enchantment id="0x03" name="Blast Protection" officialName="blast_protection" />
+    <enchantment id="0x04" name="Projectile Protection" officialName="projectile_protection" />
+    <enchantment id="0x06" name="Respiration" officialName="respiration" />
+    <enchantment id="0x08" name="Aqua Affinity" officialName="aqua_affinity" />
+    <enchantment id="0x05" name="Thorns" officialName="thorns" />
+    <enchantment id="0x07" name="Depth Strider" officialName="depth_strider" />
+    <enchantment id="0x09" name="Sharpness" officialName="sharpness" />
+    <enchantment id="0x0a" name="Smite" officialName="smite" />
+    <enchantment id="0x0b" name="Bane of Arthropods" officialName="bane_of_arthropods" />
+    <enchantment id="0x0c" name="Knockback" officialName="knockback" />
+    <enchantment id="0x0d" name="Fire Aspect" officialName="fire_aspect" />
+    <enchantment id="0x0e" name="Looting" officialName="looting" />
+    <enchantment id="0x0f" name="Efficiency" officialName="efficiency" />
+    <enchantment id="0x10" name="Silk Touch" officialName="silk_touch" />
+    <enchantment id="0x11" name="Unbreaking" officialName="unbreaking" />
+    <enchantment id="0x12" name="Fortune" officialName="fortune" />
+    <enchantment id="0x13" name="Power" officialName="power" />
+    <enchantment id="0x14" name="Punch" officialName="punch" />
+    <enchantment id="0x15" name="Flame" officialName="flame" />
+    <enchantment id="0x16" name="Infinity" officialName="infinity" />
+    <enchantment id="0x17" name="Luck of the Sea" officialName="luck_of_the_sea" />
+    <enchantment id="0x18" name="Lure" officialName="lure" />
+  </enchantmentlist>
 </xml>

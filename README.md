@@ -9,9 +9,11 @@ It can also:
 
 * Create an image of the biomes in your world
 
-* Create an image of the grass color in your world (it's pretty interesting!)
+* Create an image of block light in your world (kind of like an image from space at night)
 
-* Create an image of block light in your world (like an image from space at night)
+* Create an image of the block height in your world (kind of like a topographic map)
+
+* Create an image of the grass color in your world (it's pretty interesting!)
 
 * Create movies of all layers from bedrock to build limit (*ffmpeg* required)
 
@@ -23,67 +25,10 @@ It can also:
   * For each world type (e.g. overworld, nether):
     * Histogram of biomes (per-block column)
 
+
 ## Experimental win32 and win64 builds
 
-I used mingw to build win32 and win64 executables.  They are lightly tested :)  You can find the exe and required dll's in mcpe_viz.win32.zip and mcpe_viz.win64.zip
-
-
-## Requirements
-
-* You know how to compile things :)
-* Mojang's LevelDB from github (see below) (https://github.com/Mojang/leveldb-mcpe.git)
-* libnbt++ from github (see below) (https://github.com/ljfa-ag/libnbtplusplus.git)
-* [Optional] *ffmpeg* for creating movies
-
-
-## How to compile
-
-### Mojang's LevelDB
-
-The code uses Mojang's modified version of LevelDB.  Here's how to compile it (from the top dir of mcpe_viz):
-
-```
-> git clone https://github.com/Mojang/leveldb-mcpe.git
-> chdir leveldb-mcpe
-> make
-```
-
-If all goes well, there will be a "libleveldb.a" in leveldb-mcpe/
-
-To get it to compile on Fedora, I found that I needed to do this from leveldb-mcpe/:
-
-```
-> ln -s /usr/include include/zlib
-```
-
-If you have compile errors, check the README* files from leveldb-mcpe for prerequisites
-
-### libnbt++
-
-The code uses libnbt++.  Here's how to compile it (from the top dir of mcpe_viz):
-
-```
-> git clone https://github.com/ljfa-ag/libnbtplusplus.git
-> chdir libnbtplusplus
-> mkdir build
-> chdir build
-> cmake .. -DNBT_BUILD_TESTS=OFF
-> make
-```
-
-If all goes well, there will be a "libnbt++.a" in libnbtplusplus/build/
-
-If you have compile errors, check the README* files from libnbtplusplus for prerequisites
-
-### Compile mcpe_viz
-
-From the top directory of mcpe_viz:
-
-```
-> make
-```
-
-If all goes well, you will have "mcpe_viz" in build/
+I used mingw to build win32 and win64 executables.  You can find the exe and required dll's in mcpe_viz.win32.zip and mcpe_viz.win64.zip.  To try it out on windows, download either of the zip files, unzip it and run the exe.
 
 
 ## Usage
@@ -112,6 +57,68 @@ Please note that --db expects the directory which contains "level.dat".
 You can copy mcpe_viz.cfg to ~/.mcpe_viz/mcpe_viz.cfg and then edit that file to customize the way mcpe_viz works.
 
 You can copy mcpe_viz.xml to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to set custom colors for blocks and biomes.
+
+
+## Compiling it from source
+
+If you just want to run the software on windows, see above :)  If you would like to compile it for Linux (or Windows), read on.
+
+### Requirements
+
+* You know how to compile things :)
+* Mojang's LevelDB from github (see below) (https://github.com/Mojang/leveldb-mcpe.git)
+* libnbt++ from github (see below) (https://github.com/ljfa-ag/libnbtplusplus.git)
+* [Optional] *ffmpeg* for creating movies
+
+
+### How to compile
+
+#### Mojang's LevelDB
+
+The code uses Mojang's modified version of LevelDB.  Here's how to compile it (from the top dir of mcpe_viz):
+
+```
+> git clone https://github.com/Mojang/leveldb-mcpe.git
+> chdir leveldb-mcpe
+> make
+```
+
+If all goes well, there will be a "libleveldb.a" in leveldb-mcpe/
+
+To get it to compile on Fedora, I found that I needed to do this from leveldb-mcpe/:
+
+```
+> ln -s /usr/include include/zlib
+```
+
+If you have compile errors, check the README* files from leveldb-mcpe for prerequisites
+
+#### libnbt++
+
+The code uses libnbt++.  Here's how to compile it (from the top dir of mcpe_viz):
+
+```
+> git clone https://github.com/ljfa-ag/libnbtplusplus.git
+> chdir libnbtplusplus
+> mkdir build
+> chdir build
+> cmake .. -DNBT_BUILD_TESTS=OFF
+> make
+```
+
+If all goes well, there will be a "libnbt++.a" in libnbtplusplus/build/
+
+If you have compile errors, check the README* files from libnbtplusplus for prerequisites
+
+#### Compile mcpe_viz
+
+From the top directory of mcpe_viz:
+
+```
+> make
+```
+
+If all goes well, you will have "mcpe_viz" in build/
 
 
 ## TODO

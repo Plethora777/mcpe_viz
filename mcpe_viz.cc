@@ -1,16 +1,29 @@
 /*
-  MCPE World File Visualizer
+  Minecraft Pocket Edition (MCPE) World File Visualization & Reporting Tool
   (c) Plethora777, 2015.9.26
 
   GPL'ed code - see LICENSE
 
-  This requires Mojang's modified LevelDB library! (see README.md for details)
-  This requires libnbt++ (see README.md for details)
+  Requires Mojang's modified LevelDB library! (see README.md for details)
+  Requires libnbt++ (see README.md for details)
 
   To build it, use cmake
 
 
   todobig
+
+  * determine proper xml entries for missing items + entities + blocks
+  -- examples: in world 'another1' - missing mobs: 94/0x5e (nether only?); 69/0x45 (both?)
+  ---- suspects: magma cube; wither skeleton; what else? ocelots?
+
+  * look at "weird" entities: Dropped Item; Falling block; Shot arrow
+  * time to split this code up into separate files?
+
+  * option to name output files w/ world name
+
+  * parse NBT and do something interesting with the info :)
+  ** output to log file
+  ** create vector files that contain highlights (see openlayers idea below)
 
   * use "solid" info from block info to do something? could it fix the light map?
 
@@ -19,7 +32,6 @@
   * go and look at wiki to see the type of info that is stored per block
 
   * produce another light map that shows areas that ARE spawnable? (e.g. use this to make an area 100% mob spawn proof)
-
 
   * convert all printf-style stuff to streams
 
@@ -123,9 +135,9 @@ namespace mcpe_viz {
       int doImageGrass;
       int doImageHeightCol;
       int doImageHeightColGrayscale;
-      // todo height using topBlockY
-      int doImageBlockLight;
-      int doImageSkyLight;
+      // todo height image using topBlockY
+      int doImageLightBlock;
+      int doImageLightSky;
       bool shortRunFlag;
       bool verboseFlag;
       bool quietFlag;
@@ -156,8 +168,8 @@ namespace mcpe_viz {
 	doImageGrass = kDoOutputNone;
 	doImageHeightCol = kDoOutputNone;
 	doImageHeightColGrayscale = kDoOutputNone;
-	doImageBlockLight = kDoOutputNone;
-	doImageSkyLight = kDoOutputNone;
+	doImageLightBlock = kDoOutputNone;
+	doImageLightSky = kDoOutputNone;
 	
 	shortRunFlag = false;
 	verboseFlag = false;
@@ -191,11 +203,11 @@ namespace mcpe_viz {
     Control control;
 
     
-    // world types
+    // dimensions
     enum {
-      kWorldIdOverworld = 0,
-      kWorldIdNether = 1,
-      kWorldIdCount = 2
+      kDimIdOverworld = 0,
+      kDimIdNether = 1,
+      kDimIdCount = 2
     };
 
     // nbt parsing modes
@@ -204,6 +216,8 @@ namespace mcpe_viz {
       kNbtModeEntity = 100,
       kNbtModeItem = 200
     };
+    int globalNbtListNumber=0;
+    int globalNbtCompoundNumber=0;
 
     // output image types
     enum {
@@ -227,16 +241,15 @@ namespace mcpe_viz {
     int32_t palRedBlackGreen[256];
 
     
-    int myParseInt32(const char* p, int startByte) {
-      int ret;
+    int32_t myParseInt32(const char* p, int startByte) {
+      int32_t ret;
       memcpy(&ret, &p[startByte], 4);
       return ret;
     }
 
-    int myParseInt8(const char* p, int startByte) {
+    int8_t myParseInt8(const char* p, int startByte) {
       return (p[startByte] & 0xff);
     }
-
 
     // note: super super old hsl2rgb code; origin unknown
     double _hue_to_rgb(double m1, double m2, double h) {
@@ -254,13 +267,13 @@ namespace mcpe_viz {
       return m1;
     }
 
-    int _clamp(int v, int minv, int maxv) {
+    int32_t _clamp(int32_t v, int32_t minv, int32_t maxv) {
       if ( v < minv ) return minv;
       if ( v > maxv ) return maxv;
       return v;
     }
     
-    int hsl2rgb ( double h, double s, double l, int &r, int &g, int &b ) {
+    int hsl2rgb ( double h, double s, double l, int32_t &r, int32_t &g, int32_t &b ) {
       double m2;
       if (l <= 0.5) {
 	m2 = l * (s+1.0);
@@ -277,16 +290,16 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int makeHslRamp ( int *pal, int start, int stop, double h1, double h2, double s1, double s2, double l1, double l2 ) {
+    int makeHslRamp ( int32_t *pal, int32_t start, int32_t stop, double h1, double h2, double s1, double s2, double l1, double l2 ) {
       double steps = stop-start+1;
       double dh = (h2 - h1) / steps;
       double ds = (s2 - s1) / steps;
       double dl = (l2 - l1) / steps;
       double h=h1,s=s1,l=l1;
-      int r,g,b;
+      int32_t r,g,b;
       for ( int i=start; i<=stop; i++ ) {
 	hsl2rgb(h,s,l, r,g,b);
-	int c = ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+	int32_t c = ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
 	pal[i] = c;
 	h+=dh;
 	s+=ds;
@@ -304,6 +317,11 @@ namespace mcpe_viz {
       // fill 128..255 with purple (we should never see this color)
       for (int i=128; i < 256; i++) {
 	palRedBlackGreen[i] = 0xff00ff;
+      }
+
+      // convert palette
+      for (int i=0; i < 256; i++) {
+	palRedBlackGreen[i] = htobe32(palRedBlackGreen[i]);
       }
     }
 
@@ -376,7 +394,7 @@ namespace mcpe_viz {
     }
     
     
-    class MyBlock {
+    class BlockInfo {
     public:
       std::string name;
       int32_t color;
@@ -384,7 +402,7 @@ namespace mcpe_viz {
       bool colorSetFlag;
       bool solidFlag;
       int colorSetNeedCount;
-      MyBlock() {
+      BlockInfo() {
 	name = "(unknown)";
 	setColor(0xff00ff); // purple
 	lookupColorFlag = false;
@@ -392,80 +410,85 @@ namespace mcpe_viz {
 	colorSetFlag = false;
 	colorSetNeedCount = 0;
       }
-      MyBlock& setName(const std::string s) {
+      BlockInfo& setName(const std::string s) {
 	name = std::string(s);
 	return *this;
       }
-      MyBlock& setColor(int32_t rgb) {
+      BlockInfo& setColor(int32_t rgb) {
 	// note: we convert color storage to big endian so that we can memcpy when creating images
 	color = htobe32(rgb);
 	colorSetFlag = true;
 	return *this;
       }
-      MyBlock& setLookupColorFlag(bool f) {
+      BlockInfo& setLookupColorFlag(bool f) {
 	lookupColorFlag = f;
 	return *this;
       }
-      MyBlock& setSolidFlag(bool f) {
+      BlockInfo& setSolidFlag(bool f) {
 	solidFlag = f;
 	return *this;
       }
       bool isSolid() { return solidFlag; }
     };
 
-    MyBlock blockInfo[256];
+    BlockInfo blockInfoList[256];
     
 
-    // todo - make these all subclasses of a common class
-    class MyItem {
+    class ItemInfo {
     public:
       std::string name;
-      MyItem(const char* n) {
+      ItemInfo(const char* n) {
 	setName(n);
       }
-      MyItem& setName (const std::string s) {
+      ItemInfo& setName (const std::string s) {
 	name = std::string(s);
 	return *this;
       }
     };
 
-    std::map<int, std::unique_ptr<MyItem> > itemInfo;
+    std::map<int, std::unique_ptr<ItemInfo> > itemInfoList;
+    bool has_key(const std::map<int, std::unique_ptr<ItemInfo> > &m, int k) {
+      return  m.find(k) != m.end();
+    }
 
 
-    class MyEntity {
+    class EntityInfo {
     public:
       std::string name;
-      MyEntity(const char* n) {
+      EntityInfo(const char* n) {
 	setName(n);
       }
-      MyEntity& setName (const std::string s) {
+      EntityInfo& setName (const std::string s) {
 	name = std::string(s);
 	return *this;
       }
     };
 
-    std::map<int, std::unique_ptr<MyEntity> > entityInfo;
+    std::map<int, std::unique_ptr<EntityInfo> > entityInfoList;
+    bool has_key(const std::map<int, std::unique_ptr<EntityInfo> > &m, int k) {
+      return  m.find(k) != m.end();
+    }
 
 
-    class MyBiome {
+    class BiomeInfo {
     public:
       std::string name;
       int32_t color;
       bool colorSetFlag;
-      MyBiome(const char* n) {
+      BiomeInfo(const char* n) {
 	setName(n);
 	setColor(0xff00ff);
 	colorSetFlag = false;
       }
-      MyBiome(const char* n, int32_t rgb) {
+      BiomeInfo(const char* n, int32_t rgb) {
 	setName(n);
 	setColor(rgb);
       }
-      MyBiome& setName (const std::string s) {
+      BiomeInfo& setName (const std::string s) {
 	name = std::string(s);
 	return *this;
       }
-      MyBiome& setColor(int32_t rgb) {
+      BiomeInfo& setColor(int32_t rgb) {
 	// note: we convert color storage to big endian so that we can memcpy when creating images
 	color = htobe32(rgb);
 	colorSetFlag=true;
@@ -473,10 +496,37 @@ namespace mcpe_viz {
       }
     };
 
-    std::map<int, std::unique_ptr<MyBiome> > biomeInfo;
+    std::map<int, std::unique_ptr<BiomeInfo> > biomeInfoList;
+    bool has_key(const std::map<int, std::unique_ptr<BiomeInfo> > &m, int k) {
+      return  m.find(k) != m.end();
+    }
 
 
-    class MyChunk {
+    class EnchantmentInfo {
+    public:
+      std::string name;
+      std::string officialName;
+      EnchantmentInfo(const char* n) {
+	setName(n);
+	officialName="";
+      }
+      EnchantmentInfo& setName (const std::string s) {
+	name = std::string(s);
+	return *this;
+      }
+      EnchantmentInfo& setOfficialName (const std::string s) {
+	officialName = std::string(s);
+	return *this;
+      }
+    };
+
+    std::map<int, std::unique_ptr<EnchantmentInfo> > enchantmentInfoList;
+    bool has_key(const std::map<int, std::unique_ptr<EnchantmentInfo> > &m, int k) {
+      return  m.find(k) != m.end();
+    }
+    
+
+    class ChunkData {
     public:
       int chunkX, chunkZ;
       uint8_t blocks[16][16];
@@ -485,7 +535,7 @@ namespace mcpe_viz {
       uint8_t topBlockY[16][16];
       uint8_t heightCol[16][16];
       uint8_t topLight[16][16];
-      MyChunk(int cx, int cz,
+      ChunkData(int cx, int cz,
 	      const uint8_t* b, const uint8_t* d, const uint32_t* xgrassAndBiome, const uint8_t* tby, const uint8_t* height,
 	      const uint8_t* light) {
 	chunkX=cx;
@@ -500,11 +550,11 @@ namespace mcpe_viz {
     };
 
 
-    class MyChunkList {
+    class ChunkDataList {
     public:
       std::string name;
-      int worldId;
-      std::vector< std::unique_ptr<MyChunk> > list;
+      int dimId;
+      std::vector< std::unique_ptr<ChunkData> > list;
       int minChunkX = 0, maxChunkX = 0;
       int minChunkZ = 0, maxChunkZ = 0;
       bool chunkBoundsValid;
@@ -516,9 +566,9 @@ namespace mcpe_viz {
       std::vector<int> blockForceTopList;
       std::vector<int> blockHideList;
       
-      MyChunkList() {
+      ChunkDataList() {
 	name = "(UNKNOWN)";
-	worldId = -1;
+	dimId = -1;
 	chunkBoundsValid = false;
 	memset(histoChunkType,0,256*sizeof(int));
 	memset(histoGlobalBiome,0,256*sizeof(int));
@@ -555,16 +605,16 @@ namespace mcpe_viz {
 	maxChunkX = std::max(maxChunkX, chunkX);
 	maxChunkZ = std::max(maxChunkZ, chunkZ);
 
-	std::unique_ptr<MyChunk> tmp(new MyChunk(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY, height, topLight));
+	std::unique_ptr<ChunkData> tmp(new ChunkData(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY, height, topLight));
 	list.push_back( std::move(tmp) );
       }
 
       
-      bool checkDoForWorld(int v) {
+      bool checkDoForDim(int v) {
 	if ( v == kDoOutputAll ) {
 	  return true;
 	}
-	if ( v == worldId ) {
+	if ( v == dimId ) {
 	  return true;
 	}
 	return false;
@@ -647,7 +697,6 @@ namespace mcpe_viz {
 	return 0;
       }
 
-
       void generateImage(const std::string fname, int imageMode = kImageModeTerrain) {
 	const int chunkOffsetX = -minChunkX;
 	const int chunkOffsetZ = -minChunkZ;
@@ -663,12 +712,12 @@ namespace mcpe_viz {
 
 	int32_t color;
 	const char *pcolor = (const char*)&color;
-	for ( auto it = list.begin() ; it != list.end(); ++it) {
-	  int imageX = ((*it)->chunkX + chunkOffsetX) * 16;
-	  int imageZ = ((*it)->chunkZ + chunkOffsetZ) * 16;
+	for ( const auto& it: list ) {
+	  int imageX = (it->chunkX + chunkOffsetX) * 16;
+	  int imageZ = (it->chunkZ + chunkOffsetZ) * 16;
 
-	  int worldX = (*it)->chunkX * 16;
-	  int worldZ = (*it)->chunkZ * 16;
+	  int worldX = it->chunkX * 16;
+	  int worldZ = it->chunkZ * 16;
 	  
 	  for (int cz=0; cz < 16; cz++) {
 	    for (int cx=0; cx < 16; cx++) {
@@ -677,62 +726,59 @@ namespace mcpe_viz {
 	      
 	      if ( imageMode == kImageModeBiome ) {
 		// get biome color
-		int biomeId = (*it)->grassAndBiome[cx][cz] & 0xff;
-		try { 
-		  if ( biomeInfo.at(biomeId) ) {
-		    color = biomeInfo[biomeId]->color;
-		  }
-		} catch (std::exception& e) {
-		  // set an error color
+		int biomeId = it->grassAndBiome[cx][cz] & 0xff;
+		if ( has_key(biomeInfoList, biomeId) ) {
+		  color = biomeInfoList[biomeId]->color;
+		} else {
 		  fprintf(stderr,"ERROR: Unkown biome %d 0x%x\n", biomeId, biomeId);
 		  color = htobe32(0xff2020);
 		}
 	      }
 	      else if ( imageMode == kImageModeGrass ) {
 		// get grass color
-		int32_t grassColor = (*it)->grassAndBiome[cx][cz] >> 8;
+		int32_t grassColor = it->grassAndBiome[cx][cz] >> 8;
 		color = htobe32(grassColor);
 	      }
 	      else if ( imageMode == kImageModeHeightCol ) {
 		// get height value and use red-black-green palette
-		uint8_t c = (*it)->heightCol[cx][cz];
-		color = htobe32(palRedBlackGreen[c]);
+		uint8_t c = it->heightCol[cx][cz];
+		color = palRedBlackGreen[c];
 	      }
 	      else if ( imageMode == kImageModeHeightColGrayscale ) {
 		// get height value and make it grayscale
-		uint8_t c = (*it)->heightCol[cx][cz];
+		uint8_t c = it->heightCol[cx][cz];
 		color = htobe32( (c << 16) | (c << 8) | c );
 	      }
 	      else if ( imageMode == kImageModeBlockLight ) {
 		// get block light value and expand it (is only 4-bits)
 		// todobig - why z/x here and x/z everywhere else... hmmm
-		uint8_t c = ((*it)->topLight[cz][cx] & 0x0f) << 4;
+		uint8_t c = (it->topLight[cz][cx] & 0x0f) << 4;
 		color = htobe32( (c << 16) | (c << 8) | c );
 	      }
 	      else if ( imageMode == kImageModeSkyLight ) {
 		// get sky light value and expand it (is only 4-bits)
 		// todobig - why z/x here and x/z everywhere else... hmmm
-		uint8_t c = ((*it)->topLight[cz][cx] & 0xf0);
+		uint8_t c = (it->topLight[cz][cx] & 0xf0);
 		color = htobe32( (c << 16) | (c << 8) | c );
 	      }
 	      else {
 		// regular image
-		int blockid = (*it)->blocks[cz][cx];
+		int blockid = it->blocks[cz][cx];
 		
-		if ( blockInfo[blockid].lookupColorFlag ) {
-		  int blockdata = (*it)->data[cz][cx];
+		if ( blockInfoList[blockid].lookupColorFlag ) {
+		  int blockdata = it->data[cz][cx];
 		  color = standardColorInfo[blockdata];
 		} else {
-		  color = blockInfo[blockid].color;
-		  if ( ! blockInfo[blockid].colorSetFlag ) {
-		    blockInfo[blockid].colorSetNeedCount++;
+		  color = blockInfoList[blockid].color;
+		  if ( ! blockInfoList[blockid].colorSetFlag ) {
+		    blockInfoList[blockid].colorSetNeedCount++;
 		  }
 		}
 	      }
 
 	      // do grid lines
-	      if ( checkDoForWorld(control.doGrid) && (cx==0 || cz==0) ) {
-		if ( ((*it)->chunkX == 0) && ((*it)->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
+	      if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
+		if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
 		  color = htobe32(0xeb3333);
 		} else {
 		  color = htobe32(0xc1ffc4);
@@ -752,16 +798,16 @@ namespace mcpe_viz {
 	      memcpy(&buf[ ((imageZ + cz) * imageW + (imageX + cx)) * 3], &pcolor[1], 3);
 #endif
 
-	      if ( worldId == 0 && imageMode == kImageModeTerrain ) {
+	      if ( dimId == kDimIdOverworld && imageMode == kImageModeTerrain ) {
 		int ix = (imageX + cx);
 		int iz = (imageZ + cz);
 		int wx = (worldX + cx);
 		int wz = (worldZ + cz);
 		if ( (wx == 0) && (wz == 0) ) {
-		  fprintf(stderr,"Info: World (0, 0) is at image (%d,%d)\n", ix,iz);
+		  fprintf(stderr,"    Info: World (0, 0) is at image (%d, %d)\n", ix,iz);
 		}
 		if ( (wx == worldSpawnX) && (wz == worldSpawnZ) ) {
-		  fprintf(stderr,"Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
+		  fprintf(stderr,"    Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
 		}
 	      }
 	    }
@@ -775,8 +821,8 @@ namespace mcpe_viz {
 
 	if ( imageMode == kImageModeTerrain ) {
 	  for (int i=0; i < 256; i++) {
-	    if ( blockInfo[i].colorSetNeedCount ) {
-	      fprintf(stderr,"Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfo[i].name.c_str(), blockInfo[i].colorSetNeedCount);
+	    if ( blockInfoList[i].colorSetNeedCount ) {
+	      fprintf(stderr,"    Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfoList[i].name.c_str(), blockInfoList[i].colorSetNeedCount);
 	    }
 	  }
 	}
@@ -792,7 +838,7 @@ namespace mcpe_viz {
 	//const int imageH = chunkH * 16;
 
 	int divisor = 1;
-	if ( worldId == kWorldIdNether ) { 
+	if ( dimId == kDimIdNether ) { 
 	  // if nether, we divide coordinates by 8
 	  divisor = 8; 
 	}
@@ -822,9 +868,9 @@ namespace mcpe_viz {
 	for (int cy=0; cy < 128; cy++) {
 	  // todo - make this part a func so that user can ask for specific slices from the cmdline?
 	  fprintf(stderr,"  Layer %d\n", cy);
-	  for ( auto it = list.begin() ; it != list.end(); ++it) {
-	    int imageX = ((*it)->chunkX + chunkOffsetX) * 16;
-	    int imageZ = ((*it)->chunkZ + chunkOffsetZ) * 16;
+	  for ( const auto& it : list ) {
+	    int imageX = (it->chunkX + chunkOffsetX) * 16;
+	    int imageZ = (it->chunkZ + chunkOffsetZ) * 16;
 
 	    for (int cz=0; cz < 16; cz++) {
 	      for (int cx=0; cx < 16; cx++) {
@@ -835,15 +881,15 @@ namespace mcpe_viz {
 		if ( (ix >= cropX) && (ix < (cropX + cropW)) &&
 		     (iz >= cropZ) && (iz < (cropZ + cropH)) ) {
 
-		  if ( pchunk==nullptr || (pchunkX != (*it)->chunkX) || (pchunkZ != (*it)->chunkZ) ) {
+		  if ( pchunk==nullptr || (pchunkX != it->chunkX) || (pchunkZ != it->chunkZ) ) {
 		    // get the chunk
 		    // construct key
 		    char keybuf[20];
 		    int keybuflen;
-		    int32_t kx = (*it)->chunkX, kz=(*it)->chunkZ, kw=worldId;
+		    int32_t kx = it->chunkX, kz=it->chunkZ, kw=dimId;
 		    uint8_t kt=0x30;
-		    switch (worldId) {
-		    case 0:
+		    switch (dimId) {
+		    case kDimIdOverworld:
 		      //overworld
 		      memcpy(&keybuf[0],&kx,sizeof(int32_t));
 		      memcpy(&keybuf[4],&kz,sizeof(int32_t));
@@ -863,27 +909,27 @@ namespace mcpe_viz {
 		    leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
 		    assert(dstatus.ok());
 		    pchunk = svalue.data();
-		    pchunkX = (*it)->chunkX;
-		    pchunkZ = (*it)->chunkZ;
+		    pchunkX = it->chunkX;
+		    pchunkZ = it->chunkZ;
 		  }
 		 
 		  uint8_t blockid = getBlockId(pchunk, cx,cz,cy);
 
-		  if ( blockid == 0 && ( cy > (*it)->topBlockY[cz][cx] ) ) {
+		  if ( blockid == 0 && ( cy > it->topBlockY[cz][cx] ) ) {
 		    // special handling for air -- keep existing value if we are above top block
 		    // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
 		  } else {
 		    
-		    if ( blockInfo[blockid].lookupColorFlag ) {
+		    if ( blockInfoList[blockid].lookupColorFlag ) {
 		      uint8_t blockdata = getBlockData(pchunk, cx,cz,cy);
 		      color = standardColorInfo[blockdata];
 		    } else {
-		      color = blockInfo[blockid].color;
+		      color = blockInfoList[blockid].color;
 		    }
 		  
 		    // do grid lines
-		    if ( checkDoForWorld(control.doGrid) && (cx==0 || cz==0) ) {
-		      if ( ((*it)->chunkX == 0) && ((*it)->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
+		    if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
+		      if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
 			// highlight (0,0)
 			color = htobe32(0xeb3333);
 		      } else {
@@ -943,45 +989,45 @@ namespace mcpe_viz {
 
       int doOutput(leveldb::DB* db) {
 	fprintf(stderr,"Do Output: %s\n",name.c_str());
-
+	
 	doOutputStats();
 	
-	fprintf(stderr,"Generate Image\n");
+	fprintf(stderr,"  Generate Image\n");
 	generateImage(std::string(control.fnOutputBase + "." + name + ".map.png"));
 	
-	if ( checkDoForWorld(control.doImageBiome) ) {
-	  fprintf(stderr,"Generate Biome Image\n");
+	if ( checkDoForDim(control.doImageBiome) ) {
+	  fprintf(stderr,"  Generate Biome Image\n");
 	  generateImage(std::string(control.fnOutputBase + "." + name + ".biome.png"), kImageModeBiome);
 	}
-	if ( checkDoForWorld(control.doImageGrass) ) {
-	  fprintf(stderr,"Generate Grass Image\n");
+	if ( checkDoForDim(control.doImageGrass) ) {
+	  fprintf(stderr,"  Generate Grass Image\n");
 	  generateImage(std::string(control.fnOutputBase + "." + name + ".grass.png"), kImageModeGrass);
 	}
-	if ( checkDoForWorld(control.doImageHeightCol) ) {
-	  fprintf(stderr,"Generate Height Col Image\n");
+	if ( checkDoForDim(control.doImageHeightCol) ) {
+	  fprintf(stderr,"  Generate Height Column Image\n");
 	  generateImage(std::string(control.fnOutputBase + "." + name + ".height_col.png"), kImageModeHeightCol);
 	}
-	if ( checkDoForWorld(control.doImageHeightColGrayscale) ) {
-	  fprintf(stderr,"Generate Height Col (grayscale) Image\n");
+	if ( checkDoForDim(control.doImageHeightColGrayscale) ) {
+	  fprintf(stderr,"  Generate Height Column (grayscale) Image\n");
 	  generateImage(std::string(control.fnOutputBase + "." + name + ".height_col_grayscale.png"), kImageModeHeightColGrayscale);
 	}
-	if ( checkDoForWorld(control.doImageBlockLight) ) {
-	  fprintf(stderr,"Generate Block Light Image\n");
+	if ( checkDoForDim(control.doImageLightBlock) ) {
+	  fprintf(stderr,"  Generate Block Light Image\n");
 	  generateImage(std::string(control.fnOutputBase + "." + name + ".light_block.png"), kImageModeBlockLight);
 	}
-	if ( checkDoForWorld(control.doImageSkyLight) ) {
-	  fprintf(stderr,"Generate Sky Light Image\n");
+	if ( checkDoForDim(control.doImageLightSky) ) {
+	  fprintf(stderr,"  Generate Sky Light Image\n");
 	  generateImage(std::string(control.fnOutputBase + "." + name + ".light_sky.png"), kImageModeSkyLight);
 	}
 
-	if ( checkDoForWorld(control.doMovie) ) {
-	  fprintf(stderr,"Generate movie\n");
+	if ( checkDoForDim(control.doMovie) ) {
+	  fprintf(stderr,"  Generate movie\n");
 	  generateMovie(db, std::string(control.fnOutputBase + "." + name + ".mp4"));
 	}
 	
 	// reset
 	for (int i=0; i < 256; i++) {
-	  blockInfo[i].colorSetNeedCount = 0;
+	  blockInfoList[i].colorSetNeedCount = 0;
 	}
 
 	return 0;
@@ -990,8 +1036,8 @@ namespace mcpe_viz {
 
     
     bool vectorContains( std::vector<int> &v, int i ) {
-      for ( auto iter = std::begin(v); iter != std::end(v); iter++) {
-	if ( *iter == i ) {
+      for ( const auto& iter: v ) {
+	if ( iter == i ) {
 	  return true;
 	}
       }
@@ -1010,50 +1056,15 @@ namespace mcpe_viz {
 
     
     std::string getBiomeName(int idv) {
-      char s[256];
-      try { 
-	if ( biomeInfo.at(idv) ) {
-	  return biomeInfo[idv]->name;
-	}
-      } catch (std::exception& e) {
-	sprintf(s,"ERROR: Failed to find biome id (%d)",idv);
-	return std::string(s);
+      if ( has_key(biomeInfoList, idv) ) {
+	return biomeInfoList[idv]->name;
       }
-      sprintf(s,"ERROR: Unknown biome id (%d)",idv);
+      char s[256];
+      sprintf(s,"ERROR: Failed to find biome id (%d)",idv);
       return std::string(s);
     }
 
     
-    // todo - keep this to use with new nbt lib?
-    int printIdTag(FILE *fout, int nbtMode, bool idTagFlag, int idv) {
-      if ( idTagFlag ) {
-	if ( idv >= 0 ) {
-	  switch ( nbtMode ) {
-	  case kNbtModeEntity:
-	    try { 
-	      if ( entityInfo.at(idv) ) {
-		fprintf(fout, " [Entity: %s]", entityInfo[idv]->name.c_str());
-	      }
-	    } catch (std::exception& e) {
-	      fprintf(fout, " [Entity: UNKNOWN (%d 0x%x) (%s)]",idv,idv,e.what());
-	    }
-	    break;
-	  case kNbtModeItem:
-	    try {
-	      if ( itemInfo.at(idv) ) {
-		fprintf(fout, " [Item: %s]", itemInfo[idv]->name.c_str());
-	      }
-	    } catch (std::exception& e) {
-	      fprintf(fout, " [Item: UNKNOWN (%d 0x%x) (%s)]",idv,idv,e.what());
-	    }
-	    break;
-	  }
-	}
-      }
-      return 0;
-    }
-
-
     // helper types for NBT
     typedef std::pair<std::string, std::unique_ptr<nbt::tag> > MyTag;
     typedef std::vector< MyTag > MyTagList;
@@ -1110,9 +1121,9 @@ namespace mcpe_viz {
 	  nbt::tag_byte_array v = t.second->as<nbt::tag_byte_array>();
 	  fprintf(control.fpLog,"[");
 	  int i=0;
-	  for (auto itt = v.begin(); itt != v.end(); ++itt) {
+	  for (const auto& itt: v ) {
 	    if ( i++ > 0 ) { fprintf(control.fpLog," "); }
-	    fprintf(control.fpLog,"%02x", (int)(*itt));
+	    fprintf(control.fpLog,"%02x", (int)itt);
 	  }
 	  fprintf(control.fpLog,"] (hex byte array)\n");
 	}
@@ -1126,27 +1137,29 @@ namespace mcpe_viz {
       case nbt::tag_type::List:
 	{
 	  nbt::tag_list v = t.second->as<nbt::tag_list>();
-	  fprintf(control.fpLog,"LIST {\n");
+	  int lnum = ++globalNbtListNumber;
+	  fprintf(control.fpLog,"LIST-%d {\n",lnum);
 	  indent++;
-	  for ( auto it=v.begin(); it != v.end(); ++it ) {
-	    std::unique_ptr<nbt::tag> t = it->get().clone();
+	  for ( const auto& it: v ) {
+	    std::unique_ptr<nbt::tag> t = it.get().clone();
 	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), std::move(t) ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
-	  fprintf(control.fpLog,"%s} LIST\n", makeIndent(indent,hdr).c_str());
+	  fprintf(control.fpLog,"%s} LIST-%d\n", makeIndent(indent,hdr).c_str(), lnum);
 	}
 	break;
       case nbt::tag_type::Compound:
 	{
 	  nbt::tag_compound v = t.second->as<nbt::tag_compound>();
-	  fprintf(control.fpLog,"COMPOUND {\n");
+	  int cnum = ++globalNbtCompoundNumber;
+	  fprintf(control.fpLog,"COMPOUND-%d {\n",cnum);
 	  indent++;
-	  for ( auto it=v.begin(); it != v.end(); ++it ) {
-	    std::unique_ptr<nbt::tag> t = it->second.get().clone();
-	    parseNbtTag( hdr, indent, std::make_pair( it->first, std::move(t) ) );
+	  for ( const auto& it: v ) {
+	    std::unique_ptr<nbt::tag> t = it.second.get().clone();
+	    parseNbtTag( hdr, indent, std::make_pair( it.first, std::move(t) ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
-	  fprintf(control.fpLog,"%s} COMPOUND\n", makeIndent(indent,hdr).c_str());
+	  fprintf(control.fpLog,"%s} COMPOUND-%d\n", makeIndent(indent,hdr).c_str(),cnum);
 	}
 	break;
       case nbt::tag_type::Int_Array:
@@ -1154,9 +1167,9 @@ namespace mcpe_viz {
 	  nbt::tag_int_array v = t.second->as<nbt::tag_int_array>();
 	  fprintf(control.fpLog,"[");
 	  int i=0;
-	  for (auto itt = v.begin(); itt != v.end(); ++itt) {
+	  for ( const auto& itt: v ) {
 	    if ( i++ > 0 ) { fprintf(control.fpLog," "); }
-	    fprintf(control.fpLog,"%x", (*itt));
+	    fprintf(control.fpLog,"%x", itt);
 	  }
 	  fprintf(control.fpLog,"] (hex int array)\n");
 	}
@@ -1174,6 +1187,10 @@ namespace mcpe_viz {
       int indent=0;
       fprintf(control.fpLog,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
 
+      // these help us look at dumped nbt data and match up LIST's and COMPOUND's
+      globalNbtListNumber=0;
+      globalNbtCompoundNumber=0;
+      
       std::istringstream is(std::string(buf,bufLen));
       nbt::io::stream_reader reader(is, endian::little);
 
@@ -1203,23 +1220,691 @@ namespace mcpe_viz {
       }
       
       // iterate over the tags
-      for ( auto itt = tagList.begin(); itt != tagList.end(); ++itt ) {
-	parseNbtTag( hdr, indent, *itt );
+      for ( const auto& itt: tagList ) {
+	parseNbtTag( hdr, indent, itt );
       }
       
       fprintf(control.fpLog,"%sNBT Decode End (%d tags)\n",makeIndent(indent,hdr).c_str(), (int)tagList.size());
 
       return 0;
     }
+
+    void worldPointToImagePoint(float wx, float wz, int &ix, int &iy);
+
+    // todo - use this throughout parsing or is it madness? :)
+    template<class T>
+    class MyValue {
+    public:
+      T value;
+      bool valid;
+      MyValue() {
+	clear();
+      }
+      void clear() {
+	value=(T)0;
+	valid=false;
+      }
+      void set(T nvalue) {
+	value = nvalue;
+	valid = true;
+      }
+      std::string toString() {
+	if ( valid ) {
+	  return std::string(""+value);
+	} else {
+	  return std::string("*Invalid Value*");
+	}
+      }
+    };
+    
+    template<class T>
+    class Point2d {
+    public:
+      T x, y;
+      bool valid;
+      Point2d() {
+	clear();
+      }
+      void set(T nx, T ny) {
+	x=nx;
+	y=ny;
+	valid=true;
+      }
+      void clear(){
+	x=(T)0;
+	y=(T)0;
+	valid=false;
+      }
+      std::string toString() {
+	if ( valid ) {
+	  std::ostringstream str;
+	  str << x << ", " << y;
+	  return str.str();
+	} else {
+	  return std::string("*Invalid-Point2d*");
+	}
+      }
+    };
+
+    template<class T>
+    class Point3d {
+    public:
+      T x, y, z;
+      bool valid;
+      Point3d() {
+	clear();
+      }
+      void set(T nx, T ny, T nz) {
+	x=nx;
+	y=ny;
+	z=nz;
+	valid=true;
+      }
+      void clear(){
+	x=(T)0;
+	y=(T)0;
+	z=(T)0;
+	valid=false;
+      }
+      std::string toString() {
+	if ( valid ) {
+	  std::ostringstream str;
+	  str << x << ", " << y << ", " << z;
+	  return str.str();
+	} else {
+	  return std::string("*Invalid-Point2d*");
+	}
+      }
+    };
+
+    // todo - each value in these structs should be an object that does "valid" checking
+    class ParsedEnchantment {
+    public:
+      MyValue<int32_t> id;
+      MyValue<int32_t> level;
+      ParsedEnchantment() {
+	clear();
+      }
+      void clear() {
+	id.clear();
+	level.clear();
+      }
+      int parse(nbt::tag_compound& iench) {
+	if ( iench.has_key("id", nbt::tag_type::Short) ) {
+	  id.set( iench["id"].as<nbt::tag_short>().get() );
+	}
+	if ( iench.has_key("lvl", nbt::tag_type::Short) ) {
+	  level.set( iench["lvl"].as<nbt::tag_short>().get() );
+	}
+	return 0;
+      }
+      std::string toString() {
+	char tmpstring[1025];
+	std::string s = "";
+	if ( id.valid ) {
+	  if ( has_key(enchantmentInfoList, id.value) ) {
+	    s += enchantmentInfoList[id.value]->name;
+	  } else {
+	    sprintf(tmpstring,"(UNKNOWN: id=%d 0x%x)",id.value,id.value);
+	    s += tmpstring;
+	  }
+	  sprintf(tmpstring," (%d)", level.value);
+	  s += tmpstring;
+	} else {
+	  s += "*Invalid id*";
+	}
+	return s;
+      }
+    };
+    
+    class ParsedItem {
+    public:
+      bool valid;
+      bool armorFlag;
+      int32_t id;
+      int32_t slot;
+      int32_t damage;
+      int32_t count;
+      int32_t repairCost;
+      std::vector< std::unique_ptr<ParsedEnchantment> > enchantmentList;
+      ParsedItem() {
+	clear();
+      }
+      void clear() {
+	valid = false;
+	armorFlag = false;
+	id = -1;
+	slot = -1;
+	damage = -1;
+	count = -1;
+	repairCost = -1;
+	enchantmentList.clear();
+      }
+      int parse(nbt::tag_compound& iitem) {
+	if ( iitem.has_key("Count", nbt::tag_type::Byte) ) {
+	  count = iitem["Count"].as<nbt::tag_byte>().get();
+	}
+	if ( iitem.has_key("Damage", nbt::tag_type::Short) ) {
+	  damage = iitem["Damage"].as<nbt::tag_short>().get();
+	}
+	if ( iitem.has_key("Slot", nbt::tag_type::Byte) ) {
+	  slot = iitem["Slot"].as<nbt::tag_byte>().get();
+	}
+	if ( iitem.has_key("id", nbt::tag_type::Short) ) {
+	  id = iitem["id"].as<nbt::tag_short>().get();
+	}
+
+	// todo - other fields? 
+
+	// look for item enchantment
+	if ( iitem.has_key("tag", nbt::tag_type::Compound) ) {
+	  nbt::tag_compound etag = iitem["tag"].as<nbt::tag_compound>();
+
+	  if ( etag.has_key("RepairCost", nbt::tag_type::Int) ) {
+	    repairCost = etag["RepairCost"].as<nbt::tag_int>().get();
+	  }
+
+	  if ( etag.has_key("ench", nbt::tag_type::List) ) {
+	    nbt::tag_list elist = etag["ench"].as<nbt::tag_list>();
+
+	    for ( const auto& it: elist ) {
+	      nbt::tag_compound ench = it.as<nbt::tag_compound>();
+	      std::unique_ptr<ParsedEnchantment> e(new ParsedEnchantment());
+	      int ret = e->parse(ench);
+	      if ( ret == 0 ) {
+		enchantmentList.push_back( std::move(e) );
+	      } else {
+		// todo err?
+	      }
+	    }
+	  }
+	}
+	valid = true;
+	return 0;
+      }
+      int parseArmor(nbt::tag_compound& iarmor) {
+	armorFlag = true;
+	return parse(iarmor);
+      }
+      std::string toString(bool swallowFlag=false, int swallowValue=0) {
+	char tmpstring[1025];
+
+	if ( ! valid ) { return std::string("*Invalid Item*"); }
+
+	if ( swallowFlag ) {
+	  if ( swallowValue == id ) {
+	    return std::string("");
+	  }
+	}
+	
+	std::string s = "[";
+
+	if ( id <= 255 ) {
+	  s += "Block:" + blockInfoList[id].name;
+	} else if ( has_key(itemInfoList, id) ) {
+	  s += "Item:" + itemInfoList[id]->name;
+	} else {
+	  sprintf(tmpstring,"(UNKNOWN: id=%d 0x%x)",id,id);
+	  s += tmpstring;
+	}
+
+	if ( damage >= 0 ) {
+	  sprintf(tmpstring," Damage=%d", damage);
+	  s += tmpstring;
+	}
+	if ( count >= 0 ) {
+	  sprintf(tmpstring," Count=%d", count);
+	  s += tmpstring;
+	}
+	if ( slot >= 0 ) {
+	  sprintf(tmpstring," Slot=%d", slot);
+	  s += tmpstring;
+	}
+
+	if ( enchantmentList.size() > 0 ) {
+	  s += " Enchantments=[";
+	  int i=enchantmentList.size();
+	  for ( const auto& it: enchantmentList ) {
+	    s += it->toString();
+	    if ( --i > 0 ) {
+	      s += "; "; 
+	    }
+	  }
+	  s += "]";
+	}
+	
+	s += "]";
+	return s;
+      }
+    };
+      
+    class ParsedEntity {
+    public:
+      Point3d<int> bedPosition;
+      Point3d<int> spawn;
+      Point3d<float> pos;
+      Point2d<float> rotation;
+      int32_t id;
+      int32_t tileId;
+      bool playerFlag;
+      std::vector< std::unique_ptr<ParsedItem> > inventory;
+      std::vector< std::unique_ptr<ParsedItem> > armorList;
+      ParsedItem itemInHand;
+      ParsedItem item;
+      
+      ParsedEntity() {
+	clear();
+      }
+      void clear() {
+	bedPosition.clear();
+	spawn.clear();
+	pos.clear();
+	rotation.clear();
+	id = 0;
+	tileId = -1;
+	playerFlag = false;
+	inventory.clear();
+	armorList.clear();
+	itemInHand.clear();
+	item.clear();
+      }
+      int addInventoryItem ( nbt::tag_compound &iitem ) {
+	std::unique_ptr<ParsedItem> it(new ParsedItem());
+	int ret = it->parse(iitem);
+	inventory.push_back( std::move(it) );
+	return ret;
+      }
+      int doItemInHand ( nbt::tag_compound &iitem ) {
+	itemInHand.clear();
+	return itemInHand.parse(iitem);
+      }
+      int doItem ( nbt::tag_compound &iitem ) {
+	item.clear();
+	return item.parse(iitem);
+      }
+      int doTile ( int ntileId ) {
+	tileId = ntileId;
+	return 0;
+      }
+
+      int addArmor ( nbt::tag_compound &iarmor ) {
+	std::unique_ptr<ParsedItem> armor(new ParsedItem());
+	int ret = armor->parseArmor(iarmor);
+	if ( ret == 0 ) {
+	  armorList.push_back( std::move(armor) );
+	}
+	return 0;
+      }
+
+      // todo - this should probably be multi-line so it's not so insane looking :)
+      std::string toString(const std::string hdr) {
+	char tmpstring[1025];
+	
+	std::string s = "[";
+	if ( playerFlag ) {
+	  s += "Player";
+	} else {
+	  s += "Mob";
+	}
+
+	if ( has_key(entityInfoList, id) ) {
+	  s += " Name=" + entityInfoList[id]->name;
+	} else {
+	  sprintf(tmpstring," Name=(UNKNOWN: id=%d 0x%x)",id,id);
+	  s += tmpstring;
+	}
+
+	s += " Pos=(" + pos.toString() + ")";
+	s += " Rotation=(" + rotation.toString() + ")";
+
+	if ( playerFlag ) {
+
+	  // output player position + rotation to user
+	  // todo - option to put icon on map
+	  int ix, iy;
+	  worldPointToImagePoint(pos.x,pos.z, ix,iy);
+	  fprintf(stderr,"Player Position=(%f, %f, %f) at image (%d, %d) -- Rotation=(%f, %f)\n", pos.x,pos.y,pos.z, ix, iy, rotation.x,rotation.y);
+
+	  s += " BedPos=(" + bedPosition.toString() + ")";
+	  s += " Spawn=(" + spawn.toString() + ")";
+	}
+
+	if ( armorList.size() > 0 ) {
+	  s += " [Armor:";
+	  for ( const auto& it: armorList ) {
+	    std::string sarmor = it->toString(true,0);
+	    if ( sarmor.size() > 0 ) {
+	      s += " " + sarmor;
+	    }
+	  }
+	  s += "]";
+	}
+
+	if ( inventory.size() > 0 ) {
+	  s += " [Inventory:";
+	  for ( const auto& it: inventory ) {
+	    std::string sitem = it->toString(true,0);
+	    if ( sitem.size() > 0 ) {
+	      s += " " + sitem;
+	    }
+	  }
+	  s += "]";
+	}
+
+	if ( itemInHand.valid ) {
+	  s += " ItemInHand=" + itemInHand.toString();
+	}
+
+	if ( item.valid ) {
+	  s += " Item=" + item.toString();
+	}
+
+	if ( tileId >= 0 ) {
+	  sprintf(tmpstring," Tile=[%s (%d 0x%x)]", blockInfoList[tileId].name.c_str(), tileId, tileId);
+	  s += tmpstring;
+	}
+	// todo - falling block also has "Data" (byte)
+
+	// todo - dropped item also has "Fire" (short); "Health" (short)
+	
+	s += "]";
+	return s;
+      }
+    };
+    typedef std::vector< std::unique_ptr<ParsedEntity> > ParsedEntityList;
+
+    class ParsedTileEntity {
+    public:
+      Point3d<float> pos;
+      Point2d<int32_t> pairChest;
+      std::string id;
+      std::vector< std::unique_ptr<ParsedItem> > items;
+      std::vector< std::string > text;
+      int32_t entityId;
+      
+      ParsedTileEntity() {
+	clear();
+      }
+      void clear() {
+	pos.clear();
+	pairChest.clear();
+	id = "";
+	entityId = -1;
+	items.clear();
+	text.clear();
+      }
+      int addItem ( nbt::tag_compound &iitem ) {
+	std::unique_ptr<ParsedItem> it(new ParsedItem());
+	int ret = it->parse(iitem);
+	items.push_back( std::move(it) );
+	return ret;
+      }
+      int addSign ( nbt::tag_compound &tc ) {
+	text.push_back( tc["Text1"].as<nbt::tag_string>().get() );
+	text.push_back( tc["Text2"].as<nbt::tag_string>().get() );
+	text.push_back( tc["Text3"].as<nbt::tag_string>().get() );
+	text.push_back( tc["Text4"].as<nbt::tag_string>().get() );
+	return 0;
+      }
+      int addMobSpawner ( nbt::tag_compound &tc ) {
+	entityId = tc["EntityId"].as<nbt::tag_int>().get();
+	// todo - any of these interesting?
+	/*
+	  0x31-te: [] COMPOUND-1 {
+	  0x31-te:   [Delay] 20 0x14 (short)
+	  0x31-te:   [EntityId] 2850 0xb22 (int)
+	  0x31-te:   [MaxNearbyEntities] 6 0x6 (short)
+	  0x31-te:   [MaxSpawnDelay] 200 0xc8 (short)
+	  0x31-te:   [MinSpawnDelay] 200 0xc8 (short)
+	  0x31-te:   [RequiredPlayerRange] 16 0x10 (short)
+	  0x31-te:   [SpawnCount] 4 0x4 (short)
+	  0x31-te:   [SpawnRange] 4 0x4 (short)
+	*/
+	return 0;
+      }
+      
+      // todo - this should probably be multi-line so it's not so insane looking :)
+      std::string toString(const std::string hdr) {
+	char tmpstring[1025];
+	
+	std::string s = "[";
+	
+	s += "Pos=(" + pos.toString() + ")";
+
+	if ( items.size() > 0 ) {
+	  if ( pairChest.valid ) {
+	    // todo - should we keep lists and combine chests so that we can show full content of double chests?
+	    s += " PairChest=(" + pairChest.toString() + ")";
+	  }
+	  
+	  s+=" Chest=[";
+	  int i = items.size();
+	  for ( const auto& it: items ) {
+	    std::string sitem = it->toString(true,0);
+	    --i;
+	    if ( sitem.size() > 0 ) {
+	      s += sitem;
+	      if ( i > 0 ) {
+		s += " ";
+	      }
+	    }
+	  }
+	  s += "]";
+	}
+
+	if ( text.size() > 0 ) {
+	  s+=" Sign=[";
+	  int i = text.size();
+	  for ( const auto& it: text ) {
+	    s += it;
+	    if ( --i > 0 ) {
+	      s += " / ";
+	    }
+	  }
+	  s += "]";
+	}
+
+	if ( entityId > 0 ) {
+	  s+= " MobSpawner=[";
+	  // todo - the entityid is weird.  lsb appears to be entity type; high bytes are ??
+	  int eid = entityId & 0xff;
+	  if ( has_key(entityInfoList, eid) ) {
+	    s += "Name=" + entityInfoList[eid]->name;
+	  } else {
+	    sprintf(tmpstring,"Name=(UNKNOWN: id=%d 0x%x)",eid,eid);
+	    s += tmpstring;
+	  }
+	  s += "]";
+	}
+	
+	s += "]";
+	return s;
+      }
+    };
+    typedef std::vector< std::unique_ptr<ParsedTileEntity> > ParsedTileEntityList;
+    
+    int parseNbt_entity(std::string dimName, std::string hdr, MyTagList &tagList, bool playerFlag, ParsedEntityList &entityList) {
+      entityList.clear();
+      
+      // this could be a list of mobs
+      for ( size_t i=0; i < tagList.size(); i++ ) { 
+
+	std::unique_ptr<ParsedEntity> entity(new ParsedEntity());
+	entity->clear();
+	
+	// check tagList
+	if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+	  // all is good
+	} else {
+	  fprintf(stderr,"ERROR: parseNbt_entity() called with invalid tagList (loop=%d)\n",(int)i);
+	  return -1;
+	}
+	
+	nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+	
+	entity->playerFlag = playerFlag;
+	
+	if ( tc.has_key("Armor", nbt::tag_type::List) ) {
+	  nbt::tag_list armorList = tc["Armor"].as<nbt::tag_list>();
+	  for ( const auto& iter: armorList ) {
+	    nbt::tag_compound armor = iter.as<nbt::tag_compound>();
+	    entity->addArmor(armor);
+	  }
+	}
+	
+	if ( tc.has_key("Attributes") ) {
+	  // todo - parse - quite messy; interesting?
+	}
+
+	if ( playerFlag ) {
+
+	  if ( tc.has_key("BedPositionX", nbt::tag_type::Int) ) {
+	    entity->bedPosition.set( tc["BedPositionX"].as<nbt::tag_int>().get(),
+				    tc["BedPositionY"].as<nbt::tag_int>().get(),
+				    tc["BedPositionZ"].as<nbt::tag_int>().get() );
+	  }
+
+	  if ( tc.has_key("SpawnX", nbt::tag_type::Int) ) {
+	    entity->spawn.set( tc["SpawnX"].as<nbt::tag_int>().get(),
+			      tc["SpawnY"].as<nbt::tag_int>().get(),
+			      tc["SpawnZ"].as<nbt::tag_int>().get() );
+	  }
+      
+	  if ( tc.has_key("Inventory", nbt::tag_type::List) ) {
+	    nbt::tag_list inventory = tc["Inventory"].as<nbt::tag_list>();
+	    for ( const auto& iter: inventory ) {
+	      nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+	      entity->addInventoryItem(iitem);
+	    }
+	  }
+	} else {
+
+	  // non-player entity
+
+	  // todo - other interesting bits?
+	
+	  if ( tc.has_key("ItemInHand", nbt::tag_type::Compound) ) {
+	    entity->doItemInHand( tc["ItemInHand"].as<nbt::tag_compound>() );
+	  }
+	  if ( tc.has_key("Item", nbt::tag_type::Compound) ) {
+	    entity->doItem( tc["Item"].as<nbt::tag_compound>() );
+	  }
+	  if ( tc.has_key("Tile", nbt::tag_type::Byte) ) {
+	    entity->doTile( tc["Tile"].as<nbt::tag_byte>() );
+	  }
+	}
+
+	if ( tc.has_key("Pos", nbt::tag_type::List) ) {
+	  nbt::tag_list pos = tc["Pos"].as<nbt::tag_list>();
+	  entity->pos.set( pos[0].as<nbt::tag_float>().get(),
+			  pos[1].as<nbt::tag_float>().get(),
+			  pos[2].as<nbt::tag_float>().get() );
+	}
+
+	if ( tc.has_key("Rotation", nbt::tag_type::List) ) {
+	  nbt::tag_list rotation = tc["Rotation"].as<nbt::tag_list>();
+	  entity->rotation.set( rotation[0].as<nbt::tag_float>().get(),
+				rotation[1].as<nbt::tag_float>().get() );
+	}
+      
+	if ( tc.has_key("id", nbt::tag_type::Int) ) {
+	  entity->id = tc["id"].as<nbt::tag_int>().get();
+	}
+      
+	fprintf(control.fpLog, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(hdr).c_str());
+
+	entityList.push_back( std::move(entity) );
+      }
+      
+      return 0;
+    }
+
+    int parseNbt_tileEntity(std::string dimName, MyTagList &tagList, ParsedTileEntityList &tileEntityList) {
+      tileEntityList.clear();
+      
+      // this could be a list of mobs
+      for ( size_t i=0; i < tagList.size(); i++ ) { 
+
+	bool parseFlag = false;
+	
+	std::unique_ptr<ParsedTileEntity> tileEntity(new ParsedTileEntity());
+	tileEntity->clear();
+	
+	// check tagList
+	if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+	  // all is good
+	} else {
+	  fprintf(stderr,"ERROR: parseNbt_tileEntity() called with invalid tagList (loop=%d)\n",(int)i);
+	  return -1;
+	}
+	
+	nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+
+	if ( tc.has_key("x", nbt::tag_type::Int) ) {
+	  tileEntity->pos.set( tc["x"].as<nbt::tag_int>().get(),
+			       tc["y"].as<nbt::tag_int>().get(),
+			       tc["z"].as<nbt::tag_int>().get() );
+	}
+
+	if ( tc.has_key("pairx", nbt::tag_type::Int) ) {
+	  tileEntity->pairChest.set( tc["pairx"].as<nbt::tag_int>().get(),
+				     tc["pairz"].as<nbt::tag_int>().get() );
+	}
+	
+	if ( tc.has_key("id", nbt::tag_type::String) ) {
+	  std::string id = tc["id"].as<nbt::tag_string>().get();
+	  
+	  if ( id == "Sign" ) {
+	    tileEntity->addSign(tc);
+	    parseFlag = true;
+	  }
+	  else if ( id == "Chest" ) {
+	    if ( tc.has_key("Items", nbt::tag_type::List) ) {
+	      nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
+	      for ( const auto& iter: items ) {
+		nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+		tileEntity->addItem(iitem);
+	      }
+	      parseFlag = true;
+	    }
+	  }
+	  else if ( id == "BrewingStand" ) {
+	    // todo - anything interesting?
+	  }
+	  else if ( id == "EnchantTable" ) {
+	    // todo - anything interesting?
+	  }
+	  else if ( id == "Furnace" ) {
+	    // todo - anything interesting?
+	  }
+	  else if ( id == "MobSpawner" ) {
+	    tileEntity->addMobSpawner(tc);
+	    parseFlag = true;
+	  }
+	  else {
+	    fprintf(control.fpLog,"ERROR: Unknown tileEntity id=(%s)\n", id.c_str());
+	  }
+	}
+
+	if ( parseFlag ) {
+	  fprintf(control.fpLog, "%sParsedTileEntity: %s\n", dimName.c_str(), tileEntity->toString("").c_str());
+
+	  tileEntityList.push_back( std::move(tileEntity) );
+	}
+      }
+      
+      return 0;
+    }
+
     
     int printKeyValue(const char* key, int key_size, const char* value, int value_size, bool printKeyAsStringFlag) {
-      fprintf(control.fpLog,"WARNING: Unknown key size (%d) k=[%s][", key_size, 
+      fprintf(control.fpLog,"WARNING: Unknown Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
 	      (printKeyAsStringFlag ? key : "(SKIPPED)"));
       for (int i=0; i < key_size; i++) {
 	if ( i > 0 ) { fprintf(control.fpLog," "); }
 	fprintf(control.fpLog,"%02x",((int)key[i] & 0xff));
       }
-      fprintf(control.fpLog,"] v=[");
+      fprintf(control.fpLog,"] value_size=%d value_hex=[",value_size);
       for (int i=0; i < value_size; i++) {
 	if ( i > 0 ) { fprintf(control.fpLog," "); }
 	fprintf(control.fpLog,"%02x",((int)value[i] & 0xff));
@@ -1235,19 +1920,19 @@ namespace mcpe_viz {
       leveldb::Options dbOptions;
       leveldb::ReadOptions dbReadOptions;
       
-      MyChunkList chunkList[kWorldIdCount];
+      ChunkDataList chunkList[kDimIdCount];
       
       MyWorld() {
 	db = nullptr;
 	dbOptions.compressors[0] = new leveldb::ZlibCompressor();
 	dbOptions.create_if_missing = false;
 	dbReadOptions.fill_cache = false;
-	for (int i=0; i < kWorldIdCount; i++) {
-	  chunkList[i].worldId = i;
+	for (int i=0; i < kDimIdCount; i++) {
+	  chunkList[i].dimId = i;
 	  chunkList[i].clearChunkBounds();
 	}
-	chunkList[kWorldIdOverworld].setName("overworld");
-	chunkList[kWorldIdNether].setName("nether");
+	chunkList[kDimIdOverworld].setName("overworld");
+	chunkList[kDimIdNether].setName("nether");
       }
       ~MyWorld() {
 	dbClose();
@@ -1274,7 +1959,7 @@ namespace mcpe_viz {
       int calcChunkBounds() {
 	// see if we already calculated bounds
 	bool passFlag = true;
-	for (int i=0; i < kWorldIdCount; i++) {
+	for (int i=0; i < kDimIdCount; i++) {
 	  if ( ! chunkList[i].chunkBoundsValid ) {
 	    passFlag = false;
 	  }
@@ -1284,11 +1969,11 @@ namespace mcpe_viz {
 	}
 
 	// clear bounds
-	for (int i=0; i < kWorldIdCount; i++) {
+	for (int i=0; i < kDimIdCount; i++) {
 	  chunkList[i].clearChunkBounds();
 	}
 
-	int chunkX=-1, chunkZ=-1, chunkWorldId=-1, chunkType=-1;
+	int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
 	
 	fprintf(stderr,"Scan keys to get world boundaries\n");
 	int recordCt = 0;
@@ -1316,12 +2001,12 @@ namespace mcpe_viz {
 	  else if ( key_size == 13 ) {
 	    chunkX = myParseInt32(key, 0);
 	    chunkZ = myParseInt32(key, 4);
-	    chunkWorldId = myParseInt32(key, 8);
+	    chunkDimId = myParseInt32(key, 8);
 	    chunkType = myParseInt8(key, 12);
 	    
 	    // sanity checks
 	    if ( chunkType == 0x30 ) {
-	      chunkList[chunkWorldId].addToChunkBounds(chunkX, chunkZ);
+	      chunkList[chunkDimId].addToChunkBounds(chunkX, chunkZ);
 	    }
 	  }
 	}
@@ -1330,13 +2015,15 @@ namespace mcpe_viz {
 	delete iter;
 
 	// mark bounds valid
-	for (int i=0; i < kWorldIdCount; i++) {
+	for (int i=0; i < kDimIdCount; i++) {
 	  chunkList[i].setChunkBoundsValid();
 	}
 
+	fprintf(stderr,"  %d records\n", recordCt);
+	
 	return 0;
       }
-      
+
       leveldb::Status parseDb () {
 	int histo[256];
 	int histoBiome[256];
@@ -1352,7 +2039,7 @@ namespace mcpe_viz {
 
 	char tmpstring[256];
 
-	int chunkX=-1, chunkZ=-1, chunkWorldId=-1, chunkType=-1;
+	int chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
       
 	calcChunkBounds();
 	
@@ -1395,17 +2082,21 @@ namespace mcpe_viz {
 	  }
 	  else if ( strncmp(key,"~local_player",key_size) == 0 ) {
 	    fprintf(control.fpLog,"Local Player value:\n");
-	    parseNbt("Local Player: ", value, value_size, tagList);
-	    // todo - parse tagList?
-	    // todo - interesting tags: BedPositionX/Y/Z; Pos; Rotation
-	    // todo - parse entity function?
+	    int ret = parseNbt("Local Player: ", value, value_size, tagList);
+	    if ( ret == 0 ) { 
+	      ParsedEntityList entityList;
+	      parseNbt_entity("","Local Player:", tagList, true, entityList);
+	    }
 	  }
 	  else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
 	    // note: key contains player id (e.g. "player_-1234")
 	    std::string playerRemoteId = &key[strlen("player_")];
 	    fprintf(control.fpLog,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
-	    parseNbt("Remote Player: ", value, value_size, tagList);
-	    // todo - parse tagList? similar to local player
+	    int ret = parseNbt("Remote Player: ", value, value_size, tagList);
+	    if ( ret == 0 ) {
+	      ParsedEntityList entityList;
+	      parseNbt_entity("","Remote Player:", tagList, true, entityList);
+	    }
 	  }
 	  else if ( strncmp(key,"villages",key_size) == 0 ) {
 	    fprintf(control.fpLog,"Villages value:\n");
@@ -1421,42 +2112,43 @@ namespace mcpe_viz {
 	    fprintf(control.fpLog,"portals value:\n");
 	    parseNbt("portals: ", value, value_size, tagList);
 	    // todo - parse tagList?
+	    // todo - could work out "perfect" portal mappings? (for each portal, show where perfect portal would be in other world)
 	  }
 			 
 	  else if ( key_size == 9 || key_size == 13 ) {
 
 	    // this is probably a record we want to parse
 
-	    std::string worldName; // todo - could use name from chunkList
+	    std::string dimName;
 	    if ( key_size == 9 ) {
 	      chunkX = myParseInt32(key, 0);
 	      chunkZ = myParseInt32(key, 4);
-	      chunkWorldId = 0; // forced for overworld
+	      chunkDimId = kDimIdOverworld;
 	      chunkType = myParseInt8(key, 8);
-	      worldName = "overworld";
+	      dimName = "overworld";
 	    }
 	    else if ( key_size == 13 ) {
 	      chunkX = myParseInt32(key, 0);
 	      chunkZ = myParseInt32(key, 4);
-	      chunkWorldId = myParseInt32(key, 8);
+	      chunkDimId = myParseInt32(key, 8);
 	      chunkType = myParseInt8(key, 12);
-	      worldName = "nether";
+	      dimName = "nether";
 
-	      // check for new world id's
-	      if ( chunkWorldId != 1 ) {
-		fprintf(stderr, "HEY! Found new chunkWorldId=0x%x\n", chunkWorldId);
+	      // check for new dim id's
+	      if ( chunkDimId != kDimIdNether ) {
+		fprintf(stderr, "HEY! Found new chunkDimId=0x%x\n", chunkDimId);
 	      }
 	    }
 	  
-	    chunkList[chunkWorldId].histoChunkType[chunkType]++;
+	    chunkList[chunkDimId].histoChunkType[chunkType]++;
 
-	    r = worldName + "-chunk: ";
+	    r = dimName + "-chunk: ";
 	    sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
 	    r += tmpstring;
 	    if ( true ) {
 	      // show approximate image coordinates for chunk
-	      int chunkOffsetX = -chunkList[chunkWorldId].minChunkX;
-	      int chunkOffsetZ = -chunkList[chunkWorldId].maxChunkZ;
+	      int chunkOffsetX = -chunkList[chunkDimId].minChunkX;
+	      int chunkOffsetZ = -chunkList[chunkDimId].maxChunkZ;
 	      int imageX = (chunkX + chunkOffsetX) * 16;
 	      int imageZ = (chunkZ + chunkOffsetZ) * 16;
 	      int ix = (imageX);
@@ -1487,27 +2179,38 @@ namespace mcpe_viz {
 		  for ( int cx=0; cx < 16; cx++) {
 		    uint8_t blockId = getBlockId(value, cx,cz,cy);
 		    histo[blockId]++;
-		    if ( topBlock[cz][cx] == 0 ||
-			 vectorContains(chunkList[chunkWorldId].blockHideList, topBlock[cz][cx]) ||
-			 vectorContains(chunkList[chunkWorldId].blockForceTopList, blockId) ) {
-		      topBlock[cz][cx] = blockId;
-		      topData[cz][cx] = getBlockData(value, cx,cz,cy);
-		      topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
-		      topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
-		      topBlockY[cz][cx] = cy;
-		    }
 
-		    // todo - testing
+		    // todo - check for isSolid?
+		    if ( blockId != 0 ) {  // current block is NOT air
+		      if ( ( topBlock[cz][cx] == 0 &&  // top block is not already set
+			     !vectorContains(chunkList[chunkDimId].blockHideList, blockId) ) || // blockId is not in hide list
+			   vectorContains(chunkList[chunkDimId].blockForceTopList, blockId) // see if we want to force a block
+			   ) {
+			topBlock[cz][cx] = blockId;
+			topData[cz][cx] = getBlockData(value, cx,cz,cy);
+			topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
+			topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
+			topBlockY[cz][cx] = cy;
+
+			// todo topLight here
 #if 1
-		    // todo - this does not quite work yet; need to get block light on block above first n SOLID block
-		    if ( topBlock[cz][cx] == 0 ) {
-		      // note: we store blocklight from air block ABOVE top block; use this for block light image
-		      uint8_t sl = getBlockSkyLight(value, cx,cz,cy);
-		      uint8_t bl = getBlockBlockLight(value, cx,cz,cy);	
-		      // we combine the light nibbles into a byte
-		      topLight[cz][cx] = (sl << 4) | bl;
-		    }
+			// todo - we are getting the block light ABOVE this block (correct?)
+			// todo - this will break if we are using force-top stuff
+			int cy2 = cy;
+			if ( blockInfoList[blockId].isSolid() ) {
+			  // move to block above this block
+			  cy2++;
+			  if ( cy2 > 127 ) { cy2 = 127; }
+			} else {
+			  // if not solid, don't adjust
+			}
+			uint8_t sl = getBlockSkyLight(value, cx,cz,cy2);
+			uint8_t bl = getBlockBlockLight(value, cx,cz,cy2);	
+			// we combine the light nibbles into a byte
+			topLight[cz][cx] = (sl << 4) | bl;
 #endif
+		      }
+		    }
 		  }
 		}
 	      }
@@ -1521,7 +2224,8 @@ namespace mcpe_viz {
 
 #if 0
 		  // todo - testing idea about lighting - get lighting from top solid block - result is part good part crazy
-		  int ty = colData1[cz][cx];
+		  int ty = colData1[cz][cx] + 1;
+		  if ( ty > 127 ) { ty=127; }
 		  uint8_t sl = getBlockSkyLight(value, cx,cz,ty);
 		  uint8_t bl = getBlockBlockLight(value, cx,cz,ty);
 		  topLight[cz][cx] = (sl << 4) | bl;
@@ -1537,7 +2241,7 @@ namespace mcpe_viz {
 		  int32_t rawData = colData2[cz][cx];
 		  int biomeId = (int)(rawData & 0xFF);
 		  histoBiome[biomeId]++;
-		  chunkList[chunkWorldId].histoGlobalBiome[biomeId]++;
+		  chunkList[chunkDimId].histoGlobalBiome[biomeId]++;
 		  grassAndBiome[cz][cx] = rawData;
 		  fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
 		}
@@ -1546,14 +2250,14 @@ namespace mcpe_viz {
 	      fprintf(control.fpLog,"Block Histogram:\n");
 	      for (int i=0; i < 256; i++) {
 		if ( histo[i] > 0 ) {
-		  fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", worldName.c_str(), i, histo[i], blockInfo[i].name.c_str());
+		  fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histo[i], blockInfoList[i].name.c_str());
 		}
 	      }
 	      fprintf(control.fpLog,"Biome Histogram:\n");
 	      for (int i=0; i < 256; i++) {
 		if ( histoBiome[i] > 0 ) {
 		  std::string biomeName( getBiomeName(i) );
-		  fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", worldName.c_str(), i, histoBiome[i], biomeName.c_str());
+		  fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histoBiome[i], biomeName.c_str());
 		}
 	      }
 	      fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
@@ -1575,34 +2279,45 @@ namespace mcpe_viz {
 	      }
 
 	      // store chunk
-	      chunkList[chunkWorldId].putChunk(chunkX, chunkZ,
-					       &topBlock[0][0], &topData[0][0],
-					       &grassAndBiome[0][0], &topBlockY[0][0],
-					       &colData1[0][0], &topLight[0][0]);
+	      chunkList[chunkDimId].putChunk(chunkX, chunkZ,
+					     &topBlock[0][0], &topData[0][0],
+					     &grassAndBiome[0][0], &topBlockY[0][0],
+					     &colData1[0][0], &topLight[0][0]);
 
 	      break;
 
 	    case 0x31:
-	      fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", worldName.c_str());
-	      parseNbt("0x31-te: ", value, value_size, tagList);
-	      // todo - parse tagList?
+	      {
+		fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
+		int ret = parseNbt("0x31-te: ", value, value_size, tagList);
+		if ( ret == 0 ) { 
+		  ParsedTileEntityList tileEntityList;
+		  parseNbt_tileEntity(dimName+"-", tagList, tileEntityList);
+		}
+	      }
 	      break;
 
 	    case 0x32:
-	      fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", worldName.c_str());
-	      parseNbt("0x32-e: ", value, value_size, tagList);
-	      // todo - parse tagList?
+	      {
+		fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", dimName.c_str());
+		int ret = parseNbt("0x32-e: ", value, value_size, tagList);
+		if ( ret == 0 ) {
+		  ParsedEntityList entityList;
+		  parseNbt_entity(dimName+"-", "Mob:", tagList, false, entityList);
+		}
+	      }
 	      break;
 
 	    case 0x33:
 	      // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
-	      fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", worldName.c_str());
+	      fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
 	      parseNbt("0x33-tick: ", value, value_size, tagList);
 	      // todo - parse tagList?
+	      // todo - could show location of active fires
 	      break;
 
 	    case 0x34:
-	      fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", worldName.c_str());
+	      fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
 	      printKeyValue(key,key_size,value,value_size,false);
 	      /* 
 		 0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
@@ -1614,10 +2329,10 @@ namespace mcpe_viz {
 	      break;
 
 	    case 0x35:
-	      fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", worldName.c_str());
+	      fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
 	      printKeyValue(key,key_size,value,value_size,false);
 	      /*
-		0x35 ?? -- both worlds -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
+		0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
 		-- there are 2907 in "another1"
 		-- to examine data:
 		cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
@@ -1627,15 +2342,15 @@ namespace mcpe_viz {
 	    case 0x76:
 	      {
 		// this record is not very interesting we usually hide it
-		// todo - it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
+		// note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
 		if ( control.verboseFlag || (value[0] != 2) ) { 
-		  fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", worldName.c_str(), (int)(value[0]));
+		  fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(value[0]));
 		}
 	      }
 	      break;
 
 	    default:
-	      fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", worldName.c_str(),
+	      fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
 		      key_size, chunkType, value_size);
 	      printKeyValue(key,key_size,value,value_size,true);
 	      if ( false ) {
@@ -1648,12 +2363,14 @@ namespace mcpe_viz {
 	    }
 	  }
 	  else {
-	    fprintf(control.fpLog,"WARNING: Unknown key size (%d)\n", key_size);
+	    fprintf(control.fpLog,"WARNING: Unknown chunk - key_size=%d value_size=%d\n", key_size, value_size);
 	    printKeyValue(key,key_size,value,value_size,true);
-	    // try to nbt decode
-	    fprintf(control.fpLog,"WARNING: Attempting NBT Decode:\n");
-	    parseNbt("WARNING: ", value, value_size, tagList);
-	    // todo - parse tagList?
+	    if ( false ) { 
+	      // try to nbt decode
+	      fprintf(control.fpLog,"WARNING: Attempting NBT Decode:\n");
+	      parseNbt("WARNING: ", value, value_size, tagList);
+	      // todo - parse tagList?
+	    }
 	  }
 	}
 	fprintf(stderr,"Read %d records\n", recordCt);
@@ -1668,7 +2385,7 @@ namespace mcpe_viz {
       
       int doOutput() {
 	calcChunkBounds();
-	for (int i=0; i < kWorldIdCount; i++) {
+	for (int i=0; i < kDimIdCount; i++) {
 	  chunkList[i].doOutput(db);
 	}
 	return 0;
@@ -1677,6 +2394,14 @@ namespace mcpe_viz {
 
     MyWorld myWorld;
 
+    void worldPointToImagePoint(float wx, float wz, int &ix, int &iy) {
+      const int chunkOffsetX = -myWorld.chunkList[kDimIdOverworld].minChunkX;
+      const int chunkOffsetZ = -myWorld.chunkList[kDimIdOverworld].minChunkZ;
+      
+      ix = wx + (chunkOffsetX * 16);
+      iy = wz + (chunkOffsetZ * 16);
+    }
+    
     
     int parseLevelFile(const std::string fname) {
       FILE *fp = fopen(fname.c_str(), "rb");
@@ -1750,6 +2475,9 @@ namespace mcpe_viz {
       }
 
       // todo - this should use streams
+
+      const char* hdr = "";
+      int indent = 1;
       
       FILE *fp = fopen(fn.c_str(), "r");
       if ( ! fp ) {
@@ -1776,54 +2504,54 @@ namespace mcpe_viz {
 	}
 	
 	if ( (p=strstr(buf,"hide-top:")) ) {
-	  int worldId = -1;
+	  int dimId = -1;
 	  int blockId = -1;
 	  int pass = false;
-	  if ( sscanf(&p[9],"%d 0x%x", &worldId, &blockId) == 2 ) {
+	  if ( sscanf(&p[9],"%d 0x%x", &dimId, &blockId) == 2 ) {
 	    pass = true;
 	  }
-	  else if ( sscanf(&p[9],"%d %d", &worldId, &blockId) == 2 ) {
+	  else if ( sscanf(&p[9],"%d %d", &dimId, &blockId) == 2 ) {
 	    pass = true;
 	  }
-	  // check worldId
-	  if ( worldId < kWorldIdOverworld || worldId >= kWorldIdCount ) {
+	  // check dimId
+	  if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
 	    pass = false;
 	  }
 	  if ( pass ) {
 	    // add to hide list
-	    fprintf(stderr,"INFO: Adding 'hide-top' block: worldId=%d blockId=%3d (0x%02x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
-	    myWorld.chunkList[worldId].blockHideList.push_back(blockId);
+	    fprintf(stderr,"%sAdding 'hide-top' block: dimId=%d blockId=%3d (0x%02x) (hide-top: %s - %s)\n", makeIndent(indent,hdr).c_str(), dimId, blockId, blockId, myWorld.chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str());
+	    myWorld.chunkList[dimId].blockHideList.push_back(blockId);
 	  } else {
-	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide-top': [%s]\n", buf);
+	    fprintf(stderr,"%sERROR: Failed to parse cfg item 'hide-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
 	  }
 	}
 
 	else if ( (p=strstr(buf,"force-top:")) ) {
-	  int worldId = -1;
+	  int dimId = -1;
 	  int blockId = -1;
 	  int pass = false;
-	  if ( sscanf(&p[10],"%d 0x%x", &worldId, &blockId) == 2 ) {
+	  if ( sscanf(&p[10],"%d 0x%x", &dimId, &blockId) == 2 ) {
 	    pass = true;
 	  }
-	  else if ( sscanf(&p[10],"%d %d", &worldId, &blockId) == 2 ) {
+	  else if ( sscanf(&p[10],"%d %d", &dimId, &blockId) == 2 ) {
 	    pass = true;
 	  }
-	  // check worldId
-	  if ( worldId < kWorldIdOverworld || worldId >= kWorldIdCount ) {
+	  // check dimId
+	  if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
 	    pass = false;
 	  }
 	  if ( pass ) {
 	    // add to hide list
-	    fprintf(stderr,"INFO: Adding 'force-top' block: worldId=%d blockId=%3d (0x%02x) (%s)\n", worldId, blockId, blockId, blockInfo[blockId].name.c_str());
-	    myWorld.chunkList[worldId].blockForceTopList.push_back(blockId);
+	    fprintf(stderr,"%sINFO: Adding 'force-top' block: dimId=%d blockId=%3d (0x%02x) (force-top: %s - %s)\n", makeIndent(indent,hdr).c_str(), dimId, blockId, blockId, myWorld.chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str());
+	    myWorld.chunkList[dimId].blockForceTopList.push_back(blockId);
 	  } else {
-	    fprintf(stderr,"ERROR: Failed to parse cfg item 'hide': [%s]\n", buf);
+	    fprintf(stderr,"%sERROR: Failed to parse cfg item 'hide': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
 	  }
 	}
 
 	else {
 	  if ( strlen(buf) > 0 ) {
-	    fprintf(stderr,"WARNING: Unparsed config line: [%s]\n",buf);
+	    fprintf(stderr,"%sWARNING: Unparsed config line: [%s]\n", makeIndent(indent,hdr).c_str(),buf);
 	  }
 	}
 	
@@ -1936,7 +2664,7 @@ namespace mcpe_viz {
       std::string s("(EMPTY)");
       xmlChar* prop = xmlGetProp(cur,p);
       if ( prop ) {
-        s = (char*)prop;
+	s = (char*)prop;
 	xmlFree(prop);
 	valid=true;
       }
@@ -1958,7 +2686,7 @@ namespace mcpe_viz {
 
 	  // create data
 	  if ( idValid && nameValid ) {
-	    MyBlock& b = blockInfo[id].setName(name);
+	    BlockInfo& b = blockInfoList[id].setName(name);
 	    if ( colorValid ) {
 	      b.setColor(color);
 	    }
@@ -2017,7 +2745,7 @@ namespace mcpe_viz {
 
 	  // create data
 	  if ( idValid && nameValid ) {
-	    itemInfo.insert( std::make_pair(id, std::unique_ptr<MyItem>(new MyItem(name.c_str()))) );
+	    itemInfoList.insert( std::make_pair(id, std::unique_ptr<ItemInfo>(new ItemInfo(name.c_str()))) );
 	  } else {
 	    // todo error
 	    fprintf(stderr,"WARNING: Did not find valid id and name for item: (0x%x) (%s)\n"
@@ -2043,7 +2771,7 @@ namespace mcpe_viz {
 
 	  // create data
 	  if ( idValid && nameValid ) {
-	    entityInfo.insert( std::make_pair(id, std::unique_ptr<MyEntity>(new MyEntity(name.c_str()))) );
+	    entityInfoList.insert( std::make_pair(id, std::unique_ptr<EntityInfo>(new EntityInfo(name.c_str()))) );
 	  } else {
 	    // todo error
 	    fprintf(stderr,"WARNING: Did not find valid id and name for entity: (0x%x) (%s)\n"
@@ -2057,7 +2785,38 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int doParseXML_biomelist(xmlNodePtr cur) {
+    int doParseXML_enchantmentlist(xmlNodePtr cur) {
+      cur = cur->xmlChildrenNode;
+      while (cur != NULL) {
+	if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantment") == 0 ) {
+
+	  bool idValid, nameValid, officialNameValid;
+	  
+	  int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+	  std::string officialName = xmlGetString(cur, (const xmlChar*)"officialName", officialNameValid);
+	  
+	  // create data
+	  if ( idValid && nameValid ) {
+	    std::unique_ptr<EnchantmentInfo> b(new EnchantmentInfo(name.c_str()));
+	    if ( officialNameValid ) {
+	      b->setOfficialName(officialName);
+	    }
+	    enchantmentInfoList.insert( std::make_pair(id, std::move(b)) );
+	  } else {
+	    // todo error
+	    fprintf(stderr,"WARNING: Did not find valid id and name for enchantment: (0x%x) (%s)\n"
+		    , id
+		    , name.c_str()
+		    );
+	  }
+	}
+	cur = cur->next;
+      }
+      return 0;
+    }
+
+      int doParseXML_biomelist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"biome") == 0 ) {
@@ -2070,11 +2829,11 @@ namespace mcpe_viz {
 
 	  // create data
 	  if ( idValid && nameValid ) {
-	    std::unique_ptr<MyBiome> b(new MyBiome(name.c_str()));
+	    std::unique_ptr<BiomeInfo> b(new BiomeInfo(name.c_str()));
 	    if ( colorValid ) {
 	      b->setColor(color);
 	    }
-	    biomeInfo.insert( std::make_pair(id, std::move(b)) );
+	    biomeInfoList.insert( std::make_pair(id, std::move(b)) );
 	  } else {
 	    // todo error
 	    fprintf(stderr,"WARNING: Did not find valid id and name for biome: (0x%x) (%s)\n"
@@ -2108,6 +2867,9 @@ namespace mcpe_viz {
 	}
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"biomelist") == 0 ) {
 	  doParseXML_biomelist(cur);
+	}
+	if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantmentlist") == 0 ) {
+	  doParseXML_enchantmentlist(cur);
 	}
 	
 	cur = cur->next;
@@ -2205,18 +2967,18 @@ namespace mcpe_viz {
       fprintf(stderr,"Options:\n"
 	      "  --detail                 Log extensive details about the world to the log file\n"
 	      "\n"
-	      "  (note: [wid] is optional world-id - if not specified, do all worlds; 0=Overworld; 1=Nether)\n"
-	      "  --grid [wid]             Display chunk grid on top of world\n"
+	      "  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
+	      "  --grid[=did]             Display chunk grid on top of images\n"
 	      "\n"
-	      "  --all-image [wid]        Create all image types\n"
-	      "  --biome [wid]            Create a biome map image\n"
-	      "  --grass [wid]            Create a grass color map image\n"
-	      "  --height-col [wid]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
-	      "  --height-col-gs [wid]    Create a height column map image (grayscale)\n"
-	      "  --blocklight [wid]       Create a block light map image\n"
-	      "  --skylight [wid]         Create a sky light map image\n"
+	      "  --all-image[=did]        Create all image types\n"
+	      "  --biome[=did]            Create a biome map image\n"
+	      "  --grass[=did]            Create a grass color map image\n"
+	      "  --height-col[=did]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
+	      "  --height-col-gs[=did]    Create a height column map image (grayscale)\n"
+	      "  --blocklight[=did]       Create a block light map image\n"
+	      "  --skylight[=did]         Create a sky light map image\n"
 	      "\n"
-	      "  --movie [wid]            Create movie of layers of overworld\n"
+	      "  --movie[=did]            Create movie of layers\n"
 	      "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
 	      "\n"
 	      "  --xml fn                 XML file containing data definitions\n"
@@ -2230,21 +2992,22 @@ namespace mcpe_viz {
     }
 
     // todo rename
-    int parseWorldIdOptArg(const char* arg) {
+    int parseDimIdOptArg(const char* arg) {
+      int did = kDoOutputAll;
       if ( arg ) {
+	did = atoi(arg);
+
 	// sanity check
-	int wid = atoi(arg);
-	if ( wid >= kWorldIdOverworld && wid < kWorldIdCount ) {
-	  return wid;
+	if ( did >= kDimIdOverworld && did < kDimIdCount ) {
+	  // all is good
 	} else {
-	  fprintf(stderr,"ERROR: Invalid world-id supplied (%d), defaulting to Overworld only\n", wid);
-	  wid=kWorldIdOverworld;
+	  fprintf(stderr,"ERROR: Invalid dimension-id supplied (%d), defaulting to Overworld only\n", did);
+	  did=kDimIdOverworld;
 	}
-	return wid;
       } else {
-	// if no arg, we want output for all worlds
-	return kDoOutputAll;
+	// if no arg, we want output for all dimensions
       }
+      return did;
     }
     
     int parse_args ( int argc, char **argv, Control& control ) {
@@ -2304,39 +3067,39 @@ namespace mcpe_viz {
 	  break;
 
 	case 'G':
-	  control.doGrid = parseWorldIdOptArg(optarg);
+	  control.doGrid = parseDimIdOptArg(optarg);
 	  break;
 
 	case 'B':
-	  control.doImageBiome = parseWorldIdOptArg(optarg);
+	  control.doImageBiome = parseDimIdOptArg(optarg);
 	  break;
 	case 'g':
-	  control.doImageGrass = parseWorldIdOptArg(optarg);
+	  control.doImageGrass = parseDimIdOptArg(optarg);
 	  break;
 	case 'd':
-	  control.doImageHeightCol = parseWorldIdOptArg(optarg);
+	  control.doImageHeightCol = parseDimIdOptArg(optarg);
 	  break;
 	case '#':
-	  control.doImageHeightColGrayscale = parseWorldIdOptArg(optarg);
+	  control.doImageHeightColGrayscale = parseDimIdOptArg(optarg);
 	  break;
 	case 'b':
-	  control.doImageBlockLight = parseWorldIdOptArg(optarg);
+	  control.doImageLightBlock = parseDimIdOptArg(optarg);
 	  break;
 	case 's':
-	  control.doImageSkyLight = parseWorldIdOptArg(optarg);
+	  control.doImageLightSky = parseDimIdOptArg(optarg);
 	  break;
 
 	case 'A':
-	  control.doImageBiome = parseWorldIdOptArg(optarg);
-	  control.doImageGrass = parseWorldIdOptArg(optarg);
-	  control.doImageHeightCol = parseWorldIdOptArg(optarg);
-	  control.doImageHeightColGrayscale = parseWorldIdOptArg(optarg);
-	  control.doImageBlockLight = parseWorldIdOptArg(optarg);
-	  control.doImageSkyLight = parseWorldIdOptArg(optarg);
+	  control.doImageBiome = 
+	    control.doImageGrass = 
+	    control.doImageHeightCol = 
+	    control.doImageHeightColGrayscale =
+	    control.doImageLightBlock = 
+	    control.doImageLightSky = parseDimIdOptArg(optarg);
 	  break;
       
 	case 'M':
-	  control.doMovie = parseWorldIdOptArg(optarg);
+	  control.doMovie = parseDimIdOptArg(optarg);
 	  break;
 	case '*':
 	  // movie dimensions
@@ -2402,7 +3165,7 @@ int main ( int argc, char **argv ) {
 
   ret = mcpe_viz::parseXml(argv);
   if ( ret != 0 ) {
-    fprintf(stderr,"ERROR: Failed to parse an XML file.  Exiting...\n");
+    fprintf(stderr,"ERROR: Failed to parse XML file.  Exiting...\n");
     fprintf(stderr,"** Hint: Make sure that mcpe_viz.xml is in any of: current dir, exec dir, ~/.mcpe_viz/\n");
     return -1;
   }

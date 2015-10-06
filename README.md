@@ -1,7 +1,7 @@
 # MCPE Viz
 by Plethora777
 
-MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files (LevelDB).  It creates overview images from the world files, and reports *lots* of details on your world.
+MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, and reports *lots* of details on your world.
 
 It can also:
 
@@ -16,14 +16,20 @@ It can also:
 * Create an image of the grass color in your world (it's pretty interesting!)
 
 * Create movies of all layers from bedrock to build limit (*ffmpeg* required)
-
+  
 * Dump a *huge* amount of info about your world including:
+  * Dumps detailed information about all mobs, players and items in your world
   * For each 16x16 block chunk:
     * Top blocks (block type, block data, biome)
     * Histogram of all blocks in the chunk
     * And more...
   * For each world type (e.g. overworld, nether):
     * Histogram of biomes (per-block column)
+
+
+## Examples
+
+Here are example images: http://imgur.com/a/YiIWe
 
 Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
 

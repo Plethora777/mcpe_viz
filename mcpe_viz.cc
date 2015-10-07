@@ -17,6 +17,9 @@
   ---- suspects: magma cube; wither skeleton; what else? ocelots?
 
   * look at "weird" entities: Dropped Item; Falling block; Shot arrow
+
+  * see if there is interesting info re colors for overview map: http://minecraft.gamepedia.com/Map_item_format
+
   * time to split this code up into separate files?
 
   * option to name output files w/ world name

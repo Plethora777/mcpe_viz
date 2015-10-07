@@ -68,7 +68,7 @@ find_package(Threads REQUIRED)
 find_package(LibXml2 REQUIRED)
 
 # todo - threads?
-include_directories(${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} leveldb-mcpe/include libnbtplusplus/include)
+include_directories(${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${PROJECT_SOURCE_DIR}/leveldb-mcpe/include ${PROJECT_SOURCE_DIR}/libnbtplusplus/include)
 
 if(MCPE_VIZ_WIN32)
   include_directories(libnbtplusplus/wbuild .)

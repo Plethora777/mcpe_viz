@@ -12,6 +12,10 @@
 
   todobig
 
+  * parse potions in inventories etc
+  * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
+
+
   * see about using block data values to get details of blocks (e.g. wood type, leaf type, etc)
 
   * determine proper xml entries for missing items + entities + blocks
@@ -3090,8 +3094,6 @@ namespace mcpe_viz {
 	  std::string dirDest = mydirname(control.fnOutputBase);
 	  
 	  if ( dirDest.size() > 0 && dirDest != "." ) {
-	    fprintf(stderr,"HEY! dirDest is (%s)\n", dirDest.c_str());
-	    
 	    // todo are we sure this is a diff dir?
 	    // todo check errors
 	    sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());

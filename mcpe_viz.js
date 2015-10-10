@@ -139,6 +139,7 @@ function doParsedItem(obj,sortFlag) {
 
 
 // adapted from: http://openlayers.org/en/v3.9.0/examples/vector-layer.html
+// todo - this does not work?
 var highlightStyleCache = {};
 var featureOverlay = new ol.layer.Vector({
     source: new ol.source.Vector(),
@@ -229,6 +230,20 @@ var displayFeatureInfo = function(evt) {
 			var item = props[i];
 			s += "Item:<ul>" + doParsedItem([item],false) + "</ul>";
 		    }
+		    else if ( i === "Sign" ) {
+			s += ""
+			    + props[i].Text1 + "<br/>"
+			    + props[i].Text2 + "<br/>"
+			    + props[i].Text3 + "<br/>"
+			    + props[i].Text4 + "<br/>"
+			;
+		    }
+		    else if ( i === "MobSpawner" ) {
+			s += ""
+			    + "Name: <b>" + props[i].Name + "</b><br/>"
+			    + "entityId: <b>" + props[i].entityId + "</b><br/>"
+			;
+		    }
 		    else {
 			s += "" + i + ": " + JSON.stringify(props[i], null, 2) + "<br/>";
 		    }
@@ -251,14 +266,17 @@ var displayFeatureInfo = function(evt) {
 	});
 	$(element).popover('show');
 
-	if (feature !== highlight) {
-	    if (highlight) {
-		featureOverlay.getSource().removeFeature(highlight);
+	// todo - this does not appear to work
+	if ( false ) {
+	    if (feature !== highlight) {
+		if (highlight) {
+		    featureOverlay.getSource().removeFeature(highlight);
+		}
+		if (feature) {
+		    featureOverlay.getSource().addFeature(feature);
+		}
+		highlight = feature;
 	    }
-	    if (feature) {
-		featureOverlay.getSource().addFeature(feature);
-	    }
-	    highlight = feature;
 	}
     }
 };

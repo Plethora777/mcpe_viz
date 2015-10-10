@@ -138,7 +138,7 @@
     </div>
 
     <div class="hide">
-      <div id="popover" title="Welcome to ol3"></div>
+      <div id="popover" class="mypopover"></div>
     </div>
 
     <div id="throbber" class="ui-corner-all" style="display:none;">

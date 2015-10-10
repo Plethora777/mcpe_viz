@@ -43,6 +43,7 @@ html, body, .container-fluid, #map {
 
 .popover {
     z-index: auto;
+    min-width: 300px !important;
 }
 .popover-title {
     background-color: #202020;
@@ -51,7 +52,6 @@ html, body, .container-fluid, #map {
 }
 .popover-content {
     padding: 0.25em 0.5em;
-    min-width: 225px;
     font-size: 90%;
 }
 

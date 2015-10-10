@@ -6,9 +6,10 @@ leveldb-mcpe/
 libnbtplusplus/
 Backup/
 Research/
+openlayers
+
 *~
 update_win.sh
-openlayers/
 
 # Compiled Object files
 *.slo

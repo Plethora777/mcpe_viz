@@ -23,8 +23,8 @@
     <div class="navbar navbar-inverse navbar-fixed-bottom" data-role="navbar">
       <div class="container-fluid">
 
-	<div class="btn-group dropup" data-toggle="tooltip" title="Select Dimension">
-	  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+	<div class="btn-group dropup">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Dimension">
 	    <span id="dimensionSelectName">Dimension</span>
 	  <span class="caret"></span></button>
 	  <ul class="dropdown-menu">
@@ -34,9 +34,9 @@
 	</div>
 
 	<div class="btn-group">
-	  <button type="button" class="btn btn-primary" id="layerPrev" data-toggle="tooltip" title="Go to Lower Layer">&lt;</button>
-	  <div class="btn-group dropup" data-toggle="tooltip" title="Select Layer">
-	    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+	  <button type="button" class="btn btn-primary mytooltip" id="layerPrev" title="Go to Lower Layer">&lt;</button>
+	  <div class="btn-group dropup">
+	    <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Layer">
 	      <span id="layerNumber">Go to Layer</span>
 	    <span class="caret"></span></button>
 	    <ul class="dropdown-menu">
@@ -57,11 +57,11 @@
 	      <li><a onclick="layerGoto(127);" href="#">Layer 127</a></li>
 	    </ul>
 	  </div>
-	  <button type="button" class="btn btn-primary" id="layerNext" data-toggle="tooltip" title="Go to Higher Layer">&gt;</button>
+	  <button type="button" class="btn btn-primary mytooltip" id="layerNext" title="Go to Higher Layer">&gt;</button>
 	</div>
 
-	<div class="btn-group dropup" data-toggle="tooltip" title="Select Main Image">
-	  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+	<div class="btn-group dropup">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Main Image">
 	    <span id="imageSelectName">Main Image</span>
 	  <span class="caret"></span></button>
 	  <ul class="dropdown-menu">
@@ -73,8 +73,8 @@
 	  </ul>
 	</div>
 	
-	<div class="btn-group dropup" data-toggle="tooltip" title="Show Passive Mobs">
-	  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+	<div class="btn-group dropup">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Show Passive Mobs">
 	    Passive Mobs
           <span class="caret"></span></button>
           <ul class="dropdown-menu">
@@ -96,8 +96,8 @@
           </ul>
 	</div>
 
-	<div class="btn-group dropup" data-toggle="tooltip" title="Show Aggressive Mobs">
-	  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+	<div class="btn-group dropup">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Show Aggressive Mobs">
 	    Aggressive Mobs
           <span class="caret"></span></button>
           <ul class="dropdown-menu">
@@ -119,8 +119,8 @@
           </ul>
 	</div>
 
-	<div class="btn-group dropup" data-toggle="tooltip" title="Show Objects">
-	  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+	<div class="btn-group dropup">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Show Objects">
 	    Objects
           <span class="caret"></span></button>
           <ul class="dropdown-menu">

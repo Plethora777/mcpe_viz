@@ -644,7 +644,7 @@ var fixContentHeight = function(){
 $(function() {
 
     // setup tooltips
-    $('[data-toggle="tooltip"]').tooltip({
+    $('.mytooltip').tooltip({
 	// this helps w/ btn groups
 	trigger: "hover",
 	container: "body"
@@ -653,7 +653,6 @@ $(function() {
     // add the main layer
     setDimensionById(0);
 
-    // Popup showing the position the user clicked
     popover = new ol.Overlay({
 	element: document.getElementById('popover'),
 	autoPan: true,

@@ -1,0 +1,97 @@
+html, body, .container-fluid, #map {
+    margin: 0;
+    border: 0;
+    padding: 0;
+}
+
+.ol-mouse-position { 
+    background-color: #ffffff;
+    border: 1px solid gray;
+    border-radius: 5px;
+    padding: 0.25em 0.5em;
+}
+
+/* note: attempt at fixing blurry zoom */
+#map, img, canvas { 
+    image-rendering: -moz-crisp-edges;         /* Firefox */
+    image-rendering:   -o-crisp-edges;         /* Opera */
+    image-rendering: -webkit-optimize-contrast;/* Webkit (non-standard naming) */
+    image-rendering: crisp-edges;
+    -ms-interpolation-mode: nearest-neighbor;  /* IE (non-standard property) */
+}
+
+/* full screen support */
+.ol-full-screen {
+    /* move button down a bit */
+    top: 3em;
+}
+.map:-moz-full-screen {
+    height: 100%;
+}
+.map:-webkit-full-screen {
+    height: 100%;
+}
+.map:-ms-fullscreen {
+    height: 100%;
+}
+.map:fullscreen {
+    height: 100%;
+}
+.ol-rotate {
+    top: 3em;
+}
+
+.popover {
+    z-index: auto;
+}
+.popover-title {
+    background-color: #202020;
+    color: #f0f0f0;
+    padding: 0.25em 0.5em;
+}
+.popover-content {
+    padding: 0.25em 0.5em;
+    min-width: 225px;
+    font-size: 90%;
+}
+
+.mob {
+    /* background-color: #202020; */
+    /* color: #f0f0f0; */
+    /* padding: 0.2em 0.2em; */
+}
+.mob_name {
+    font-weight: bold;
+    /* text-align: left; */
+}
+.mob_id {
+    /* text-align: right; */
+}
+
+/* todo - fix attribution small/weird issue */
+div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible ul li {
+    /* font-size: 200%; */
+}
+div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
+    /*
+    bottom: 2em;
+    right: 5px;
+   */
+}
+
+#throbber {
+    z-index: auto;
+    background-color: #e0e0e0;
+    color: #000000;
+    border: 2px solid black;
+    height: auto;
+    width: 200px;
+    padding: 10px;
+    -moz-opacity:0.85;
+    opacity:0.85;
+    filter:alpha(opacity=85);
+    position: absolute; left: 75px; top: 10px;
+}
+#throbber-msg {
+    color: #606060;
+}

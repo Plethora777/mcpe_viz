@@ -85,7 +85,7 @@
     <block id="0x56" name="Pumpkin S" color="0xfbad26" /> 
     <block id="0x57" name="Netherrack" color="0xc6475f" />
     <block id="0x58" name="Soul Sand" color="0x9f6969" />
-    <block id="0x59" name="Glowstone" color="0xfbfe03" />
+    <block id="0x59" name="Glowstone" color="0xfafa9c" />
     <block id="0x5A" name="Portal" color="0xffa0ff" solid="0" />
     <block id="0x5B" name="Jack o'Lantern S" color="0xfd9501" />
     <block id="0x5C" name="Cake S" solid="0" /> // todo
@@ -365,6 +365,7 @@
     <entity id="0x40" name="Dropped item" />
     <entity id="0x41" name="Primed TNT" />
     <entity id="0x42" name="Falling block" />
+    <entity id="0x45" name="Experience Orb" />    // note: reverse engineered by me
     <entity id="0x4D" name="Fishing Rod hook" />
     <entity id="0x50" name="Shot arrow" />
     <entity id="0x51" name="Thrown snowball" />
@@ -373,6 +374,7 @@
     <entity id="0x54" name="Minecart" />
     <entity id="0x55" name="Ghast fireball" />
     <entity id="0x5A" name="Boat" />
+    <entity id="0x5e" name="Blaze fireball" />    // note: reverse engineered by me
   </entitylist>
 
   // mostly from: http://minecraft.gamepedia.com/Data_values#Biome_IDs

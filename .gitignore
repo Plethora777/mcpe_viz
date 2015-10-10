@@ -8,6 +8,7 @@ Backup/
 Research/
 *~
 update_win.sh
+openlayers/
 
 # Compiled Object files
 *.slo

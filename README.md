@@ -5,6 +5,8 @@ MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) worl
 
 It can also:
 
+* Create a powerful web-based viewer for your world.
+
 * Create images of individual layers of your world
 
 * Create an image of the biomes in your world
@@ -16,7 +18,7 @@ It can also:
 * Create an image of the grass color in your world (it's pretty interesting!)
 
 * Create movies of all layers from bedrock to build limit (*ffmpeg* required)
-  
+
 * Dump a *huge* amount of info about your world including:
   * Dumps detailed information about all mobs, players and items in your world
   * For each 16x16 block chunk:
@@ -59,6 +61,30 @@ This will read the leveldb from "./mcpe/another1" and name output files starting
 
 Please note that --db expects the directory which contains "level.dat".
 
+
+### Experimental Browser-based Openlayers Viewer
+
+You can create a browser-based viewer for your world files.  It will allow you to pan, zoom and switch between the different images.  It's pretty spiffy!  To make a complete viewer (with all the images), do something like this:
+
+```
+> ./mcpe_viz --db ./mcpe/another1/ --out ./mcpe/output/mcpe_output10 --html --all-image --slices
+```
+
+This will create a LOT of images -- individual images for each layer of the overworld and nether, as well as all the regular images.  It will also create "./mcpe/output/mcpe_output10.html".  Load this file in your browser and you will have an Openlayers-based viewer for your world!  Openlayers (http://openlayers.org/) is a super cool javascript library for mapping.
+
+Usage notes:
+* Zoom in with double click or press the "+" button (upper left)
+* Zoom out with shift-double click or press the "-" button (upper left)
+* Move with click and drag
+* Rotate with shift-alt click and drag
+* Your mouse position is shown in the upper right in world coordinates and image coordinates
+* You can go full-screen (button under mouse position window)
+* Tool bar at the bottom of the screen:
+  * Choose Overworld or Nether
+  * Scroll through the layers from 0 (bedrock) to 127 (build limit)
+  * Choose Overview, Biome etc
+  * Show Mobs and Items -- click on an entry and the map will be updated with labeled points.  You can toggle on as many different types as you like.  Click on the points or labels to get more info on the item.  Note that labels are not drawn when you are zoomed out.
+  
 
 ## Customization
 

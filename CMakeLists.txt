@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
-  VERSION 0.0.4)
+  VERSION 0.0.5)
 
 option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
 option(MCPE_VIZ_WIN64 "Build win64 using mingw" OFF)
@@ -99,6 +99,9 @@ endif()
 # copy the xml file - kind of ugly
 configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.xml mcpe_viz.xml COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.cfg mcpe_viz.cfg COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.js mcpe_viz.js COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.css mcpe_viz.css COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.html.template mcpe_viz.html.template COPYONLY)
 
 if(MCPE_VIZ_WIN32)
   configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
@@ -117,6 +120,7 @@ if(MCPE_VIZ_WIN32)
     "./mcpe_viz.exe"
     "./mcpe_viz.cfg"
     "./mcpe_viz.xml"
+    "./mcpe_viz.*"
     "./*.dll"
     "./README.txt"
     "./LICENSE.txt"
@@ -132,6 +136,7 @@ elseif(MCPE_VIZ_WIN64)
     "./mcpe_viz.exe"
     "./mcpe_viz.cfg"
     "./mcpe_viz.xml"
+    "./mcpe_viz.*"
     "./*.dll"
     "./README.txt"
     "./LICENSE.txt"

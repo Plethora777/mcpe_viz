@@ -12,9 +12,23 @@
 
   todobig
 
-  * parse potions in inventories etc
-  * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
+  * xml <block> needs to be expanded to allow block_data values so that we can get complete info (e.g. wood types)
+  -- block[id][block_data] = foo
+  -- compare wiki re block info for mc vs mcpe
+  -- same for items + entities
+  -- THIS: perhaps <block ...><variant .../></block>?
 
+  * it takes a loooong time to do a full html - 47 minutes?!
+  -- try to do it as we parse the chunks?
+
+  * parse potions etc in inventories etc
+
+  * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
+  -- put ALL chests in a map<x,y,z>; go through list of chests and put PairChest in matching sets and mark all as unprocessed; go thru list and do all, if PairChest mark both as done
+
+  * web: popover does not show in fullscreen
+  * web: how to handle multiple features at the same point? (e.g. stacked chests)
+  * web: why does click on point not always work?
 
   * see about using block data values to get details of blocks (e.g. wood type, leaf type, etc)
 
@@ -75,6 +89,7 @@
 #include <png.h>
 #include <libxml/xmlreader.h>
 #include <getopt.h>
+#include <sys/stat.h>
 #include "leveldb/db.h"
 #include "leveldb/zlib_compressor.h"
 
@@ -88,19 +103,26 @@
 #include <fstream>
 #include <sstream>
 
-#include <sys/stat.h>
-
 
 #ifndef htobe32
-// note: this is only used on win32 builds
-// borrowed from /usr/include/bits/byteswap.h
-/*
-  #define htobe32(x)						\
-  ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |	\
-  (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
-*/
+// note: this is only used on win32/win64 builds
 // todo - doesn't check host endianness
 inline int32_t htobe32(const int32_t src) {
+  int32_t dst;
+  const char* ps = (char*)&src;
+  char* pd = (char*)&dst;
+  pd[0]=ps[3];
+  pd[1]=ps[2];
+  pd[2]=ps[1];
+  pd[3]=ps[0];
+  return dst;
+}
+#endif
+
+#ifndef be32toh
+// note: this is only used on win32/win64 builds
+// todo - doesn't check host endianness
+inline int32_t be32toh(const int32_t src) {
   int32_t dst;
   const char* ps = (char*)&src;
   char* pd = (char*)&dst;
@@ -137,7 +159,7 @@ int copyFileWithStringReplacement ( const std::string fnSrc, const std::string f
 				    const StringReplacementList& replaceStrings ) {
   char buf[1025];
 
-  fprintf(stderr,"copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
+  fprintf(stderr,"  copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
 
   FILE *fpsrc = fopen(fnSrc.c_str(),"r");
   if ( ! fpsrc ) {
@@ -187,7 +209,7 @@ int copyFile ( const std::string fnSrc, const std::string fnDest ) {
   char buf[1025];
   memset(buf,0,1025);
 
-  fprintf(stderr,"copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
+  fprintf(stderr,"  copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
   
   FILE *fpsrc = fopen(fnSrc.c_str(),"r");
   if ( ! fpsrc ) {
@@ -233,6 +255,8 @@ namespace mcpe_viz {
       kDimIdCount = 2
     };
 
+    const int32_t kColorDefault = 0xff00ff;
+    
     // all user options are stored here
     class Control {
     public:
@@ -244,7 +268,7 @@ namespace mcpe_viz {
       std::string fnGeoJSON;
       std::string fnHtml;
       std::string fnJs;
-
+      
       // per dimension filenames
       std::string fnLayerTop[kDimIdCount];
       std::string fnLayerBiome[kDimIdCount];
@@ -402,8 +426,22 @@ namespace mcpe_viz {
       kImageModeBlockLight = 5,
       kImageModeSkyLight = 6
     };
-    
-    int32_t standardColorInfo[16];
+
+    class StandardColorInfo {
+    public:
+      std::string name;
+      int32_t color;
+      StandardColorInfo() {
+	name = "(unknown)";
+	setColor(kColorDefault);
+      }
+      StandardColorInfo& setColor(int32_t rgb) {
+	// note: we DO NOT convert color because we'll probably need to adjust it
+	color = rgb;
+	return *this;
+      }
+    };
+    StandardColorInfo standardColorInfo[16];
 
     // these are read from level.dat
     int32_t worldSpawnX = 0;
@@ -489,7 +527,7 @@ namespace mcpe_viz {
       palRedBlackGreen[63]=0x202020;
       // fill 128..255 with purple (we should never see this color)
       for (int i=128; i < 256; i++) {
-	palRedBlackGreen[i] = 0xff00ff;
+	palRedBlackGreen[i] = kColorDefault;
       }
 
       // convert palette
@@ -572,13 +610,15 @@ namespace mcpe_viz {
       std::string name;
       int32_t color;
       bool lookupColorFlag;
+      int32_t lookupColorOffset;
       bool colorSetFlag;
       bool solidFlag;
       int colorSetNeedCount;
       BlockInfo() {
 	name = "(unknown)";
-	setColor(0xff00ff); // purple
+	setColor(kColorDefault); // purple
 	lookupColorFlag = false;
+	lookupColorOffset = 0;
 	solidFlag = true;
 	colorSetFlag = false;
 	colorSetNeedCount = 0;
@@ -595,6 +635,10 @@ namespace mcpe_viz {
       }
       BlockInfo& setLookupColorFlag(bool f) {
 	lookupColorFlag = f;
+	return *this;
+      }
+      BlockInfo& setLookupColorOffset(int32_t o) {
+	lookupColorOffset = o;
 	return *this;
       }
       BlockInfo& setSolidFlag(bool f) {
@@ -650,7 +694,7 @@ namespace mcpe_viz {
       bool colorSetFlag;
       BiomeInfo(const char* n) {
 	setName(n);
-	setColor(0xff00ff);
+	setColor(kColorDefault);
 	colorSetFlag = false;
       }
       BiomeInfo(const char* n, int32_t rgb) {
@@ -943,7 +987,7 @@ namespace mcpe_viz {
 		
 		if ( blockInfoList[blockid].lookupColorFlag ) {
 		  int blockdata = it->data[cz][cx];
-		  color = standardColorInfo[blockdata];
+		  color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
 		} else {
 		  color = blockInfoList[blockid].color;
 		  if ( ! blockInfoList[blockid].colorSetFlag ) {
@@ -1004,7 +1048,188 @@ namespace mcpe_viz {
 	}
       }
 
-      void generateMovie(leveldb::DB* db, const std::string fname, bool makeMovieFlag, bool useCropFlag ) {
+#if 0
+      // todo - we should see about doing this as temp img files w/ one pass thru the chunks; then create png from the temp img files
+      // todo - this is similar to generateMovie, but to save time we build temp img file as we go
+      // todo - a valiant effort, but this uses a ridiculous amount of disk space (e.g. 25gb for "another1")
+      int32_t generateSlices(leveldb::DB* db, const std::string fname) {
+	const int32_t chunkOffsetX = -minChunkX;
+	const int32_t chunkOffsetZ = -minChunkZ;
+	
+	const int chunkW = (maxChunkX-minChunkX+1);
+	const int chunkH = (maxChunkZ-minChunkZ+1);
+	const int imageW = chunkW * 16;
+	const int imageH = chunkH * 16;
+
+	fprintf(stderr,"  Generate Slices\n");
+
+	uint8_t* buf = new uint8_t[ imageW * imageH * 3 ];
+	memset(buf, 0, imageW*imageH*3);
+	
+	// create our temp files
+	fprintf(stderr,"    Create temp files (dirTemp=%s)\n", control.dirTemp.c_str());
+	int32_t tmpId = (int32_t)time(NULL);
+	char tmpstring[1025];
+	std::string listFnTemp[128];
+	int fdTemp[128];
+	for (int cy=0; cy < 128; cy++) {
+	  sprintf(tmpstring,"%s/mcpe_viz.temp.%d.L%03d.D%d.raw",control.dirTemp.c_str(), tmpId,cy,dimId);
+	  listFnTemp[cy] = tmpstring;
+	  fdTemp[cy] = open(tmpstring, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	  if ( fdTemp[cy] < 0 ) {
+	    fprintf(stderr,"ERROR: Failed to open temp file for write (%s) (errno=%d)\n", tmpstring, errno);
+	    // clean up other temp files
+	    for ( int ty=0; ty < cy; ty++ ) {
+	      close(fdTemp[ty]);
+	      unlink(listFnTemp[ty].c_str());
+	    }
+	    return -1;
+	  } else {
+	    // file the entire temp image with 0 (to init data that might not get touched otherwise)
+	    for (int ty=0; ty < imageH; ty++) {
+	      write(fdTemp[cy], buf, imageW*3);
+	    }
+	  }
+	}
+	
+	leveldb::ReadOptions readOptions;
+	readOptions.fill_cache=false; // may improve performance?
+
+	std::string svalue;
+	const char* pchunk = nullptr;
+	
+	int32_t color;
+	const char *pcolor = (const char*)&color;
+
+	fprintf(stderr,"    Read chunks...\n");
+	int32_t totalChunks = list.size();
+	int32_t currChunk = 0;
+	for ( const auto& it : list ) {
+	  int imageX = (it->chunkX + chunkOffsetX) * 16;
+	  int imageZ = (it->chunkZ + chunkOffsetZ) * 16;
+
+	  if ( ( ++currChunk % 5000) == 0 ) {
+	    fprintf(stderr,"    Read chunk %d / %d\n", currChunk, totalChunks);
+	  }
+	  
+	  // get the chunk
+	  // construct key
+	  char keybuf[20];
+	  int keybuflen;
+	  int32_t kx = it->chunkX, kz=it->chunkZ, kw=dimId;
+	  uint8_t kt=0x30;
+	  switch (dimId) {
+	  case kDimIdOverworld:
+	    //overworld
+	    memcpy(&keybuf[0],&kx,sizeof(int32_t));
+	    memcpy(&keybuf[4],&kz,sizeof(int32_t));
+	    memcpy(&keybuf[8],&kt,sizeof(uint8_t));
+	    keybuflen=9;
+	    break;
+	  default:
+	    // nether
+	    memcpy(&keybuf[0],&kx,sizeof(int32_t));
+	    memcpy(&keybuf[4],&kz,sizeof(int32_t));
+	    memcpy(&keybuf[8],&kw,sizeof(int32_t));
+	    memcpy(&keybuf[12],&kt,sizeof(uint8_t));
+	    keybuflen=13;
+	    break;
+	  }
+	  leveldb::Slice key(keybuf,keybuflen);
+	  leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
+	  assert(dstatus.ok());
+	  pchunk = svalue.data();
+	  
+	  for (int cy=0; cy < 128; cy++) {
+
+	    // todo - be more clever about the seek? (seek on z change only etc
+	    lseek(fdTemp[cy], (((imageZ) * imageW) + (imageX)) * 3, SEEK_SET);
+	      
+	    for (int cz=0; cz < 16; cz++) {
+
+	      for (int cx=0; cx < 16; cx++) {
+		
+		uint8_t blockid = getBlockId(pchunk, cx,cz,cy);
+
+		if ( blockid == 0 && ( cy > it->topBlockY[cz][cx] ) && (dimId != kDimIdNether) ) {
+		  // special handling for air -- keep existing value if we are above top block
+		  // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
+		  // however, we do NOT do this for the nether. because: the nether
+		} else {
+		  
+		  if ( blockInfoList[blockid].lookupColorFlag ) {
+		    uint8_t blockdata = getBlockData(pchunk, cx,cz,cy);
+		    color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
+		  } else {
+		    color = blockInfoList[blockid].color;
+		  }
+		  
+		  // do grid lines
+		  if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
+		    if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
+		      // highlight (0,0)
+		      color = htobe32(0xeb3333);
+		    } else {
+		      color = htobe32(0xc1ffc4);
+		    }
+		  }
+		  
+		  // todo - be more clever about the seek? (seek on z change only etc
+		  write(fdTemp[cy],&pcolor[1],3);
+		}
+	      }
+	    }
+	  }
+	}
+
+	// we have gone thru all the chunks and created all the temp files
+
+	// close files
+	for (int cy=0; cy < 128; cy++) {
+	  close(fdTemp[cy]);
+	}
+	  
+	// now process all the temp files
+	// note RGB pixels
+
+	for (int cy=0; cy < 128; cy++) {
+	  
+	  fprintf(stderr,"  Creating layer %d\n", cy);
+	  
+	  // copy file to buf for png
+	  FILE* fp = fopen(listFnTemp[cy].c_str(),"rb");
+	  uint8_t* p = buf;
+	  for (int iy=0; iy < imageH; iy++) {
+	    fread(p, 3, imageW, fp);
+	    p+=imageW*3;
+	  }
+	  fclose(fp);
+	  
+	  // create png
+	  std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";
+	  fnameTmp += "full.";
+	  fnameTmp += name;
+	  fnameTmp += ".";
+	  char xtmp[100];
+	  sprintf(xtmp,"%03d",cy);
+	  fnameTmp += xtmp;
+	  fnameTmp += ".png";
+	  
+	  control.fnLayerRaw[dimId][cy] = fnameTmp;
+	  
+	  outputPNG(fnameTmp, buf, imageW, imageH);
+
+	  // delete temp file
+	  unlink(listFnTemp[cy].c_str());
+	}
+
+	delete [] buf;
+
+	return 0;
+      }
+#endif
+      
+      int generateMovie(leveldb::DB* db, const std::string fname, bool makeMovieFlag, bool useCropFlag ) {
 	const int32_t chunkOffsetX = -minChunkX;
 	const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -1036,8 +1261,6 @@ namespace mcpe_viz {
 	uint8_t* buf = new uint8_t[ cropW * cropH * 3 ];
 	memset(buf, 0, cropW*cropH*3);
 
-	std::vector<std::string> fileList;
-
 	// todobig - we *could* write image data to flat files during parseDb and then convert these flat files into png here
 
 	leveldb::ReadOptions readOptions;
@@ -1058,13 +1281,12 @@ namespace mcpe_viz {
 	    int imageZ = (it->chunkZ + chunkOffsetZ) * 16;
 
 	    for (int cz=0; cz < 16; cz++) {
+	      int iz = (imageZ + cz);
 	      for (int cx=0; cx < 16; cx++) {
 
 		int ix = (imageX + cx);
-		int iz = (imageZ + cz);
 
-		if ( (ix >= cropX) && (ix < (cropX + cropW)) &&
-		     (iz >= cropZ) && (iz < (cropZ + cropH)) ) {
+		if ( !useCropFlag || ((ix >= cropX) && (ix < (cropX + cropW)) && (iz >= cropZ) && (iz < (cropZ + cropH))) ) {
 
 		  if ( pchunk==nullptr || (pchunkX != it->chunkX) || (pchunkZ != it->chunkZ) ) {
 		    // get the chunk
@@ -1108,7 +1330,7 @@ namespace mcpe_viz {
 		    
 		    if ( blockInfoList[blockid].lookupColorFlag ) {
 		      uint8_t blockdata = getBlockData(pchunk, cx,cz,cy);
-		      color = standardColorInfo[blockdata];
+		      color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
 		    } else {
 		      color = blockInfoList[blockid].color;
 		    }
@@ -1156,7 +1378,6 @@ namespace mcpe_viz {
 	  control.fnLayerRaw[dimId][cy] = fnameTmp;
 	  
 	  outputPNG(fnameTmp, buf, cropW, cropH);
-	  fileList.push_back(fnameTmp);
 	}
 
 	delete [] buf;
@@ -1178,7 +1399,8 @@ namespace mcpe_viz {
 	
 	  // todo - delete temp slice files? cmdline option to NOT delete
 	}
-	
+
+	return 0;
       }
 
       int doOutput(leveldb::DB* db) {
@@ -1229,6 +1451,7 @@ namespace mcpe_viz {
 	if ( checkDoForDim(control.doSlices) ) {
 	  fprintf(stderr,"  Generate full-size slices\n");
 	  generateMovie(db, std::string(""), false, false);
+	  //generateSlices(db, std::string(""));
 	}
 	
 	// reset
@@ -1462,6 +1685,18 @@ namespace mcpe_viz {
 	}
       }
     };
+
+    std::string escapeDoubleQuotes(const std::string& s) {
+      std::string ret="";
+      for ( const auto& ch : s ) {
+	if ( ch == '"' ) {
+	  ret += "\\\"";
+	} else {
+	  ret += ch;
+	}
+      }
+      return ret;
+    }
     
     template<class T>
     class Point2d {
@@ -2113,6 +2348,7 @@ namespace mcpe_viz {
       }
       int addMobSpawner ( nbt::tag_compound &tc ) {
 	entityId = tc["EntityId"].as<nbt::tag_int>().get();
+	// todo - how to interpret entityId? (e.g. 0xb22 -- 0x22 is skeleton, what is 0xb?)
 	// todo - any of these interesting?
 	/*
 	  0x31-te: [] COMPOUND-1 {
@@ -2168,8 +2404,8 @@ namespace mcpe_viz {
 	  int i = text.size();
 	  int t=1;
 	  for ( const auto& it: text ) {
-	    // todo - should escape " here (and probably elsewhere)
-	    sprintf(tmpstring,"\"Text%d\": \"%s\"", t++, it.c_str());
+	    // todo - think about how to handle weird chars people put in signs
+	    sprintf(tmpstring,"\"Text%d\": \"%s\"", t++, escapeDoubleQuotes(it).c_str());
 	    ts += tmpstring;
 	    if ( --i > 0 ) {
 	      ts += ", ";
@@ -2402,7 +2638,6 @@ namespace mcpe_viz {
       return 0;
     }
 
-    // todo - togeojson for tileentities
     int parseNbt_tileEntity(int32_t dimensionId, std::string dimName, MyTagList &tagList, ParsedTileEntityList &tileEntityList) {
       tileEntityList.clear();
       
@@ -2479,6 +2714,159 @@ namespace mcpe_viz {
 	  }
 	  
 	  tileEntityList.push_back( std::move(tileEntity) );
+	}
+      }
+      
+      return 0;
+    }
+
+    class ParsedPortal {
+    public:
+      Point3d<int> pos;
+      int32_t dimId;
+      int32_t span;
+      int32_t xa, za;
+      
+      ParsedPortal() {
+	clear();
+      }
+      void clear() {
+	pos.clear();
+	dimId = -1;
+	span = xa = za = 0;
+      }
+      int add ( nbt::tag_compound &tc ) {
+	dimId = tc["DimId"].as<nbt::tag_int>().get();
+	span = tc["Span"].as<nbt::tag_byte>().get();
+	int tpx = tc["TpX"].as<nbt::tag_int>().get();
+	int tpy = tc["TpY"].as<nbt::tag_int>().get();
+	int tpz = tc["TpZ"].as<nbt::tag_int>().get();
+	pos.set(tpx,tpy,tpz);
+	xa = tc["Xa"].as<nbt::tag_byte>().get();
+	za = tc["Za"].as<nbt::tag_byte>().get();
+	return 0;
+      }
+      std::string toGeoJSON() {
+	std::vector<std::string> list;
+	char tmpstring[1025];
+
+	// note: we fake this as a tile entity so that it is easy to deal with in js
+	list.push_back(std::string("\"TileEntity\": \"true\""));
+
+	list.push_back("\"Name\": \"NetherPortal\"");
+
+	sprintf(tmpstring,"\"DimId\": \"%d\"", dimId);
+	list.push_back(tmpstring);
+
+	sprintf(tmpstring,"\"Span\": \"%d\"", span);
+	list.push_back(tmpstring);
+
+	sprintf(tmpstring,"\"Xa\": \"%d\"", xa);
+	list.push_back(tmpstring);
+
+	sprintf(tmpstring,"\"Za\": \"%d\"", za);
+	list.push_back(tmpstring);
+	
+	if ( list.size() > 0 ) {
+	  std::string s="";
+
+	  sprintf(tmpstring,"\"Dimension\": \"%d\"", dimId);
+	  list.push_back(std::string(tmpstring));
+
+	  sprintf(tmpstring, "\"Pos\": [%s]", pos.toString().c_str());
+	  list.push_back(std::string(tmpstring));
+	  
+	  int ix, iy;
+	  worldPointToImagePoint(dimId, pos.x,pos.z, ix,iy, true);
+	  sprintf(tmpstring,"%d, %d",ix,iy);
+	  s +=
+	    "{\n"
+	    "\t\"type\": \"Feature\",\n"
+	    "\t\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
+	    ;
+	  s += tmpstring;
+	  s +=
+	    "] },\n"
+	    "\t\"properties\": {\n"
+	    ;
+	  
+	  int i = list.size();
+	  for (const auto& iter : list ) {
+	    s += iter;
+	    if ( --i > 0 ) {
+	      s += ",";
+	    }
+	    s += "\n";
+	  }
+	  s += "}\n}\n";
+	  return s;
+	}
+
+	return std::string("");
+      }
+      
+      // todo - this should probably be multi-line so it's not so insane looking :)
+      std::string toString() {
+	char tmpstring[1025];
+
+	std::string s = "[";
+
+	s += "Nether Portal";
+	
+	s += " Pos=" + pos.toStringWithImageCoords(dimId);
+	
+	sprintf(tmpstring," DimId=%d", dimId);
+	s += tmpstring;
+
+	sprintf(tmpstring," Span=%d", span);
+	s += tmpstring;
+
+	sprintf(tmpstring," Xa=%d", xa);
+	s += tmpstring;
+
+	sprintf(tmpstring," Za=%d", za);
+	s += tmpstring;
+	
+	s += "]";
+	return s;
+      }
+    };
+    typedef std::vector< std::unique_ptr<ParsedPortal> > ParsedPortalList;
+
+    int parseNbt_portals(MyTagList &tagList, ParsedPortalList &portalList) {
+      portalList.clear();
+      
+      // this could be a list of mobs
+      for ( size_t i=0; i < tagList.size(); i++ ) { 
+
+	// check tagList
+	if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+	  nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+	  if ( tc.has_key("data", nbt::tag_type::Compound) ) {
+	    nbt::tag_compound td = tc["data"].as<nbt::tag_compound>();
+	    if ( td.has_key("PortalRecords", nbt::tag_type::List) ) {
+	      // all is good
+	      nbt::tag_list plist = td["PortalRecords"].as<nbt::tag_list>();
+	      
+	      for ( const auto& it : plist ) {
+		nbt::tag_compound pc = it.as<nbt::tag_compound>();
+
+		std::unique_ptr<ParsedPortal> portal(new ParsedPortal());
+		portal->clear();
+		
+		portal->add( pc );
+		
+		fprintf(control.fpLog, "ParsedPortal: %s\n", portal->toString().c_str());
+		
+		std::string json = portal->toGeoJSON();
+		if ( json.size() > 0 ) {
+		  listGeoJSON.push_back( json );
+		}
+		
+		portalList.push_back( std::move(portal) );
+	      }
+	    }
+	  }
 	}
       }
       
@@ -2612,12 +3000,12 @@ namespace mcpe_viz {
 	  const int32_t imageW = chunkW * 16;
 	  const int32_t imageH = chunkH * 16;
 
-	  fprintf(stderr,"Bounds (chunk): Dim=%d X=(%d %d) Z=(%d %d)\n"
+	  fprintf(stderr,"  Bounds (chunk): DimId=%d X=(%d %d) Z=(%d %d)\n"
 		  , i
 		  , chunkList[i].minChunkX, chunkList[i].maxChunkX
 		  , chunkList[i].minChunkZ, chunkList[i].maxChunkZ
 		  );
-	  fprintf(stderr,"Bounds (pixel): Dim=%d X=(%d %d) Z=(%d %d) Image=(%d %d)\n"
+	  fprintf(stderr,"  Bounds (pixel): DimId=%d X=(%d %d) Z=(%d %d) Image=(%d %d)\n"
 		  , i
 		  , chunkList[i].minChunkX*16, chunkList[i].maxChunkX*16
 		  , chunkList[i].minChunkZ*16, chunkList[i].maxChunkZ*16
@@ -2739,9 +3127,11 @@ namespace mcpe_viz {
 	  }
 	  else if ( strncmp(key,"portals",key_size) == 0 ) {
 	    fprintf(control.fpLog,"portals value:\n");
-	    parseNbt("portals: ", value, value_size, tagList);
-	    // todo - parse tagList?
-	    // todo - could work out "perfect" portal mappings? (for each portal, show where perfect portal would be in other world)
+	    int ret = parseNbt("portals: ", value, value_size, tagList);
+	    if ( ret == 0 ) {
+	      ParsedPortalList portalList;
+	      parseNbt_portals(tagList,portalList);
+	    }
 	  }
 			 
 	  else if ( key_size == 9 || key_size == 13 ) {
@@ -3082,6 +3472,31 @@ namespace mcpe_viz {
 	      }
 	    }
 	    fprintf(fp,"};\n");
+
+	    // write color info
+	    fprintf(fp,
+		    "// a lookup table for identifying blocks in the web ui\n"
+		    "// key is color (decimal), value is block name\n"
+		    "// hacky? it sure is!\n"
+		    );
+	    
+	    fprintf(fp,"blockColorLUT = {\n");
+	    for (int i=0; i < 256; i++) {
+	      if ( blockInfoList[i].lookupColorFlag ) {
+		for (int sc=0; sc < 16; sc++) {
+		  int xcolor =  standardColorInfo[sc].color + blockInfoList[i].lookupColorOffset;
+		  std::string xname = blockInfoList[i].name + ", " + standardColorInfo[sc].name;
+		  fprintf(fp,"\"%d\":\"%s\",\n", xcolor, xname.c_str());
+		}
+	      } else {
+		if ( blockInfoList[i].colorSetFlag ) {
+		  fprintf(fp,"\"%d\":\"%s\",\n", be32toh(blockInfoList[i].color), blockInfoList[i].name.c_str());
+		}
+	      }
+	    }
+	    // last, put the catch-all
+	    fprintf(fp,"\"%d\": \"*UNKNOWN BLOCK*\" };\n",kColorDefault);
+
 	    fclose(fp);
 	    
 	  } else {
@@ -3173,7 +3588,7 @@ namespace mcpe_viz {
 	  worldSpawnX = tc["SpawnX"].as<nbt::tag_int>().get();
 	  worldSpawnY = tc["SpawnY"].as<nbt::tag_int>().get();
 	  worldSpawnZ = tc["SpawnZ"].as<nbt::tag_int>().get();
-	  fprintf(stderr, "Found World Spawn: x=%d y=%d z=%d\n", worldSpawnX, worldSpawnY, worldSpawnZ);
+	  fprintf(stderr, "  Found World Spawn: x=%d y=%d z=%d\n", worldSpawnX, worldSpawnY, worldSpawnZ);
 	}
 
 	delete [] buf;
@@ -3195,7 +3610,7 @@ namespace mcpe_viz {
       memset(buf,0,1025);
       fgets(buf,1024,fp);
 
-      fprintf(stderr,"Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+      fprintf(stderr,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
       fprintf(control.fpLog,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
       fclose(fp);
 
@@ -3415,12 +3830,13 @@ namespace mcpe_viz {
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
 
-	  bool idValid, nameValid, colorValid, lookupColorFlagValid, solidFlagValid;
+	  bool idValid, nameValid, colorValid, lookupColorFlagValid, lookupColorOffsetValid, solidFlagValid;
 	  
 	  int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	  int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 	  bool lookupColorFlag = xmlGetBool(cur, (const xmlChar*)"lookupColor", false, lookupColorFlagValid);
+	  int lookupColorOffset = xmlGetInt(cur, (const xmlChar*)"lookupColorOffset", lookupColorOffsetValid);
 	  bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
 
 	  // create data
@@ -3430,6 +3846,9 @@ namespace mcpe_viz {
 	      b.setColor(color);
 	    }
 	    b.setLookupColorFlag(lookupColorFlag);
+	    if ( lookupColorOffsetValid ) {
+	      b.setLookupColorOffset(lookupColorOffset);
+	    }
 	    b.setSolidFlag(solidFlag);
 	  } else {
 	    // todo error
@@ -3451,17 +3870,23 @@ namespace mcpe_viz {
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"standardcolor") == 0 ) {
 
-	  bool idValid, colorValid;
-	  
+	  bool idValid, nameValid, colorValid;
+
 	  int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	  int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 
 	  // create data
-	  if ( idValid && colorValid ) {
-	    standardColorInfo[id] = htobe32(color);
+	  if ( idValid && nameValid && colorValid ) {
+	    if ( id >= 0 && id < 16 ) { 
+	      standardColorInfo[id].name = name;
+	      standardColorInfo[id].color = color;
+	    } else {
+	      fprintf(stderr,"WARNING: Found out of range standard color (id=%d)\n",id);
+	    }
 	  } else {
 	    // todo error
-	    fprintf(stderr,"WARNING: Did not find valid id and color for standardcolor: (0x%x) (0x%x)\n"
+	    fprintf(stderr,"WARNING: Did not find valid id, name and color for standardcolor: (0x%x) (0x%x)\n"
 		    , id
 		    , color
 		    );
@@ -3706,6 +4131,9 @@ namespace mcpe_viz {
       fprintf(stderr,"Options:\n"
 	      //"  --detail                 Log extensive details about the world to the log file\n"
 	      "  --html                   Create html and javascript files to use as a fancy viewer\n"
+	      "  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
+	      "  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer (slow)\n"
+	      //"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
 	      "\n"
 	      "  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
 	      "  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
@@ -3784,6 +4212,8 @@ namespace mcpe_viz {
 	{"grid", optional_argument, NULL, 'G'},
 
 	{"html", no_argument, NULL, ')'},
+	{"html-most", no_argument, NULL, '='},
+	{"html-all", no_argument, NULL, '_'},
 
 	{"shortrun", no_argument, NULL, '$'}, // this is just for testing
     
@@ -3879,6 +4309,29 @@ namespace mcpe_viz {
 
 	case ')':
 	  control.doHtml = true;
+	  break;
+
+	case '=':
+	  // html most
+	  control.doHtml = true;
+	  control.doImageBiome = 
+	    control.doImageGrass = 
+	    control.doImageHeightCol = 
+	    control.doImageHeightColGrayscale =
+	    control.doImageLightBlock = 
+	    control.doImageLightSky = kDoOutputAll;
+	  break;
+
+	case '_':
+	  // html all
+	  control.doHtml = true;
+	  control.doImageBiome = 
+	    control.doImageGrass = 
+	    control.doImageHeightCol = 
+	    control.doImageHeightColGrayscale =
+	    control.doImageLightBlock = 
+	    control.doImageLightSky = kDoOutputAll;
+	  control.doSlices = kDoOutputAll;
 	  break;
 	  
 	case 'B':

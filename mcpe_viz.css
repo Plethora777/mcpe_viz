@@ -23,7 +23,7 @@ html, body, .container-fluid, #map {
 /* full screen support */
 .ol-full-screen {
     /* move button down a bit */
-    top: 3em;
+    top: 4.5em;
 }
 .map:-moz-full-screen {
     height: 100%;
@@ -94,4 +94,8 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
 }
 #throbber-msg {
     color: #606060;
+}
+
+.mycenter {
+    text-align: center;
 }

@@ -4,20 +4,21 @@
 
   todo
 
-  * toggle btwn overworld / nether - show player est. spot in nether even if they are in overworld
-
-  * scaleline is crazy - how to specify 1 pixel = 1m?
-
-  * drawing tools on map -- especially circles (show diameter) (for mob systems)
+  * online help/intro text -- bootstrap tour? (is there a CDN for bstour?)
 
   * measuring tool
+
+  * drawing tools on map -- especially circles (show diameter) (for mob systems)
 
   * features
   -- hover over pixel gives info: (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)")
 
+
+  * toggle btwn overworld / nether - show player est. spot in nether even if they are in overworld
+
   * store biome info in a vector file; use that to display tooltips
 
-  * how to get navbar in full screen?
+  * how to get navbar + popovers in full screen?
 
   */
 
@@ -50,6 +51,9 @@
 var map = null, projection = null, extent = null;
 var popover = null;
 
+var globalMousePosition = null;
+var pixelData = null, pixelDataName = "";
+
 var layerRawIndex = 63;
 var layerMain = null;
 
@@ -57,7 +61,6 @@ var mousePositionControl = null;
 
 var globalDimensionId = -1;
 var globalLayerMode = 0, globalLayerId = 0;
-
 
 var listEntityToggle = [];
 var listTileEntityToggle = [];
@@ -172,6 +175,153 @@ var featureOverlay = new ol.layer.Vector({
     }
 });
 
+function doFeaturePopover(feature,coordinate) {
+    var element = popover.getElement();
+    var props = feature.getProperties();
+
+    var name = props.Name;
+    if ( name === "MobSpawner" ) { name="Mob Spawner"; }
+    if ( name === "NetherPortal" ) { name="Nether Portal"; }
+    
+    var stitle;
+    if ( props.Entity !== undefined ) {
+	stitle = "<div class=\"mob\"><span class=\"mob_name\">" + name + "</span> <span class=\"mob_id\">(id=" + props.id + ")</span></div>\n";
+    } else {
+	stitle = "<div class=\"mob\"><span class=\"mob_name\">" + name + "</span></div>\n";
+    }
+    
+    var s = "<div>";
+    
+    for ( var i in props ) {
+	// skip geometry property because it contains circular refs; skip others that are uninteresting
+	if ( i !== "geometry" &&
+	     i !== "TileEntity" &&
+	     i !== "Entity" &&
+	     i !== "pairchest" &&
+	     i !== "player" &&
+	     i !== "Name" &&
+	     i !== "id" &&
+	     i !== "Dimension"
+	   ) {
+	    if ( typeof(props[i]) === 'object' ) {
+		if ( i === "Armor" ) {
+		    var armor = props[i];
+		    s += "Armor:<ul>" + doParsedItem(armor,false) + "</ul>";
+		}
+		else if ( i === "Items" ) {
+		    // items in a chest
+		    var items = props[i];
+		    s += "Items:<ul>" + doParsedItem(items,true) + "</ul>";
+		}
+		else if ( i === "Inventory" ) {
+		    var inventory = props[i];
+		    s += "Inventory:<ul>" + doParsedItem(inventory,true) + "</ul>";
+		}
+		else if ( i === "ItemInHand" ) {
+		    var itemInHand = props[i];
+		    s += "In Hand:<ul>" + doParsedItem([itemInHand],false) + "</ul>";
+		}
+		else if ( i === "Item" ) {
+		    var item = props[i];
+		    s += "Item:<ul>" + doParsedItem([item],false) + "</ul>";
+		}
+		else if ( i === "Sign" ) {
+		    s += "<div class=\"mycenter\">"
+			+ props[i].Text1 + "<br/>"
+			+ props[i].Text2 + "<br/>"
+			+ props[i].Text3 + "<br/>"
+			+ props[i].Text4 + "<br/>"
+			+ "</div>"
+		    ;
+		}
+		else if ( i === "MobSpawner" ) {
+		    s += ""
+			+ "Name: <b>" + props[i].Name + "</b><br/>"
+			+ "entityId: <b>" + props[i].entityId + "</b><br/>"
+		    ;
+		}
+		else {
+		    s += "" + i + ": " + JSON.stringify(props[i], null, 2) + "<br/>";
+		}
+	    } else {
+		s += "" + i + ": <b>" + props[i].toString() + "</b><br/>";
+	    }
+	}
+    }
+    s += "</div>";
+    popover.setPosition(coordinate);
+    $(element).popover({
+	'placement': 'auto right',
+	'viewport': {selector: "#map", padding: 0},
+	'animation': false,
+	'trigger': "click focus",
+	'html': true,
+	'title': stitle,
+	'content': s
+    });
+    $(element).popover('show');
+    
+    // todo - disabled because this does not appear to work
+    if ( false ) {
+	if (feature !== highlight) {
+	    if (highlight) {
+		featureOverlay.getSource().removeFeature(highlight);
+	    }
+	    if (feature) {
+		featureOverlay.getSource().addFeature(feature);
+	    }
+	    highlight = feature;
+	}
+    }
+
+    return 0;
+}
+
+function doFeatureSelect(features, coordinate) {
+    var element = popover.getElement();
+
+    var stitle = "<div class=\"mob\"><span class=\"mob_name\">Multiple Items</span></div>\n";
+
+    features.sort( function(a,b) { 
+	var ap = a.getProperties();
+	var astr = ap.Name + " @ (" + ap.Pos[0] +", "+ ap.Pos[1] +", "+ ap.Pos[2] + ")";
+	var bp = b.getProperties();
+	var bstr = bp.Name + " @ (" + bp.Pos[0] +", "+ bp.Pos[1] +", "+ bp.Pos[2] + ")";
+	return astr.localeCompare(bstr);
+    } );
+    
+    var s = 'Select item:<div class="list-group">';
+    for ( var i in features ) {
+	var feature = features[i];
+	var props = feature.getProperties();
+	// how to do this?
+	s += '<a href="#" data-id="'+i+'" class="list-group-item doFeatureHelper">'
+	    + props.Name
+	    + ' @ ' + props.Pos[0] +', '+ props.Pos[1] +', '+ props.Pos[2] + ')'
+	    + '</a>'
+	;
+    }
+    s+= "</div>";
+    
+    popover.setPosition(coordinate);
+    $(element).popover({
+	'placement': 'auto right',
+	'viewport': {selector: "#map", padding: 0},
+	'animation': false,
+	'trigger': "click focus",
+	'html': true,
+	'title': stitle,
+	'content': s
+    });
+    $(element).popover('show');
+    // setup click helper for the list of items
+    $(".doFeatureHelper").click( function() {
+	var id = +$(this).attr("data-id");
+	$(element).popover('destroy');
+	doFeaturePopover(features[id], coordinate);
+    });
+}
+
 var highlight;
 var displayFeatureInfo = function(evt) {
     var pixel = evt.pixel;
@@ -179,104 +329,20 @@ var displayFeatureInfo = function(evt) {
     var element = popover.getElement();
 
     $(element).popover('destroy');
-    
-    var feature = map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-	return feature;
+
+    // we get a list in case there are multiple items (e.g. stacked chests)
+    var features = [];
+    map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+	features.push(feature);
     });
 
-    if (feature) {
+    if ( features.length > 0 ) {
 
-	var props = feature.getProperties();
-
-	var stitle;
-	if ( props.Entity !== undefined ) {
-	    stitle = "<div class=\"mob\"><span class=\"mob_name\">" + props.Name + "</span> <span class=\"mob_id\">(id=" + props.id + ")</span></div>\n";
+	if ( features.length === 1 )  {
+	    doFeaturePopover(features[0], coordinate);
 	} else {
-	    stitle = "<div class=\"mob\"><span class=\"mob_name\">" + props.Name + "</span></div>\n";
-	}
-	
-	var s = "<div>";
-
-	for ( var i in props ) {
-	    // skip geometry property because it contains circular refs; skip others that are uninteresting
-	    if ( i !== "geometry" &&
-		 i !== "TileEntity" &&
-		 i !== "Entity" &&
-		 i !== "pairchest" &&
-		 i !== "player" &&
-		 i !== "Name" &&
-		 i !== "id" &&
-		 i !== "Dimension"
-	       ) {
-		if ( typeof(props[i]) === 'object' ) {
-		    if ( i === "Armor" ) {
-			var armor = props[i];
-			s += "Armor:<ul>" + doParsedItem(armor,false) + "</ul>";
-		    }
-		    else if ( i === "Items" ) {
-			// items in a chest
-			var items = props[i];
-			s += "Items:<ul>" + doParsedItem(items,true) + "</ul>";
-		    }
-		    else if ( i === "Inventory" ) {
-			var inventory = props[i];
-			s += "Inventory:<ul>" + doParsedItem(inventory,true) + "</ul>";
-		    }
-		    else if ( i === "ItemInHand" ) {
-			var itemInHand = props[i];
-			s += "In Hand:<ul>" + doParsedItem([itemInHand],false) + "</ul>";
-		    }
-		    else if ( i === "Item" ) {
-			var item = props[i];
-			s += "Item:<ul>" + doParsedItem([item],false) + "</ul>";
-		    }
-		    else if ( i === "Sign" ) {
-			s += ""
-			    + props[i].Text1 + "<br/>"
-			    + props[i].Text2 + "<br/>"
-			    + props[i].Text3 + "<br/>"
-			    + props[i].Text4 + "<br/>"
-			;
-		    }
-		    else if ( i === "MobSpawner" ) {
-			s += ""
-			    + "Name: <b>" + props[i].Name + "</b><br/>"
-			    + "entityId: <b>" + props[i].entityId + "</b><br/>"
-			;
-		    }
-		    else {
-			s += "" + i + ": " + JSON.stringify(props[i], null, 2) + "<br/>";
-		    }
-		} else {
-		    s += "" + i + ": <b>" + props[i].toString() + "</b><br/>";
-		}
-	    }
-	}
-	s += "</div>";
-	popover.setPosition(coordinate);
-	$(element).attr('title', stitle);
-	$(element).popover({
-	    'placement': 'auto right',
-	    'viewport': {selector: "#map", padding: 0},
-	    'animation': false,
-	    'trigger': "click focus",
-	    'html': true,
-	    //'title': stitle,
-	    'content': s
-	});
-	$(element).popover('show');
-
-	// todo - this does not appear to work
-	if ( false ) {
-	    if (feature !== highlight) {
-		if (highlight) {
-		    featureOverlay.getSource().removeFeature(highlight);
-		}
-		if (feature) {
-		    featureOverlay.getSource().addFeature(feature);
-		}
-		highlight = feature;
-	    }
+	    // we need to show a feature select list
+	    doFeatureSelect(features, coordinate);
 	}
     }
 };
@@ -346,6 +412,8 @@ function setLayer(fn) {
 	],
 	url: fn,
 	projection: projection,
+	imageSize: [ dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight ],
+	// "Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image."
 	imageExtent: extent
     });
 
@@ -364,6 +432,33 @@ function setLayer(fn) {
 	layerMain = new ol.layer.Image({source: src});
 	map.addLayer(layerMain);
 
+	// get the pixel position with every move
+	$(map.getViewport()).on('mousemove', function(evt) {
+	    globalMousePosition = map.getEventPixel(evt.originalEvent);
+	    // todo - too expensive?
+	    map.render();
+	}).on('mouseout', function() {
+	    globalMousePosition = null;
+	    // todo - too expensive?
+	    map.render();
+	});
+	
+	layerMain.on('postcompose', function(event) {
+	    var ctx = event.context;
+	    var pixelRatio = event.frameState.pixelRatio;
+	    pixelDataName="";
+	    if ( globalMousePosition && globalLayerMode===0 && globalLayerId===0 ) {
+		var x = globalMousePosition[0] * pixelRatio;
+		var y = globalMousePosition[1] * pixelRatio;
+		pixelData = ctx.getImageData(x, y, 1, 1).data;
+		var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
+		pixelDataName = blockColorLUT[""+cval];
+		if ( pixelDataName === undefined ) {
+		    pixelDataName = "Unknown RGB: " + pixelData[0] +" "+ pixelData[1] +" "+ pixelData[2] + " ("+cval+")";
+		}
+	    }
+	});
+	
 	var bindLayerListeners = function(layer) {
 	    layer.on('precompose', setCanvasSmoothingMode);
 	    layer.on('postcompose', resetCanvasSmoothingMode);
@@ -424,12 +519,20 @@ function initDimension() {
     dimensionInfo[globalDimensionId].globalOffsetX = dimensionInfo[globalDimensionId].minWorldX;
     dimensionInfo[globalDimensionId].globalOffsetY = dimensionInfo[globalDimensionId].minWorldY;
 
+    console.log("World bounds: dimId="+globalDimensionId
+		+ " w=" + dimensionInfo[globalDimensionId].worldWidth
+		+ " h=" + dimensionInfo[globalDimensionId].worldHeight
+		+ " offx=" + dimensionInfo[globalDimensionId].globalOffsetX
+		+ " offy=" + dimensionInfo[globalDimensionId].globalOffsetY
+	       );
+    
     projection = new ol.proj.Projection({
 	code: 'mcpe_viz-image',
-	units: 'pixels',
-	// axisOrientation: 'neu',
-	//axisOrientation: 'esu',
-	extent: extent
+	units: 'm',
+	extent: extent,
+	getPointResolution: function(resolution, coordinate) {
+	    return resolution;
+	}
     });
 
     if ( mousePositionControl === null ) {
@@ -457,8 +560,7 @@ function initDimension() {
 		.extend([
 		    attribution,
 		    new ol.control.ZoomToExtent(),
-		    // todo - scaleline is crazy - wrong units
-		    // new ol.control.ScaleLine(),
+		    new ol.control.ScaleLine(),
 		    new ol.control.FullScreen(),
 		    mousePositionControl
 		]),
@@ -467,14 +569,14 @@ function initDimension() {
 	    view: new ol.View({
 		projection: projection,
 		center: [ dimensionInfo[globalDimensionId].playerPosX, dimensionInfo[globalDimensionId].playerPosY],
-		zoom: 4
+		zoom: 6
 	    })
 	});
     } else {
 	var view = new ol.View({
 	    projection: projection,
 	    center: [ dimensionInfo[globalDimensionId].playerPosX, dimensionInfo[globalDimensionId].playerPosY],
-	    zoom: 4
+	    zoom: 6
 	});
 	map.setView(view);
     }
@@ -645,8 +747,12 @@ var coordinateFormatFunction = function(coordinate) {
     cy = ((dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1]) + dimensionInfo[globalDimensionId].globalOffsetY;
     ix = coordinate[0];
     iy = (dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1];
-    return "world: " + cx.toFixed(0) + " " + cy.toFixed(0) + " image: " + ix.toFixed(0) + " " + iy.toFixed(0);
-    //ol.coordinate.add(globalOffsetX,globalOffsetY).createStringXY(4),
+    var prec=1;
+    var s = "world: " + cx.toFixed(prec) + " " + cy.toFixed(prec) + " image: " + ix.toFixed(prec) + " " + iy.toFixed(prec);
+    if ( pixelDataName.length > 0 ) {
+	s += "<br/>Block: " + pixelDataName;
+    }
+    return s;
 };
 
 // adapted from: http://stackoverflow.com/questions/12887506/cannot-set-maps-div-height-for-openlayers-map

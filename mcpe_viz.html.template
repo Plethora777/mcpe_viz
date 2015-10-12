@@ -126,7 +126,8 @@
           <ul class="dropdown-menu">
 	    <li><a href="#" class="tileEntityToggle" data-id="Sign">Sign</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="Chest">Chest</a></li>
-	    <li><a href="#" class="tileEntityToggle" data-id="MobSpawner">MobSpawner</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-id="MobSpawner">Mob Spawner</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-id="NetherPortal">Nether Portal</a></li>
 	    <li><a href="#" class="tileEntityToggleRemoveAll">Remove All</a></li>
           </ul>
 	</div>

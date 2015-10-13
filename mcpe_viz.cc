@@ -88,6 +88,7 @@
 #include <libgen.h>
 #include <map>
 #include <vector>
+#include <algorithm>
 #include <png.h>
 #include <libxml/xmlreader.h>
 #include <getopt.h>
@@ -161,7 +162,7 @@ int copyFileWithStringReplacement ( const std::string fnSrc, const std::string f
 				    const StringReplacementList& replaceStrings ) {
   char buf[1025];
 
-  fprintf(stderr,"  copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
+  //fprintf(stderr,"  copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
 
   FILE *fpsrc = fopen(fnSrc.c_str(),"r");
   if ( ! fpsrc ) {
@@ -211,7 +212,7 @@ int copyFile ( const std::string fnSrc, const std::string fnDest ) {
   char buf[1025];
   memset(buf,0,1025);
 
-  fprintf(stderr,"  copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
+  //fprintf(stderr,"  copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
   
   FILE *fpsrc = fopen(fnSrc.c_str(),"r");
   if ( ! fpsrc ) {
@@ -1719,7 +1720,7 @@ namespace mcpe_viz {
       }
       return ret;
     }
-    
+
     template<class T>
     class Point2d {
     public:
@@ -2059,6 +2060,9 @@ namespace mcpe_viz {
       std::vector< std::unique_ptr<ParsedItem> > armorList;
       ParsedItem itemInHand;
       ParsedItem item;
+      // todo - this is very handy + powerful - use it for other Parsed classes?
+      std::vector< std::pair<std::string,std::string> > otherProps;
+      bool otherPropsSortedFlag;
       
       ParsedEntity() {
 	clear();
@@ -2077,6 +2081,8 @@ namespace mcpe_viz {
 	armorList.clear();
 	itemInHand.clear();
 	item.clear();
+	otherProps.clear();
+	otherPropsSortedFlag = false;
       }
       int addInventoryItem ( nbt::tag_compound &iitem ) {
 	std::unique_ptr<ParsedItem> it(new ParsedItem());
@@ -2102,6 +2108,75 @@ namespace mcpe_viz {
 	int ret = armor->parseArmor(iarmor);
 	if ( ret == 0 ) {
 	  armorList.push_back( std::move(armor) );
+	}
+	return 0;
+      }
+
+      int addOtherProp(std::string key, std::string value) {
+	otherProps.push_back( std::make_pair(key,value) );
+	return 0;
+      }
+      
+      int checkOtherProp(nbt::tag_compound& tc, std::string key) {
+	char tmpstring[1025];
+	if ( tc.has_key(key)) {
+	  // todo - seems silly that we have to do this:
+	  const nbt::tag_type tagType = tc[key].get_type();
+	  switch ( tagType ) {
+	  case nbt::tag_type::Byte:
+	    {
+	      int8_t v = tc[key].as<nbt::tag_byte>().get();
+	      sprintf(tmpstring,"%d (0x%x)", v, v);
+	      addOtherProp(key, std::string(tmpstring));
+	    }
+	    break;
+	  case nbt::tag_type::Short:
+	    {
+	      int16_t v = tc[key].as<nbt::tag_short>().get();
+	      sprintf(tmpstring,"%d (0x%x)", v, v);
+	      addOtherProp(key, std::string(tmpstring));
+	    }
+	    break;
+	  case nbt::tag_type::Int:
+	    {
+	      int32_t v = tc[key].as<nbt::tag_int>().get();
+	      sprintf(tmpstring,"%d (0x%x)", v, v);
+	      addOtherProp(key, std::string(tmpstring));
+	    }
+	    break;
+	  case nbt::tag_type::Long:
+	    {
+	      int64_t v = tc[key].as<nbt::tag_long>().get();
+	      sprintf(tmpstring,"%lld (0x%llx)", (long long int)v, (long long int)v);
+	      addOtherProp(key, std::string(tmpstring));
+	    }
+	    break;
+	  case nbt::tag_type::Float:
+	    {
+	      sprintf(tmpstring,"%f",tc[key].as<nbt::tag_float>().get());
+	      addOtherProp(key, std::string(tmpstring));
+	    }
+	    break;
+	  case nbt::tag_type::Double:
+	    {
+	      sprintf(tmpstring,"%lf",tc[key].as<nbt::tag_double>().get());
+	      addOtherProp(key, std::string(tmpstring));
+	    }
+	    break;
+	  case nbt::tag_type::String:
+	    {
+	      addOtherProp(key, std::string(tc[key].as<nbt::tag_string>().get()));
+	    }
+	    break;
+	  default:
+	    // todo - err?
+	    //Byte_Array = 7,
+	    //List = 9,
+	    //Compound = 10,
+	    //Int_Array = 11,
+	    fprintf(stderr,"WARNING: Unable to capture entity other prop key=%s\n", key.c_str());
+	    break;
+	  }
 	}
 	return 0;
       }
@@ -2216,6 +2291,14 @@ namespace mcpe_viz {
 	  list.push_back(std::string("\"Item\": { " + item.toGeoJSON() + " }"));
 	}
 
+	if ( ! otherPropsSortedFlag ) {
+	  std::sort( otherProps.begin(), otherProps.end() );
+	  otherPropsSortedFlag = true;
+	}
+	for ( const auto& it : otherProps ) {
+	  list.push_back(std::string("\"" + it.first + "\": \"" + it.second + "\""));
+	}
+	
 	// todo?
 	/*
 	  if ( tileId >= 0 ) {
@@ -2320,6 +2403,14 @@ namespace mcpe_viz {
 	  s += " Item=" + item.toString();
 	}
 
+	if ( ! otherPropsSortedFlag ) {
+	  std::sort( otherProps.begin(), otherProps.end() );
+	  otherPropsSortedFlag = true;
+	}
+	for ( const auto& it : otherProps ) {
+	  s += " " + it.first + "=" + it.second;
+	}
+	
 	if ( tileId >= 0 ) {
 	  sprintf(tmpstring," Tile=[%s (%d 0x%x)]", blockInfoList[tileId].name.c_str(), tileId, tileId);
 	  s += tmpstring;
@@ -2385,7 +2476,6 @@ namespace mcpe_viz {
 	*/
 	return 0;
       }
-
       std::string toGeoJSON(int32_t forceDimensionId) {
 	std::vector<std::string> list;
 	char tmpstring[1025];
@@ -2649,7 +2739,75 @@ namespace mcpe_viz {
 	if ( tc.has_key("id", nbt::tag_type::Int) ) {
 	  entity->id = tc["id"].as<nbt::tag_int>().get();
 	}
-      
+
+	// todo - diff entities have other fields:
+	// see: http://minecraft.gamepedia.com/Chunk_format#Mobs
+
+	// chicken: IsChickenJockey
+	entity->checkOtherProp(tc, "IsChickenJockey");
+	
+	// ocelot: CatType
+	entity->checkOtherProp(tc, "CatType");
+	
+	// sheep: Sheared; Color
+	entity->checkOtherProp(tc, "Sheared");
+	entity->checkOtherProp(tc, "Color");
+	
+	// skeleton: SkeletonType (wither skeleton!)
+	entity->checkOtherProp(tc, "SkeletonType");
+
+	// slime: Size
+	entity->checkOtherProp(tc, "Size");
+	entity->checkOtherProp(tc, "OnGround");
+	
+	// wolf: Angry; CollarColor
+	entity->checkOtherProp(tc, "Angry");
+	entity->checkOtherProp(tc, "CollarColor");
+	entity->checkOtherProp(tc, "Owner"); 
+	entity->checkOtherProp(tc, "OwnerNew"); // mcpe only?
+
+	// villager: Profession; Riches; Career; CareerLevel; Willing; (Inventory); [Offers]
+	entity->checkOtherProp(tc, "Profession");
+	entity->checkOtherProp(tc, "Riches");
+	entity->checkOtherProp(tc, "Career");
+	entity->checkOtherProp(tc, "CareerLevel");
+	entity->checkOtherProp(tc, "Willing");
+	entity->checkOtherProp(tc, "Sitting");
+
+	// breedable mobs
+	entity->checkOtherProp(tc, "InLove");
+	entity->checkOtherProp(tc, "Age");
+	entity->checkOtherProp(tc, "ForcedAge");
+	
+	// zombie: (IsVillager?); IsBaby;
+	entity->checkOtherProp(tc, "IsBaby");
+
+	// zombie pigman
+	entity->checkOtherProp(tc, "Anger");
+	entity->checkOtherProp(tc, "HurtBy");
+
+	// enderman
+	entity->checkOtherProp(tc, "carried");
+	entity->checkOtherProp(tc, "carriedData");
+
+	// creeper
+	entity->checkOtherProp(tc, "IsPowered");
+	
+	// common
+	entity->checkOtherProp(tc, "Health");
+	entity->checkOtherProp(tc, "OwnerID"); 
+	entity->checkOtherProp(tc, "Persistent");
+
+	entity->checkOtherProp(tc, "PlayerCreated"); // golems?
+	
+	// IsGlobal - but appears to be always 0
+
+	// todo - LinksTag - might be spider jockeys?
+	
+	// stuff I found:
+	// zombie villager
+	entity->checkOtherProp(tc, "SpawnedByNight");
+	
 	fprintf(control.fpLog, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(hdr, actualDimensionId).c_str());
 
 	listGeoJSON.push_back( entity->toGeoJSON(actualDimensionId) );
@@ -3515,7 +3673,7 @@ namespace mcpe_viz {
 		    "// hacky? it sure is!\n"
 		    );
 	    
-	    fprintf(fp,"blockColorLUT = {\n");
+	    fprintf(fp,"var blockColorLUT = {\n");
 	    for (int i=0; i < 256; i++) {
 	      if ( blockInfoList[i].lookupColorFlag ) {
 		for (int sc=0; sc < 16; sc++) {

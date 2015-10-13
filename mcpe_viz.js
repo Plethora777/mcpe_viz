@@ -50,7 +50,7 @@ var globalMousePosition = null;
 var pixelData = null, pixelDataName = "";
 
 var layerRawIndex = 63;
-var layerMain = null;
+var layerMain = null, srcLayerMain = null;
 
 var mousePositionControl = null;
 
@@ -346,6 +346,25 @@ var displayFeatureInfo = function(evt) {
     }
 };
 
+// http://stackoverflow.com/questions/14484787/wrap-text-in-javascript
+function stringDivider(str, width, spaceReplacer) {
+    if (str.length > width) {
+	var p = width;
+	for (; p > 0 && (str[p] != ' ' && str[p] != '-'); p--) {
+	}
+	if (p > 0) {
+	    var left;
+	    if (str.substring(p, p + 1) == '-') {
+		left = str.substring(0, p + 1);
+	    } else {
+		left = str.substring(0, p);
+	    }
+	    var right = str.substring(p + 1);
+	    return left + spaceReplacer + stringDivider(right, width, spaceReplacer);
+	}
+    }
+    return str;
+}
 
 // from: http://openlayers.org/en/v3.9.0/examples/vector-labels.html
 var getText = function(feature, resolution) {
@@ -394,6 +413,20 @@ var createTextStyle = function(feature, resolution) {
 	rotation: rotation
     });
 };
+
+
+function setLayerLoadListeners(src) {
+    src.on('imageloadstart', function(event) {
+	updateLoadEventCount(1);
+    });
+    src.on('imageloadend', function(event) {
+	updateLoadEventCount(-1);
+    });
+    src.on('imageloaderror', function(event) {
+	updateLoadEventCount(-1);
+	alert("Image load error.");
+    });
+}
 
 
 // from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
@@ -492,7 +525,6 @@ function shade(inputs, data) {
     return new ImageData(shadeData, width, height);
 }
 
-
 var srcElevation = null, rasterElevation = null, layerElevation = null;
 
 function doShadedRelief(enableFlag) {
@@ -512,6 +544,8 @@ function doShadedRelief(enableFlag) {
 		// "Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image."
 		imageExtent: extent
 	    });
+
+	    setLayerLoadListeners(srcElevation);
 
 	    rasterElevation = new ol.source.Raster({
 		sources: [srcElevation],
@@ -533,7 +567,7 @@ function doShadedRelief(enableFlag) {
 	    controlIds.forEach(function(id) {
 		var control = document.getElementById(id);
 		var output = document.getElementById(id + 'Out');
-		// todo - this does NOT update the text fields - why?
+		// todo - this does NOT update the text fields on firefox - why?
 		control.addEventListener('input', function() {
 		    output.innerText = control.value;
 		    rasterElevation.changed();
@@ -560,6 +594,100 @@ function doShadedRelief(enableFlag) {
 }
 
 
+function makeChunkGrid(inputs, data) {
+    var srcImage = inputs[0];
+    var width = srcImage.width;
+    var height = srcImage.height;
+    var srcData = srcImage.data;
+    var gridData = new Uint8ClampedArray(srcData.length);
+    var dx = data.resolution;
+    var dy = data.resolution;
+    
+    //console.log("makeChunkGrid w=" + width + " h=" + height + " dx="+dx+" dy="+dy);
+
+    // todo - so fiddly.  it's still off a bit (not locked to src pixels)
+    
+    var cy = data.extent[3];
+    for (var pixelY = 0; pixelY < height; ++pixelY, cy-=dy) {
+	var icy = Math.round(((data.worldHeight - 1) - cy) + data.globalOffsetY);
+	var chunkY = Math.round(icy / 16);
+	var cx = data.extent[0];
+	for (var pixelX = 0; pixelX < width; ++pixelX, cx+=dx) {
+	    var offset = (pixelY * width + pixelX) * 4;
+
+	    var icx = Math.round(cx + data.globalOffsetX);
+	    var chunkX = Math.round(icx / 16);
+	    if ( ((icx % 16) === 0) || ((icy % 16) === 0) ) {
+		if ( chunkX === 0 && chunkY === 0 ) {
+		    gridData[offset]     = 255;
+		    gridData[offset + 1] = 0;
+		    gridData[offset + 2] = 0;
+		    gridData[offset + 3] = 255; 
+		} else {
+		    gridData[offset]     = 255;
+		    gridData[offset + 1] = 255;
+		    gridData[offset + 2] = 255;
+		    gridData[offset + 3] = 255;
+		}
+	    } else {
+		gridData[offset]     = 
+		    gridData[offset + 1] = 
+		    gridData[offset + 2] = 
+		    gridData[offset + 3] = 0;
+	    }
+	}
+    }
+    return new ImageData(gridData, width, height);
+}
+
+var rasterChunkGrid = null, layerChunkGrid = null;
+
+function doChunkGrid(enableFlag) {
+    if ( enableFlag ) {
+	if ( srcLayerMain === null ) {
+	    alert("Main layer source is null.  Cannot proceed.");
+	    return -1;
+	}
+	var doInitFlag = false;
+	if ( rasterChunkGrid === null ) {
+	    doInitFlag = true;
+
+	    rasterChunkGrid = new ol.source.Raster({
+		sources: [srcLayerMain],
+		operationType: 'image',
+		operation: makeChunkGrid
+	    });
+
+	    layerChunkGrid = new ol.layer.Image({
+		opacity: 0.4,
+		source: rasterChunkGrid
+	    });
+	}
+
+	map.addLayer(layerChunkGrid);
+
+	if ( doInitFlag ) {
+	    rasterChunkGrid.on('beforeoperations', function(event) {
+		// the event.data object will be passed to operations
+		var data = event.data;
+		data.resolution = event.resolution;
+		data.extent = event.extent;
+		data.worldWidth = dimensionInfo[globalDimensionId].worldWidth;
+		data.worldHeight = dimensionInfo[globalDimensionId].worldHeight;
+		data.globalOffsetX = dimensionInfo[globalDimensionId].globalOffsetX;
+		data.globalOffsetY = dimensionInfo[globalDimensionId].globalOffsetY;
+		//console.log("rasterChunkGrid resolution=" + event.resolution + " extent=" + event.extent);
+	    });
+	}
+    } else {
+	if ( layerChunkGrid !== null ) {
+	    map.removeLayer(layerChunkGrid);
+	}
+    }
+    return 0;
+}
+
+
 function setLayer(fn) {
     if ( fn.length <= 1 ) {
 	alert("That image is not available -- see README.md and re-run mcpe_viz");
@@ -568,7 +696,7 @@ function setLayer(fn) {
     
     // note: an attempt to add the new layer and then remove the old layer to prevent white screen (doesn't work)
     // todo - attribution is small and weird in map - why?
-    var src = new ol.source.ImageStatic({
+    srcLayerMain = new ol.source.ImageStatic({
 	attributions: [
 	    new ol.Attribution({
 		html: 'Created by <a href="https://github.com/Plethora777/mcpe_viz" target="_blank">mcpe_viz</a>'
@@ -581,19 +709,10 @@ function setLayer(fn) {
 	imageExtent: extent
     });
 
-    src.on('imageloadstart', function(event) {
-	updateLoadEventCount(1);
-    });
-    src.on('imageloadend', function(event) {
-	updateLoadEventCount(-1);
-    });
-    src.on('imageloaderror', function(event) {
-	updateLoadEventCount(-1);
-	alert("Image load error.  Filename=" + fn);
-    });
+    setLayerLoadListeners(srcLayerMain);
     
     if ( layerMain === null ) {
-	layerMain = new ol.layer.Image({source: src});
+	layerMain = new ol.layer.Image({source: srcLayerMain});
 	map.addLayer(layerMain);
 
 	// get the pixel position with every move
@@ -603,7 +722,6 @@ function setLayer(fn) {
 	    map.render();
 	}).on('mouseout', function() {
 	    globalMousePosition = null;
-	    // todo - too expensive?
 	    map.render();
 	});
 	
@@ -612,6 +730,7 @@ function setLayer(fn) {
 	    var pixelRatio = event.frameState.pixelRatio;
 	    pixelDataName="";
 	    if ( globalMousePosition && globalLayerMode===0 && globalLayerId===0 ) {
+		// todo - this appears to be slightly off at times (e.g. block does not change crisply at src pixel boundaries)
 		var x = globalMousePosition[0] * pixelRatio;
 		var y = globalMousePosition[1] * pixelRatio;
 		pixelData = ctx.getImageData(x, y, 1, 1).data;
@@ -629,7 +748,7 @@ function setLayer(fn) {
 	};
 	bindLayerListeners(layerMain);
     } else {
-	layerMain.setSource( src );
+	layerMain.setSource( srcLayerMain );
     }
     return 0;
 }
@@ -850,18 +969,12 @@ function loadVectors() {
 	url: dimensionInfo[globalDimensionId].fnGeoJSON,
 	format: new ol.format.GeoJSON()
     });
-    updateLoadEventCount(1);
 
+    updateLoadEventCount(1);
     var listenerKey = src.on('change', function(e) {
 	if (src.getState() == 'ready') {
 	    updateLoadEventCount(-1);
-	    // hide loading icon
-	    // ...
-	    // and unregister the "change" listener
 	    ol.Observable.unByKey(listenerKey);
-	    // or vectorSource.unByKey(listenerKey) if
-	    // you don't use the current master branch
-	    // of ol3
 	}
     });
 
@@ -920,10 +1033,10 @@ function layerGoto(layer) {
 
 // todo - this is still not quiet right
 var coordinateFormatFunction = function(coordinate) {
-    cx = coordinate[0] + dimensionInfo[globalDimensionId].globalOffsetX;
-    cy = ((dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1]) + dimensionInfo[globalDimensionId].globalOffsetY;
-    ix = coordinate[0];
-    iy = (dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1];
+    var cx = coordinate[0] + dimensionInfo[globalDimensionId].globalOffsetX;
+    var cy = ((dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1]) + dimensionInfo[globalDimensionId].globalOffsetY;
+    var ix = coordinate[0];
+    var iy = (dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1];
     var prec=1;
     var s = "world: " + cx.toFixed(prec) + " " + cy.toFixed(prec) + " image: " + ix.toFixed(prec) + " " + iy.toFixed(prec);
     if ( pixelDataName.length > 0 ) {
@@ -962,7 +1075,6 @@ $(function() {
 	}
     });
     map.addOverlay(popover);
-
 
     // todo - refine overview map cfg?
     if ( false ) {
@@ -1024,6 +1136,16 @@ $(function() {
 	}
     });
 
+    $("#gridToggle").click(function() {
+	if ( $("#gridToggle").parent().hasClass("active") ) {
+	    $("#gridToggle").parent().removeClass("active");
+	    doChunkGrid(false);
+	} else {
+	    $("#gridToggle").parent().addClass("active");
+	    doChunkGrid(true);
+	}
+    });
+    
     $("#elevationToggle").click(function() {
 	if ( $("#elevationToggle").parent().hasClass("active") ) {
 	    $("#elevationToggle").parent().removeClass("active");

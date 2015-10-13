@@ -1,11 +1,11 @@
 # MCPE Viz
 by Plethora777
 
-MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, and reports *lots* of details on your world.
+MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, reports *lots* of details on your world, and can create a powerful Google Maps-like web app for viewing your world.
 
 It can also:
 
-* Create a powerful web-based viewer for your world.
+* Create a powerful Google Maps-like web app viewer for your world.
 
 * Create images of individual layers of your world
 
@@ -64,15 +64,23 @@ Please note that --db expects the directory which contains "level.dat".
 
 ### Experimental Browser-based Openlayers Viewer
 
-You can create a browser-based viewer for your world files.  It will allow you to pan, zoom and switch between the different images.  It's pretty spiffy!  To make a complete viewer (with all the images), do something like this:
+You can create a browser-based viewer for your world files.  It will allow you to pan, zoom and switch between the different images.  It's pretty spiffy!
+
+To make a quick viewer (with all regular images, but without indvidual layers), do something like this:
 
 ```
-> ./mcpe_viz --db ./mcpe/another1/ --out ./mcpe/output/mcpe_output10 --html --all-image --slices
+> ./mcpe_viz --db ./mcpe/another1/ --out ./mcpe/output/out1 --html-most
 ```
 
-This will create a LOT of images -- individual images for each layer of the overworld and nether, as well as all the regular images.  It will also create "./mcpe/output/mcpe_output10.html".  Load this file in your browser and you will have an Openlayers-based viewer for your world!  Openlayers (http://openlayers.org/) is a super cool javascript library for mapping.
+To make a complete viewer (with all images and all layers), do something like this:
 
-Usage notes:
+```
+> ./mcpe_viz --db ./mcpe/another1/ --out ./mcpe/output/out1 --html-all
+```
+
+This will create a LOT of images -- individual images for each layer of the overworld and nether, as well as all the regular images.  It will also create "./mcpe/output/out1.html".  Load this file in your browser and you will have an Openlayers-based viewer for your world!  Openlayers (http://openlayers.org/) is a powerful javascript library for mapping.
+
+Web App Usage Notes:
 * Zoom in with double click or press the "+" button (upper left)
 * Zoom out with shift-double click or press the "-" button (upper left)
 * Move with click and drag
@@ -84,6 +92,7 @@ Usage notes:
   * Scroll through the layers from 0 (bedrock) to 127 (build limit)
   * Choose Overview, Biome etc
   * Show Mobs and Items -- click on an entry and the map will be updated with labeled points.  You can toggle on as many different types as you like.  Click on the points or labels to get more info on the item.  Note that labels are not drawn when you are zoomed out.
+  * Enable elevation overlay (shaded relief)
   
 
 ## Customization

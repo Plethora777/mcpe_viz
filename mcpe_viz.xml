@@ -75,12 +75,12 @@
     <block id="0x3C" name="Farmland" color="0x646325" solid="0" /> // *D
     <block id="0x3D" name="Furnace" color="0x303030" /> // *S *E
     <block id="0x3E" name="Burning Furnace" color="0xc69b9b" solid="0" /> // *S *E
-    <block id="0x3F" name="Standing Sign" solid="0" /> //todo // *I *S *E
+    <block id="0x3F" name="Standing Sign" solid="0" color="0x8d804a" /> // *I *S *E
     <block id="0x40" name="Oak Door" color="0x77602e" solid="0" /> // *S *I
-    <block id="0x41" name="Ladder" solid="0" /> //todo
+    <block id="0x41" name="Ladder" solid="0" color="0xada170" />
     <block id="0x42" name="Rail" color="0x866e3b" solid="0" /> // todo - tough to choose a good color here, silver/gray is not enough contrast to stone etc
     <block id="0x43" name="Cobblestone Stairs" color="0xd0d0d0" solid="0" /> // *D
-    <block id="0x44" name="Wall Sign" solid="0" /> //todo // *I *S *E
+    <block id="0x44" name="Wall Sign" solid="0" color="0x8d804b" /> // *I *S *E
     <block id="0x47" name="Iron Door" solid="0" /> // todo // *S
     <block id="0x49" name="Redstone Ore" color="0xeb7979" />
     <block id="0x4A" name="Glowing Redstone Ore" color="0xeb7978" />
@@ -97,14 +97,14 @@
     <block id="0x59" name="Glowstone" color="0xfafa9c" />
     <block id="0x5A" name="Nether Portal" color="0xffa0ff" solid="0" />
     <block id="0x5B" name="Jack o'Lantern" color="0xfd9501" /> // *S
-    <block id="0x5C" name="Cake" solid="0" /> // todo // *S
+    <block id="0x5C" name="Cake" solid="0" color="0xe4b8c4" /> // *S
     <block id="0x5F" name="TBD - MCPE=Invisible Bedrock / MCPC=Stained Glass" color="0x161616" />
-    <block id="0x60" name="Trapdoor" solid="0" /> //todo // *S
+    <block id="0x60" name="Trapdoor" solid="0" color="0x9e9678" /> // *S
     <block id="0x61" name="Monster Egg" /> //todo
     <block id="0x62" name="Stone Brick" color="0xb6b6b0" /> // *D *B
     <block id="0x63" name="Brown Mushroom (block)" color="0xcaa761" />
     <block id="0x64" name="Red Mushroom (block)" color="0xfe9c9b" />
-    <block id="0x65" name="Iron Bars" solid="0" /> // todo
+    <block id="0x65" name="Iron Bars" solid="0" color="0xd6d5d3" />
     <block id="0x66" name="Glass Pane" color="0xd1d1d1" solid="0" />
     <block id="0x67" name="Melon" color="0x73d86c" />
     <block id="0x68" name="Pumpkin Stem" color="0xa6a96f" solid="0" /> // *S
@@ -119,12 +119,12 @@
     <block id="0x71" name="Nether Brick Fence" color="0x8c3939" solid="0" />
     <block id="0x72" name="Nether Brick Stairs" color="0xa74949" solid="0" /> // *S
     <block id="0x73" name="Nether Wart" color="0xa81031" solid="0" />
-    <block id="0x74" name="Enchantment Table" solid="0" /> // todo // *E
-    <block id="0x75" name="Brewing Stand" solid="0" /> // todo // *I *S *E
-    <block id="0x78" name="End Portal Frame" /> // todo
+    <block id="0x74" name="Enchantment Table" solid="0" color="0xc28a8a" /> // *E
+    <block id="0x75" name="Brewing Stand" solid="0" color="0xe8e6a9" /> // *I *S *E
+    <block id="0x78" name="End Portal Frame" color="0x8faf91" />
     <block id="0x79" name="End Stone" /> // todo
     <block id="0x7E" name="TBD - MCPE=Cake (Mystery) S / MCPC=Wooden Slab" solid="0" /> // todo  // *S *B
-    <block id="0x7F" name="Cocoa" solid="0" /> // todo // *S *I
+    <block id="0x7F" name="Cocoa" solid="0" color="0xb58e17" /> // *S *I
     <block id="0x80" name="Sandstone Stairs" color="0xcecb89" solid="0" /> // *S
     <block id="0x81" name="Emerald Ore" color="0x77d17d" />
     <block id="0x85" name="Block of Emerald" color="0x6dbc73" />
@@ -132,13 +132,13 @@
     <block id="0x87" name="Birch Wood Stairs" color="0x696a2a" solid="0" /> // *S
     <block id="0x88" name="Jungle Wood Stairs" color="0x696a29" solid="0" /> // *S
     <block id="0x8B" name="Cobblestone Wall" color="0xb0b0b0" solid="0" /> // *S
-    <block id="0x8C" name="Flower Pot" solid="0" /> // todo // *I *S *E
+    <block id="0x8C" name="Flower Pot" solid="0" color="0xdd9924" /> // *I *S *E
     <block id="0x8D" name="Carrot" color="0xe8a03a" solid="0" />  // *S *I
     <block id="0x8E" name="Potato" color="0xb4af1c" solid="0" /> // *S *I
     <block id="0x8F" name="TBD - MCPE=Mob head" /> //todo // *I *S *E
     <block id="0x90" name="TBD - MCPC=Mob head" /> //todo // *I *S *E
     // todo - note: on the MCPE page anvil is listed as 0x90; in the data files (and the MC page) it is 0x91
-    <block id="0x91" name="Anvil" solid="0" /> // todo  // *S *B
+    <block id="0x91" name="Anvil" solid="0" color="0x525252" /> // *S *B
     <block id="0x98" name="Block of Redstone" color="0xcd5c5c" />
     <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
     <block id="0x9B" name="Block of Quartz" color="0xffffff" /> // *S *B
@@ -157,18 +157,18 @@
     <block id="0xAC" name="Hardened Clay" color="0xb75252" /> 
     <block id="0xAD" name="Block of Coal" color="0x5c5c5c" />
     <block id="0xAE" name="Packed Ice" color="0x02cffd" />
-    <block id="0xAF" name="Large Flowers" solid="0" /> // todo // *S *B
-    <block id="0xB7" name="Spruce Fence Gate" solid="0" /> // todo
-    <block id="0xB8" name="Birch Fence Gate" solid="0" /> // todo
-    <block id="0xB9" name="Jungle Fence Gate" solid="0" /> // todo
-    <block id="0xBA" name="Dark Oak Fence Gate" solid="0" /> // todo
-    <block id="0xBB" name="Acacia Fence Gate" solid="0" /> // todo
+    <block id="0xAF" name="Large Flowers" solid="0" color="0xe0f83d" /> // *S *B
+    <block id="0xB7" name="Spruce Fence Gate" solid="0" color="0xa77b10" />
+    <block id="0xB8" name="Birch Fence Gate" solid="0" color="0xa77b11" />
+    <block id="0xB9" name="Jungle Fence Gate" solid="0" color="0xa77b12" />
+    <block id="0xBA" name="Dark Oak Fence Gate" solid="0" color="0xa77b13" />
+    <block id="0xBB" name="Acacia Fence Gate" solid="0" color="0xa77b14" />
     <block id="0xC6" name="Grass Path" color="0xb86335" />
     <block id="0xF3" name="Podzol" color="0x45390a" />
     <block id="0xF4" name="Beetroot" color="0xd03388" solid="0" /> // *S *I
-    <block id="0xF5" name="Stone Cutter" />  // todo
+    <block id="0xF5" name="Stone Cutter" color="0xb2aea5" />
     <block id="0xF6" name="Glowing Obsidian" /> // todo
-    <block id="0xF7" name="Nether Reactor Core" /> // todo
+    <block id="0xF7" name="Nether Reactor Core" color="0xbaf5f2" />
     <block id="0xF8" name="Update Game Block (update!) [note 1]" /> // todo
     <block id="0xF9" name="Update Game Block (ate!upd)" /> // todo
     <block id="0xFF" name="info_reserved6" /> // todo

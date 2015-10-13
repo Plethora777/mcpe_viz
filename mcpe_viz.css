@@ -56,16 +56,11 @@ html, body, .container-fluid, #map {
 }
 
 .mob {
-    /* background-color: #202020; */
-    /* color: #f0f0f0; */
-    /* padding: 0.2em 0.2em; */
 }
 .mob_name {
     font-weight: bold;
-    /* text-align: left; */
 }
 .mob_id {
-    /* text-align: right; */
 }
 
 /* todo - fix attribution small/weird issue */
@@ -84,6 +79,7 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
     background-color: #e0e0e0;
     color: #000000;
     border: 2px solid black;
+    border-radius: 5px;
     height: auto;
     width: 200px;
     padding: 10px;

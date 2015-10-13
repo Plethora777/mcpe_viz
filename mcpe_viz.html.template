@@ -68,8 +68,9 @@
 	    <li><a href="#" class="imageSelect" data-id="0">Overview</a></li>
 	    <li><a href="#" class="imageSelect" data-id="1">Biome</a></li>
 	    <li><a href="#" class="imageSelect" data-id="2">Height</a></li>
-	    <li><a href="#" class="imageSelect" data-id="3">Block Light</a></li>
-	    <li><a href="#" class="imageSelect" data-id="4">Grass Color</a></li>
+	    <li><a href="#" class="imageSelect" data-id="3">Height (Grayscale)</a></li>
+	    <li><a href="#" class="imageSelect" data-id="4">Block Light</a></li>
+	    <li><a href="#" class="imageSelect" data-id="5">Grass Color</a></li>
 	  </ul>
 	</div>
 	
@@ -92,6 +93,7 @@
 	    <li><a href="#" class="entityToggle" data-id="22">Ocelot</a></li>
 	    <li><a href="#" class="entityToggle" data-id="63">Player</a></li>
 	    <li><a href="#" class="entityToggle" data-id="64">Dropped Item</a></li>
+	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="entityToggleRemoveAll">Remove All</a></li>
           </ul>
 	</div>
@@ -115,6 +117,7 @@
 	    <li><a href="#" class="entityToggle" data-id="43">Blaze</a></li>
 	    <li><a href="#" class="entityToggle" data-id="44">Zombie Villager</a></li>
 	    <li><a href="#" class="entityToggle" data-id="63">Player</a></li>
+	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="entityToggleRemoveAll">Remove All</a></li>
           </ul>
 	</div>
@@ -128,10 +131,34 @@
 	    <li><a href="#" class="tileEntityToggle" data-id="Chest">Chest</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="MobSpawner">Mob Spawner</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="NetherPortal">Nether Portal</a></li>
+	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="tileEntityToggleRemoveAll">Remove All</a></li>
           </ul>
 	</div>
 
+	<div class="btn-group dropup">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Options">
+	    Options
+	    <span class="caret"></span></button>
+	  <ul class="dropdown-menu">
+	    <li><a href="#" id="elevationToggle">Show Elevation Overlay</a></li>
+	    <li role="separator" class="divider"></li>
+	    <li class="input-group">
+	      <span class="input-group-addon">Intensity: <span id="vertOut"></span></span>
+	      <input id="vert" class="mytooltip" title="Vertical Exaggeration" type="range" min="1" max="5" value="1"/>
+	    </li>
+	    <li class="input-group">
+	      <span class="input-group-addon">Elevation: <span id="sunElOut"></span></span>
+	      <input id="sunEl" class="mytooltip" title="Sun Elevation" type="range" min="0" max="90" value="45"/>
+	    </li>
+	    <li class="input-group">
+	      <span class="input-group-addon">Azimuth: <span id="sunAzOut"></span></span>
+	      <input id="sunAz" class="mytooltip" title="Sun Azimuth" type="range" min="0" max="360" value="45"/>
+	    </li>
+	    <li><a href="#" id="elevationReset">Reset Elevation Settings</a></li>
+	  </ul>
+	</div>
+	
 	<div class="navbar-header navbar-right">
 	  <a class="navbar-brand" target="_blank" href="https://github.com/Plethora777/mcpe_viz">&nbsp;MCPE Viz Viewer by Plethora777</a>
 	</div>

@@ -12,11 +12,9 @@
 
   * features
   -- hover over pixel gives info: (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)")
-
+  -- store biome info in a vector file; use that to display tooltips
 
   * toggle btwn overworld / nether - show player est. spot in nether even if they are in overworld
-
-  * store biome info in a vector file; use that to display tooltips
 
   * how to get navbar + popovers in full screen?
 
@@ -25,9 +23,6 @@
 
 /*
   todo - interesting openlayers examples:
-
-  shaded relief -- could try this with height map?
-  http://openlayers.org/en/v3.9.0/examples/shaded-relief.html
 
   vector icons
   http://openlayers.org/en/v3.9.0/examples/icon.html
@@ -175,13 +170,17 @@ var featureOverlay = new ol.layer.Vector({
     }
 });
 
+function correctGeoJSONName(name) {
+    if ( name == "MobSpawner" ) { name="Mob Spawner"; }
+    if ( name == "NetherPortal" ) { name="Nether Portal"; }
+    return name;
+}
+
 function doFeaturePopover(feature,coordinate) {
     var element = popover.getElement();
     var props = feature.getProperties();
 
-    var name = props.Name;
-    if ( name === "MobSpawner" ) { name="Mob Spawner"; }
-    if ( name === "NetherPortal" ) { name="Nether Portal"; }
+    var name = correctGeoJSONName(props.Name);
     
     var stitle;
     if ( props.Entity !== undefined ) {
@@ -296,7 +295,7 @@ function doFeatureSelect(features, coordinate) {
 	var props = feature.getProperties();
 	// how to do this?
 	s += '<a href="#" data-id="'+i+'" class="list-group-item doFeatureHelper">'
-	    + props.Name
+	    + correctGeoJSONName(props.Name)
 	    + ' @ ' + props.Pos[0] +', '+ props.Pos[1] +', '+ props.Pos[2] + ')'
 	    + '</a>'
 	;
@@ -352,7 +351,7 @@ var displayFeatureInfo = function(evt) {
 var getText = function(feature, resolution) {
     var type = 'normal';
     var maxResolution = 2;
-    var text = feature.get('Name');
+    var text = correctGeoJSONName(feature.get('Name'));
 
     if ( true ) {
 	if (resolution > maxResolution) {
@@ -372,12 +371,12 @@ var getText = function(feature, resolution) {
 var createTextStyle = function(feature, resolution) {
     var align = 'left';
     var baseline = 'bottom';
-    var size = '12pt';
-    var offsetX = 5;
-    var offsetY = -5;
+    var size = '14pt';
+    var offsetX = 3;
+    var offsetY = -3;
     var weight = 'bold';
     var rotation = 0;
-    var font = weight + ' ' + size + ' Arial';
+    var font = weight + ' ' + size + ' Calibri,sans-serif';
     var fillColor = '#ffffff';
     var outlineColor = '#000000';
     var outlineWidth = 3;
@@ -395,6 +394,171 @@ var createTextStyle = function(feature, resolution) {
 	rotation: rotation
     });
 };
+
+
+// from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
+// NOCOMPILE
+/**
+ * Generates a shaded relief image given elevation data.  Uses a 3x3
+ * neighborhood for determining slope and aspect.
+ * @param {Array.<ImageData>} inputs Array of input images.
+ * @param {Object} data Data added in the "beforeoperations" event.
+ * @return {ImageData} Output image.
+ */
+function shade(inputs, data) {
+    var elevationImage = inputs[0];
+    var width = elevationImage.width;
+    var height = elevationImage.height;
+    var elevationData = elevationImage.data;
+    var shadeData = new Uint8ClampedArray(elevationData.length);
+    var dp = data.resolution * 2;
+    var maxX = width - 1;
+    var maxY = height - 1;
+    var pixel = [0, 0, 0, 0];
+    var twoPi = 2 * Math.PI;
+    var halfPi = Math.PI / 2;
+    var sunEl = Math.PI * data.sunEl / 180;
+    var sunAz = Math.PI * data.sunAz / 180;
+    var cosSunEl = Math.cos(sunEl);
+    var sinSunEl = Math.sin(sunEl);
+    var pixelX, pixelY, x0, x1, y0, y1, offset,
+	z0, z1, dzdx, dzdy, slope, aspect, cosIncidence, scaled;
+    for (pixelY = 0; pixelY <= maxY; ++pixelY) {
+	y0 = pixelY === 0 ? 0 : pixelY - 1;
+	y1 = pixelY === maxY ? maxY : pixelY + 1;
+	for (pixelX = 0; pixelX <= maxX; ++pixelX) {
+	    x0 = pixelX === 0 ? 0 : pixelX - 1;
+	    x1 = pixelX === maxX ? maxX : pixelX + 1;
+
+	    // determine elevation for (x0, pixelY)
+	    offset = (pixelY * width + x0) * 4;
+	    pixel[0] = elevationData[offset];
+	    pixel[1] = elevationData[offset + 1];
+	    pixel[2] = elevationData[offset + 2];
+	    pixel[3] = elevationData[offset + 3];
+	    z0 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+
+	    // determine elevation for (x1, pixelY)
+	    offset = (pixelY * width + x1) * 4;
+	    pixel[0] = elevationData[offset];
+	    pixel[1] = elevationData[offset + 1];
+	    pixel[2] = elevationData[offset + 2];
+	    pixel[3] = elevationData[offset + 3];
+	    z1 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+
+	    dzdx = (z1 - z0) / dp;
+
+	    // determine elevation for (pixelX, y0)
+	    offset = (y0 * width + pixelX) * 4;
+	    pixel[0] = elevationData[offset];
+	    pixel[1] = elevationData[offset + 1];
+	    pixel[2] = elevationData[offset + 2];
+	    pixel[3] = elevationData[offset + 3];
+	    z0 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+
+	    // determine elevation for (pixelX, y1)
+	    offset = (y1 * width + pixelX) * 4;
+	    pixel[0] = elevationData[offset];
+	    pixel[1] = elevationData[offset + 1];
+	    pixel[2] = elevationData[offset + 2];
+	    pixel[3] = elevationData[offset + 3];
+	    z1 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+
+	    dzdy = (z1 - z0) / dp;
+
+	    slope = Math.atan(Math.sqrt(dzdx * dzdx + dzdy * dzdy));
+
+	    aspect = Math.atan2(dzdy, -dzdx);
+	    if (aspect < 0) {
+		aspect = halfPi - aspect;
+	    } else if (aspect > halfPi) {
+		aspect = twoPi - aspect + halfPi;
+	    } else {
+		aspect = halfPi - aspect;
+	    }
+
+	    cosIncidence = sinSunEl * Math.cos(slope) +
+		cosSunEl * Math.sin(slope) * Math.cos(sunAz - aspect);
+
+	    offset = (pixelY * width + pixelX) * 4;
+	    scaled = 255 * cosIncidence;
+	    shadeData[offset] = scaled;
+	    shadeData[offset + 1] = scaled;
+	    shadeData[offset + 2] = scaled;
+	    shadeData[offset + 3] = elevationData[offset + 3];
+	}
+    }
+
+    return new ImageData(shadeData, width, height);
+}
+
+
+var srcElevation = null, rasterElevation = null, layerElevation = null;
+
+function doShadedRelief(enableFlag) {
+    if ( enableFlag ) {
+	var fn = dimensionInfo[globalDimensionId].fnLayerHeightGrayscale;
+	if ( fn === undefined || fn.length <= 1 ) {
+	    alert("Data for elevation (--height-col-gs) image is not available -- see README.md and re-run mcpe_viz");
+	    return -1;
+	}
+	var doInitFlag = false;
+	if ( srcElevation === null ) {
+	    doInitFlag = true;
+	    srcElevation = new ol.source.ImageStatic({
+		url: fn,
+		projection: projection,
+		imageSize: [ dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight ],
+		// "Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image."
+		imageExtent: extent
+	    });
+
+	    rasterElevation = new ol.source.Raster({
+		sources: [srcElevation],
+		operationType: 'image',
+		operation: shade
+	    });
+
+	    layerElevation = new ol.layer.Image({
+		opacity: 0.3,
+		source: rasterElevation
+	    });
+	}
+
+	map.addLayer(layerElevation);
+
+	if ( doInitFlag ) {
+	    var controlIds = ['vert', 'sunEl', 'sunAz'];
+	    var controls = {};
+	    controlIds.forEach(function(id) {
+		var control = document.getElementById(id);
+		var output = document.getElementById(id + 'Out');
+		// todo - this does NOT update the text fields - why?
+		control.addEventListener('input', function() {
+		    output.innerText = control.value;
+		    rasterElevation.changed();
+		});
+		output.innerText = control.value;
+		controls[id] = control;
+	    });
+
+	    rasterElevation.on('beforeoperations', function(event) {
+		// the event.data object will be passed to operations
+		var data = event.data;
+		data.resolution = event.resolution;
+		for (var id in controls) {
+		    data[id] = Number(controls[id].value);
+		}
+	    });
+	}
+    } else {
+	if ( layerElevation !== null ) {
+	    map.removeLayer(layerElevation);
+	}
+    }
+    return 0;
+}
+
 
 function setLayer(fn) {
     if ( fn.length <= 1 ) {
@@ -484,13 +648,18 @@ function setLayerById(id) {
 	    $("#imageSelectName").html("Height");
 	}
     } else if ( id === 3 ) {
-	if ( setLayer(dimensionInfo[globalDimensionId].fnLayerBlockLight) === 0 ) {
+	if ( setLayer(dimensionInfo[globalDimensionId].fnLayerHeightGrayscale) === 0 ) {
 	    globalLayerMode = 0; globalLayerId = 3;
-	    $("#imageSelectName").html("Block Light");
+	    $("#imageSelectName").html("Height (Grayscale)");
 	}
     } else if ( id === 4 ) {
-	if ( setLayer(dimensionInfo[globalDimensionId].fnLayerGrass) === 0 ) {
+	if ( setLayer(dimensionInfo[globalDimensionId].fnLayerBlockLight) === 0 ) {
 	    globalLayerMode = 0; globalLayerId = 4;
+	    $("#imageSelectName").html("Block Light");
+	}
+    } else if ( id === 5 ) {
+	if ( setLayer(dimensionInfo[globalDimensionId].fnLayerGrass) === 0 ) {
+	    globalLayerMode = 0; globalLayerId = 5;
 	    $("#imageSelectName").html("Grass Color");
 	}
     } else {
@@ -547,18 +716,22 @@ function initDimension() {
     } else {
 	mousePositionControl.setProjection(projection);
     }
-    
-    var attribution = new ol.control.Attribution({
-	collapsed: false,
-	collapsible: false
-	//target: "_blank"
-    });		
 
+    /*
+      var attribution = new ol.control.Attribution({
+      collapsed: false,
+      collapsible: false
+      //target: "_blank"
+      });		
+    */
+    
     if ( map === null ) {
 	map = new ol.Map({
-	    controls: ol.control.defaults({ attribution:false })
+	    controls: ol.control.defaults({
+		attribution:true,
+		attributionOptions: { collapsed: false, collapsible: false, target: "_blank" }
+	    })
 		.extend([
-		    attribution,
 		    new ol.control.ZoomToExtent(),
 		    new ol.control.ScaleLine(),
 		    new ol.control.FullScreen(),
@@ -630,9 +803,9 @@ var createPointStyleFunction = function() {
 		    if ( listEntityToggle[id] ) { 
 			style = new ol.style.Style({
 			    image: new ol.style.Circle({
-				radius: 5,
-				fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 0.5)'}),
-				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.5)', width: 2})
+				radius: 4,
+				fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 1.0)'}),
+				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 1.0)', width: 2})
 			    }),
 			    text: createTextStyle(feature, resolution)
 			});
@@ -648,9 +821,9 @@ var createPointStyleFunction = function() {
 		    if ( listTileEntityToggle[Name] ) { 
 			style = new ol.style.Style({
 			    image: new ol.style.Circle({
-				radius: 5,
-				fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 0.5)'}),
-				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.5)', width: 2})
+				radius: 4,
+				fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 1.0)'}),
+				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 1.0)', width: 2})
 			    }),
 			    text: createTextStyle(feature, resolution)
 			});
@@ -677,15 +850,19 @@ function loadVectors() {
 	url: dimensionInfo[globalDimensionId].fnGeoJSON,
 	format: new ol.format.GeoJSON()
     });
-    // todo - are there events like this for vectors?
-    src.on('imageloadstart', function(event) {
-	updateLoadEventCount(1);
-    });
-    src.on('imageloadend', function(event) {
-	updateLoadEventCount(-1);
-    });
-    src.on('imageloaderror', function(event) {
-	updateLoadEventCount(-1);
+    updateLoadEventCount(1);
+
+    var listenerKey = src.on('change', function(e) {
+	if (src.getState() == 'ready') {
+	    updateLoadEventCount(-1);
+	    // hide loading icon
+	    // ...
+	    // and unregister the "change" listener
+	    ol.Observable.unByKey(listenerKey);
+	    // or vectorSource.unByKey(listenerKey) if
+	    // you don't use the current master branch
+	    // of ol3
+	}
     });
 
     vectorPoints = new ol.layer.Vector({
@@ -847,6 +1024,24 @@ $(function() {
 	}
     });
 
+    $("#elevationToggle").click(function() {
+	if ( $("#elevationToggle").parent().hasClass("active") ) {
+	    $("#elevationToggle").parent().removeClass("active");
+	    doShadedRelief(false);
+	} else {
+	    $("#elevationToggle").parent().addClass("active");
+	    doShadedRelief(true);
+	}
+    });
+    $("#elevationReset").click(function() {
+	$("#vert").val(1);
+	$("#sunEl").val(45);
+	$("#sunAz").val(45);
+	if ( rasterElevation !== null ) {
+	    rasterElevation.changed();
+	}
+    });
+    
     // fix map size
     window.addEventListener('resize', fixContentHeight);
     fixContentHeight();

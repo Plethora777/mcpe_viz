@@ -18,6 +18,8 @@
   -- same for items + entities
   -- THIS: perhaps <block ...><variant .../></block>?
 
+  * idea from /u/sturace -- filter by pixel value (e.g. show only oak trees)
+
   * it takes a loooong time to do a full html - 47 minutes?!
   -- try to do it as we parse the chunks?
 
@@ -177,28 +179,28 @@ int copyFileWithStringReplacement ( const std::string fnSrc, const std::string f
     memset(buf,0,1025);
     if ( fgets(buf, 1024, fpsrc) ) { 
 
-    // look for replacement string
-    bool doneFlag = false;
-    for ( const auto& it : replaceStrings ) {
-      char* p = strstr(buf,it.first.c_str());
-      if ( p ) {
-	std::string sbefore(buf,(p-buf));
-	std::string safter(&p[it.first.size()]);
-	if ( sbefore.size() > 0 ) {
-	  fputs(sbefore.c_str(), fpdest);
+      // look for replacement string
+      bool doneFlag = false;
+      for ( const auto& it : replaceStrings ) {
+	char* p = strstr(buf,it.first.c_str());
+	if ( p ) {
+	  std::string sbefore(buf,(p-buf));
+	  std::string safter(&p[it.first.size()]);
+	  if ( sbefore.size() > 0 ) {
+	    fputs(sbefore.c_str(), fpdest);
+	  }
+	  fputs(it.second.c_str(), fpdest);
+	  if ( safter.size() > 0 ) {
+	    fputs(safter.c_str(),fpdest);
+	  }
+	  doneFlag = true;
+	  break;
 	}
-	fputs(it.second.c_str(), fpdest);
-	if ( safter.size() > 0 ) {
-	  fputs(safter.c_str(),fpdest);
-	}
-	doneFlag = true;
-	break;
+      }
+      if ( ! doneFlag ) {
+	fputs(buf,fpdest);
       }
     }
-    if ( ! doneFlag ) {
-      fputs(buf,fpdest);
-    }
-  }
   }
   fclose(fpsrc);
   fclose(fpdest);
@@ -245,17 +247,22 @@ namespace mcpe_viz {
 
     enum OutputType : int32_t {
       kDoOutputNone = -2,
-      kDoOutputAll = -1
-    };
+	kDoOutputAll = -1
+	};
 
     // dimensions
     enum DimensionType : int32_t {
       kDimIdOverworld = 0,
-      kDimIdNether = 1,
-      kDimIdCount = 2
-    };
+	kDimIdNether = 1,
+	kDimIdCount = 2
+	};
 
     const int32_t kColorDefault = 0xff00ff;
+
+    enum HeightMode : int32_t {
+      kHeightModeTop = 0,
+	kHeightModeLevelDB = 1
+	};
     
     // all user options are stored here
     class Control {
@@ -295,6 +302,8 @@ namespace mcpe_viz {
       bool verboseFlag;
       bool quietFlag;
       int movieX, movieY, movieW, movieH;
+
+      int heightMode;
 
       bool fpLogNeedCloseFlag;
       FILE *fpLog;
@@ -361,6 +370,9 @@ namespace mcpe_viz {
 	fpLog = stdout;
 	fpGeoJSON = nullptr;
 
+	// todo - param for this
+	heightMode = kHeightModeTop;
+	
 	for (int did=0; did < kDimIdCount; did++) {
 	  fnLayerTop[did] = "";
 	  fnLayerBiome[did] = "";
@@ -419,13 +431,13 @@ namespace mcpe_viz {
     // output image types
     enum ImageModeType : int32_t {
       kImageModeTerrain = 0,
-      kImageModeBiome = 1,
-      kImageModeGrass = 2,
-      kImageModeHeightCol = 3,
-      kImageModeHeightColGrayscale = 4,
-      kImageModeBlockLight = 5,
-      kImageModeSkyLight = 6
-    };
+	kImageModeBiome = 1,
+	kImageModeGrass = 2,
+	kImageModeHeightCol = 3,
+	kImageModeHeightColGrayscale = 4,
+	kImageModeBlockLight = 5,
+	kImageModeSkyLight = 6
+	};
 
     class StandardColorInfo {
     public:
@@ -753,8 +765,8 @@ namespace mcpe_viz {
       uint8_t heightCol[16][16];
       uint8_t topLight[16][16];
       ChunkData(int32_t cx, int32_t cz,
-	      const uint8_t* b, const uint8_t* d, const uint32_t* xgrassAndBiome, const uint8_t* tby, const uint8_t* height,
-	      const uint8_t* light) {
+		const uint8_t* b, const uint8_t* d, const uint32_t* xgrassAndBiome, const uint8_t* tby, const uint8_t* height,
+		const uint8_t* light) {
 	chunkX=cx;
 	chunkZ=cz;
 	memcpy(blocks, b, 16*16);
@@ -961,13 +973,23 @@ namespace mcpe_viz {
 	      }
 	      else if ( imageMode == kImageModeHeightCol ) {
 		// get height value and use red-black-green palette
-		uint8_t c = it->heightCol[cx][cz];
-		color = palRedBlackGreen[c];
+		if ( control.heightMode == kHeightModeTop ) {
+		  uint8_t c = it->topBlockY[cz][cx];
+		  color = palRedBlackGreen[c];
+		} else {
+		  uint8_t c = it->heightCol[cx][cz];
+		  color = palRedBlackGreen[c];
+		}
 	      }
 	      else if ( imageMode == kImageModeHeightColGrayscale ) {
 		// get height value and make it grayscale
-		uint8_t c = it->heightCol[cx][cz];
-		color = htobe32( (c << 16) | (c << 8) | c );
+		if ( control.heightMode == kHeightModeTop ) {
+		  uint8_t c = it->topBlockY[cz][cx];
+		  color = htobe32( (c << 16) | (c << 8) | c );
+		} else {
+		  uint8_t c = it->heightCol[cx][cz];
+		  color = htobe32( (c << 16) | (c << 8) | c );
+		}
 	      }
 	      else if ( imageMode == kImageModeBlockLight ) {
 		// get block light value and expand it (is only 4-bits)
@@ -2196,10 +2218,10 @@ namespace mcpe_viz {
 
 	// todo?
 	/*
-	if ( tileId >= 0 ) {
+	  if ( tileId >= 0 ) {
 	  sprintf(tmpstring," Tile=[%s (%d 0x%x)]", blockInfoList[tileId].name.c_str(), tileId, tileId);
 	  s += tmpstring;
-	}
+	  }
 	*/
 
 	if ( list.size() > 0 ) {
@@ -2572,14 +2594,14 @@ namespace mcpe_viz {
 
 	  if ( tc.has_key("BedPositionX", nbt::tag_type::Int) ) {
 	    entity->bedPosition.set( tc["BedPositionX"].as<nbt::tag_int>().get(),
-				    tc["BedPositionY"].as<nbt::tag_int>().get(),
-				    tc["BedPositionZ"].as<nbt::tag_int>().get() );
+				     tc["BedPositionY"].as<nbt::tag_int>().get(),
+				     tc["BedPositionZ"].as<nbt::tag_int>().get() );
 	  }
 
 	  if ( tc.has_key("SpawnX", nbt::tag_type::Int) ) {
 	    entity->spawn.set( tc["SpawnX"].as<nbt::tag_int>().get(),
-			      tc["SpawnY"].as<nbt::tag_int>().get(),
-			      tc["SpawnZ"].as<nbt::tag_int>().get() );
+			       tc["SpawnY"].as<nbt::tag_int>().get(),
+			       tc["SpawnZ"].as<nbt::tag_int>().get() );
 	  }
       
 	  if ( tc.has_key("DimensionId", nbt::tag_type::Int) ) {
@@ -2614,8 +2636,8 @@ namespace mcpe_viz {
 	if ( tc.has_key("Pos", nbt::tag_type::List) ) {
 	  nbt::tag_list pos = tc["Pos"].as<nbt::tag_list>();
 	  entity->pos.set( pos[0].as<nbt::tag_float>().get(),
-			  pos[1].as<nbt::tag_float>().get(),
-			  pos[2].as<nbt::tag_float>().get() );
+			   pos[1].as<nbt::tag_float>().get(),
+			   pos[2].as<nbt::tag_float>().get() );
 	}
 
 	if ( tc.has_key("Rotation", nbt::tag_type::List) ) {
@@ -2890,7 +2912,16 @@ namespace mcpe_viz {
       return 0;
     }
 
-    
+
+    // note: this is an attempt to remove "bad" chunks as seen in "nyan.zip" world
+    bool legalChunkPos ( int32_t chunkX, int32_t chunkZ ) {
+      if ( (uint32_t)chunkX == 0x80000000 && (uint32_t)chunkZ == 0x80000000 ) {
+	return false;
+      }
+      return true;
+    }
+
+
     class MyWorld {
     public:
       leveldb::DB* db;
@@ -2971,7 +3002,7 @@ namespace mcpe_viz {
 	    chunkType = myParseInt8(key, 8);
 	    
 	    // sanity checks
-	    if ( chunkType == 0x30 ) {
+	    if ( chunkType == 0x30 && legalChunkPos(chunkX,chunkZ) ) {
 	      chunkList[0].addToChunkBounds(chunkX, chunkZ);
 	    }
 	  }
@@ -2982,7 +3013,7 @@ namespace mcpe_viz {
 	    chunkType = myParseInt8(key, 12);
 	    
 	    // sanity checks
-	    if ( chunkType == 0x30 ) {
+	    if ( chunkType == 0x30 && legalChunkPos(chunkX,chunkZ) ) {
 	      chunkList[chunkDimId].addToChunkBounds(chunkX, chunkZ);
 	    }
 	  }
@@ -3159,226 +3190,229 @@ namespace mcpe_viz {
 	      }
 	    }
 	  
-	    chunkList[chunkDimId].histoChunkType[chunkType]++;
+	    if ( ! legalChunkPos(chunkX,chunkZ) ) {
+	      fprintf(stderr,"WARNING: Found a chunk with invalid chunk coordinates cx=%d cz=%d\n", chunkX, chunkZ);
+	    } else {
+	      chunkList[chunkDimId].histoChunkType[chunkType]++;
 
-	    r = dimName + "-chunk: ";
-	    sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
-	    r += tmpstring;
-	    if ( true ) {
-	      // show approximate image coordinates for chunk
-	      int chunkOffsetX = -chunkList[chunkDimId].minChunkX;
-	      int chunkOffsetZ = -chunkList[chunkDimId].maxChunkZ;
-	      int imageX = (chunkX + chunkOffsetX) * 16;
-	      int imageZ = (chunkZ + chunkOffsetZ) * 16;
-	      int ix = (imageX);
-	      int iz = (imageZ);
-	      sprintf(tmpstring," (image %d %d)",ix,iz);
-	      r+=tmpstring;
-	    }
-	    r += "\n";
-	    fprintf(control.fpLog,r.c_str());
+	      r = dimName + "-chunk: ";
+	      sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
+	      r += tmpstring;
+	      if ( true ) {
+		// show approximate image coordinates for chunk
+		int chunkOffsetX = -chunkList[chunkDimId].minChunkX;
+		int chunkOffsetZ = -chunkList[chunkDimId].maxChunkZ;
+		int imageX = (chunkX + chunkOffsetX) * 16;
+		int imageZ = (chunkZ + chunkOffsetZ) * 16;
+		int ix = (imageX);
+		int iz = (imageZ);
+		sprintf(tmpstring," (image %d %d)",ix,iz);
+		r+=tmpstring;
+	      }
+	      r += "\n";
+	      fprintf(control.fpLog,r.c_str());
 
-	    switch ( chunkType ) {
-	    case 0x30:
-	      // terrain data
+	      switch ( chunkType ) {
+	      case 0x30:
+		// terrain data
 
-	      // clear data
-	      memset(histo,0,256*sizeof(int));
-	      memset(histoBiome,0,256*sizeof(int));
-	      memset(topBlock,0, 16*16*sizeof(uint8_t));
-	      memset(topData,0, 16*16*sizeof(uint8_t));
-	      memset(grassAndBiome,0, 16*16*sizeof(uint32_t));
-	      memset(topSkyLight,0, 16*16*sizeof(uint8_t));
-	      memset(topBlockLight,0, 16*16*sizeof(uint8_t));
-	      memset(topLight,0, 16*16*sizeof(uint8_t));
+		// clear data
+		memset(histo,0,256*sizeof(int));
+		memset(histoBiome,0,256*sizeof(int));
+		memset(topBlock,0, 16*16*sizeof(uint8_t));
+		memset(topData,0, 16*16*sizeof(uint8_t));
+		memset(grassAndBiome,0, 16*16*sizeof(uint32_t));
+		memset(topSkyLight,0, 16*16*sizeof(uint8_t));
+		memset(topBlockLight,0, 16*16*sizeof(uint8_t));
+		memset(topLight,0, 16*16*sizeof(uint8_t));
 	      
-	      // iterate over chunk area, get data etc
-	      for (int cy=127; cy >= 0; cy--) {
-		for ( int cz=0; cz < 16; cz++ ) {
-		  for ( int cx=0; cx < 16; cx++) {
-		    uint8_t blockId = getBlockId(value, cx,cz,cy);
-		    histo[blockId]++;
+		// iterate over chunk area, get data etc
+		for (int cy=127; cy >= 0; cy--) {
+		  for ( int cz=0; cz < 16; cz++ ) {
+		    for ( int cx=0; cx < 16; cx++) {
+		      uint8_t blockId = getBlockId(value, cx,cz,cy);
+		      histo[blockId]++;
 
-		    // todo - check for isSolid?
-		    if ( blockId != 0 ) {  // current block is NOT air
-		      if ( ( topBlock[cz][cx] == 0 &&  // top block is not already set
-			     !vectorContains(chunkList[chunkDimId].blockHideList, blockId) ) || // blockId is not in hide list
-			   vectorContains(chunkList[chunkDimId].blockForceTopList, blockId) // see if we want to force a block
-			   ) {
-			topBlock[cz][cx] = blockId;
-			topData[cz][cx] = getBlockData(value, cx,cz,cy);
-			topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
-			topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
-			topBlockY[cz][cx] = cy;
+		      // todo - check for isSolid?
+		      if ( blockId != 0 ) {  // current block is NOT air
+			if ( ( topBlock[cz][cx] == 0 &&  // top block is not already set
+			       !vectorContains(chunkList[chunkDimId].blockHideList, blockId) ) || // blockId is not in hide list
+			     vectorContains(chunkList[chunkDimId].blockForceTopList, blockId) // see if we want to force a block
+			     ) {
+			  topBlock[cz][cx] = blockId;
+			  topData[cz][cx] = getBlockData(value, cx,cz,cy);
+			  topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
+			  topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
+			  topBlockY[cz][cx] = cy;
 
-			// todo topLight here
+			  // todo topLight here
 #if 1
-			// todo - we are getting the block light ABOVE this block (correct?)
-			// todo - this will break if we are using force-top stuff
-			int cy2 = cy;
-			if ( blockInfoList[blockId].isSolid() ) {
-			  // move to block above this block
-			  cy2++;
-			  if ( cy2 > 127 ) { cy2 = 127; }
-			} else {
-			  // if not solid, don't adjust
-			}
-			uint8_t sl = getBlockSkyLight(value, cx,cz,cy2);
-			uint8_t bl = getBlockBlockLight(value, cx,cz,cy2);	
-			// we combine the light nibbles into a byte
-			topLight[cz][cx] = (sl << 4) | bl;
+			  // todo - we are getting the block light ABOVE this block (correct?)
+			  // todo - this will break if we are using force-top stuff
+			  int cy2 = cy;
+			  if ( blockInfoList[blockId].isSolid() ) {
+			    // move to block above this block
+			    cy2++;
+			    if ( cy2 > 127 ) { cy2 = 127; }
+			  } else {
+			    // if not solid, don't adjust
+			  }
+			  uint8_t sl = getBlockSkyLight(value, cx,cz,cy2);
+			  uint8_t bl = getBlockBlockLight(value, cx,cz,cy2);	
+			  // we combine the light nibbles into a byte
+			  topLight[cz][cx] = (sl << 4) | bl;
 #endif
+			}
 		      }
 		    }
 		  }
 		}
-	      }
 
-	      memset(colData1, 0, 16*16*sizeof(uint8_t));
-	      memset(colData2, 0, 16*16*sizeof(int32_t));
-	      for (int cz=0; cz < 16; cz++) {
-		for (int cx=0; cx < 16; cx++) {
-		  colData1[cz][cx] = getColData1(value, cx,cz);
-		  colData2[cz][cx] = getColData2(value, cx,cz);
+		memset(colData1, 0, 16*16*sizeof(uint8_t));
+		memset(colData2, 0, 16*16*sizeof(int32_t));
+		for (int cz=0; cz < 16; cz++) {
+		  for (int cx=0; cx < 16; cx++) {
+		    colData1[cz][cx] = getColData1(value, cx,cz);
+		    colData2[cz][cx] = getColData2(value, cx,cz);
 
 #if 0
-		  // todo - testing idea about lighting - get lighting from top solid block - result is part good part crazy
-		  int ty = colData1[cz][cx] + 1;
-		  if ( ty > 127 ) { ty=127; }
-		  uint8_t sl = getBlockSkyLight(value, cx,cz,ty);
-		  uint8_t bl = getBlockBlockLight(value, cx,cz,ty);
-		  topLight[cz][cx] = (sl << 4) | bl;
+		    // todo - testing idea about lighting - get lighting from top solid block - result is part good part crazy
+		    int ty = colData1[cz][cx] + 1;
+		    if ( ty > 127 ) { ty=127; }
+		    uint8_t sl = getBlockSkyLight(value, cx,cz,ty);
+		    uint8_t bl = getBlockBlockLight(value, cx,cz,ty);
+		    topLight[cz][cx] = (sl << 4) | bl;
 #endif
+		  }
 		}
-	      }
 
 	    
-	      // print chunk info
-	      fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
-	      for (int cz=0; cz<16; cz++) {
-		for (int cx=0; cx<16; cx++) {
-		  int32_t rawData = colData2[cz][cx];
-		  int biomeId = (int)(rawData & 0xFF);
-		  histoBiome[biomeId]++;
-		  chunkList[chunkDimId].histoGlobalBiome[biomeId]++;
-		  grassAndBiome[cz][cx] = rawData;
-		  fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
+		// print chunk info
+		fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
+		for (int cz=0; cz<16; cz++) {
+		  for (int cx=0; cx<16; cx++) {
+		    int32_t rawData = colData2[cz][cx];
+		    int biomeId = (int)(rawData & 0xFF);
+		    histoBiome[biomeId]++;
+		    chunkList[chunkDimId].histoGlobalBiome[biomeId]++;
+		    grassAndBiome[cz][cx] = rawData;
+		    fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
+		  }
+		  fprintf(control.fpLog,"\n");
 		}
-		fprintf(control.fpLog,"\n");
-	      }
-	      fprintf(control.fpLog,"Block Histogram:\n");
-	      for (int i=0; i < 256; i++) {
-		if ( histo[i] > 0 ) {
-		  fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histo[i], blockInfoList[i].name.c_str());
+		fprintf(control.fpLog,"Block Histogram:\n");
+		for (int i=0; i < 256; i++) {
+		  if ( histo[i] > 0 ) {
+		    fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histo[i], blockInfoList[i].name.c_str());
+		  }
 		}
-	      }
-	      fprintf(control.fpLog,"Biome Histogram:\n");
-	      for (int i=0; i < 256; i++) {
-		if ( histoBiome[i] > 0 ) {
-		  std::string biomeName( getBiomeName(i) );
-		  fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histoBiome[i], biomeName.c_str());
+		fprintf(control.fpLog,"Biome Histogram:\n");
+		for (int i=0; i < 256; i++) {
+		  if ( histoBiome[i] > 0 ) {
+		    std::string biomeName( getBiomeName(i) );
+		    fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histoBiome[i], biomeName.c_str());
+		  }
 		}
-	      }
-	      fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
-	      for (int cz=0; cz<16; cz++) {
-		for (int cx=0; cx<16; cx++) {
-		  fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cz][cx], (int)topBlockLight[cz][cx]);
+		fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
+		for (int cz=0; cz<16; cz++) {
+		  for (int cx=0; cx<16; cx++) {
+		    fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cz][cx], (int)topBlockLight[cz][cx]);
+		  }
+		  fprintf(control.fpLog,"\n");
 		}
-		fprintf(control.fpLog,"\n");
-	      }
-	      // todo - grass-color is in high 3 bytes of coldata2
-	      // todo - need to show this?
-	      fprintf(control.fpLog,"Column Data (height-col:biome):\n");
-	      for (int cz=0; cz<16; cz++) {
-		for (int cx=0; cx<16; cx++) {
-		  int biomeId = (int)(colData2[cz][cx] & 0xFF);
-		  fprintf(control.fpLog,"%x:%02x ", (int)colData1[cz][cx], biomeId);
+		// todo - grass-color is in high 3 bytes of coldata2
+		// todo - need to show this?
+		fprintf(control.fpLog,"Column Data (height-col:biome):\n");
+		for (int cz=0; cz<16; cz++) {
+		  for (int cx=0; cx<16; cx++) {
+		    int biomeId = (int)(colData2[cz][cx] & 0xFF);
+		    fprintf(control.fpLog,"%x:%02x ", (int)colData1[cz][cx], biomeId);
+		  }
+		  fprintf(control.fpLog,"\n");
 		}
-		fprintf(control.fpLog,"\n");
-	      }
 
-	      // store chunk
-	      chunkList[chunkDimId].putChunk(chunkX, chunkZ,
-					     &topBlock[0][0], &topData[0][0],
-					     &grassAndBiome[0][0], &topBlockY[0][0],
-					     &colData1[0][0], &topLight[0][0]);
+		// store chunk
+		chunkList[chunkDimId].putChunk(chunkX, chunkZ,
+					       &topBlock[0][0], &topData[0][0],
+					       &grassAndBiome[0][0], &topBlockY[0][0],
+					       &colData1[0][0], &topLight[0][0]);
+		break;
 
-	      break;
-
-	    case 0x31:
-	      {
-		fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
-		int ret = parseNbt("0x31-te: ", value, value_size, tagList);
-		if ( ret == 0 ) { 
-		  ParsedTileEntityList tileEntityList;
-		  parseNbt_tileEntity(chunkDimId, dimName+"-", tagList, tileEntityList);
+	      case 0x31:
+		{
+		  fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
+		  int ret = parseNbt("0x31-te: ", value, value_size, tagList);
+		  if ( ret == 0 ) { 
+		    ParsedTileEntityList tileEntityList;
+		    parseNbt_tileEntity(chunkDimId, dimName+"-", tagList, tileEntityList);
+		  }
 		}
-	      }
-	      break;
+		break;
 
-	    case 0x32:
-	      {
-		fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", dimName.c_str());
-		int ret = parseNbt("0x32-e: ", value, value_size, tagList);
-		if ( ret == 0 ) {
-		  ParsedEntityList entityList;
-		  parseNbt_entity(chunkDimId, dimName+"-", "Mob:", tagList, false, false, entityList);
+	      case 0x32:
+		{
+		  fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", dimName.c_str());
+		  int ret = parseNbt("0x32-e: ", value, value_size, tagList);
+		  if ( ret == 0 ) {
+		    ParsedEntityList entityList;
+		    parseNbt_entity(chunkDimId, dimName+"-", "Mob:", tagList, false, false, entityList);
+		  }
 		}
-	      }
-	      break;
+		break;
 
-	    case 0x33:
-	      // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
-	      fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
-	      parseNbt("0x33-tick: ", value, value_size, tagList);
-	      // todo - parse tagList?
-	      // todo - could show location of active fires
-	      break;
+	      case 0x33:
+		// todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
+		fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
+		parseNbt("0x33-tick: ", value, value_size, tagList);
+		// todo - parse tagList?
+		// todo - could show location of active fires
+		break;
 
-	    case 0x34:
-	      fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
-	      printKeyValue(key,key_size,value,value_size,false);
-	      /* 
-		 0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
-		 -- there are 206 of these in "another1" world
-		 -- something to do with snow?
-		 -- to examine data:
-		 cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
-	      */
-	      break;
+	      case 0x34:
+		fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
+		printKeyValue(key,key_size,value,value_size,false);
+		/* 
+		   0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
+		   -- there are 206 of these in "another1" world
+		   -- something to do with snow?
+		   -- to examine data:
+		   cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
+		*/
+		break;
 
-	    case 0x35:
-	      fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
-	      printKeyValue(key,key_size,value,value_size,false);
-	      /*
-		0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
-		-- there are 2907 in "another1"
-		-- to examine data:
-		cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
-	      */
-	      break;
+	      case 0x35:
+		fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
+		printKeyValue(key,key_size,value,value_size,false);
+		/*
+		  0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
+		  -- there are 2907 in "another1"
+		  -- to examine data:
+		  cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
+		*/
+		break;
 
-	    case 0x76:
-	      {
-		// this record is not very interesting we usually hide it
-		// note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
-		if ( control.verboseFlag || (value[0] != 2) ) { 
-		  fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(value[0]));
+	      case 0x76:
+		{
+		  // this record is not very interesting we usually hide it
+		  // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
+		  if ( control.verboseFlag || (value[0] != 2) ) { 
+		    fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(value[0]));
+		  }
 		}
-	      }
-	      break;
+		break;
 
-	    default:
-	      fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
-		      key_size, chunkType, value_size);
-	      printKeyValue(key,key_size,value,value_size,true);
-	      if ( false ) {
-		if ( value_size > 10 ) {
-		  parseNbt("UNK: ", value, value_size, tagList);
-		  // todo - parse tagList?
+	      default:
+		fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
+			key_size, chunkType, value_size);
+		printKeyValue(key,key_size,value,value_size,true);
+		if ( false ) {
+		  if ( value_size > 10 ) {
+		    parseNbt("UNK: ", value, value_size, tagList);
+		    // todo - parse tagList?
+		  }
 		}
+		break;
 	      }
-	      break;
 	    }
 	  }
 	  else {
@@ -3457,6 +3491,7 @@ namespace mcpe_viz {
 	      fprintf(fp,"  fnLayerTop: \"%s\",\n", mybasename(control.fnLayerTop[did]).c_str());
 	      fprintf(fp,"  fnLayerBiome: \"%s\",\n", mybasename(control.fnLayerBiome[did]).c_str());
 	      fprintf(fp,"  fnLayerHeight: \"%s\",\n", mybasename(control.fnLayerHeight[did]).c_str());
+	      fprintf(fp,"  fnLayerHeightGrayscale: \"%s\",\n", mybasename(control.fnLayerHeightGrayscale[did]).c_str());
 	      fprintf(fp,"  fnLayerBlockLight: \"%s\",\n", mybasename(control.fnLayerBlockLight[did]).c_str());
 	      fprintf(fp,"  fnLayerGrass: \"%s\",\n", mybasename(control.fnLayerGrass[did]).c_str());
 	      
@@ -3505,12 +3540,10 @@ namespace mcpe_viz {
 	  }
 	  
 	  // copy helper files to destination directory
-	  // todo -- mcpe_viz.js + mcpe_viz.css
 	  std::string dirDest = mydirname(control.fnOutputBase);
 	  
 	  if ( dirDest.size() > 0 && dirDest != "." ) {
 	    // todo are we sure this is a diff dir?
-	    // todo check errors
 	    sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
 	    std::string fnJsDest = tmpstring;
 	    copyFile(fnJsSrc, fnJsDest);
@@ -3551,10 +3584,10 @@ namespace mcpe_viz {
 
       // adjust for nether
       /*
-      if ( dimId == kDimIdNether ) {
+	if ( dimId == kDimIdNether ) {
 	ix /= 8;
 	iy /= 8;
-      }
+	}
       */
     }
     
@@ -3980,7 +4013,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-      int doParseXML_biomelist(xmlNodePtr cur) {
+    int doParseXML_biomelist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"biome") == 0 ) {

@@ -54,10 +54,10 @@ See "./mcpe_viz --help" for the most up-to-date usage info
 Here's an example invocation:
 
 ```
-> ./mcpe_viz --grid --db ./mcpe/another1/ --out ./mcpe/output/mcpe_output8
+> ./mcpe_viz --grid --db ./mcpe/another1/ --out ./mcpe/output/out1
 ```
 
-This will read the leveldb from "./mcpe/another1" and name output files starting with "./mcpe/output/mcpe_output8", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "mcpe_output8.log".  The log file has a *ton* of interesting information about your world.  "grep" is your friend.
+This will read the leveldb from "./mcpe/another1" and name output files starting with "./mcpe/output/out1", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "out1.log".  The log file has a *ton* of interesting information about your world.  "grep" is your friend.
 
 Please note that --db expects the directory which contains "level.dat".
 

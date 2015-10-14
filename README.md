@@ -1,9 +1,11 @@
 # MCPE Viz
 by Plethora777
 
-MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, reports *lots* of details on your world, and can create a powerful Google Maps-like web app for viewing your world.
+MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, and reports *lots* of details on your world.
 
-It can also:
+It can also create a powerful Google Maps-like Web App for viewing your world.
+
+Additional Features:
 
 * Create a powerful Google Maps-like web app viewer for your world.
 
@@ -29,11 +31,34 @@ It can also:
     * Histogram of biomes (per-block column)
 
 
-## Examples
+## Example Output
 
 Here are example images: http://imgur.com/a/YiIWe
 
 Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
+
+
+## Quick Start -- How to run it on Windows
+
+* Download the zip file: https://github.com/Plethora777/mcpe_viz/archive/master.zip
+
+* Unzip that file.
+
+* Inside you will find "mcpe_viz.win32.zip" (windows 32-bit) and "mcpe_viz.win64.zip" (windows 64-bit).  Choose one that is appropriate for your system.  Unzip it.
+
+* Inside you will find mcpe_viz.exe
+
+* Open a command prompt and run it something like this:
+
+```
+mcpe_viz.exe --db path-to-your-world-file-dir/ --out out1 --html-most
+```
+
+Note: Replace "path-to-your-world-file-dir/" with the actual directory which contains your world files -- it wants the directory that has level.dat in it.
+
+**DO NOT RUN THIS ON YOUR ORIGINAL MCPE DATA FILES; MAKE A BACKUP COPY OF YOUR DATA AND RUN THIS AGAINST THAT COPY ONLY!**
+
+This will produce a bunch of image files and "out1.html". Open "out1.html" in your browser.
 
 
 ## Experimental win32 and win64 builds
@@ -93,6 +118,7 @@ Web App Usage Notes:
   * Choose Overview, Biome etc
   * Show Mobs and Items -- click on an entry and the map will be updated with labeled points.  You can toggle on as many different types as you like.  Click on the points or labels to get more info on the item.  Note that labels are not drawn when you are zoomed out.
   * Enable elevation overlay (shaded relief)
+  * Enable chunk grid overlay
   
 
 ## Customization

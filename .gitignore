@@ -8,6 +8,9 @@ Backup/
 Research/
 openlayers
 
+jslint.sh
+prepush.pl
+
 *~
 update_win.sh
 

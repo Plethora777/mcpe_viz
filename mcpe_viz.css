@@ -83,9 +83,9 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
     height: auto;
     width: 200px;
     padding: 10px;
-    -moz-opacity:0.85;
-    opacity:0.85;
-    filter:alpha(opacity=85);
+    -moz-opacity: 0.85;
+    opacity: 0.85;
+    filter: alpha(opacity=85);
     position: absolute; left: 75px; top: 10px;
 }
 #throbber-msg {

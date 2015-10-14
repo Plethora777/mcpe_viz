@@ -18,24 +18,13 @@
   -- same for items + entities
   -- THIS: perhaps <block ...><variant .../></block>?
 
-  * idea from /u/sturace -- filter by pixel value (e.g. show only oak trees)
-
   * it takes a loooong time to do a full html - 47 minutes?!
-  -- try to do it as we parse the chunks?
+  -- try to do it as we parse the chunks? (temp disk space requirement is *huge*)
 
   * parse potions etc in inventories etc
 
   * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
   -- put ALL chests in a map<x,y,z>; go through list of chests and put PairChest in matching sets and mark all as unprocessed; go thru list and do all, if PairChest mark both as done
-
-  * web: popover does not show in fullscreen
-  * web: how to handle multiple features at the same point? (e.g. stacked chests)
-  * web: why does click on point not always work?
-
-  * see about using block data values to get details of blocks (e.g. wood type, leaf type, etc)
-
-  * determine proper xml entries for missing items + entities + blocks
-  -- wither skeleton?
 
   * see if there is interesting info re colors for overview map: http://minecraft.gamepedia.com/Map_item_format
 
@@ -53,11 +42,6 @@
 
   * convert all printf-style stuff to streams
 
-  ** openlayers ui
-  ** ability to hover over a pixel and get info (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)"); switch image layers
-  ** vector: biomes (or raster that is not displayed?)
-  ** vector: height? (or raster that is not displayed?)
-
   todo
 
   ** cmdline options:
@@ -69,9 +53,6 @@
 
   ** maps/instructions to get from point A (e.g. spawn) to biome type X (in blocks but also in landmark form: over 2 seas left at the birch forest etc); same for items and entities
 
-  ** map icons for interesting things (e.g. player, remote player, villagers, item X, entity X, etc)
-  
-
   todo win32/win64 build
 
   * immediate crash if using -O2?
@@ -80,7 +61,7 @@
   * leveldb fread_nolock issue -- link fails; forcing msvcrXXX.a crashes on windows
   * log file: change end line to CRLF?
 
-  ** osx build?
+  ** osx build? cross compile tools look kinda horrible; see https://www.macports.org/
 
   */
 
@@ -320,6 +301,7 @@ namespace mcpe_viz {
 	  }
 	}
 	if ( fpGeoJSON != nullptr ) {
+	  // todo - this is a silly place to do this; make it a function
 	  // put the geojson preamble stuff
 	  fprintf(fpGeoJSON,
 		  "{\n"
@@ -407,18 +389,19 @@ namespace mcpe_viz {
 	  }
 	}
 
-	// todo - user option for filename?
-	fnGeoJSON = fnOutputBase + ".geojson";
-	fpGeoJSON = fopen(fnGeoJSON.c_str(), "w");
-	if ( ! fpGeoJSON ) {
-	  fprintf(stderr,"ERROR: Failed to create GeoJSON output file (%s).  Reverting to stdout...\n", fnGeoJSON.c_str());
-	  // todo - should be a fatal error?
+	if ( doHtml ) {
+	  fnGeoJSON = fnOutputBase + ".geojson";
+	  fpGeoJSON = fopen(fnGeoJSON.c_str(), "w");
+	  if ( ! fpGeoJSON ) {
+	    fprintf(stderr,"ERROR: Failed to create GeoJSON output file (%s).\n", fnGeoJSON.c_str());
+	    exit(-1);
+	  }
+	  
+	  listGeoJSON.clear();
+
+	  fnHtml = fnOutputBase + ".html";
+	  fnJs = fnOutputBase + ".js";
 	}
-
-	listGeoJSON.clear();
-
-	fnHtml = fnOutputBase + ".html";
-	fnJs = fnOutputBase + ".js";
       }
     };
 
@@ -1197,7 +1180,6 @@ namespace mcpe_viz {
 		    }
 		  }
 		  
-		  // todo - be more clever about the seek? (seek on z change only etc
 		  write(fdTemp[cy],&pcolor[1],3);
 		}
 	      }
@@ -1712,13 +1694,15 @@ namespace mcpe_viz {
       }
     };
 
-    std::string escapeDoubleQuotes(const std::string& s) {
+    std::string escapeString(const std::string& s, const std::string& escapeChars) {
       std::string ret="";
       for ( const auto& ch : s ) {
-	if ( ch == '"' ) {
-	  ret += "\\\"";
-	} else {
-	  ret += ch;
+	for ( const auto& escape : escapeChars ) {
+	  if ( ch == escape ) {
+	    ret += "\\" + escape;
+	  } else {
+	    ret += ch;
+	  }
 	}
       }
       return ret;
@@ -2063,7 +2047,7 @@ namespace mcpe_viz {
       std::vector< std::unique_ptr<ParsedItem> > armorList;
       ParsedItem itemInHand;
       ParsedItem item;
-      // todo - this is very handy + powerful - use it for other Parsed classes?
+      // todobig - this is very handy + powerful - use it for other Parsed classes?
       std::vector< std::pair<std::string,std::string> > otherProps;
       bool otherPropsSortedFlag;
       
@@ -2487,7 +2471,7 @@ namespace mcpe_viz {
 	  list.push_back("\"Name\": \"Chest\"");
 	  
 	  if ( pairChest.valid ) {
-	    // todo - should we keep lists and combine chests so that we can show full content of double chests?
+	    // todobig - should we keep lists and combine chests so that we can show full content of double chests?
 	    list.push_back("\"pairchest\": [" + pairChest.toString() + "]");
 	  }
 	  
@@ -2520,7 +2504,7 @@ namespace mcpe_viz {
 	  int t=1;
 	  for ( const auto& it: text ) {
 	    // todo - think about how to handle weird chars people put in signs
-	    sprintf(tmpstring,"\"Text%d\": \"%s\"", t++, escapeDoubleQuotes(it).c_str());
+	    sprintf(tmpstring,"\"Text%d\": \"%s\"", t++, escapeString(it,"\"").c_str());
 	    ts += tmpstring;
 	    if ( --i > 0 ) {
 	      ts += ", ";
@@ -2597,7 +2581,7 @@ namespace mcpe_viz {
 
 	if ( items.size() > 0 ) {
 	  if ( pairChest.valid ) {
-	    // todo - should we keep lists and combine chests so that we can show full content of double chests?
+	    // todobig - should we keep lists and combine chests so that we can show full content of double chests?
 	    s += " PairChest=(" + pairChest.toString() + ")";
 	  }
 	  
@@ -2808,7 +2792,6 @@ namespace mcpe_viz {
 	// todo - LinksTag - might be spider jockeys?
 	
 	// stuff I found:
-	// zombie villager
 	entity->checkOtherProp(tc, "SpawnedByNight");
 	
 	fprintf(control.fpLog, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(hdr, actualDimensionId).c_str());
@@ -3282,12 +3265,12 @@ namespace mcpe_viz {
 	    // 0x61 +"BiomeData" -- snow accum? -- overworld only?
 	    fprintf(control.fpLog,"BiomeData value:\n");
 	    parseNbt("BiomeData: ", value, value_size, tagList);
-	    // todo - parse tagList?
+	    // todo - parse tagList? snow accumulation amounts
 	  }
 	  else if ( strncmp(key,"Overworld",key_size) == 0 ) {
 	    fprintf(control.fpLog,"Overworld value:\n");
 	    parseNbt("Overworld: ", value, value_size, tagList);
-	    // todo - parse tagList?
+	    // todo - parse tagList? mostly a list of "LimboEntities"
 	  }
 	  else if ( strncmp(key,"~local_player",key_size) == 0 ) {
 	    fprintf(control.fpLog,"Local Player value:\n");
@@ -3310,12 +3293,12 @@ namespace mcpe_viz {
 	  else if ( strncmp(key,"villages",key_size) == 0 ) {
 	    fprintf(control.fpLog,"Villages value:\n");
 	    parseNbt("villages: ", value, value_size, tagList);
-	    // todo - parse tagList?
+	    // todo - parse tagList? usually empty, unless player is in range of village; test that!
 	  }
 	  else if ( strncmp(key,"Nether",key_size) == 0 ) {
 	    fprintf(control.fpLog,"Nether value:\n");
 	    parseNbt("Nether: ", value, value_size, tagList);
-	    // todo - parse tagList?
+	    // todo - parse tagList?  list of LimboEntities
 	  }
 	  else if ( strncmp(key,"portals",key_size) == 0 ) {
 	    fprintf(control.fpLog,"portals value:\n");
@@ -3526,7 +3509,7 @@ namespace mcpe_viz {
 		fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
 		parseNbt("0x33-tick: ", value, value_size, tagList);
 		// todo - parse tagList?
-		// todo - could show location of active fires
+		// todobig - could show location of active fires
 		break;
 
 	      case 0x34:
@@ -3630,7 +3613,7 @@ namespace mcpe_viz {
 		    "var dimensionInfo = {\n"
 		    );
 	    for (int did=0; did < kDimIdCount; did++) {
-	      fprintf(fp, "\"%d\": {\n", did);
+	      fprintf(fp, "'%d': {\n", did);
 	      fprintf(fp,"  minWorldX: %d,\n", chunkList[did].minChunkX*16);
 	      fprintf(fp,"  maxWorldX: %d + 15,\n", chunkList[did].maxChunkX*16);
 	      fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
@@ -3648,17 +3631,17 @@ namespace mcpe_viz {
 	      fprintf(fp,"  playerPosY: %d,\n", py);
 
 	      // todo - a diff geojson for overworld + nether?
-	      fprintf(fp,"  fnGeoJSON: \"%s\",\n", mybasename(control.fnGeoJSON).c_str());
-	      fprintf(fp,"  fnLayerTop: \"%s\",\n", mybasename(control.fnLayerTop[did]).c_str());
-	      fprintf(fp,"  fnLayerBiome: \"%s\",\n", mybasename(control.fnLayerBiome[did]).c_str());
-	      fprintf(fp,"  fnLayerHeight: \"%s\",\n", mybasename(control.fnLayerHeight[did]).c_str());
-	      fprintf(fp,"  fnLayerHeightGrayscale: \"%s\",\n", mybasename(control.fnLayerHeightGrayscale[did]).c_str());
-	      fprintf(fp,"  fnLayerBlockLight: \"%s\",\n", mybasename(control.fnLayerBlockLight[did]).c_str());
-	      fprintf(fp,"  fnLayerGrass: \"%s\",\n", mybasename(control.fnLayerGrass[did]).c_str());
+	      fprintf(fp,"  fnGeoJSON: '%s',\n", mybasename(control.fnGeoJSON).c_str());
+	      fprintf(fp,"  fnLayerTop: '%s',\n", mybasename(control.fnLayerTop[did]).c_str());
+	      fprintf(fp,"  fnLayerBiome: '%s',\n", mybasename(control.fnLayerBiome[did]).c_str());
+	      fprintf(fp,"  fnLayerHeight: '%s',\n", mybasename(control.fnLayerHeight[did]).c_str());
+	      fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", mybasename(control.fnLayerHeightGrayscale[did]).c_str());
+	      fprintf(fp,"  fnLayerBlockLight: '%s',\n", mybasename(control.fnLayerBlockLight[did]).c_str());
+	      fprintf(fp,"  fnLayerGrass: '%s',\n", mybasename(control.fnLayerGrass[did]).c_str());
 	      
 	      fprintf(fp,"  listLayers: [\n");
 	      for (int i=0; i < 128; i++) {
-	        fprintf(fp, "    \"%s\",\n", mybasename(control.fnLayerRaw[did][i]).c_str());
+	        fprintf(fp, "    '%s',\n", mybasename(control.fnLayerRaw[did][i]).c_str());
 	      }
 	      fprintf(fp,"  ]\n");
 	      if ( (did+1) < kDimIdCount ) {
@@ -3682,16 +3665,16 @@ namespace mcpe_viz {
 		for (int sc=0; sc < 16; sc++) {
 		  int xcolor =  standardColorInfo[sc].color + blockInfoList[i].lookupColorOffset;
 		  std::string xname = blockInfoList[i].name + ", " + standardColorInfo[sc].name;
-		  fprintf(fp,"\"%d\":\"%s\",\n", xcolor, xname.c_str());
+		  fprintf(fp,"'%d': '%s',\n", xcolor, escapeString(xname,"'").c_str());
 		}
 	      } else {
 		if ( blockInfoList[i].colorSetFlag ) {
-		  fprintf(fp,"\"%d\":\"%s\",\n", be32toh(blockInfoList[i].color), blockInfoList[i].name.c_str());
+		  fprintf(fp,"'%d': '%s',\n", be32toh(blockInfoList[i].color), escapeString(blockInfoList[i].name,"'").c_str());
 		}
 	      }
 	    }
 	    // last, put the catch-all
-	    fprintf(fp,"\"%d\": \"*UNKNOWN BLOCK*\"\n};\n",kColorDefault);
+	    fprintf(fp,"'%d': '*UNKNOWN BLOCK*'\n};\n",kColorDefault);
 
 	    // write biome color info
 	    fprintf(fp,
@@ -3703,16 +3686,16 @@ namespace mcpe_viz {
 	    fprintf(fp,"var biomeColorLUT = {\n");
 	    for ( const auto& it : biomeInfoList ) {
 	      if ( it.second->colorSetFlag ) {
-		fprintf(fp,"\"%d\":\"%s (id=%d (0x%x))\",\n"
+		fprintf(fp,"'%d': '%s (id=%d (0x%x))',\n"
 			, be32toh(it.second->color)
-			, it.second->name.c_str()
+			, escapeString(it.second->name,"'").c_str()
 			, it.first
 			, it.first
 			);
 	      }
 	    }
 	    // last, put the catch-all
-	    fprintf(fp,"\"%d\": \"*UNKNOWN BIOME*\"\n};\n",kColorDefault);
+	    fprintf(fp,"'%d': '*UNKNOWN BIOME*'\n};\n",kColorDefault);
 	    
 	    fclose(fp);
 	    
@@ -3724,7 +3707,7 @@ namespace mcpe_viz {
 	  std::string dirDest = mydirname(control.fnOutputBase);
 	  
 	  if ( dirDest.size() > 0 && dirDest != "." ) {
-	    // todo are we sure this is a diff dir?
+	    // todo - how to be sure that this is a diff dir?
 	    sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
 	    std::string fnJsDest = tmpstring;
 	    copyFile(fnJsSrc, fnJsDest);
@@ -3733,7 +3716,7 @@ namespace mcpe_viz {
 	    std::string fnCssDest = tmpstring;
 	    copyFile(fnCssSrc, fnCssDest);
 	  } else {
-	    // todo - warn user?
+	    // if same dir, don't copy files
 	  }
 	  
 	}
@@ -4377,7 +4360,6 @@ namespace mcpe_viz {
 	      );
     }
 
-    // todo rename
     int parseDimIdOptArg(const char* arg) {
       int did = kDoOutputAll;
       if ( arg ) {

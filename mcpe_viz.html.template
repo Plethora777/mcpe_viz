@@ -149,17 +149,16 @@
 	    <li><a href="#" id="elevationToggle">Show Elevation Overlay</a></li>
 	    <li class="input-group">
 	      <span class="input-group-addon">Intensity: <span id="vertOut"></span></span>
-	      <input id="vert" class="mytooltip" title="Vertical Exaggeration" type="range" min="1" max="5" value="1"/>
+	      <input id="vert" class="mytooltip" title="Vertical Exaggeration" type="range" min="1" max="10" data-default="3" value="3"/>
 	    </li>
 	    <li class="input-group">
-	      <span class="input-group-addon">Elevation: <span id="sunElOut"></span></span>
-	      <input id="sunEl" class="mytooltip" title="Sun Elevation" type="range" min="0" max="90" value="45"/>
+	      <span class="input-group-addon">Altitude: <span id="sunElOut"></span></span>
+	      <input id="sunEl" class="mytooltip" title="Sun Altitude" type="range" min="0" max="90" data-default="45" value="45"/>
 	    </li>
 	    <li class="input-group">
 	      <span class="input-group-addon">Azimuth: <span id="sunAzOut"></span></span>
-	      <input id="sunAz" class="mytooltip" title="Sun Azimuth" type="range" min="0" max="360" value="45"/>
+	      <input id="sunAz" class="mytooltip" title="Sun Azimuth" type="range" min="0" max="360" data-default="315" value="315"/>
 	    </li>
-	    <li role="separator" class="divider"></li>
 	    <li><a href="#" id="elevationReset">Reset Elevation Settings</a></li>
 	  </ul>
 	</div>

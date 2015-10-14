@@ -4,6 +4,8 @@
 
   todo
 
+  * rewrite/adapt to use the google closure tools?
+
   * online help/intro text -- bootstrap tour? (is there a CDN for bstour?)
 
   * measuring tool
@@ -429,8 +431,14 @@ function setLayerLoadListeners(src) {
 }
 
 
-// from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
+// originally from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
+// but that code is actually *quite* insane
+// rewritten based on:
+//   http://edndoc.esri.com/arcobjects/9.2/net/shared/geoprocessing/spatial_analyst_tools/how_hillshade_works.htm
+
+// todo what does this comment for? (from openlayers version)
 // NOCOMPILE
+
 /**
  * Generates a shaded relief image given elevation data.  Uses a 3x3
  * neighborhood for determining slope and aspect.
@@ -444,81 +452,134 @@ function shade(inputs, data) {
     var height = elevationImage.height;
     var elevationData = elevationImage.data;
     var shadeData = new Uint8ClampedArray(elevationData.length);
-    var dp = data.resolution * 2;
     var maxX = width - 1;
     var maxY = height - 1;
-    var pixel = [0, 0, 0, 0];
     var twoPi = 2 * Math.PI;
     var halfPi = Math.PI / 2;
-    var sunEl = Math.PI * data.sunEl / 180;
-    var sunAz = Math.PI * data.sunAz / 180;
-    var cosSunEl = Math.cos(sunEl);
-    var sinSunEl = Math.sin(sunEl);
-    var pixelX, pixelY, x0, x1, y0, y1, offset,
-	z0, z1, dzdx, dzdy, slope, aspect, cosIncidence, scaled;
-    for (pixelY = 0; pixelY <= maxY; ++pixelY) {
-	y0 = pixelY === 0 ? 0 : pixelY - 1;
-	y1 = pixelY === maxY ? maxY : pixelY + 1;
-	for (pixelX = 0; pixelX <= maxX; ++pixelX) {
-	    x0 = pixelX === 0 ? 0 : pixelX - 1;
-	    x1 = pixelX === maxX ? maxX : pixelX + 1;
 
-	    // determine elevation for (x0, pixelY)
-	    offset = (pixelY * width + x0) * 4;
-	    pixel[0] = elevationData[offset];
-	    pixel[1] = elevationData[offset + 1];
-	    pixel[2] = elevationData[offset + 2];
-	    pixel[3] = elevationData[offset + 3];
-	    z0 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+    // (2)  Zenith_deg = 90 - Altitude
+    // (3)  Zenith_rad = Zenith_deg * pi / 180.0
+    var zenithRad = (90 - data.sunEl) * Math.PI / 180;
 
-	    // determine elevation for (x1, pixelY)
-	    offset = (pixelY * width + x1) * 4;
-	    pixel[0] = elevationData[offset];
-	    pixel[1] = elevationData[offset + 1];
-	    pixel[2] = elevationData[offset + 2];
-	    pixel[3] = elevationData[offset + 3];
-	    z1 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+    // (4)  Azimuth_math = 360.0 - Azimuth + 90
+    var azimuthMath = 360 - data.sunAz + 90;
+    // (5)  if Azimth_math >= 360.0 : Azimuth_math = Azimuth_math - 360.0
+    if ( azimuthMath >= 360.0 ) {
+	azimuthMath = azimuthMath - 360.0;
+    }
+    // (6)  Azimuth_rad = Azimuth_math *  pi / 180.0
+    var azimuthRad = azimuthMath * Math.PI / 180.0;
 
-	    dzdx = (z1 - z0) / dp;
+    var cosZenithRad = Math.cos(zenithRad);
+    var sinZenithRad = Math.sin(zenithRad);
 
-	    // determine elevation for (pixelX, y0)
-	    offset = (y0 * width + pixelX) * 4;
-	    pixel[0] = elevationData[offset];
-	    pixel[1] = elevationData[offset + 1];
-	    pixel[2] = elevationData[offset + 2];
-	    pixel[3] = elevationData[offset + 3];
-	    z0 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+    // todo - since we need to multiply x2 to expand 0..127 to 0..255 we instead halve this (would be 8)
+    var dp = data.resolution * 4.0;  // data.resolution * 8; // todo - not totally sure about the use of resolution here
 
-	    // determine elevation for (pixelX, y1)
-	    offset = (y1 * width + pixelX) * 4;
-	    pixel[0] = elevationData[offset];
-	    pixel[1] = elevationData[offset + 1];
-	    pixel[2] = elevationData[offset + 2];
-	    pixel[3] = elevationData[offset + 3];
-	    z1 = data.vert * (pixel[0] + pixel[1] * 2 + pixel[2] * 3);
+    // notes: negative values simply reverse the sun azimuth; the range of interesting values is fairly narrow - somewhere on (0.001..0.8)
+    var zFactor = (data.vert / 10.0) - 0.075;
 
-	    dzdy = (z1 - z0) / dp;
+    var x0, x1, x2, 
+	y0, y1, y2, 
+	offset,
+	z0, z2, 
+	dzdx, dzdy, 
+	slopeRad, aspectRad, hillshade, fhillshade;
 
-	    slope = Math.atan(Math.sqrt(dzdx * dzdx + dzdy * dzdy));
+    /* 
+       our 3x3 grid:
+       a b c
+       d e f
+       g h i
+       
+       y0 is row above curr
+       y1 is curr
+       y2 is row below curr
 
-	    aspect = Math.atan2(dzdy, -dzdx);
-	    if (aspect < 0) {
-		aspect = halfPi - aspect;
-	    } else if (aspect > halfPi) {
-		aspect = twoPi - aspect + halfPi;
+       x0 is col to left of curr
+       x1 is curr
+       x2 is col to right of curr
+    */
+
+    for (y1 = 0; y1 <= maxY; ++y1) {
+	y0 = (y1 === 0) ? 0 : (y1 - 1);
+	y2 = (y1 === maxY) ? maxY : (y1 + 1);
+
+	for (x1 = 0; x1 <= maxX; ++x1) {
+	    x0 = (x1 === 0) ? 0 : (x1 - 1);
+	    x2 = (x1 === maxX) ? maxX : (x1 + 1);
+
+	    // z0 = a + 2d + g
+	    z0 = 
+		elevationData[(y0*width + x0)*4] + 
+		elevationData[(y1*width + x0)*4] * 2.0 + 
+		elevationData[(y2*width + x0)*4];
+
+	    // z2 = c + 2f + i
+	    z2 = 
+		elevationData[(y0*width + x2)*4] + 
+		elevationData[(y1*width + x2)*4] * 2.0 + 
+		elevationData[(y2*width + x2)*4];
+	    
+	    // (7)  [dz/dx] = ((c + 2f + i) - (a + 2d + g)) / (8 * cellsize)
+	    dzdx = (z2 - z0) / dp;
+
+
+	    // z0 = a + 2b + c
+	    z0 = 
+		elevationData[(y0*width + x0)*4] + 
+		elevationData[(y0*width + x1)*4] * 2.0 + 
+		elevationData[(y0*width + x2)*4];
+
+	    // z2 = g + 2h + i
+	    z2 = 
+		elevationData[(y2*width + x0)*4] + 
+		elevationData[(y2*width + x1)*4] * 2.0 + 
+		elevationData[(y2*width + x2)*4];
+
+	    // (8)  [dz/dy] = ((g + 2h + i) - (a + 2b + c))  / (8 * cellsize)
+	    dzdy = (z2 - z0) / dp;
+
+	    // (9)  Slope_rad = ATAN ( z_factor * sqrt ( [dz/dx]2 + [dz/dy]2) ) 
+	    slopeRad = Math.atan( zFactor * Math.sqrt(dzdx * dzdx + dzdy * dzdy) );
+
+	    if ( dzdx !== 0.0 ) { 
+		aspectRad = Math.atan2(dzdy, -dzdx);
+
+		if (aspectRad < 0) {
+		    aspectRad = twoPi + aspectRad;
+		}
+	    }
+	    else {
+		if ( dzdy > 0.0 ) {
+		    aspectRad = halfPi;
+		} 
+		else if (dzdy < 0.0 ) {
+		    aspectRad = twoPi - halfPi;
+		}
+		else {
+		    // aspectRad is fine
+		    aspectRad = 0.0; // todo - this is my guess; algo notes are ambiguous
+		}
+	    }
+	    
+	    // (1)  Hillshade = 255.0 * ( ( cos(Zenith_rad) * cos(Slope_rad) ) + 
+	    //        ( sin(Zenith_rad) * sin(Slope_rad) * cos(Azimuth_rad - Aspect_rad) ) )
+	    // Note that if the calculation of Hillshade value is < 0, the cell value will be = 0.
+
+	    fhillshade = 255.0 * ( ( cosZenithRad * Math.cos(slopeRad) ) + ( sinZenithRad * Math.sin(slopeRad) * Math.cos(azimuthRad - aspectRad) ) );
+
+	    if ( fhillshade < 0.0 ) {
+		hillshade = 0;
 	    } else {
-		aspect = halfPi - aspect;
+		hillshade = Math.round(fhillshade);
 	    }
 
-	    cosIncidence = sinSunEl * Math.cos(slope) +
-		cosSunEl * Math.sin(slope) * Math.cos(sunAz - aspect);
-
-	    offset = (pixelY * width + pixelX) * 4;
-	    scaled = 255 * cosIncidence;
-	    shadeData[offset] = scaled;
-	    shadeData[offset + 1] = scaled;
-	    shadeData[offset + 2] = scaled;
-	    shadeData[offset + 3] = elevationData[offset + 3];
+	    offset = (y1 * width + x1) * 4;
+	    shadeData[offset] =
+		shadeData[offset + 1] =
+		shadeData[offset + 2] = hillshade;
+	    shadeData[offset + 3] = 255;
 	}
     }
 
@@ -605,7 +666,7 @@ function makeChunkGrid(inputs, data) {
     
     //console.log("makeChunkGrid w=" + width + " h=" + height + " dx="+dx+" dy="+dy);
 
-    // todo - so fiddly.  it's still off a bit (not locked to src pixels)
+    // todo - so fiddly.  it's still off a bit (not 100% locked to src pixels)
     
     var cy = data.extent[3];
     for (var pixelY = 0; pixelY < height; ++pixelY, cy-=dy) {
@@ -622,12 +683,12 @@ function makeChunkGrid(inputs, data) {
 		    gridData[offset]     = 255;
 		    gridData[offset + 1] = 0;
 		    gridData[offset + 2] = 0;
-		    gridData[offset + 3] = 255; 
+		    gridData[offset + 3] = 128; 
 		} else {
 		    gridData[offset]     = 255;
 		    gridData[offset + 1] = 255;
 		    gridData[offset + 2] = 255;
-		    gridData[offset + 3] = 255;
+		    gridData[offset + 3] = 128;
 		}
 	    } else {
 		gridData[offset]     = 
@@ -718,7 +779,7 @@ function setLayer(fn) {
 	// get the pixel position with every move
 	$(map.getViewport()).on('mousemove', function(evt) {
 	    globalMousePosition = map.getEventPixel(evt.originalEvent);
-	    // todo - too expensive?
+	    // todo - is this too expensive? is there a better way?
 	    map.render();
 	}).on('mouseout', function() {
 	    globalMousePosition = null;
@@ -729,13 +790,18 @@ function setLayer(fn) {
 	    var ctx = event.context;
 	    var pixelRatio = event.frameState.pixelRatio;
 	    pixelDataName="";
-	    if ( globalMousePosition && globalLayerMode===0 && globalLayerId===0 ) {
+	    if ( globalMousePosition && 
+		 ((globalLayerMode===0 && (globalLayerId===0 || globalLayerId===1) ) || globalLayerMode!==0 ) ) {
 		// todo - this appears to be slightly off at times (e.g. block does not change crisply at src pixel boundaries)
 		var x = globalMousePosition[0] * pixelRatio;
 		var y = globalMousePosition[1] * pixelRatio;
 		pixelData = ctx.getImageData(x, y, 1, 1).data;
 		var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
-		pixelDataName = blockColorLUT[""+cval];
+		if ( globalLayerMode===0 && globalLayerId===1 ) {
+		    pixelDataName = biomeColorLUT[""+cval];
+		} else {
+		    pixelDataName = blockColorLUT[""+cval];
+		}
 		if ( pixelDataName === undefined ) {
 		    pixelDataName = "Unknown RGB: " + pixelData[0] +" "+ pixelData[1] +" "+ pixelData[2] + " ("+cval+")";
 		}
@@ -861,7 +927,7 @@ function initDimension() {
 	    view: new ol.View({
 		projection: projection,
 		center: [ dimensionInfo[globalDimensionId].playerPosX, dimensionInfo[globalDimensionId].playerPosY],
-		zoom: 6
+		resolution: 1
 	    })
 	});
     } else {
@@ -1031,7 +1097,7 @@ function layerGoto(layer) {
 }
 
 
-// todo - this is still not quiet right
+// todo - this is still not quite right
 var coordinateFormatFunction = function(coordinate) {
     var cx = coordinate[0] + dimensionInfo[globalDimensionId].globalOffsetX;
     var cy = ((dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1]) + dimensionInfo[globalDimensionId].globalOffsetY;
@@ -1074,6 +1140,7 @@ $(function() {
 	    duration: 100
 	}
     });
+    // todo - do we need to do this when we create/update popover? hmmm
     map.addOverlay(popover);
 
     // todo - refine overview map cfg?
@@ -1156,9 +1223,9 @@ $(function() {
 	}
     });
     $("#elevationReset").click(function() {
-	$("#vert").val(1);
-	$("#sunEl").val(45);
-	$("#sunAz").val(45);
+	$("#vert").val( $("#vert").attr('data-default') );
+	$("#sunEl").val( $("#sunEl").attr('data-default') );
+	$("#sunAz").val( $("#sunAz").attr('data-default') );
 	if ( rasterElevation !== null ) {
 	    rasterElevation.changed();
 	}

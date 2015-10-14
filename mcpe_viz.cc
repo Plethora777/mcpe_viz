@@ -1473,6 +1473,9 @@ namespace mcpe_viz {
 
 	if ( checkDoForDim(control.doSlices) ) {
 	  fprintf(stderr,"  Generate full-size slices\n");
+	  fprintf(stderr,"    Make yourself comofortable.  This could take a while :)\n");
+	  fprintf(stderr,"    Seriously... this is sl-o-o-o-w.  I like to optimize code.  In this case, there are a couple of ways to make it faster, but they require a gargantuan amount of temporary disk space (ImageW * ImageH * 3 * 128)...\n");
+	  fprintf(stderr,"    So... make yourself comfortable.  Maybe get a snack.\n");
 	  generateMovie(db, std::string(""), false, false);
 	  //generateSlices(db, std::string(""));
 	}
@@ -3666,9 +3669,9 @@ namespace mcpe_viz {
 	    }
 	    fprintf(fp,"};\n");
 
-	    // write color info
+	    // write block color info
 	    fprintf(fp,
-		    "// a lookup table for identifying blocks in the web ui\n"
+		    "// a lookup table for identifying blocks in the web app\n"
 		    "// key is color (decimal), value is block name\n"
 		    "// hacky? it sure is!\n"
 		    );
@@ -3688,12 +3691,32 @@ namespace mcpe_viz {
 	      }
 	    }
 	    // last, put the catch-all
-	    fprintf(fp,"\"%d\": \"*UNKNOWN BLOCK*\" };\n",kColorDefault);
+	    fprintf(fp,"\"%d\": \"*UNKNOWN BLOCK*\"\n};\n",kColorDefault);
 
+	    // write biome color info
+	    fprintf(fp,
+		    "// a lookup table for identifying biomes in the web app\n"
+		    "// key is color (decimal), value is biome name\n"
+		    "// hacky? it sure is!\n"
+		    );
+	    
+	    fprintf(fp,"var biomeColorLUT = {\n");
+	    for ( const auto& it : biomeInfoList ) {
+	      if ( it.second->colorSetFlag ) {
+		fprintf(fp,"\"%d\":\"%s (id=%d (0x%x))\",\n"
+			, be32toh(it.second->color)
+			, it.second->name.c_str()
+			, it.first
+			, it.first
+			);
+	      }
+	    }
+	    // last, put the catch-all
+	    fprintf(fp,"\"%d\": \"*UNKNOWN BIOME*\"\n};\n",kColorDefault);
+	    
 	    fclose(fp);
 	    
 	  } else {
-	    // todo err
 	    fprintf(stderr,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
 	  }
 	  

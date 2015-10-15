@@ -759,7 +759,6 @@ function doChunkGrid(enableFlag) {
     return 0;
 }
 
-
 function setLayer(fn, extraHelp) {
     if (fn.length <= 1) {
 	if ( extraHelp === undefined ) {
@@ -810,15 +809,24 @@ function setLayer(fn, extraHelp) {
 		// todo - this appears to be slightly off at times (e.g. block does not change crisply at src pixel boundaries)
 		var x = globalMousePosition[0] * pixelRatio;
 		var y = globalMousePosition[1] * pixelRatio;
+		var pre = '';
 		pixelData = ctx.getImageData(x, y, 1, 1).data;
 		var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
 		if (globalLayerMode === 0 && globalLayerId === 1) {
+		    pre = 'Biome: ';
 		    pixelDataName = biomeColorLUT['' + cval];
 		} else {
+		    pre = 'Block: ';
 		    pixelDataName = blockColorLUT['' + cval];
 		}
-		if (pixelDataName === undefined) {
-		    pixelDataName = 'Unknown RGB: ' + pixelData[0] + ' ' + pixelData[1] + ' ' + pixelData[2] + ' (' + cval + ')';
+		if (pixelDataName === undefined || pixelDataName === '') {
+		    if (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0) {
+			pixelDataName = '(<i>Here be Monsters</i> -- unexplored chunk)';
+		    } else {
+			pixelDataName = pre + 'Unknown RGB: ' + pixelData[0] + ' ' + pixelData[1] + ' ' + pixelData[2] + ' (' + cval + ')';
+		    }
+		} else {
+		    pixelDataName = pre + pixelDataName;
 		}
 	    }
 	});
@@ -1122,7 +1130,7 @@ var coordinateFormatFunction = function(coordinate) {
     var prec = 1;
     var s = 'world: ' + cx.toFixed(prec) + ' ' + cy.toFixed(prec) + ' image: ' + ix.toFixed(prec) + ' ' + iy.toFixed(prec);
     if (pixelDataName.length > 0) {
-	s += '<br/>Block: ' + pixelDataName;
+	s += '<br/>' + pixelDataName;
     }
     return s;
 };
@@ -1176,6 +1184,11 @@ $(function() {
 	setDimensionById(id);
     });
     
+    
+    $('.layerGoto').click(function() {
+	var id = +$(this).attr('data-id');
+	layerGoto(id);
+    });
     
     $('#layerPrev').click(function() { layerMove(-1); });
     $('#layerNext').click(function() { layerMove(1); });

@@ -12,6 +12,14 @@
 
   todobig
 
+  * adapt all abort() calls to something more graceful
+
+  * use colortest to fix colors
+
+  * learn about push_back / emplace_back etc
+
+  * find better hsl/hsv to/from rgb funcs
+
   * xml <block> needs to be expanded to allow block_data values so that we can get complete info (e.g. wood types)
   -- block[id][block_data] = foo
   -- compare wiki re block info for mc vs mcpe
@@ -41,6 +49,8 @@
   * produce another light map that shows areas that ARE spawnable? (e.g. use this to make an area 100% mob spawn proof)
 
   * convert all printf-style stuff to streams
+
+  * adapt for MCPC?
 
   todo
 
@@ -75,14 +85,17 @@
 #include <getopt.h>
 #include <sys/stat.h>
 #include "leveldb/db.h"
+// hide innocuous warnings here
+#pragma GCC diagnostic ignored "-Wshadow"
 #include "leveldb/zlib_compressor.h"
+#pragma GCC diagnostic pop
 
 // nbt lib stuff
 #include "io/stream_reader.h"
-//#ifdef NBT_HAVE_ZLIB
-//#include "io/izlibstream.h"
-//#endif
+// hide innocuous warnings here
+#pragma GCC diagnostic ignored "-Wshadow"
 #include "nbt_tags.h"
+#pragma GCC diagnostic pop
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -281,6 +294,7 @@ namespace mcpe_viz {
       int doImageLightBlock;
       int doImageLightSky;
       bool shortRunFlag;
+      bool colorTestFlag;
       bool verboseFlag;
       bool quietFlag;
       int movieX, movieY, movieW, movieH;
@@ -305,11 +319,11 @@ namespace mcpe_viz {
 	  // put the geojson preamble stuff
 	  fprintf(fpGeoJSON,
 		  "{\n"
-		  "\t\"type\": \"FeatureCollection\",\n"
+		  "\"type\": \"FeatureCollection\",\n"
 		  // todo - correct way to specify this?
-		  "\t\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
+		  "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
 		  "\n"
-		  "\t\"features\": [\n"
+		  "\"features\": [\n"
 		  );
 	  int i = listGeoJSON.size();
 	  for ( const auto& it: listGeoJSON ) {
@@ -346,6 +360,7 @@ namespace mcpe_viz {
 	doImageLightSky = kDoOutputNone;
 	
 	shortRunFlag = false;
+	colorTestFlag = false;
 	verboseFlag = false;
 	quietFlag = false;
 	movieX = movieY = movieW = movieH = 0;
@@ -423,6 +438,78 @@ namespace mcpe_viz {
 	kImageModeSkyLight = 6
 	};
 
+    class PngHelper {
+    public:
+      std::string fn;
+      FILE *fp;
+      png_structp png;
+      png_infop info;
+      png_bytep *row_pointers;
+      bool openFlag;
+
+      PngHelper() {
+	fn = "";
+	fp = nullptr;
+	png = nullptr;
+	info = nullptr;
+	row_pointers = nullptr;
+	openFlag = false;
+      }
+      ~PngHelper() {
+	close();
+      }
+      int init(std::string xfn, int w, int h, int numRowPointers) {
+	fn = std::string(xfn);
+	return open(w,h,numRowPointers);
+      }
+      int open(int width, int height, int numRowPointers) {
+	fp = fopen(fn.c_str(), "wb");
+	if(!fp) {
+	  fprintf(stderr,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+	  return -1;
+	}
+	
+	png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png) abort();
+	
+	info = png_create_info_struct(png);
+	if (!info) abort();
+	
+	if (setjmp(png_jmpbuf(png))) abort();
+	
+	png_init_io(png, fp);
+	
+	// Output is 8bit depth, RGB format.
+	png_set_IHDR(
+		     png,
+		     info,
+		     width, height,
+		     8,
+		     PNG_COLOR_TYPE_RGB,
+		     PNG_INTERLACE_NONE,
+		     PNG_COMPRESSION_TYPE_DEFAULT,
+		     PNG_FILTER_TYPE_DEFAULT
+		     );
+	png_write_info(png, info);
+	
+	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
+	openFlag = true;
+	return 0;
+      }
+      int close() {
+	if ( fp != nullptr && openFlag ) {
+	  png_write_end(png, info);
+	  png_destroy_write_struct(&png, &info);
+	  free(row_pointers);
+	  fclose(fp);
+	  fp = nullptr;
+	}
+	openFlag = false;
+	return 0;
+      }
+    };
+
+    
     class StandardColorInfo {
     public:
       std::string name;
@@ -458,6 +545,104 @@ namespace mcpe_viz {
       return (p[startByte] & 0xff);
     }
 
+    bool vectorContains( const std::vector<int> &v, int i ) {
+      for ( const auto& iter: v ) {
+	if ( iter == i ) {
+	  return true;
+	}
+      }
+      return false;
+    }
+
+    
+    std::string makeIndent(int indent, const char* hdr) {
+      std::string s;
+      s.append(hdr);
+      for (int i=0; i < indent; i++) {
+	s.append("  ");
+      }
+      return s;
+    }
+
+
+    // from: http://kickjava.com/src/org/eclipse/swt/graphics/RGB.java.htm
+    int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness) {
+      double r = (double)red / 255.0;
+      double g = (double)green / 255.0;
+      double b = (double)blue / 255.0;
+      double vmax = std::max(std::max(r, g), b);
+      double vmin = std::min(std::min(r, g), b);
+      double delta = vmax - vmin;
+      hue = 0.0;
+      brightness = vmax;
+      saturation = (vmax == 0.0) ? 0.0 : ((vmax - vmin) / vmax);
+      
+      if (delta != 0.0) {
+	if (r == vmax) {
+	  hue = (g - b) / delta;
+	} else {
+	  if (g == vmax) {
+	    hue = 2 + (b - r) / delta;
+	  } else {
+	    hue = 4 + (r - g) / delta;
+	  }
+	}
+	hue *= 60.0;
+	if (hue < 0.0) hue += 360.0;
+      }
+      return 0;
+    }
+    
+#if 0    
+    // from: http://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
+    int rgb2hsv(int32_t in_r, int32_t in_g, int32_t in_b, double& out_h, double& out_s, double& out_v) {
+      double min, max, delta;
+
+      min = in_r < in_g ? in_r : in_g;
+      min = min  < in_b ? min  : in_b;
+      
+      max = in_r > in_g ? in_r : in_g;
+      max = max  > in_b ? max  : in_b;
+      
+      out_v = max;                                // v
+      delta = max - min;
+      if (delta < 0.00001)
+	{
+	  out_s = 0;
+	  out_h = 0; // undefined, maybe nan?
+	  return 0;
+	}
+      if( max > 0.0 ) { // NOTE: if Max is == 0, this divide would cause a crash
+	out_s = (delta / max);                  // s
+      } else {
+	// if max is 0, then r = g = b = 0
+	// s = 0, v is undefined
+	out_s = 0.0;
+	out_h = NAN;                            // its now undefined
+	return 0;
+      }
+      if( in_r >= max ) {                           // > is bogus, just keeps compilor happy
+	out_h = ( in_g - in_b ) / delta;        // between yellow & magenta
+      }
+      else {
+	if( in_g >= max ) {
+	  out_h = 2.0 + ( in_b - in_r ) / delta;  // between cyan & yellow
+	}
+	else {
+	  out_h = 4.0 + ( in_r - in_g ) / delta;  // between magenta & cyan
+	}
+      }
+      
+      out_h *= 60.0;                              // degrees
+      
+      if( out_h < 0.0 ) {
+	out_h += 360.0;
+      }
+      
+      return 0;
+    }
+#endif
+    
     // note: super super old hsl2rgb code; origin unknown
     double _hue_to_rgb(double m1, double m2, double h) {
       while (h < 1.0) { h += 1.0; }
@@ -543,7 +728,7 @@ namespace mcpe_viz {
       return (x*16) + z;
     }
 
-    uint8_t getBlockId(const char* p, int x, int z, int y) {
+    inline uint8_t getBlockId(const char* p, int x, int z, int y) {
       return (p[_calcOffset(x,z,y)] & 0xff);
     }
 
@@ -645,7 +830,7 @@ namespace mcpe_viz {
     };
 
     BlockInfo blockInfoList[256];
-    
+
 
     class ItemInfo {
     public:
@@ -776,6 +961,9 @@ namespace mcpe_viz {
       int histoChunkType[256];
       int histoGlobalBiome[256];
 
+      bool fastBlockHideList[256];
+      bool fastBlockForceTopList[256];
+
       std::vector<int> blockForceTopList;
       std::vector<int> blockHideList;
       
@@ -785,6 +973,13 @@ namespace mcpe_viz {
 	chunkBoundsValid = false;
 	memset(histoChunkType,0,256*sizeof(int));
 	memset(histoGlobalBiome,0,256*sizeof(int));
+      }
+
+      void updateFastLists() {
+	for (int bid=0; bid < 256; bid++) {
+	  fastBlockHideList[bid] = vectorContains(blockHideList, bid);
+	  fastBlockForceTopList[bid] = vectorContains(blockForceTopList, bid);
+	}
       }
 
       void setName(std::string s) {
@@ -902,7 +1097,7 @@ namespace mcpe_viz {
 	}
       
 	png_write_image(png, row_pointers);
-	png_write_end(png, NULL);
+	png_write_end(png, info);
 
 	png_destroy_write_struct(&png, &info);
 
@@ -1058,7 +1253,7 @@ namespace mcpe_viz {
       // todo - we should see about doing this as temp img files w/ one pass thru the chunks; then create png from the temp img files
       // todo - this is similar to generateMovie, but to save time we build temp img file as we go
       // todo - a valiant effort, but this uses a ridiculous amount of disk space (e.g. 25gb for "another1")
-      int32_t generateSlices(leveldb::DB* db, const std::string fname) {
+      int32_t gs_obsolete(leveldb::DB* db, const std::string fname) {
 	const int32_t chunkOffsetX = -minChunkX;
 	const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -1233,7 +1428,192 @@ namespace mcpe_viz {
 	return 0;
       }
 #endif
-      
+
+      // a run on old code (generateMovie):
+      // > time ./mcpe_viz --db another1/ --out test-all1/out1 --log log.tall1 --html-all
+      // 2672.248u 5.461s 45:47.69 97.4% 0+0k 72+1424304io 0pf+0w
+      // approx 45 minutes
+
+      // a run on this new code (generateSlices):
+      // 957.146u 4.463s 16:30.58 97.0%  0+0k 2536+1424304io 1pf+0w
+      // approx 17 minutes
+
+      int generateSlices(leveldb::DB* db) {
+	const int chunkW = (maxChunkX-minChunkX+1);
+	const int chunkH = (maxChunkZ-minChunkZ+1);
+	const int imageW = chunkW * 16;
+	const int imageH = chunkH * 16;
+
+	char keybuf[128];
+	int keybuflen;
+	int32_t kw = dimId;
+	uint8_t kt = 0x30;
+	
+	fprintf(stderr,"    Writing all 128 images in one pass\n");
+	  
+	leveldb::ReadOptions readOptions;
+	readOptions.fill_cache=false; // may improve performance?
+
+	std::string svalue;
+	const char* ochunk = nullptr;
+	const char* pchunk = nullptr;
+	
+	int32_t color;
+	const char *pcolor = (const char*)&color;
+
+	// create png helpers
+	PngHelper png[128];
+	for (int cy=0; cy<128; cy++) {
+	  std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.full.";
+	  fnameTmp += name;
+	  fnameTmp += ".";
+	  sprintf(keybuf,"%03d",cy);
+	  fnameTmp += keybuf;
+	  fnameTmp += ".png";
+
+	  control.fnLayerRaw[dimId][cy] = fnameTmp;
+	  
+	  png[cy].init(fnameTmp, imageW, imageH, 16);
+	}
+	
+	// create row buffers
+	uint8_t* rbuf[128];
+	for (int cy=0; cy<128; cy++) {
+	  rbuf[cy] = new uint8_t[(imageW*3)*16];
+	  // setup row pointers
+	  for (int cz=0; cz<16; cz++) {
+	    png[cy].row_pointers[cz] = &rbuf[cy][(cz*imageW)*3];
+	  }
+	}
+	  
+	uint8_t myChunkTopBlockY[16][16];
+	  
+	int foundCt = 0, notFoundCt1 = 0, notFoundCt2 = 0;
+	  
+	// we operate on 16 rows of image z
+	int runCt = 0;
+	for (int32_t imageZ=0, chunkZ=minChunkZ; imageZ < imageH; imageZ += 16, chunkZ++) {
+
+	  if ( (++runCt % 10) == 0 ) {
+	    fprintf(stderr,"    Row %d of %d\n", imageZ, imageH);
+	  }
+	    
+	  for (int32_t imageX=0, chunkX=minChunkX; imageX < imageW; imageX += 16, chunkX++) {
+
+	    // we need to find our chunk that matches this so that we can find topBlockY
+	    // todo - could this be faster/smarter?
+	    bool foundChunk = false;
+	    for (const auto& it : list) {
+	      //fprintf(stderr,"%d %d     ", it->chunkX, it->chunkZ);
+	      if ( it->chunkX == chunkX && it->chunkZ == chunkZ ) {
+		memcpy(&myChunkTopBlockY[0][0], &it->topBlockY[0][0], 16*16);
+		foundChunk = true;
+		break;
+	      }
+	    }
+	    //fprintf(stderr,"\n");
+	    if ( ! foundChunk ) {
+	      notFoundCt1++;
+	      // we need to clear this area
+	      for (int cy=0; cy < 128; cy++) {
+		for (int cz=0; cz < 16; cz++) {
+		  memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
+		}
+	      }
+	      continue;
+	    }
+
+	    // get the chunk
+	    // construct key
+	    switch (dimId) {
+	    case kDimIdOverworld:
+	      //overworld
+	      memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	      memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	      memcpy(&keybuf[8],&kt,sizeof(uint8_t));
+	      keybuflen=9;
+	      break;
+	    default:
+	      // nether
+	      memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	      memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	      memcpy(&keybuf[8],&kw,sizeof(int32_t));
+	      memcpy(&keybuf[12],&kt,sizeof(uint8_t));
+	      keybuflen=13;
+	      break;
+	    }
+	    leveldb::Slice key(keybuf,keybuflen);
+	    leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
+	    if ( ! dstatus.ok() ) {
+	      notFoundCt2++;
+	      fprintf(stderr,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n",
+		      chunkX, chunkZ, dstatus.ToString().c_str());
+	      // we need to clear this area
+	      for (int cy=0; cy < 128; cy++) {
+		for (int cz=0; cz < 16; cz++) {
+		  memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
+		}
+	      }
+	      continue;
+	    }
+	    ochunk = svalue.data();
+	    pchunk = svalue.data();
+	    foundCt++;
+	      
+	    // we step through the chunk in the natural order to speed things up
+	    for (int cx=0; cx < 16; cx++) {
+	      for (int cz=0; cz < 16; cz++) {
+		for (int cy=0; cy < 128; cy++) {
+		  uint8_t blockid = *(pchunk++);
+		  
+		  if ( blockid == 0 && (cy > myChunkTopBlockY[cz][cx]) && (dimId != kDimIdNether) ) {
+		    // special handling for air -- keep existing value if we are above top block
+		    // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
+		    // however, we do NOT do this for the nether. because: the nether
+
+		    if ( dimId != kDimIdNether ) {
+		      // we need to copy this pixel from another layer
+		      memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3],
+			     &rbuf[myChunkTopBlockY[cz][cx]][((cz*imageW) + imageX + cx)*3],
+			     3);
+		    } else {
+		      // we clear the pixel
+		      memset(&rbuf[cy][((cz*imageW) + imageX + cx)*3], 0, 3);
+		    }
+		      
+		  } else {
+		    
+		    if ( blockInfoList[blockid].lookupColorFlag ) {
+		      // todo - do math directly instead of calling getBlockData?
+		      uint8_t blockdata = getBlockData(ochunk, cx,cz,cy);
+		      color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
+		    } else {
+		      color = blockInfoList[blockid].color;
+		    }
+		    
+		    memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
+		  }
+		}
+	      }
+	    }
+	  }
+	  
+	  // put the png rows
+	  for (int cy=0; cy<128; cy++) {
+	    png_write_rows(png[cy].png, png[cy].row_pointers, 16);
+	  }
+	}
+	
+	for (int cy=0; cy<128; cy++) {
+	  delete [] rbuf[cy];
+	  png[cy].close();
+	}
+	
+	// fprintf(stderr,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
+	
+	return 0;
+      }
+	  
       int generateMovie(leveldb::DB* db, const std::string fname, bool makeMovieFlag, bool useCropFlag ) {
 	const int32_t chunkOffsetX = -minChunkX;
 	const int32_t chunkOffsetZ = -minChunkZ;
@@ -1287,8 +1667,8 @@ namespace mcpe_viz {
 
 	    for (int cz=0; cz < 16; cz++) {
 	      int iz = (imageZ + cz);
-	      for (int cx=0; cx < 16; cx++) {
 
+	      for (int cx=0; cx < 16; cx++) {
 		int ix = (imageX + cx);
 
 		if ( !useCropFlag || ((ix >= cropX) && (ix < (cropX + cropW)) && (iz >= cropZ) && (iz < (cropZ + cropH))) ) {
@@ -1455,11 +1835,11 @@ namespace mcpe_viz {
 
 	if ( checkDoForDim(control.doSlices) ) {
 	  fprintf(stderr,"  Generate full-size slices\n");
-	  fprintf(stderr,"    Make yourself comofortable.  This could take a while :)\n");
+	  fprintf(stderr,"    Make yourself comfortable.  This could take a while :)\n");
 	  fprintf(stderr,"    Seriously... this is sl-o-o-o-w.  I like to optimize code.  In this case, there are a couple of ways to make it faster, but they require a gargantuan amount of temporary disk space (ImageW * ImageH * 3 * 128)...\n");
 	  fprintf(stderr,"    So... make yourself comfortable.  Maybe get a snack.\n");
-	  generateMovie(db, std::string(""), false, false);
-	  //generateSlices(db, std::string(""));
+	  //generateMovie(db, std::string(""), false, false);
+	  generateSlices(db);
 	}
 	
 	// reset
@@ -1470,26 +1850,6 @@ namespace mcpe_viz {
 	return 0;
       }
     };
-
-    
-    bool vectorContains( std::vector<int> &v, int i ) {
-      for ( const auto& iter: v ) {
-	if ( iter == i ) {
-	  return true;
-	}
-      }
-      return false;
-    }
-
-    
-    std::string makeIndent(int indent, const char* hdr) {
-      std::string s;
-      s.append(hdr);
-      for (int i=0; i < indent; i++) {
-	s.append("  ");
-      }
-      return s;
-    }
 
     
     std::string getBiomeName(int idv) {
@@ -1578,8 +1938,8 @@ namespace mcpe_viz {
 	  fprintf(control.fpLog,"LIST-%d {\n",lnum);
 	  indent++;
 	  for ( const auto& it: v ) {
-	    std::unique_ptr<nbt::tag> t = it.get().clone();
-	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), std::move(t) ) );
+	    std::unique_ptr<nbt::tag> tt = it.get().clone();
+	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), std::move(tt) ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
 	  fprintf(control.fpLog,"%s} LIST-%d\n", makeIndent(indent,hdr).c_str(), lnum);
@@ -1592,8 +1952,8 @@ namespace mcpe_viz {
 	  fprintf(control.fpLog,"COMPOUND-%d {\n",cnum);
 	  indent++;
 	  for ( const auto& it: v ) {
-	    std::unique_ptr<nbt::tag> t = it.second.get().clone();
-	    parseNbtTag( hdr, indent, std::make_pair( it.first, std::move(t) ) );
+	    std::unique_ptr<nbt::tag> tt = it.second.get().clone();
+	    parseNbtTag( hdr, indent, std::make_pair( it.first, std::move(tt) ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
 	  fprintf(control.fpLog,"%s} COMPOUND-%d\n", makeIndent(indent,hdr).c_str(),cnum);
@@ -1699,7 +2059,8 @@ namespace mcpe_viz {
       for ( const auto& ch : s ) {
 	for ( const auto& escape : escapeChars ) {
 	  if ( ch == escape ) {
-	    ret += "\\" + escape;
+	    ret += "\\";
+	    ret += escape;
 	  } else {
 	    ret += ch;
 	  }
@@ -2178,13 +2539,13 @@ namespace mcpe_viz {
 	sprintf(tmpstring,"%d, %d",ix,iy);
 	s +=
 	  "{\n"
-	  "\t\"type\": \"Feature\",\n"
-	  "\t\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
+	  "\"type\": \"Feature\",\n"
+	  "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
 	  ;
 	s += tmpstring;
 	s +=
 	  "] },\n"
-	  "\t\"properties\": {\n"
+	  "\"properties\": {\n"
 	  ;
 
 	if ( has_key(entityInfoList, id) ) {
@@ -2311,7 +2672,7 @@ namespace mcpe_viz {
       }
       
       // todo - this should probably be multi-line so it's not so insane looking :)
-      std::string toString(const std::string hdr, int32_t forceDimensionId) {
+      std::string toString(int32_t forceDimensionId) {
 	char tmpstring[1025];
 	
 	std::string s = "[";
@@ -2547,13 +2908,13 @@ namespace mcpe_viz {
 	  sprintf(tmpstring,"%d, %d",ix,iy);
 	  s +=
 	    "{\n"
-	    "\t\"type\": \"Feature\",\n"
-	    "\t\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
+	    "\"type\": \"Feature\",\n"
+	    "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
 	    ;
 	  s += tmpstring;
 	  s +=
 	    "] },\n"
-	    "\t\"properties\": {\n"
+	    "\"properties\": {\n"
 	    ;
 	  
 	  int i = list.size();
@@ -2572,7 +2933,7 @@ namespace mcpe_viz {
       }
       
       // todo - this should probably be multi-line so it's not so insane looking :)
-      std::string toString(const std::string hdr, int32_t dimensionId) {
+      std::string toString(int32_t dimensionId) {
 	char tmpstring[1025];
 	
 	std::string s = "[";
@@ -2631,7 +2992,7 @@ namespace mcpe_viz {
     };
     typedef std::vector< std::unique_ptr<ParsedTileEntity> > ParsedTileEntityList;
     
-    int parseNbt_entity(int32_t dimensionId, std::string dimName, std::string hdr, MyTagList &tagList, bool playerLocalFlag, bool playerRemoteFlag, ParsedEntityList &entityList) {
+    int parseNbt_entity(int32_t dimensionId, std::string dimName, MyTagList &tagList, bool playerLocalFlag, bool playerRemoteFlag, ParsedEntityList &entityList) {
       entityList.clear();
 
       int32_t actualDimensionId = dimensionId;
@@ -2794,7 +3155,7 @@ namespace mcpe_viz {
 	// stuff I found:
 	entity->checkOtherProp(tc, "SpawnedByNight");
 	
-	fprintf(control.fpLog, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(hdr, actualDimensionId).c_str());
+	fprintf(control.fpLog, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(actualDimensionId).c_str());
 
 	listGeoJSON.push_back( entity->toGeoJSON(actualDimensionId) );
 
@@ -2872,7 +3233,7 @@ namespace mcpe_viz {
 	}
 
 	if ( parseFlag ) {
-	  fprintf(control.fpLog, "%sParsedTileEntity: %s\n", dimName.c_str(), tileEntity->toString("", dimensionId).c_str());
+	  fprintf(control.fpLog, "%sParsedTileEntity: %s\n", dimName.c_str(), tileEntity->toString(dimensionId).c_str());
 
 	  std::string json = tileEntity->toGeoJSON(dimensionId);
 	  if ( json.size() > 0 ) {
@@ -2947,13 +3308,13 @@ namespace mcpe_viz {
 	  sprintf(tmpstring,"%d, %d",ix,iy);
 	  s +=
 	    "{\n"
-	    "\t\"type\": \"Feature\",\n"
-	    "\t\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
+	    "\"type\": \"Feature\",\n"
+	    "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
 	    ;
 	  s += tmpstring;
 	  s +=
 	    "] },\n"
-	    "\t\"properties\": {\n"
+	    "\"properties\": {\n"
 	    ;
 	  
 	  int i = list.size();
@@ -3064,8 +3425,68 @@ namespace mcpe_viz {
       }
       return true;
     }
+    
+    
+    // todo move this
+    class ColorInfo {
+    public:
+      std::string name;
+      int32_t color;
+      int r,g,b;
+      double h, s, l;
+      
+      ColorInfo(std::string n, int32_t c) {
+	name = std::move(n);
+	color = c;
+	calcHSL();
+      }
+      ColorInfo& operator=(const ColorInfo& other) = default;
+      int calcHSL() {
+	r = (color & 0xFF0000) >> 16;
+	g = (color & 0xFF00) >> 8;
+	b = color & 0xFF;
+	h = s = l = 0.0;
+	rgb2hsb(r,g,b, h,s,l);
+	//rgb2hsv(r,g,b, h,s,l);
 
-
+	// todo -we could adjust some items to help with the sort
+	//if ( s < 0.2 ) { s=0.0; }
+	
+	return 0;
+      }
+      std::string toHtml() const {
+	char tmpstring[256];
+	std::string ret = "<div class=\"colorBlock";
+	if ( l < 0.2 ) {
+	  ret += " darkBlock";
+	}
+	ret += "\" style=\"background-color:";
+	sprintf(tmpstring,"#%02x%02x%02x",r,g,b);
+	ret += tmpstring;
+	ret += "\">" + name + " (";
+	sprintf(tmpstring,"0x%06x",color);
+	ret += tmpstring;
+	ret += ") ";
+	sprintf(tmpstring,"[ h=%lf s=%lf l=%lf ]", h, s, l);
+	ret += tmpstring;
+	ret += "</div>\n";
+	return ret;
+      }
+    };
+    
+    bool compareColorInfo(std::unique_ptr<ColorInfo> const& a, std::unique_ptr<ColorInfo> const& b) {
+      double dh=a->h - b->h;
+      if ( dh < 0.0 ) { return true; }
+      if ( dh > 0.0 ) { return false; }
+      double ds=a->s - b->s;
+      if ( ds < 0.0 ) { return true; }
+      if ( ds > 0.0 ) { return false; }
+      double dl=a->l - b->l;
+      if ( dl < 0.0 ) { return true; }
+      if ( dl > 0.0 ) { return false; }
+      return false;
+    }
+    
     class MyWorld {
     public:
       leveldb::DB* db;
@@ -3129,6 +3550,7 @@ namespace mcpe_viz {
 	
 	fprintf(stderr,"Scan keys to get world boundaries\n");
 	int recordCt = 0;
+	// todobig - is there a faster way to enumerate the keys?
 	leveldb::Iterator* iter = db->NewIterator(dbReadOptions);
 	for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
 	  leveldb::Slice skey = iter->key();
@@ -3218,6 +3640,7 @@ namespace mcpe_viz {
 	  int itemCt = 0;
 	  int32_t blockId;
 	  for (int dimId=0; dimId < kDimIdCount; dimId++) {
+	    chunkList[dimId].updateFastLists();
 	    for ( const auto& iter : chunkList[dimId].blockHideList ) {
 	      blockId = iter;
 	      fprintf(stderr,"  'hide-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
@@ -3277,7 +3700,7 @@ namespace mcpe_viz {
 	    int ret = parseNbt("Local Player: ", value, value_size, tagList);
 	    if ( ret == 0 ) { 
 	      ParsedEntityList entityList;
-	      parseNbt_entity(-1, "","Local Player:", tagList, true, false, entityList);
+	      parseNbt_entity(-1, "",tagList, true, false, entityList);
 	    }
 	  }
 	  else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
@@ -3287,7 +3710,7 @@ namespace mcpe_viz {
 	    int ret = parseNbt("Remote Player: ", value, value_size, tagList);
 	    if ( ret == 0 ) {
 	      ParsedEntityList entityList;
-	      parseNbt_entity(-1, "","Remote Player:", tagList, false, true, entityList);
+	      parseNbt_entity(-1, "",tagList, false, true, entityList);
 	    }
 	  }
 	  else if ( strncmp(key,"villages",key_size) == 0 ) {
@@ -3369,6 +3792,7 @@ namespace mcpe_viz {
 		memset(topSkyLight,0, 16*16*sizeof(uint8_t));
 		memset(topBlockLight,0, 16*16*sizeof(uint8_t));
 		memset(topLight,0, 16*16*sizeof(uint8_t));
+		memset(topBlockY,0, 16*16*sizeof(uint8_t));
 	      
 		// iterate over chunk area, get data etc
 		for (int cy=127; cy >= 0; cy--) {
@@ -3380,9 +3804,8 @@ namespace mcpe_viz {
 		      // todo - check for isSolid?
 		      if ( blockId != 0 ) {  // current block is NOT air
 			if ( ( topBlock[cz][cx] == 0 &&  // top block is not already set
-			       !vectorContains(chunkList[chunkDimId].blockHideList, blockId) ) || // blockId is not in hide list
-			     vectorContains(chunkList[chunkDimId].blockForceTopList, blockId) // see if we want to force a block
-			     ) {
+			       !chunkList[chunkDimId].fastBlockHideList[blockId] ) ||
+			     chunkList[chunkDimId].fastBlockForceTopList[blockId] ) {
 			  topBlock[cz][cx] = blockId;
 			  topData[cz][cx] = getBlockData(value, cx,cz,cy);
 			  topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
@@ -3499,7 +3922,7 @@ namespace mcpe_viz {
 		  int ret = parseNbt("0x32-e: ", value, value_size, tagList);
 		  if ( ret == 0 ) {
 		    ParsedEntityList entityList;
-		    parseNbt_entity(chunkDimId, dimName+"-", "Mob:", tagList, false, false, entityList);
+		    parseNbt_entity(chunkDimId, dimName+"-", tagList, false, false, entityList);
 		  }
 		}
 		break;
@@ -3579,6 +4002,207 @@ namespace mcpe_viz {
 
 	return leveldb::Status::OK();
       }
+
+      int doOutput_html() {
+	char tmpstring[1025];
+	
+	fprintf(stderr,"Do Output: html viewer\n");
+	
+	sprintf(tmpstring,"%s/mcpe_viz.html.template", dirExec);
+	std::string fnHtmlSrc = tmpstring;
+	
+	sprintf(tmpstring,"%s/mcpe_viz.js", dirExec);
+	std::string fnJsSrc = tmpstring;
+	
+	sprintf(tmpstring,"%s/mcpe_viz.css", dirExec);
+	std::string fnCssSrc = tmpstring;
+	  
+	// create html file -- need to substitute one variable (extra js file)
+	StringReplacementList replaceStrings;
+	replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"), std::string(mybasename(control.fnJs.c_str())) ) );
+	copyFileWithStringReplacement(fnHtmlSrc, control.fnHtml, replaceStrings);
+	  
+	// create javascript file w/ filenames etc
+	FILE *fp = fopen(control.fnJs.c_str(),"w");
+	if ( fp ) {
+	  fprintf(fp,
+		  "// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
+		  "var dimensionInfo = {\n"
+		  );
+	  for (int did=0; did < kDimIdCount; did++) {
+	    fprintf(fp, "'%d': {\n", did);
+	    fprintf(fp,"  minWorldX: %d,\n", chunkList[did].minChunkX*16);
+	    fprintf(fp,"  maxWorldX: %d + 15,\n", chunkList[did].maxChunkX*16);
+	    fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
+	    fprintf(fp,"  maxWorldY: %d + 15,\n", chunkList[did].maxChunkZ*16);
+
+	    int32_t px, py;
+	    if ( did == kDimIdNether ) {
+	      px = playerPositionImageX / 8;
+	      py = playerPositionImageY / 8;
+	    } else {
+	      px = playerPositionImageX;
+	      py = playerPositionImageY;
+	    }
+	    fprintf(fp,"  playerPosX: %d,\n", px);
+	    fprintf(fp,"  playerPosY: %d,\n", py);
+
+	    // todo - a diff geojson for overworld + nether?
+	    fprintf(fp,"  fnGeoJSON: '%s',\n", mybasename(control.fnGeoJSON).c_str());
+	    fprintf(fp,"  fnLayerTop: '%s',\n", mybasename(control.fnLayerTop[did]).c_str());
+	    fprintf(fp,"  fnLayerBiome: '%s',\n", mybasename(control.fnLayerBiome[did]).c_str());
+	    fprintf(fp,"  fnLayerHeight: '%s',\n", mybasename(control.fnLayerHeight[did]).c_str());
+	    fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", mybasename(control.fnLayerHeightGrayscale[did]).c_str());
+	    fprintf(fp,"  fnLayerBlockLight: '%s',\n", mybasename(control.fnLayerBlockLight[did]).c_str());
+	    fprintf(fp,"  fnLayerGrass: '%s',\n", mybasename(control.fnLayerGrass[did]).c_str());
+	      
+	    fprintf(fp,"  listLayers: [\n");
+	    for (int i=0; i < 128; i++) {
+	      fprintf(fp, "    '%s',\n", mybasename(control.fnLayerRaw[did][i]).c_str());
+	    }
+	    fprintf(fp,"  ]\n");
+	    if ( (did+1) < kDimIdCount ) {
+	      fprintf(fp,"},\n");
+	    } else {
+	      fprintf(fp,"}\n");
+	    }
+	  }
+	  fprintf(fp,"};\n");
+
+	  // write block color info
+	  fprintf(fp,
+		  "// a lookup table for identifying blocks in the web app\n"
+		  "// key is color (decimal), value is block name\n"
+		  "// hacky? it sure is!\n"
+		  );
+	    
+	  fprintf(fp,"var blockColorLUT = {\n");
+	  for (int i=0; i < 256; i++) {
+	    if ( blockInfoList[i].lookupColorFlag ) {
+	      for (int sc=0; sc < 16; sc++) {
+		int xcolor =  standardColorInfo[sc].color + blockInfoList[i].lookupColorOffset;
+		std::string xname = blockInfoList[i].name + ", " + standardColorInfo[sc].name;
+		fprintf(fp,"'%d': '%s',\n", xcolor, escapeString(xname,"'").c_str());
+	      }
+	    } else {
+	      if ( blockInfoList[i].colorSetFlag ) {
+		fprintf(fp,"'%d': '%s',\n", be32toh(blockInfoList[i].color), escapeString(blockInfoList[i].name,"'").c_str());
+	      }
+	    }
+	  }
+	  // last, put the catch-all
+	  fprintf(fp,"'%d': '*UNKNOWN BLOCK*'\n};\n",kColorDefault);
+
+	  // write biome color info
+	  fprintf(fp,
+		  "// a lookup table for identifying biomes in the web app\n"
+		  "// key is color (decimal), value is biome name\n"
+		  "// hacky? it sure is!\n"
+		  );
+	    
+	  fprintf(fp,"var biomeColorLUT = {\n");
+	  for ( const auto& it : biomeInfoList ) {
+	    if ( it.second->colorSetFlag ) {
+	      fprintf(fp,"'%d': '%s (id=%d (0x%x))',\n"
+		      , be32toh(it.second->color)
+		      , escapeString(it.second->name,"'").c_str()
+		      , it.first
+		      , it.first
+		      );
+	    }
+	  }
+	  // last, put the catch-all
+	  fprintf(fp,"'%d': '*UNKNOWN BIOME*'\n};\n",kColorDefault);
+	    
+	  fclose(fp);
+	    
+	} else {
+	  fprintf(stderr,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
+	}
+	  
+	// copy helper files to destination directory
+	std::string dirDest = mydirname(control.fnOutputBase);
+	  
+	if ( dirDest.size() > 0 && dirDest != "." ) {
+	  // todo - how to be sure that this is a diff dir?
+	  sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
+	  std::string fnJsDest = tmpstring;
+	  copyFile(fnJsSrc, fnJsDest);
+
+	  sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnCssSrc).c_str());
+	  std::string fnCssDest = tmpstring;
+	  copyFile(fnCssSrc, fnCssDest);
+	} else {
+	  // if same dir, don't copy files
+	}
+
+	return 0;
+      }
+
+      
+      int doOutput_colortest() {
+	fprintf(stderr,"Do Output: html colortest\n");
+	
+	std::string fnOut = control.fnOutputBase + ".colortest.html";
+	FILE *fp = fopen(fnOut.c_str(), "w");
+	
+	if ( !fp ) {
+	  // todo err
+	  fprintf(stderr, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
+	  return -1;
+	} 
+	  
+	// put start of html file
+	fprintf(fp,
+		"<!doctype html>\n"
+		"<html><head><title>MCPE Viz Color Test</title>\n"
+		"<style>"
+		".section { width: 100%%; padding: 2em 2em; }"
+		".colorBlock { width: 100%%; padding: 0.5em 2em; }"
+		".darkBlock  { color: #ffffff; }"
+		"</style>"
+		"</head>"
+		"<body>"
+		);
+	
+	// create list of all colors and sort them by HSL
+	std::vector< std::unique_ptr<ColorInfo> > webColorList;
+
+	// todo - we should probably use same logic used in making the js helepr file (calculated colors)
+	webColorList.clear();
+	for (int i=0; i < 256; i++) {
+	  if ( blockInfoList[i].colorSetFlag ) {
+	    // webColorList.emplace_back(blockInfoList[i].name, (int32_t)be32toh(blockInfoList[i].color));
+	    webColorList.push_back( std::unique_ptr<ColorInfo>( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
+	  }
+	}
+
+	std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
+	fprintf(fp, "<div class=\"section\">Block Colors</div>");
+	for (const auto& it : webColorList) {
+	  fprintf(fp, "%s\n", it->toHtml().c_str());
+	}
+
+
+
+	webColorList.clear();
+	for ( const auto& it : biomeInfoList ) {
+	  if ( it.second->colorSetFlag ) {
+	    // webColorList.emplace_back(blockInfoList[i].name, (int32_t)be32toh(blockInfoList[i].color));
+	    webColorList.push_back( std::unique_ptr<ColorInfo>( new ColorInfo(it.second->name, be32toh(it.second->color)) ) );
+	  }
+	}
+
+	std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
+	fprintf(fp, "<div class=\"section\">Biome Colors</div>");
+	for (const auto& it : webColorList) {
+	  fprintf(fp, "%s\n", it->toHtml().c_str());
+	}
+	
+	fprintf(fp,"\n</body></html>\n");
+	fclose(fp);
+	return 0;
+      }
       
       int doOutput() {
 	calcChunkBounds();
@@ -3587,138 +4211,11 @@ namespace mcpe_viz {
 	}
 
 	if ( control.doHtml ) {
-	  char tmpstring[1025];
-
-	  fprintf(stderr,"Do Output: html viewer\n");
-	  
-	  sprintf(tmpstring,"%s/mcpe_viz.html.template", dirExec);
-	  std::string fnHtmlSrc = tmpstring;
-
-	  sprintf(tmpstring,"%s/mcpe_viz.js", dirExec);
-	  std::string fnJsSrc = tmpstring;
-
-	  sprintf(tmpstring,"%s/mcpe_viz.css", dirExec);
-	  std::string fnCssSrc = tmpstring;
-	  
-	  // create html file -- need to substitute one variable (extra js file)
-	  StringReplacementList replaceStrings;
-	  replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"), std::string(mybasename(control.fnJs.c_str())) ) );
-	  copyFileWithStringReplacement(fnHtmlSrc, control.fnHtml, replaceStrings);
-	  
-	  // create javascript file w/ filenames etc
-	  FILE *fp = fopen(control.fnJs.c_str(),"w");
-	  if ( fp ) {
-	    fprintf(fp,
-		    "// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
-		    "var dimensionInfo = {\n"
-		    );
-	    for (int did=0; did < kDimIdCount; did++) {
-	      fprintf(fp, "'%d': {\n", did);
-	      fprintf(fp,"  minWorldX: %d,\n", chunkList[did].minChunkX*16);
-	      fprintf(fp,"  maxWorldX: %d + 15,\n", chunkList[did].maxChunkX*16);
-	      fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
-	      fprintf(fp,"  maxWorldY: %d + 15,\n", chunkList[did].maxChunkZ*16);
-
-	      int32_t px, py;
-	      if ( did == kDimIdNether ) {
-		px = playerPositionImageX / 8;
-		py = playerPositionImageY / 8;
-	      } else {
-		px = playerPositionImageX;
-		py = playerPositionImageY;
-	      }
-	      fprintf(fp,"  playerPosX: %d,\n", px);
-	      fprintf(fp,"  playerPosY: %d,\n", py);
-
-	      // todo - a diff geojson for overworld + nether?
-	      fprintf(fp,"  fnGeoJSON: '%s',\n", mybasename(control.fnGeoJSON).c_str());
-	      fprintf(fp,"  fnLayerTop: '%s',\n", mybasename(control.fnLayerTop[did]).c_str());
-	      fprintf(fp,"  fnLayerBiome: '%s',\n", mybasename(control.fnLayerBiome[did]).c_str());
-	      fprintf(fp,"  fnLayerHeight: '%s',\n", mybasename(control.fnLayerHeight[did]).c_str());
-	      fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", mybasename(control.fnLayerHeightGrayscale[did]).c_str());
-	      fprintf(fp,"  fnLayerBlockLight: '%s',\n", mybasename(control.fnLayerBlockLight[did]).c_str());
-	      fprintf(fp,"  fnLayerGrass: '%s',\n", mybasename(control.fnLayerGrass[did]).c_str());
-	      
-	      fprintf(fp,"  listLayers: [\n");
-	      for (int i=0; i < 128; i++) {
-	        fprintf(fp, "    '%s',\n", mybasename(control.fnLayerRaw[did][i]).c_str());
-	      }
-	      fprintf(fp,"  ]\n");
-	      if ( (did+1) < kDimIdCount ) {
-		fprintf(fp,"},\n");
-	      } else {
-		fprintf(fp,"}\n");
-	      }
-	    }
-	    fprintf(fp,"};\n");
-
-	    // write block color info
-	    fprintf(fp,
-		    "// a lookup table for identifying blocks in the web app\n"
-		    "// key is color (decimal), value is block name\n"
-		    "// hacky? it sure is!\n"
-		    );
-	    
-	    fprintf(fp,"var blockColorLUT = {\n");
-	    for (int i=0; i < 256; i++) {
-	      if ( blockInfoList[i].lookupColorFlag ) {
-		for (int sc=0; sc < 16; sc++) {
-		  int xcolor =  standardColorInfo[sc].color + blockInfoList[i].lookupColorOffset;
-		  std::string xname = blockInfoList[i].name + ", " + standardColorInfo[sc].name;
-		  fprintf(fp,"'%d': '%s',\n", xcolor, escapeString(xname,"'").c_str());
-		}
-	      } else {
-		if ( blockInfoList[i].colorSetFlag ) {
-		  fprintf(fp,"'%d': '%s',\n", be32toh(blockInfoList[i].color), escapeString(blockInfoList[i].name,"'").c_str());
-		}
-	      }
-	    }
-	    // last, put the catch-all
-	    fprintf(fp,"'%d': '*UNKNOWN BLOCK*'\n};\n",kColorDefault);
-
-	    // write biome color info
-	    fprintf(fp,
-		    "// a lookup table for identifying biomes in the web app\n"
-		    "// key is color (decimal), value is biome name\n"
-		    "// hacky? it sure is!\n"
-		    );
-	    
-	    fprintf(fp,"var biomeColorLUT = {\n");
-	    for ( const auto& it : biomeInfoList ) {
-	      if ( it.second->colorSetFlag ) {
-		fprintf(fp,"'%d': '%s (id=%d (0x%x))',\n"
-			, be32toh(it.second->color)
-			, escapeString(it.second->name,"'").c_str()
-			, it.first
-			, it.first
-			);
-	      }
-	    }
-	    // last, put the catch-all
-	    fprintf(fp,"'%d': '*UNKNOWN BIOME*'\n};\n",kColorDefault);
-	    
-	    fclose(fp);
-	    
-	  } else {
-	    fprintf(stderr,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
-	  }
-	  
-	  // copy helper files to destination directory
-	  std::string dirDest = mydirname(control.fnOutputBase);
-	  
-	  if ( dirDest.size() > 0 && dirDest != "." ) {
-	    // todo - how to be sure that this is a diff dir?
-	    sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
-	    std::string fnJsDest = tmpstring;
-	    copyFile(fnJsSrc, fnJsDest);
-
-	    sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnCssSrc).c_str());
-	    std::string fnCssDest = tmpstring;
-	    copyFile(fnCssSrc, fnCssDest);
-	  } else {
-	    // if same dir, don't copy files
-	  }
-	  
+	  doOutput_html();
+	}
+	
+	if ( control.colorTestFlag ) {
+	  doOutput_colortest();
 	}
 	
 	return 0;
@@ -4378,7 +4875,7 @@ namespace mcpe_viz {
       return did;
     }
     
-    int parse_args ( int argc, char **argv, Control& control ) {
+    int parse_args ( int argc, char **argv ) {
 
       static struct option longoptlist[] = {
 	{"db", required_argument, NULL, 'D'},
@@ -4412,6 +4909,7 @@ namespace mcpe_viz {
 	{"html-all", no_argument, NULL, '_'},
 
 	{"shortrun", no_argument, NULL, '$'}, // this is just for testing
+	{"colortest", no_argument, NULL, '!'}, // this is just for testing
     
 	{"verbose", no_argument, NULL, 'v'},
 	{"quiet", no_argument, NULL, 'q'},
@@ -4577,6 +5075,9 @@ namespace mcpe_viz {
 	case '$':
 	  control.shortRunFlag = true;
 	  break;
+	case '!':
+	  control.colorTestFlag = true;
+	  break;
       
 	case 'v': 
 	  control.verboseFlag = true; 
@@ -4620,9 +5121,11 @@ int main ( int argc, char **argv ) {
 
   fprintf(stderr,"%s\n",mcpe_viz::version.c_str());
 
+  mcpe_viz::escapeString("Jack o'Lantern","'");
+  
   dirExec = dirname(argv[0]);
   
-  int ret = mcpe_viz::parse_args(argc, argv, mcpe_viz::control);
+  int ret = mcpe_viz::parse_args(argc, argv);
   if (ret != 0) {
     mcpe_viz::print_usage(basename(argv[0]));
     return ret;

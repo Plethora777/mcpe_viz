@@ -34,30 +34,30 @@
 	</div>
 
 	<div class="btn-group">
-	  <button type="button" class="btn btn-primary mytooltip" id="layerPrev" title="Go to Lower Layer">&lt;</button>
+	  <button type="button" class="btn btn-primary mytooltip" id="layerPrev" title="Go to Lower Layer"><span class="glyphicon glyphicon-arrow-down" aria-hidden="true"></span></button>
 	  <div class="btn-group dropup">
 	    <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Layer">
 	      <span id="layerNumber">Go to Layer</span>
 	    <span class="caret"></span></button>
 	    <ul class="dropdown-menu">
-	      <li><a onclick="layerGoto(0);" href="#">Layer 0</a></li>
-	      <li><a onclick="layerGoto(10);" href="#">Layer 10</a></li>
-	      <li><a onclick="layerGoto(20);" href="#">Layer 20</a></li>
-	      <li><a onclick="layerGoto(30);" href="#">Layer 30</a></li>
-	      <li><a onclick="layerGoto(40);" href="#">Layer 40</a></li>
-	      <li><a onclick="layerGoto(50);" href="#">Layer 50</a></li>
-	      <li><a onclick="layerGoto(60);" href="#">Layer 60</a></li>
-	      <li><a onclick="layerGoto(63);" href="#">Layer 63 (Sea Leavel)</a></li>
-	      <li><a onclick="layerGoto(70);" href="#">Layer 70</a></li>
-	      <li><a onclick="layerGoto(80);" href="#">Layer 80</a></li>
-	      <li><a onclick="layerGoto(90);" href="#">Layer 90</a></li>
-	      <li><a onclick="layerGoto(100);" href="#">Layer 100</a></li>
-	      <li><a onclick="layerGoto(110);" href="#">Layer 110</a></li>
-	      <li><a onclick="layerGoto(120);" href="#">Layer 120</a></li>
-	      <li><a onclick="layerGoto(127);" href="#">Layer 127</a></li>
+	      <li><a href="#" class="layerGoto" data-id="127" href="#">Layer 127 (Build Limit)</a></li>
+	      <li><a href="#" class="layerGoto" data-id="120" href="#">Layer 120</a></li>
+	      <li><a href="#" class="layerGoto" data-id="110" href="#">Layer 110</a></li>
+	      <li><a href="#" class="layerGoto" data-id="100" href="#">Layer 100</a></li>
+	      <li><a href="#" class="layerGoto" data-id="90" href="#">Layer 90</a></li>
+	      <li><a href="#" class="layerGoto" data-id="80" href="#">Layer 80</a></li>
+	      <li><a href="#" class="layerGoto" data-id="70" href="#">Layer 70</a></li>
+	      <li><a href="#" class="layerGoto" data-id="63" href="#">Layer 63 (Sea Leavel)</a></li>
+	      <li><a href="#" class="layerGoto" data-id="60" href="#">Layer 60</a></li>
+	      <li><a href="#" class="layerGoto" data-id="50" href="#">Layer 50</a></li>
+	      <li><a href="#" class="layerGoto" data-id="40" href="#">Layer 40</a></li>
+	      <li><a href="#" class="layerGoto" data-id="30" href="#">Layer 30</a></li>
+	      <li><a href="#" class="layerGoto" data-id="20" href="#">Layer 20</a></li>
+	      <li><a href="#" class="layerGoto" data-id="10" href="#">Layer 10</a></li>
+	      <li><a href="#" class="layerGoto" data-id="0" href="#">Layer 0 (Bedrock)</a></li>
 	    </ul>
 	  </div>
-	  <button type="button" class="btn btn-primary mytooltip" id="layerNext" title="Go to Higher Layer">&gt;</button>
+	  <button type="button" class="btn btn-primary mytooltip" id="layerNext" title="Go to Higher Layer"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span></button>
 	</div>
 
 	<div class="btn-group dropup">

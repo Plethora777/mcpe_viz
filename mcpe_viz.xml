@@ -20,33 +20,33 @@
   // note: items with "TBD" in their name need investigation re MCPE value/name vs MCPC
   //
   <blocklist>
-    <block id="0x00" name="Air" color="0x0" solid="0" />
+    <block id="0x00" name="Air" color="0x010101" solid="0" />
     <block id="0x01" name="Stone" color="0xa0a0a0" /> // *S
     <block id="0x02" name="Grass Block" color="0x1f953e" />
-    <block id="0x03" name="Dirt" color="0x96721a" /> 
+    <block id="0x03" name="Dirt" color="0x7c5a06" /> 
     <block id="0x04" name="Cobblestone" color="0xc0c0c0" />
     <block id="0x05" name="Wooden Planks" color="0x696a2d" /> // *S
     <block id="0x06" name="Sapling" color="0x8afb97" solid="0" /> // *S
-    <block id="0x07" name="Bedrock" color="0x101010" />
+    <block id="0x07" name="Bedrock" color="0x202020" />
     <block id="0x08" name="Water" color="0x616699" /> // *S
     <block id="0x09" name="Stationary Water" color="0x8b92dd" /> // *S
     <block id="0x0A" name="Lava" color="0xfc2a2a" /> // *S
     <block id="0x0B" name="Stationary Lava" color="0xfc2a2b" /> // *S
     <block id="0x0C" name="Sand" color="0xede586" />
     <block id="0x0D" name="Gravel" color="0x808080" />
-    <block id="0x0E" name="Gold Ore" color="0xe1e0a5" /> // todo - too close to torch color?
+    <block id="0x0E" name="Gold Ore" color="0xf5f73b" /> // todo - too close to torch color?
     <block id="0x0F" name="Iron Ore" color="0xdbbe21" />
-    <block id="0x10" name="Coal Ore" color="0x7b7b7b" />
+    <block id="0x10" name="Coal Ore" color="0x585858" />
     <block id="0x11" name="Wood" color="0x916609" /> // *S *B
     <block id="0x12" name="Leaves" color="0x184d1e" solid="0" /> // *S *B
     <block id="0x13" name="Sponge" color="0xb3ae61" />
-    <block id="0x14" name="Glass" color="0xe0e0e0" />
+    <block id="0x14" name="Glass" color="0xf0f0f0" />
     <block id="0x15" name="Lapis Lazuli Ore" color="0xb5c2d6" />
     <block id="0x16" name="Lapis Lazuli Block" color="0x0547a9" />
     <block id="0x18" name="Sandstone" color="0xfbf8b4" /> // *S *B
     <block id="0x1A" name="Bed" color="0xff0000" solid="0" /> // *S
-    <block id="0x1B" name="Powered Rail" color="0xfe9c02" solid="0" />
-    <block id="0x1E" name="Cobweb" color="0xd2d2d2" solid="0" />
+    <block id="0x1B" name="Powered Rail" color="0xfe4902" solid="0" />
+    <block id="0x1E" name="Cobweb" color="0xe0e0e0" solid="0" />
     <block id="0x1F" name="Grass" color="0x1f953d" solid="0" /> // *S *B
     <block id="0x20" name="Dead Bush" color="0x47461e" solid="0" />
     <block id="0x23" name="Wool" lookupColor="true" lookupColorOffset="1" /> // *S *B
@@ -70,11 +70,11 @@
     <block id="0x36" name="Chest" color="0xb3914f" solid="0" /> // *E
     <block id="0x38" name="Diamond Ore" color="0x77dcd8" />
     <block id="0x39" name="Block of Diamond" color="0x83f0ec" />
-    <block id="0x3A" name="Crafting Table" color="0x202020" />
+    <block id="0x3A" name="Crafting Table" color="0x895c26" />
     <block id="0x3B" name="Wheat" color="0x3ebf59" solid="0" /> // *S *I
     <block id="0x3C" name="Farmland" color="0x646325" solid="0" /> // *D
-    <block id="0x3D" name="Furnace" color="0x303030" /> // *S *E
-    <block id="0x3E" name="Burning Furnace" color="0xc69b9b" solid="0" /> // *S *E
+    <block id="0x3D" name="Furnace" color="0xe54e26" /> // *S *E
+    <block id="0x3E" name="Burning Furnace" color="0xfd572c" solid="0" /> // *S *E
     <block id="0x3F" name="Standing Sign" solid="0" color="0x8d804a" /> // *I *S *E
     <block id="0x40" name="Oak Door" color="0x77602e" solid="0" /> // *S *I
     <block id="0x41" name="Ladder" solid="0" color="0xada170" />
@@ -84,28 +84,28 @@
     <block id="0x47" name="Iron Door" solid="0" /> // todo // *S
     <block id="0x49" name="Redstone Ore" color="0xab2828" />
     <block id="0x4A" name="Glowing Redstone Ore" color="0xab2829" />
-    <block id="0x4E" name="Snow (layer)" color="0xc1c1c1" solid="0" />
+    <block id="0x4E" name="Snow (layer)" color="0xefefff" solid="0" />
     <block id="0x4F" name="Ice" color="0x0cf5ed" />
-    <block id="0x50" name="Snow" color="0xf0f0f0" />
+    <block id="0x50" name="Snow" color="0xe0e0f0" />
     <block id="0x51" name="Cactus" color="0x116713" solid="0" />
     <block id="0x52" name="Clay (block)" color="0x91aeb4" />
     <block id="0x53" name="Sugar Cane" color="0x4ee547" solid="0" />
-    <block id="0x55" name="Fence" color="0x606060" solid="0" />
-    <block id="0x56" name="Pumpkin" color="0xfbad26" />  // *S
+    <block id="0x55" name="Fence" color="0xbc8a16" solid="0" />
+    <block id="0x56" name="Pumpkin" color="0xfe9300" />  // *S
     <block id="0x57" name="Netherrack" color="0xc6475f" />
     <block id="0x58" name="Soul Sand" color="0x9f6969" />
     <block id="0x59" name="Glowstone" color="0xfafa9c" />
     <block id="0x5A" name="Nether Portal" color="0xffa0ff" solid="0" />
-    <block id="0x5B" name="Jack o'Lantern" color="0xfd9501" /> // *S
+    <block id="0x5B" name="Jack o'Lantern" color="0xffb854" /> // *S
     <block id="0x5C" name="Cake" solid="0" color="0xe4b8c4" /> // *S
-    <block id="0x5F" name="TBD - MCPE=Invisible Bedrock / MCPC=Stained Glass" color="0x161616" />
+    <block id="0x5F" name="TBD - MCPE=Invisible Bedrock / MCPC=Stained Glass" color="0x282828" />
     <block id="0x60" name="Trapdoor" solid="0" color="0x9e9678" /> // *S
     <block id="0x61" name="Monster Egg" /> //todo
     <block id="0x62" name="Stone Brick" color="0xb6b6b0" /> // *D *B
     <block id="0x63" name="Brown Mushroom (block)" color="0xcaa761" />
     <block id="0x64" name="Red Mushroom (block)" color="0xfe9c9b" />
     <block id="0x65" name="Iron Bars" solid="0" color="0xd6d5d3" />
-    <block id="0x66" name="Glass Pane" color="0xd1d1d1" solid="0" />
+    <block id="0x66" name="Glass Pane" color="0xf8f8f8" solid="0" />
     <block id="0x67" name="Melon" color="0x73d86c" />
     <block id="0x68" name="Pumpkin Stem" color="0xa6a96f" solid="0" /> // *S
     <block id="0x69" name="Melon Stem" color="0xa6a96e" solid="0" /> // *S
@@ -409,38 +409,38 @@
     <biome id="0x00" name="Ocean" color="0x8b92dd" />
     <biome id="0x01" name="Plains" color="0x1f953e" />
     <biome id="0x02" name="Desert" color="0xede586" />
-    <biome id="0x03" name="Extreme Hills" color="0xc0c0c0" />
+    <biome id="0x03" name="Extreme Hills" color="0xa0a0a0" />
     <biome id="0x04" name="Forest" color="0x184d1e" />
     <biome id="0x05" name="Taiga" color="0x7fae7c" />
     <biome id="0x06" name="Swampland" color="0x694268" />
     <biome id="0x07" name="River" color="0x616699" />
-    <biome id="0x08" name="Hell" color="0xfe4141" />
+    <biome id="0x08" name="Hell" color="0xa00000" />
     <biome id="0x09" name="The End" color="0xd1d28a" />
-    <biome id="0x0a" name="FrozenOcean" color="0x0cf5ed" />
-    <biome id="0x0b" name="FrozenRiver" color="0xabedeb" />
+    <biome id="0x0a" name="Frozen Ocean" color="0x0cf5ed" />
+    <biome id="0x0b" name="Frozen River" color="0xabedeb" />
     <biome id="0x0c" name="Ice Plains" color="0xf0f0f0" />
     <biome id="0x0d" name="Ice Mountains" color="0xe0e0e0" />
-    <biome id="0x0e" name="MushroomIsland" color="0xfe9c9c" />
-    <biome id="0x0f" name="MushroomIslandShore" color="0xf8c0c0" />
+    <biome id="0x0e" name="Mushroom Island" color="0xff1c1c" />
+    <biome id="0x0f" name="Mushroom Island Shore" color="0xff5050" />
     <biome id="0x10" name="Beach" color="0xffd37e" />
-    <biome id="0x11" name="DesertHills" color="0xd6cd63" />
-    <biome id="0x12" name="ForestHills" color="0x2e6535" />
-    <biome id="0x13" name="TaigaHills" color="0x8ead8c" />
-    <biome id="0x14" name="Extreme Hills Edge" color="0xd0d0d0" />
+    <biome id="0x11" name="Desert Hills" color="0xd6cd63" />
+    <biome id="0x12" name="Forest Hills" color="0x2e6535" />
+    <biome id="0x13" name="Taiga Hills" color="0x8ead8c" />
+    <biome id="0x14" name="Extreme Hills Edge" color="0x909090" />
     <biome id="0x15" name="Jungle" color="0x04a51e" />
-    <biome id="0x16" name="JungleHills" color="0x036c14" />
-    <biome id="0x17" name="JungleEdge" color="0x21ab38" />
+    <biome id="0x16" name="Jungle Hills" color="0x036c14" />
+    <biome id="0x17" name="Jungle Edge" color="0x21ab38" />
     <biome id="0x18" name="Deep Ocean" color="0x3644d8" />
-    <biome id="0x19" name="Stone Beach" color="0xa0a0a0" />
-    <biome id="0x1a" name="Cold Beach" color="0xd8d8d8" />
+    <biome id="0x19" name="Stone Beach" color="0x808080" />
+    <biome id="0x1a" name="Cold Beach" color="0xe0e0ff" />
     <biome id="0x1b" name="Birch Forest" color="0x8af98f" />
     <biome id="0x1c" name="Birch Forest Hills" color="0x90e294" />
     <biome id="0x1d" name="Roofed Forest" color="0x1f7b23" />
-    <biome id="0x1e" name="Cold Taiga" color="0xc7dac5" />
-    <biome id="0x1f" name="Cold Taiga Hills" color="0xb5c9b4" />
+    <biome id="0x1e" name="Cold Taiga" color="0xd0d0f0" />
+    <biome id="0x1f" name="Cold Taiga Hills" color="0xa0a0c0" />
     <biome id="0x20" name="Mega Taiga" color="0x45390a" />
     <biome id="0x21" name="Mega Taiga Hills" color="0x76641b" />
-    <biome id="0x22" name="Extreme Hills+" color="0xc8c8c8" />
+    <biome id="0x22" name="Extreme Hills+" color="0xb0b0b0" />
     <biome id="0x23" name="Savanna" color="0x80b21f" />
     <biome id="0x24" name="Savanna Plateau" color="0x9ac548" />
     <biome id="0x25" name="Mesa" color="0xb75252" />
@@ -450,8 +450,8 @@
     <biome id="0x80" name="Plains M" color="0x2faf51" />
     <biome id="0x81" name="Sunflower Plains" color="0xf8f12c" />
     <biome id="0x82" name="Desert M" color="0xb8b270" />
-    <biome id="0x83" name="Extreme Hills M" color="0xb8b8b8" />
-    <biome id="0x84" name="Flower Forest" color="0xcd98c9" />
+    <biome id="0x83" name="Extreme Hills M" color="0xc0c0c0" />
+    <biome id="0x84" name="Flower Forest" color="0xfd893c" />
     <biome id="0x85" name="Taiga M" color="0x84c280" />
     <biome id="0x86" name="Swampland M" color="0x936396" />
     <biome id="0x8c" name="Ice Plains Spikes" color="0x02cffd" />
@@ -460,10 +460,10 @@
     <biome id="0x9b" name="Birch Forest M" color="0x9de2a0" />
     <biome id="0x9c" name="Birch Forest Hills M" color="0x83bb85" />
     <biome id="0x9d" name="Roofed Forest M" color="0x15901a" />
-    <biome id="0x9e" name="Cold Taiga M" color="0xbdd9ba" />
+    <biome id="0x9e" name="Cold Taiga M" color="0x9090b0" />
     <biome id="0xa0" name="Mega Spruce Taiga" color="0x538a4d" />
     <biome id="0xa1" name="Redwood Taiga Hills M" color="0x576c54" />
-    <biome id="0xa2" name="Extreme Hills+ M" color="0xcacaca" />
+    <biome id="0xa2" name="Extreme Hills+ M" color="0xd0d0d0" />
     <biome id="0xa3" name="Savanna M" color="0x96b25e" />
     <biome id="0xa4" name="Savanna Plateau M" color="0x7f9652" />
     <biome id="0xa5" name="Mesa (Bryce)" color="0xd18383" />

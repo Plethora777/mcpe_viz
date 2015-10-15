@@ -14,12 +14,12 @@ if(MCPE_VIZ_WIN32)
   # win32 build
   if(MCPE_VIZ_DEBUG)
     message("Build: WIN32 DEBUG")
-    add_definitions(-g -Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN32 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+    add_definitions(-g -Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN32 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
     set(CMAKE_BUILD_TYPE Debug)
   else()
     message("Build: WIN32")
     # todo - can -O2 work?
-    add_definitions(-Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN32 -O1 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+    add_definitions(-Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN32 -O1 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
   endif()
   
 elseif(MCPE_VIZ_WIN64)
@@ -27,12 +27,12 @@ elseif(MCPE_VIZ_WIN64)
   # win64 build
   if(MCPE_VIZ_DEBUG)
     message("Build: WIN64 DEBUG")
-    add_definitions(-g -Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN64 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
+    add_definitions(-g -Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN64 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
     set(CMAKE_BUILD_TYPE Debug)
   else()
     message("Build: WIN64")
     # todo - can -O2 work?
-    add_definitions(-Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN64 -O1 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
+    add_definitions(-Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -DWIN64 -O1 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
   endif()
   
 else()
@@ -40,14 +40,14 @@ else()
     
     # debug/valgrind
     message("Build: DEBUG")
-    add_definitions(-Wall -O0 -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread)
+    add_definitions(-Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -O0 -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread)
     set(CMAKE_BUILD_TYPE Debug)
     
   elseif(MCPE_VIZ_PROFILE)
     
     # gprof profiling
     message("Build: PROFILE")
-    add_definitions(-Wall -pg -O0 -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread)
+    add_definitions(-Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -pg -O0 -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread)
     set(CMAKE_BUILD_TYPE Debug)
     set(CMAKE_EXE_LINKER_FLAGS -pg)
     
@@ -55,7 +55,7 @@ else()
     
     # default linux build
     message("Build: REGULAR")
-    add_definitions(-Wall -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -O2)
+    add_definitions(-Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -std=c++11 -DDLLX= -fno-builtin-memcmp -pthread -O2)
     
   endif()
 endif()

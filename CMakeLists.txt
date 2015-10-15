@@ -117,13 +117,10 @@ if(MCPE_VIZ_WIN32)
   #  )
   add_custom_target(create_zip ALL COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win32.zip" --format=zip
-    "./mcpe_viz.exe"
-    "./mcpe_viz.cfg"
-    "./mcpe_viz.xml"
-    "./mcpe_viz.*"
-    "./*.dll"
-    "./README.txt"
-    "./LICENSE.txt"
+    "mcpe_viz.*"
+    "*.dll"
+    "README.txt"
+    "LICENSE.txt"
     DEPENDS mcpe_viz.exe
     )
 elseif(MCPE_VIZ_WIN64)
@@ -133,13 +130,10 @@ elseif(MCPE_VIZ_WIN64)
   configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
   add_custom_target(create_zip ALL COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win64.zip" --format=zip
-    "./mcpe_viz.exe"
-    "./mcpe_viz.cfg"
-    "./mcpe_viz.xml"
-    "./mcpe_viz.*"
-    "./*.dll"
-    "./README.txt"
-    "./LICENSE.txt"
+    "mcpe_viz.*"
+    "*.dll"
+    "README.txt"
+    "LICENSE.txt"
     DEPENDS mcpe_viz.exe
     )
 endif()

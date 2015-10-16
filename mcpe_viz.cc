@@ -12,22 +12,14 @@
 
   todobig
 
-  * adapt all abort() calls to something more graceful
-
-  * use colortest to fix colors
-
-  * learn about push_back / emplace_back etc
-
-  * find better hsl/hsv to/from rgb funcs
+  * simple gui -- db location; output path; output basename; checkbox: all images, html, html-most, html-all
+  -- https://wiki.qt.io/Qt_for_Beginners
 
   * xml <block> needs to be expanded to allow block_data values so that we can get complete info (e.g. wood types)
   -- block[id][block_data] = foo
   -- compare wiki re block info for mc vs mcpe
   -- same for items + entities
   -- THIS: perhaps <block ...><variant .../></block>?
-
-  * it takes a loooong time to do a full html - 47 minutes?!
-  -- try to do it as we parse the chunks? (temp disk space requirement is *huge*)
 
   * parse potions etc in inventories etc
 
@@ -52,6 +44,8 @@
 
   * adapt for MCPC?
 
+  * find better hsl/hsv to/from rgb funcs
+
   todo
 
   ** cmdline options:
@@ -74,6 +68,13 @@
   ** osx build? cross compile tools look kinda horrible; see https://www.macports.org/
 
   */
+
+// define this to use memcpy instead of manual copy of individual pixel values
+// todobig - update all pixel copy to use this
+// todobig todohere - test this again after profiling to see if there is a convincing reason to do one or the other
+// undefined = 374.546u 13.855s 6:55.84 93.3%  0+0k 2536+1658912io 1pf+0w
+// defined   = 372.824u 13.412s 6:53.63 93.3%  0+0k 2536+1658912io 1pf+0w
+#define PIXEL_COPY_MEMCPY
 
 #include <stdio.h>
 #include <libgen.h>
@@ -234,8 +235,10 @@ int copyFile ( const std::string fnSrc, const std::string fnDest ) {
 namespace mcpe_viz {
   namespace {
 
-    static const std::string version("mcpe_viz v0.0.5 by Plethora777");
+    static const std::string version("mcpe_viz v0.0.6 by Plethora777");
 
+    std::string globalLevelName = "(Unknown)";
+    
     std::vector<std::string> listGeoJSON;
 
     int32_t playerPositionImageX=0, playerPositionImageY=0;
@@ -290,7 +293,6 @@ namespace mcpe_viz {
       int doImageGrass;
       int doImageHeightCol;
       int doImageHeightColGrayscale;
-      // todo height image using topBlockY
       int doImageLightBlock;
       int doImageLightSky;
       bool shortRunFlag;
@@ -368,7 +370,7 @@ namespace mcpe_viz {
 	fpLog = stdout;
 	fpGeoJSON = nullptr;
 
-	// todo - param for this
+	// todo - cmdline option for this?
 	heightMode = kHeightModeTop;
 	
 	for (int did=0; did < kDimIdCount; did++) {
@@ -458,23 +460,40 @@ namespace mcpe_viz {
       ~PngHelper() {
 	close();
       }
-      int init(std::string xfn, int w, int h, int numRowPointers) {
+      int init(const std::string xfn, const std::string imageDescription, int w, int h, int numRowPointers) {
 	fn = std::string(xfn);
-	return open(w,h,numRowPointers);
+	return open(imageDescription,w,h,numRowPointers);
       }
-      int open(int width, int height, int numRowPointers) {
+      int open(const std::string imageDescription, int width, int height, int numRowPointers) {
 	fp = fopen(fn.c_str(), "wb");
 	if(!fp) {
 	  fprintf(stderr,"ERROR: Failed to open output file (%s)\n", fn.c_str());
 	  return -1;
 	}
 	
+	// todo - add handlers for warn/err etc?
+	/*
+	  png_structp   png_create_write_struct   (
+	  png_const_charp   user_png_ver,  
+	  png_voidp  error_ptr,  
+	  png_error_ptr  error_fn, 
+	  png_error_ptr warn_fn);
+	*/
 	png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (!png) abort();
+	if (!png) {
+	  fprintf(stderr,"ERROR: Failed png_create_write_struct\n");
+	  fclose(fp);
+	  return -2;
+	}
 	
 	info = png_create_info_struct(png);
-	if (!info) abort();
+	if (!info) {
+	  fprintf(stderr,"ERROR: Failed png_create_info_struct\n");
+	  fclose(fp);
+	  return -2;
+	}
 	
+	// todobig - can we do something more clever here?
 	if (setjmp(png_jmpbuf(png))) abort();
 	
 	png_init_io(png, fp);
@@ -490,6 +509,18 @@ namespace mcpe_viz {
 		     PNG_COMPRESSION_TYPE_DEFAULT,
 		     PNG_FILTER_TYPE_DEFAULT
 		     );
+
+	// note: the following two options have a *significant* impact on speed with a minimal cost in filesize
+	//png_set_compression_level(png, Z_BEST_COMPRESSION);
+	png_set_compression_level(png, 1); // speed!
+	png_set_filter(png, 0, PNG_FILTER_NONE);
+
+	// add text comments to png
+	addText("Program", version);
+	addText("Description", imageDescription);
+	addText("URL", "https://github.com/Plethora777/mcpe_viz");
+	// todo - other text?
+
 	png_write_info(png, info);
 	
 	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
@@ -507,6 +538,22 @@ namespace mcpe_viz {
 	openFlag = false;
 	return 0;
       }
+      int addText(const std::string key, const std::string val) {
+	png_text text[1];
+	char* skey = new char[key.size()+1];
+	strcpy(skey, key.c_str());
+	char* sval = new char[val.size()+1];
+	strcpy(sval, val.c_str());
+
+	text[0].compression = PNG_TEXT_COMPRESSION_NONE;
+	text[0].key = skey;
+	text[0].text = sval;
+	png_set_text(png, info, text, 1);
+
+	delete [] skey;
+	delete [] sval;
+	return 0;
+      }      
     };
 
     
@@ -719,13 +766,12 @@ namespace mcpe_viz {
 
     
     inline int _calcOffset(int x, int z, int y) {
-      // todo - correct calc here? shouldn't it be z*16?!
       return (((x*16) + z)*128) + y;
     }
     
-    inline int _calcOffset(int x, int z) {
-      // todo - correct calc here? shouldn't it be z*16?!
-      return (x*16) + z;
+    inline int _calcOffset2(int x, int z) {
+      // NOTE! this is the OPPOSITE block data (oy)
+      return (z*16) + x;
     }
 
     inline uint8_t getBlockId(const char* p, int x, int z, int y) {
@@ -772,14 +818,14 @@ namespace mcpe_viz {
 
     // todo - height of top *solid* block? (e.g. a glass block will NOT be the top block here)
     uint8_t getColData1(const char *buf, int x, int z) {
-      int off = _calcOffset(x,z);
+      int off = _calcOffset2(x,z);
       int8_t v = buf[32768 + 16384 + 16384 + 16384 + off];
       return v;
     }
 
     // todo - this is 4-bytes: lsb is biome, the high 3-bytes are RGB grass color
-    int32_t getColData2(const char *buf, int x, int z) {
-      int off = _calcOffset(x,z) * 4;
+    uint32_t getColData2(const char *buf, int x, int z) {
+      int off = _calcOffset2(x,z) * 4;
       int32_t v;
       memcpy(&v,&buf[32768 + 16384 + 16384 + 16384 + 256 + off],4);
       return v;
@@ -1013,8 +1059,9 @@ namespace mcpe_viz {
 	maxChunkX = std::max(maxChunkX, chunkX);
 	maxChunkZ = std::max(maxChunkZ, chunkZ);
 
-	std::unique_ptr<ChunkData> tmp(new ChunkData(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY, height, topLight));
-	list.push_back( std::move(tmp) );
+	// todobig emplace_back?
+	list.push_back( std::unique_ptr<ChunkData>
+			(new ChunkData(chunkX, chunkZ, topBlock, blockData, grassAndBiome, topBlockY, height, topLight)) );
       }
 
       
@@ -1054,57 +1101,63 @@ namespace mcpe_viz {
 	}
       }
 
-      int outputPNG(const std::string fname, uint8_t* buf, int width, int height) {
-	const char* filename = fname.c_str();
-	png_bytep *row_pointers;
+      std::string makeImageDescription(int imageMode, int layerNumber) {
+	std::string ret = "MCPE Viz Image -- World=(" + globalLevelName +")";
+	ret += " Dimension=(" + name + ")";
+	ret += " Image=(";
+	switch ( imageMode ) {
+	case kImageModeTerrain:
+	  ret += "Overview Map";
+	  break;
+	case kImageModeBiome:
+	  ret += "Biome Map";
+	  break;
+	case kImageModeGrass:
+	  ret += "Grass Color Map";
+	  break;
+	case kImageModeHeightCol:
+	  ret += "Top Block Height Map";
+	  break;
+	case kImageModeHeightColGrayscale:
+	  ret += "Top Block Height Map (grayscale)";
+	  break;
+	case kImageModeBlockLight:
+	  ret += "Top Block Light Map";
+	  break;
+	case kImageModeSkyLight:
+	  ret += "Top Block Sky Light Map";
+	  break;
+	case -1:
+	  // special marker for raw layers
+	  {
+	    char tmpstring[256];
+	    sprintf(tmpstring,"Raw Layer %d", layerNumber);
+	    ret += tmpstring;
+	  }
+	  break;
+	default:
+	  {
+	    char tmpstring[256];
+	    sprintf(tmpstring,"UNKNOWN: ImageMode=%d", imageMode);
+	    ret += tmpstring;
+	  }
+	  break;
+	}
+	ret += ")";
+	return ret;
+      }
+    
       
-	FILE *fp = fopen(filename, "wb");
-	if(!fp) {
-	  fprintf(stderr,"ERROR: Failed to open output file (%s)\n", filename);
+      int outputPNG(const std::string fname, const std::string imageDescription, uint8_t* buf, int width, int height) {
+	PngHelper png;
+	if ( png.init(fname, imageDescription, width, height, height) != 0 ) {
 	  return -1;
 	}
-      
-	png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (!png) abort();
-      
-	png_infop info = png_create_info_struct(png);
-	if (!info) abort();
-      
-	if (setjmp(png_jmpbuf(png))) abort();
-      
-	png_init_io(png, fp);
-      
-	// Output is 8bit depth, RGB format.
-	png_set_IHDR(
-		     png,
-		     info,
-		     width, height,
-		     8,
-		     PNG_COLOR_TYPE_RGB,
-		     PNG_INTERLACE_NONE,
-		     PNG_COMPRESSION_TYPE_DEFAULT,
-		     PNG_FILTER_TYPE_DEFAULT
-		     );
-	png_write_info(png, info);
-      
-	// To remove the alpha channel for PNG_COLOR_TYPE_RGB format,
-	// Use png_set_filler().
-	//png_set_filler(png, 0, PNG_FILLER_AFTER);
-
-	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
 	for(int y = 0; y < height; y++) {
-	  row_pointers[y] = &buf[ y * width * 3 ];
+	  png.row_pointers[y] = &buf[ y * width * 3 ];
 	}
-      
-	png_write_image(png, row_pointers);
-	png_write_end(png, info);
-
-	png_destroy_write_struct(&png, &info);
-
-	free(row_pointers);
-      
-	fclose(fp);
-
+	png_write_image(png.png, png.row_pointers);
+	png.close();
 	return 0;
       }
 
@@ -1133,8 +1186,12 @@ namespace mcpe_viz {
 	  for (int cz=0; cz < 16; cz++) {
 	    for (int cx=0; cx < 16; cx++) {
 
-	      // todo - this conditional inside an inner loop, not so good
+	      // todobig todohere - we could do the same thing we do w/ genSlices here -- open a png for each file and do it in one pass
+	      // todobig todohere - actually -- we could do it all in one pass (individual images + raw layers)
+	      // todobig todohere - acutally, actually -- we could EVERYTHING (but initial key scan) in one pass: do images here, then iterate over chunkspace again looking for items that populate geojson list
 	      
+	      // todo - this conditional inside an inner loop, not so good
+
 	      if ( imageMode == kImageModeBiome ) {
 		// get biome color
 		int biomeId = it->grassAndBiome[cx][cz] & 0xff;
@@ -1153,7 +1210,7 @@ namespace mcpe_viz {
 	      else if ( imageMode == kImageModeHeightCol ) {
 		// get height value and use red-black-green palette
 		if ( control.heightMode == kHeightModeTop ) {
-		  uint8_t c = it->topBlockY[cz][cx];
+		  uint8_t c = it->topBlockY[cx][cz];
 		  color = palRedBlackGreen[c];
 		} else {
 		  uint8_t c = it->heightCol[cx][cz];
@@ -1163,31 +1220,31 @@ namespace mcpe_viz {
 	      else if ( imageMode == kImageModeHeightColGrayscale ) {
 		// get height value and make it grayscale
 		if ( control.heightMode == kHeightModeTop ) {
-		  uint8_t c = it->topBlockY[cz][cx];
-		  color = htobe32( (c << 16) | (c << 8) | c );
+		  uint8_t c = it->topBlockY[cx][cz];
+		  color = (c << 24) | (c << 16) | (c << 8);
 		} else {
 		  uint8_t c = it->heightCol[cx][cz];
-		  color = htobe32( (c << 16) | (c << 8) | c );
+		  color = (c << 24) | (c << 16) | (c << 8);
 		}
 	      }
 	      else if ( imageMode == kImageModeBlockLight ) {
 		// get block light value and expand it (is only 4-bits)
 		// todobig - why z/x here and x/z everywhere else... hmmm
-		uint8_t c = (it->topLight[cz][cx] & 0x0f) << 4;
-		color = htobe32( (c << 16) | (c << 8) | c );
+		uint8_t c = (it->topLight[cx][cz] & 0x0f) << 4;
+		color = (c << 24) | (c << 16) | (c << 8);
 	      }
 	      else if ( imageMode == kImageModeSkyLight ) {
 		// get sky light value and expand it (is only 4-bits)
 		// todobig - why z/x here and x/z everywhere else... hmmm
-		uint8_t c = (it->topLight[cz][cx] & 0xf0);
-		color = htobe32( (c << 16) | (c << 8) | c );
+		uint8_t c = (it->topLight[cx][cz] & 0xf0);
+		color = (c << 24) | (c << 16) | (c << 8);
 	      }
 	      else {
 		// regular image
-		int blockid = it->blocks[cz][cx];
+		int blockid = it->blocks[cx][cz];
 		
 		if ( blockInfoList[blockid].lookupColorFlag ) {
-		  int blockdata = it->data[cz][cx];
+		  int blockdata = it->data[cx][cz];
 		  color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
 		} else {
 		  color = blockInfoList[blockid].color;
@@ -1236,7 +1293,7 @@ namespace mcpe_viz {
 	}
 	
 	// output the image
-	outputPNG(fname, buf, imageW, imageH);
+	outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH);
 
 	delete [] buf;
 
@@ -1249,185 +1306,6 @@ namespace mcpe_viz {
 	}
       }
 
-#if 0
-      // todo - we should see about doing this as temp img files w/ one pass thru the chunks; then create png from the temp img files
-      // todo - this is similar to generateMovie, but to save time we build temp img file as we go
-      // todo - a valiant effort, but this uses a ridiculous amount of disk space (e.g. 25gb for "another1")
-      int32_t gs_obsolete(leveldb::DB* db, const std::string fname) {
-	const int32_t chunkOffsetX = -minChunkX;
-	const int32_t chunkOffsetZ = -minChunkZ;
-	
-	const int chunkW = (maxChunkX-minChunkX+1);
-	const int chunkH = (maxChunkZ-minChunkZ+1);
-	const int imageW = chunkW * 16;
-	const int imageH = chunkH * 16;
-
-	fprintf(stderr,"  Generate Slices\n");
-
-	uint8_t* buf = new uint8_t[ imageW * imageH * 3 ];
-	memset(buf, 0, imageW*imageH*3);
-	
-	// create our temp files
-	fprintf(stderr,"    Create temp files (dirTemp=%s)\n", control.dirTemp.c_str());
-	int32_t tmpId = (int32_t)time(NULL);
-	char tmpstring[1025];
-	std::string listFnTemp[128];
-	int fdTemp[128];
-	for (int cy=0; cy < 128; cy++) {
-	  sprintf(tmpstring,"%s/mcpe_viz.temp.%d.L%03d.D%d.raw",control.dirTemp.c_str(), tmpId,cy,dimId);
-	  listFnTemp[cy] = tmpstring;
-	  fdTemp[cy] = open(tmpstring, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	  if ( fdTemp[cy] < 0 ) {
-	    fprintf(stderr,"ERROR: Failed to open temp file for write (%s) (errno=%d)\n", tmpstring, errno);
-	    // clean up other temp files
-	    for ( int ty=0; ty < cy; ty++ ) {
-	      close(fdTemp[ty]);
-	      unlink(listFnTemp[ty].c_str());
-	    }
-	    return -1;
-	  } else {
-	    // file the entire temp image with 0 (to init data that might not get touched otherwise)
-	    for (int ty=0; ty < imageH; ty++) {
-	      write(fdTemp[cy], buf, imageW*3);
-	    }
-	  }
-	}
-	
-	leveldb::ReadOptions readOptions;
-	readOptions.fill_cache=false; // may improve performance?
-
-	std::string svalue;
-	const char* pchunk = nullptr;
-	
-	int32_t color;
-	const char *pcolor = (const char*)&color;
-
-	fprintf(stderr,"    Read chunks...\n");
-	int32_t totalChunks = list.size();
-	int32_t currChunk = 0;
-	for ( const auto& it : list ) {
-	  int imageX = (it->chunkX + chunkOffsetX) * 16;
-	  int imageZ = (it->chunkZ + chunkOffsetZ) * 16;
-
-	  if ( ( ++currChunk % 5000) == 0 ) {
-	    fprintf(stderr,"    Read chunk %d / %d\n", currChunk, totalChunks);
-	  }
-	  
-	  // get the chunk
-	  // construct key
-	  char keybuf[20];
-	  int keybuflen;
-	  int32_t kx = it->chunkX, kz=it->chunkZ, kw=dimId;
-	  uint8_t kt=0x30;
-	  switch (dimId) {
-	  case kDimIdOverworld:
-	    //overworld
-	    memcpy(&keybuf[0],&kx,sizeof(int32_t));
-	    memcpy(&keybuf[4],&kz,sizeof(int32_t));
-	    memcpy(&keybuf[8],&kt,sizeof(uint8_t));
-	    keybuflen=9;
-	    break;
-	  default:
-	    // nether
-	    memcpy(&keybuf[0],&kx,sizeof(int32_t));
-	    memcpy(&keybuf[4],&kz,sizeof(int32_t));
-	    memcpy(&keybuf[8],&kw,sizeof(int32_t));
-	    memcpy(&keybuf[12],&kt,sizeof(uint8_t));
-	    keybuflen=13;
-	    break;
-	  }
-	  leveldb::Slice key(keybuf,keybuflen);
-	  leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
-	  assert(dstatus.ok());
-	  pchunk = svalue.data();
-	  
-	  for (int cy=0; cy < 128; cy++) {
-
-	    // todo - be more clever about the seek? (seek on z change only etc
-	    lseek(fdTemp[cy], (((imageZ) * imageW) + (imageX)) * 3, SEEK_SET);
-	      
-	    for (int cz=0; cz < 16; cz++) {
-
-	      for (int cx=0; cx < 16; cx++) {
-		
-		uint8_t blockid = getBlockId(pchunk, cx,cz,cy);
-
-		if ( blockid == 0 && ( cy > it->topBlockY[cz][cx] ) && (dimId != kDimIdNether) ) {
-		  // special handling for air -- keep existing value if we are above top block
-		  // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
-		  // however, we do NOT do this for the nether. because: the nether
-		} else {
-		  
-		  if ( blockInfoList[blockid].lookupColorFlag ) {
-		    uint8_t blockdata = getBlockData(pchunk, cx,cz,cy);
-		    color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
-		  } else {
-		    color = blockInfoList[blockid].color;
-		  }
-		  
-		  // do grid lines
-		  if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
-		    if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
-		      // highlight (0,0)
-		      color = htobe32(0xeb3333);
-		    } else {
-		      color = htobe32(0xc1ffc4);
-		    }
-		  }
-		  
-		  write(fdTemp[cy],&pcolor[1],3);
-		}
-	      }
-	    }
-	  }
-	}
-
-	// we have gone thru all the chunks and created all the temp files
-
-	// close files
-	for (int cy=0; cy < 128; cy++) {
-	  close(fdTemp[cy]);
-	}
-	  
-	// now process all the temp files
-	// note RGB pixels
-
-	for (int cy=0; cy < 128; cy++) {
-	  
-	  fprintf(stderr,"  Creating layer %d\n", cy);
-	  
-	  // copy file to buf for png
-	  FILE* fp = fopen(listFnTemp[cy].c_str(),"rb");
-	  uint8_t* p = buf;
-	  for (int iy=0; iy < imageH; iy++) {
-	    fread(p, 3, imageW, fp);
-	    p+=imageW*3;
-	  }
-	  fclose(fp);
-	  
-	  // create png
-	  std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";
-	  fnameTmp += "full.";
-	  fnameTmp += name;
-	  fnameTmp += ".";
-	  char xtmp[100];
-	  sprintf(xtmp,"%03d",cy);
-	  fnameTmp += xtmp;
-	  fnameTmp += ".png";
-	  
-	  control.fnLayerRaw[dimId][cy] = fnameTmp;
-	  
-	  outputPNG(fnameTmp, buf, imageW, imageH);
-
-	  // delete temp file
-	  unlink(listFnTemp[cy].c_str());
-	}
-
-	delete [] buf;
-
-	return 0;
-      }
-#endif
 
       // a run on old code (generateMovie):
       // > time ./mcpe_viz --db another1/ --out test-all1/out1 --log log.tall1 --html-all
@@ -1438,7 +1316,35 @@ namespace mcpe_viz {
       // 957.146u 4.463s 16:30.58 97.0%  0+0k 2536+1424304io 1pf+0w
       // approx 17 minutes
 
+      // 823.212u 13.623s 14:23.86 96.8% 0+0k 2536+1423088io 1pf+0w
+      // 830.614u 13.871s 14:52.42 94.6% 0+0k 2536+1423088io 1pf+0w
+
+      // change memcpy to byte copy:
+      // 828.757u 13.842s 14:29.31 96.9% 0+0k 2536+1422656io 1pf+0w
+
+      // with -O3
+      // 827.337u 13.430s 14:27.58 96.9% 0+0k 2568+1422656io 1pf+0w
+
+      // with -O3 and png zlib set to 1 (default is 9) and filter set to NONE
+      //   with zlib=9 == 405M    test-all2
+      //   with zlib=1 == 508M    test-all2-zlib1/
+      // 392.597u 13.598s 7:07.25 95.0%  0+0k 2568+1633896io 1pf+0w
+
+      // as above, but disabled setting filter to NONE
+      //   with zlib=1 == 572M    test-all2-zlib1/
+      // 660.763u 13.799s 11:40.99 96.2% 0+0k 2568+1764624io 1pf+0w
+
+      // 402.214u 13.937s 7:26.63 93.1%  0+0k 2568+1633896io 1pf+0w
+
+      // without -O3, with zlib=1 and filter NONE
+      // 404.518u 13.369s 7:25.09 93.8%  0+0k 2536+1633896io 1pf+0w
+
+      // so we're at ~6.5x faster now
+
       int generateSlices(leveldb::DB* db) {
+	const int32_t chunkOffsetX = -minChunkX;
+	const int32_t chunkOffsetZ = -minChunkZ;
+
 	const int chunkW = (maxChunkX-minChunkX+1);
 	const int chunkH = (maxChunkZ-minChunkZ+1);
 	const int imageW = chunkW * 16;
@@ -1448,6 +1354,7 @@ namespace mcpe_viz {
 	int keybuflen;
 	int32_t kw = dimId;
 	uint8_t kt = 0x30;
+	leveldb::Status dstatus;
 	
 	fprintf(stderr,"    Writing all 128 images in one pass\n");
 	  
@@ -1473,7 +1380,7 @@ namespace mcpe_viz {
 
 	  control.fnLayerRaw[dimId][cy] = fnameTmp;
 	  
-	  png[cy].init(fnameTmp, imageW, imageH, 16);
+	  png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16);
 	}
 	
 	// create row buffers
@@ -1485,35 +1392,54 @@ namespace mcpe_viz {
 	    png[cy].row_pointers[cz] = &rbuf[cy][(cz*imageW)*3];
 	  }
 	}
-	  
-	uint8_t myChunkTopBlockY[16][16];
-	  
-	int foundCt = 0, notFoundCt1 = 0, notFoundCt2 = 0;
+
+	// create a helper buffer which contains topBlockY for the entire image
+	uint8_t currTopBlockY = 127;
+	uint8_t* tbuf = new uint8_t[imageW * imageH];
+	memset(tbuf,127,imageW*imageH);
+	for (const auto& it : list) {
+	  int32_t ix = (it->chunkX + chunkOffsetX) * 16;
+	  int32_t iz = (it->chunkZ + chunkOffsetZ) * 16;
+	  for (int cz=0; cz < 16; cz++) {
+	    for (int cx=0; cx < 16; cx++) {
+	      tbuf[(iz+cz)*imageW + (ix+cx)] = it->topBlockY[cx][cz];
+	    }
+	  }
+	};
+	
+	int foundCt = 0, notFoundCt2 = 0;
+	uint8_t blockid, blockdata;
 	  
 	// we operate on 16 rows of image z
 	int runCt = 0;
 	for (int32_t imageZ=0, chunkZ=minChunkZ; imageZ < imageH; imageZ += 16, chunkZ++) {
 
-	  if ( (++runCt % 10) == 0 ) {
+	  if ( (runCt++ % 20) == 0 ) {
 	    fprintf(stderr,"    Row %d of %d\n", imageZ, imageH);
 	  }
 	    
 	  for (int32_t imageX=0, chunkX=minChunkX; imageX < imageW; imageX += 16, chunkX++) {
 
-	    // we need to find our chunk that matches this so that we can find topBlockY
-	    // todo - could this be faster/smarter?
-	    bool foundChunk = false;
-	    for (const auto& it : list) {
-	      //fprintf(stderr,"%d %d     ", it->chunkX, it->chunkZ);
-	      if ( it->chunkX == chunkX && it->chunkZ == chunkZ ) {
-		memcpy(&myChunkTopBlockY[0][0], &it->topBlockY[0][0], 16*16);
-		foundChunk = true;
-		break;
-	      }
+	    // construct key to get the chunk
+	    if ( dimId == kDimIdOverworld ) {
+	      //overworld
+	      memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	      memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	      memcpy(&keybuf[8],&kt,sizeof(uint8_t));
+	      keybuflen=9;
+	    } else {
+	      // nether (and probably any others that are added)
+	      memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	      memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	      memcpy(&keybuf[8],&kw,sizeof(int32_t));
+	      memcpy(&keybuf[12],&kt,sizeof(uint8_t));
+	      keybuflen=13;
 	    }
-	    //fprintf(stderr,"\n");
-	    if ( ! foundChunk ) {
-	      notFoundCt1++;
+
+	    dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+	    if ( ! dstatus.ok() ) {
+	      notFoundCt2++;
+	      // fprintf(stderr,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
 	      // we need to clear this area
 	      for (int cy=0; cy < 128; cy++) {
 		for (int cz=0; cz < 16; cz++) {
@@ -1523,58 +1449,28 @@ namespace mcpe_viz {
 	      continue;
 	    }
 
-	    // get the chunk
-	    // construct key
-	    switch (dimId) {
-	    case kDimIdOverworld:
-	      //overworld
-	      memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
-	      memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
-	      memcpy(&keybuf[8],&kt,sizeof(uint8_t));
-	      keybuflen=9;
-	      break;
-	    default:
-	      // nether
-	      memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
-	      memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
-	      memcpy(&keybuf[8],&kw,sizeof(int32_t));
-	      memcpy(&keybuf[12],&kt,sizeof(uint8_t));
-	      keybuflen=13;
-	      break;
-	    }
-	    leveldb::Slice key(keybuf,keybuflen);
-	    leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
-	    if ( ! dstatus.ok() ) {
-	      notFoundCt2++;
-	      fprintf(stderr,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n",
-		      chunkX, chunkZ, dstatus.ToString().c_str());
-	      // we need to clear this area
-	      for (int cy=0; cy < 128; cy++) {
-		for (int cz=0; cz < 16; cz++) {
-		  memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
-		}
-	      }
-	      continue;
-	    }
-	    ochunk = svalue.data();
 	    pchunk = svalue.data();
+	    ochunk = pchunk;
 	    foundCt++;
 	      
 	    // we step through the chunk in the natural order to speed things up
+	    // todobig todohere - use this info to correct the cx/cz order elsewhere in code
 	    for (int cx=0; cx < 16; cx++) {
 	      for (int cz=0; cz < 16; cz++) {
+		currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX+cx];
 		for (int cy=0; cy < 128; cy++) {
-		  uint8_t blockid = *(pchunk++);
-		  
-		  if ( blockid == 0 && (cy > myChunkTopBlockY[cz][cx]) && (dimId != kDimIdNether) ) {
+		  blockid = *(pchunk++);
+		  	
+		  if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
+
 		    // special handling for air -- keep existing value if we are above top block
 		    // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
 		    // however, we do NOT do this for the nether. because: the nether
 
 		    if ( dimId != kDimIdNether ) {
 		      // we need to copy this pixel from another layer
-		      memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3],
-			     &rbuf[myChunkTopBlockY[cz][cx]][((cz*imageW) + imageX + cx)*3],
+		      memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
+			     &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
 			     3);
 		    } else {
 		      // we clear the pixel
@@ -1585,13 +1481,20 @@ namespace mcpe_viz {
 		    
 		    if ( blockInfoList[blockid].lookupColorFlag ) {
 		      // todo - do math directly instead of calling getBlockData?
-		      uint8_t blockdata = getBlockData(ochunk, cx,cz,cy);
+		      blockdata = getBlockData(ochunk, cx,cz,cy);
 		      color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
 		    } else {
 		      color = blockInfoList[blockid].color;
 		    }
-		    
+
+#ifdef PIXEL_COPY_MEMCPY
 		    memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
+#else
+		    // todo - any use in optimizing the offset calc?
+		    rbuf[cy][((cz*imageW) + imageX + cx)*3] = pcolor[1];
+		    rbuf[cy][((cz*imageW) + imageX + cx)*3 + 1] = pcolor[2];
+		    rbuf[cy][((cz*imageW) + imageX + cx)*3 + 2] = pcolor[3];
+#endif
 		  }
 		}
 	      }
@@ -1599,6 +1502,7 @@ namespace mcpe_viz {
 	  }
 	  
 	  // put the png rows
+	  // todo - png lib is SLOW - worth it to alloc a larger window (16-row increments) and write in batches?
 	  for (int cy=0; cy<128; cy++) {
 	    png_write_rows(png[cy].png, png[cy].row_pointers, 16);
 	  }
@@ -1608,6 +1512,8 @@ namespace mcpe_viz {
 	  delete [] rbuf[cy];
 	  png[cy].close();
 	}
+
+	delete [] tbuf;
 	
 	// fprintf(stderr,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
 	
@@ -1646,7 +1552,8 @@ namespace mcpe_viz {
 	uint8_t* buf = new uint8_t[ cropW * cropH * 3 ];
 	memset(buf, 0, cropW*cropH*3);
 
-	// todobig - we *could* write image data to flat files during parseDb and then convert these flat files into png here
+	// todobig - we *could* write image data to flat files during parseDb and then convert 
+	//   these flat files into png here (but temp disk space requirements are *huge*)
 
 	leveldb::ReadOptions readOptions;
 	readOptions.fill_cache=false; // may improve performance?
@@ -1699,7 +1606,9 @@ namespace mcpe_viz {
 		    }
 		    leveldb::Slice key(keybuf,keybuflen);
 		    leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
-		    assert(dstatus.ok());
+		    if (!dstatus.ok()) {
+		      fprintf(stderr,"WARNING: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+		    }
 		    pchunk = svalue.data();
 		    pchunkX = it->chunkX;
 		    pchunkZ = it->chunkZ;
@@ -1707,7 +1616,7 @@ namespace mcpe_viz {
 		 
 		  uint8_t blockid = getBlockId(pchunk, cx,cz,cy);
 
-		  if ( blockid == 0 && ( cy > it->topBlockY[cz][cx] ) && (dimId != kDimIdNether) ) {
+		  if ( blockid == 0 && ( cy > it->topBlockY[cx][cz] ) && (dimId != kDimIdNether) ) {
 		    // special handling for air -- keep existing value if we are above top block
 		    // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=127
 		    // however, we do NOT do this for the nether. because: the nether
@@ -1762,7 +1671,7 @@ namespace mcpe_viz {
 
 	  control.fnLayerRaw[dimId][cy] = fnameTmp;
 	  
-	  outputPNG(fnameTmp, buf, cropW, cropH);
+	  outputPNG(fnameTmp, makeImageDescription(-1,cy), buf, cropW, cropH);
 	}
 
 	delete [] buf;
@@ -1835,10 +1744,6 @@ namespace mcpe_viz {
 
 	if ( checkDoForDim(control.doSlices) ) {
 	  fprintf(stderr,"  Generate full-size slices\n");
-	  fprintf(stderr,"    Make yourself comfortable.  This could take a while :)\n");
-	  fprintf(stderr,"    Seriously... this is sl-o-o-o-w.  I like to optimize code.  In this case, there are a couple of ways to make it faster, but they require a gargantuan amount of temporary disk space (ImageW * ImageH * 3 * 128)...\n");
-	  fprintf(stderr,"    So... make yourself comfortable.  Maybe get a snack.\n");
-	  //generateMovie(db, std::string(""), false, false);
 	  generateSlices(db);
 	}
 	
@@ -1938,8 +1843,7 @@ namespace mcpe_viz {
 	  fprintf(control.fpLog,"LIST-%d {\n",lnum);
 	  indent++;
 	  for ( const auto& it: v ) {
-	    std::unique_ptr<nbt::tag> tt = it.get().clone();
-	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), std::move(tt) ) );
+	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), it.get().clone() ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
 	  fprintf(control.fpLog,"%s} LIST-%d\n", makeIndent(indent,hdr).c_str(), lnum);
@@ -1952,8 +1856,7 @@ namespace mcpe_viz {
 	  fprintf(control.fpLog,"COMPOUND-%d {\n",cnum);
 	  indent++;
 	  for ( const auto& it: v ) {
-	    std::unique_ptr<nbt::tag> tt = it.second.get().clone();
-	    parseNbtTag( hdr, indent, std::make_pair( it.first, std::move(tt) ) );
+	    parseNbtTag( hdr, indent, std::make_pair( it.first, it.second.get().clone() ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
 	  fprintf(control.fpLog,"%s} COMPOUND-%d\n", makeIndent(indent,hdr).c_str(),cnum);
@@ -2000,8 +1903,8 @@ namespace mcpe_viz {
       std::istream& pis = reader.get_istr();
       while ( !done && (pis) && (!pis.eof()) ) {
 	try {
-	  t = reader.read_tag();
-	  tagList.push_back(std::move(t));
+	// todobig emplace_back?
+	  tagList.push_back(reader.read_tag());
 	}
 	catch (std::exception& e) {
 	  // check for eof which means all is well
@@ -2468,7 +2371,7 @@ namespace mcpe_viz {
       int checkOtherProp(nbt::tag_compound& tc, std::string key) {
 	char tmpstring[1025];
 	if ( tc.has_key(key)) {
-	  // todo - seems silly that we have to do this:
+	  // seems silly that we have to do this:
 	  const nbt::tag_type tagType = tc[key].get_type();
 	  switch ( tagType ) {
 	  case nbt::tag_type::Byte:
@@ -2518,6 +2421,7 @@ namespace mcpe_viz {
 	    break;
 	  default:
 	    // todo - err?
+	    // items we don't parse (yet)
 	    //Byte_Array = 7,
 	    //List = 9,
 	    //Compound = 10,
@@ -3419,15 +3323,14 @@ namespace mcpe_viz {
 
 
     // note: this is an attempt to remove "bad" chunks as seen in "nyan.zip" world
-    bool legalChunkPos ( int32_t chunkX, int32_t chunkZ ) {
+    inline bool legalChunkPos ( int32_t chunkX, int32_t chunkZ ) {
       if ( (uint32_t)chunkX == 0x80000000 && (uint32_t)chunkZ == 0x80000000 ) {
 	return false;
       }
       return true;
     }
     
-    
-    // todo move this
+
     class ColorInfo {
     public:
       std::string name;
@@ -3436,7 +3339,7 @@ namespace mcpe_viz {
       double h, s, l;
       
       ColorInfo(std::string n, int32_t c) {
-	name = std::move(n);
+	name = std::string(n);
 	color = c;
 	calcHSL();
       }
@@ -3515,9 +3418,12 @@ namespace mcpe_viz {
       int dbOpen(std::string dirDb) {
 	// todobig - leveldb read-only? snapshot?
 	fprintf(stderr,"DB Open: dir=%s\n",dirDb.c_str());
-	leveldb::Status status = leveldb::DB::Open(dbOptions, std::string(dirDb+"/db"), &db);
-	fprintf(stderr,"DB Open Status: %s\n", status.ToString().c_str()); fflush(stderr);
-	assert(status.ok());
+	leveldb::Status dstatus = leveldb::DB::Open(dbOptions, std::string(dirDb+"/db"), &db);
+	fprintf(stderr,"DB Open Status: %s\n", dstatus.ToString().c_str()); fflush(stderr);
+	if (!dstatus.ok()) {
+	  fprintf(stderr,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+	  exit(-2);
+	}
 	dbReadOptions.fill_cache=false; // may improve performance?
 	return 0;
       }
@@ -3552,10 +3458,13 @@ namespace mcpe_viz {
 	int recordCt = 0;
 	// todobig - is there a faster way to enumerate the keys?
 	leveldb::Iterator* iter = db->NewIterator(dbReadOptions);
+	leveldb::Slice skey;
+	int key_size;
+	const char* key;
 	for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-	  leveldb::Slice skey = iter->key();
-	  int key_size = skey.size();
-	  const char* key = skey.data();
+	  skey = iter->key();
+	  key_size = skey.size();
+	  key = skey.data();
 	  
 	  ++recordCt;
 	  if ( control.shortRunFlag && recordCt > 1000 ) {
@@ -3585,7 +3494,9 @@ namespace mcpe_viz {
 	  }
 	}
 
-	assert(iter->status().ok());  // Check for any errors found during the scan
+	if (!iter->status().ok()) {
+	  fprintf(stderr,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
+	}
 	delete iter;
 
 	// mark bounds valid
@@ -3620,13 +3531,12 @@ namespace mcpe_viz {
 	int histoBiome[256];
 	uint8_t topBlock[16][16];
 	uint8_t topData[16][16];
-	uint32_t grassAndBiome[16][16];
 	uint8_t topSkyLight[16][16];
 	uint8_t topLight[16][16];
 	uint8_t topBlockY[16][16];
 	uint8_t topBlockLight[16][16];
 	uint8_t colData1[16][16];
-	int32_t colData2[16][16];
+	uint32_t colData2[16][16];
 
 	char tmpstring[256];
 
@@ -3661,17 +3571,24 @@ namespace mcpe_viz {
 	fprintf(stderr,"Parse all leveldb records\n");
 	MyTagList tagList;
 	int recordCt = 0;
+
+	leveldb::Slice skey, svalue;
+	int key_size, value_size;
+	const char* key;
+	const char* value;
+	std::string dimName, chunkstr;
+
 	leveldb::Iterator* iter = db->NewIterator(dbReadOptions);
 	for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
 
 	  // note: we get the raw buffer early to avoid overhead (maybe?)
-	  leveldb::Slice skey = iter->key();
-	  int key_size = (int)skey.size();
-	  const char* key = skey.data();
+	  skey = iter->key();
+	  key_size = (int)skey.size();
+	  key = skey.data();
 
-	  leveldb::Slice svalue = iter->value();
-	  int value_size = svalue.size();
-	  const char* value = svalue.data();
+	  svalue = iter->value();
+	  value_size = svalue.size();
+	  value = svalue.data();
 
 	  ++recordCt;
 	  if ( control.shortRunFlag && recordCt > 1000 ) {
@@ -3681,7 +3598,6 @@ namespace mcpe_viz {
 	    fprintf(stderr, "  Reading records: %d\n", recordCt);
 	  }
 
-	  std::string r;
 	  fprintf(control.fpLog,"\n");
 
 	  if ( strncmp(key,"BiomeData",key_size) == 0 ) {
@@ -3736,7 +3652,6 @@ namespace mcpe_viz {
 
 	    // this is probably a record we want to parse
 
-	    std::string dimName;
 	    if ( key_size == 9 ) {
 	      chunkX = myParseInt32(key, 0);
 	      chunkZ = myParseInt32(key, 4);
@@ -3762,22 +3677,18 @@ namespace mcpe_viz {
 	    } else {
 	      chunkList[chunkDimId].histoChunkType[chunkType]++;
 
-	      r = dimName + "-chunk: ";
+	      chunkstr = dimName + "-chunk: ";
 	      sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
-	      r += tmpstring;
+	      chunkstr += tmpstring;
 	      if ( true ) {
 		// show approximate image coordinates for chunk
-		int chunkOffsetX = -chunkList[chunkDimId].minChunkX;
-		int chunkOffsetZ = -chunkList[chunkDimId].maxChunkZ;
-		int imageX = (chunkX + chunkOffsetX) * 16;
-		int imageZ = (chunkZ + chunkOffsetZ) * 16;
-		int ix = (imageX);
-		int iz = (imageZ);
-		sprintf(tmpstring," (image %d %d)",ix,iz);
-		r+=tmpstring;
+		int imageX = (chunkX - chunkList[chunkDimId].minChunkX) * 16;
+		int imageZ = (chunkZ - chunkList[chunkDimId].maxChunkZ) * 16;
+		sprintf(tmpstring," (image %d %d)", imageX, imageZ);
+		chunkstr+=tmpstring;
 	      }
-	      r += "\n";
-	      fprintf(control.fpLog,r.c_str());
+	      chunkstr += "\n";
+	      fprintf(control.fpLog, chunkstr.c_str());
 
 	      switch ( chunkType ) {
 	      case 0x30:
@@ -3788,7 +3699,6 @@ namespace mcpe_viz {
 		memset(histoBiome,0,256*sizeof(int));
 		memset(topBlock,0, 16*16*sizeof(uint8_t));
 		memset(topData,0, 16*16*sizeof(uint8_t));
-		memset(grassAndBiome,0, 16*16*sizeof(uint32_t));
 		memset(topSkyLight,0, 16*16*sizeof(uint8_t));
 		memset(topBlockLight,0, 16*16*sizeof(uint8_t));
 		memset(topLight,0, 16*16*sizeof(uint8_t));
@@ -3796,21 +3706,21 @@ namespace mcpe_viz {
 	      
 		// iterate over chunk area, get data etc
 		for (int cy=127; cy >= 0; cy--) {
-		  for ( int cz=0; cz < 16; cz++ ) {
-		    for ( int cx=0; cx < 16; cx++) {
+		  for ( int cx=0; cx < 16; cx++) {
+		    for ( int cz=0; cz < 16; cz++ ) {
 		      uint8_t blockId = getBlockId(value, cx,cz,cy);
 		      histo[blockId]++;
 
 		      // todo - check for isSolid?
 		      if ( blockId != 0 ) {  // current block is NOT air
-			if ( ( topBlock[cz][cx] == 0 &&  // top block is not already set
+			if ( ( topBlock[cx][cz] == 0 &&  // top block is not already set
 			       !chunkList[chunkDimId].fastBlockHideList[blockId] ) ||
 			     chunkList[chunkDimId].fastBlockForceTopList[blockId] ) {
-			  topBlock[cz][cx] = blockId;
-			  topData[cz][cx] = getBlockData(value, cx,cz,cy);
-			  topSkyLight[cz][cx] = getBlockSkyLight(value, cx,cz,cy);
-			  topBlockLight[cz][cx] = getBlockBlockLight(value, cx,cz,cy);
-			  topBlockY[cz][cx] = cy;
+			  topBlock[cx][cz] = blockId;
+			  topData[cx][cz] = getBlockData(value, cx,cz,cy);
+			  topSkyLight[cx][cz] = getBlockSkyLight(value, cx,cz,cy);
+			  topBlockLight[cx][cz] = getBlockBlockLight(value, cx,cz,cy);
+			  topBlockY[cx][cz] = cy;
 
 			  // todo topLight here
 #if 1
@@ -3827,7 +3737,7 @@ namespace mcpe_viz {
 			  uint8_t sl = getBlockSkyLight(value, cx,cz,cy2);
 			  uint8_t bl = getBlockBlockLight(value, cx,cz,cy2);	
 			  // we combine the light nibbles into a byte
-			  topLight[cz][cx] = (sl << 4) | bl;
+			  topLight[cx][cz] = (sl << 4) | bl;
 #endif
 			}
 		      }
@@ -3836,19 +3746,19 @@ namespace mcpe_viz {
 		}
 
 		memset(colData1, 0, 16*16*sizeof(uint8_t));
-		memset(colData2, 0, 16*16*sizeof(int32_t));
-		for (int cz=0; cz < 16; cz++) {
-		  for (int cx=0; cx < 16; cx++) {
-		    colData1[cz][cx] = getColData1(value, cx,cz);
-		    colData2[cz][cx] = getColData2(value, cx,cz);
-
+		memset(colData2, 0, 16*16*sizeof(uint32_t));
+		for (int cx=0; cx < 16; cx++) {
+		  for (int cz=0; cz < 16; cz++) {
+		    colData1[cx][cz] = getColData1(value, cx,cz);
+		    colData2[cx][cz] = getColData2(value, cx,cz);
+		    
 #if 0
 		    // todo - testing idea about lighting - get lighting from top solid block - result is part good part crazy
-		    int ty = colData1[cz][cx] + 1;
+		    int ty = colData1[cx][cz] + 1;
 		    if ( ty > 127 ) { ty=127; }
 		    uint8_t sl = getBlockSkyLight(value, cx,cz,ty);
 		    uint8_t bl = getBlockBlockLight(value, cx,cz,ty);
-		    topLight[cz][cx] = (sl << 4) | bl;
+		    topLight[cx][cz] = (sl << 4) | bl;
 #endif
 		  }
 		}
@@ -3856,14 +3766,14 @@ namespace mcpe_viz {
 	    
 		// print chunk info
 		fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
+		// todobig - problem with cx/cz here?
 		for (int cz=0; cz<16; cz++) {
 		  for (int cx=0; cx<16; cx++) {
-		    int32_t rawData = colData2[cz][cx];
+		    uint32_t rawData = colData2[cx][cz];
 		    int biomeId = (int)(rawData & 0xFF);
 		    histoBiome[biomeId]++;
 		    chunkList[chunkDimId].histoGlobalBiome[biomeId]++;
-		    grassAndBiome[cz][cx] = rawData;
-		    fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cz][cx], (int)topData[cz][cx], (int)biomeId);
+		    fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cx][cz], (int)topData[cx][cz], (int)biomeId);
 		  }
 		  fprintf(control.fpLog,"\n");
 		}
@@ -3883,7 +3793,7 @@ namespace mcpe_viz {
 		fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
 		for (int cz=0; cz<16; cz++) {
 		  for (int cx=0; cx<16; cx++) {
-		    fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cz][cx], (int)topBlockLight[cz][cx]);
+		    fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cx][cz], (int)topBlockLight[cx][cz]);
 		  }
 		  fprintf(control.fpLog,"\n");
 		}
@@ -3892,8 +3802,8 @@ namespace mcpe_viz {
 		fprintf(control.fpLog,"Column Data (height-col:biome):\n");
 		for (int cz=0; cz<16; cz++) {
 		  for (int cx=0; cx<16; cx++) {
-		    int biomeId = (int)(colData2[cz][cx] & 0xFF);
-		    fprintf(control.fpLog,"%x:%02x ", (int)colData1[cz][cx], biomeId);
+		    int biomeId = (int)(colData2[cx][cz] & 0xFF);
+		    fprintf(control.fpLog,"%x:%02x ", (int)colData1[cx][cz], biomeId);
 		  }
 		  fprintf(control.fpLog,"\n");
 		}
@@ -3901,7 +3811,7 @@ namespace mcpe_viz {
 		// store chunk
 		chunkList[chunkDimId].putChunk(chunkX, chunkZ,
 					       &topBlock[0][0], &topData[0][0],
-					       &grassAndBiome[0][0], &topBlockY[0][0],
+					       &colData2[0][0], &topBlockY[0][0],
 					       &colData1[0][0], &topLight[0][0]);
 		break;
 
@@ -3996,8 +3906,9 @@ namespace mcpe_viz {
 	fprintf(stderr,"Read %d records\n", recordCt);
 	fprintf(stderr,"Status: %s\n", iter->status().ToString().c_str());
       
-	assert(iter->status().ok());  // Check for any errors found during the scan
-
+	if (!iter->status().ok()) {
+	  fprintf(stderr,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
+	}
 	delete iter;
 
 	return leveldb::Status::OK();
@@ -4147,7 +4058,6 @@ namespace mcpe_viz {
 	FILE *fp = fopen(fnOut.c_str(), "w");
 	
 	if ( !fp ) {
-	  // todo err
 	  fprintf(stderr, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
 	  return -1;
 	} 
@@ -4172,9 +4082,16 @@ namespace mcpe_viz {
 	webColorList.clear();
 	for (int i=0; i < 256; i++) {
 	  if ( blockInfoList[i].colorSetFlag ) {
-	    // webColorList.emplace_back(blockInfoList[i].name, (int32_t)be32toh(blockInfoList[i].color));
-	    webColorList.push_back( std::unique_ptr<ColorInfo>( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
+	    webColorList.push_back( std::unique_ptr<ColorInfo>
+				    ( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
 	  }
+	}
+
+	// add standard colors
+	for (int i=0; i < 16; i++) {
+	  // note: we don't need to be32toh
+	  webColorList.push_back( std::unique_ptr<ColorInfo>
+				  ( new ColorInfo("Standard Color: " + standardColorInfo[i].name, standardColorInfo[i].color) ) );
 	}
 
 	std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
@@ -4236,7 +4153,7 @@ namespace mcpe_viz {
 	const int32_t imageH = chunkH * 16;
 	
 	ix = wx + (chunkOffsetX * 16);
-	// todo - correct calc here?
+	// todobig - correct calc here?
 	iy = (imageH-1) - (wz + (chunkOffsetZ * 16));
       } else {
 	ix = wx + (chunkOffsetX * 16);
@@ -4304,6 +4221,8 @@ namespace mcpe_viz {
       memset(buf,0,1025);
       fgets(buf,1024,fp);
 
+      globalLevelName = buf;
+      
       fprintf(stderr,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
       fprintf(control.fpLog,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
       fclose(fp);
@@ -5121,8 +5040,6 @@ int main ( int argc, char **argv ) {
 
   fprintf(stderr,"%s\n",mcpe_viz::version.c_str());
 
-  mcpe_viz::escapeString("Jack o'Lantern","'");
-  
   dirExec = dirname(argv[0]);
   
   int ret = mcpe_viz::parse_args(argc, argv);
@@ -5157,7 +5074,8 @@ int main ( int argc, char **argv ) {
 
   mcpe_viz::myWorld.dbOpen(std::string(mcpe_viz::control.dirLeveldb));
 
-  // todo - we must do this, for now - we could get clever about this later
+  // todobig - we must do this, for now - we could get clever about this later
+  // todobig - we could call this deepParseDb() and only do it if the user wanted it
   if ( true || mcpe_viz::control.doDetailParseFlag ) {
     mcpe_viz::myWorld.parseDb();
   }

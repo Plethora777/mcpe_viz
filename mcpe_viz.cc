@@ -12,8 +12,9 @@
 
   todobig
 
-  * simple gui -- db location; output path; output basename; checkbox: all images, html, html-most, html-all
-  -- https://wiki.qt.io/Qt_for_Beginners
+  * check --out -- error if it is a directory
+  * see reddit test1 world -- has this:
+  -- WARNING: Did not find block variant for block(Wooden Double Slab) with blockdata=8 (0x8)
 
   * xml <block> needs to be expanded to allow block_data values so that we can get complete info (e.g. wood types)
   -- block[id][block_data] = foo
@@ -25,6 +26,11 @@
 
   * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
   -- put ALL chests in a map<x,y,z>; go through list of chests and put PairChest in matching sets and mark all as unprocessed; go thru list and do all, if PairChest mark both as done
+
+  * how to handle really large maps (e.g. someone that explores mane thousounds of chunks N and E so that result image is 30k x 30k)
+
+  * simple gui -- db location; output path; output basename; checkbox: all images, html, html-most, html-all
+  -- https://wiki.qt.io/Qt_for_Beginners
 
   * see if there is interesting info re colors for overview map: http://minecraft.gamepedia.com/Map_item_format
 
@@ -70,10 +76,7 @@
   */
 
 // define this to use memcpy instead of manual copy of individual pixel values
-// todobig - update all pixel copy to use this
-// todobig todohere - test this again after profiling to see if there is a convincing reason to do one or the other
-// undefined = 374.546u 13.855s 6:55.84 93.3%  0+0k 2536+1658912io 1pf+0w
-// defined   = 372.824u 13.412s 6:53.63 93.3%  0+0k 2536+1658912io 1pf+0w
+// memcpy appears to be approx 1.3% faster for another1 --html-all
 #define PIXEL_COPY_MEMCPY
 
 #include <stdio.h>
@@ -243,6 +246,21 @@ namespace mcpe_viz {
 
     int32_t playerPositionImageX=0, playerPositionImageY=0;
 
+    enum LogType : int32_t {
+      // todohere - be more clever about this
+      kLogInfo1 = 0x0001,
+	kLogInfo2 = 0x0002,
+	kLogInfo3 = 0x0004,
+	kLogInfo4 = 0x0008,
+	
+	kLogInfo = 0x0010,
+	kLogWarning = 0x0020,
+	kLogError = 0x0040,
+	kLogFatalError = 0x0080,
+	kLogDebug = 0x1000,
+	kLogAll = 0xffff
+	};
+    
     enum OutputType : int32_t {
       kDoOutputNone = -2,
 	kDoOutputAll = -1
@@ -307,6 +325,9 @@ namespace mcpe_viz {
       FILE *fpLog;
       FILE *fpGeoJSON;
 
+       // todohere - set this w/ cmdline params
+      int logLevelMask = kLogAll ^ (kLogDebug);
+      
       Control() {
 	init();
       }
@@ -420,10 +441,50 @@ namespace mcpe_viz {
 	  fnJs = fnOutputBase + ".js";
 	}
       }
+
+      
     };
 
     Control control;
 
+
+    // from: http://stackoverflow.com/questions/12573968/how-to-use-gccs-printf-format-attribute-with-c11-variadic-templates
+    // make gcc check calls to this function like it checks printf et al
+    __attribute__((format(printf, 2, 3)))
+    int logmsg (int levelMask, const char *fmt, ...) {
+      // check if we care about this message
+      if ( (levelMask & control.logLevelMask) || (levelMask & kLogFatalError) ) {
+	// we care
+      } else {
+	// we don't care
+	return -1;
+      }
+      
+      // todobig - be more clever about logging - if very important or interesting, we might want to print to log AND to stderr
+      // todobig - use a FILE*fp which we set to fpLog or stderr
+      FILE *fp = control.fpLog;
+      
+      if (levelMask & kLogFatalError)   { fprintf(fp,"** FATAL ERROR: "); }
+      else if (levelMask & kLogError)   { fprintf(fp,"ERROR: "); }
+      else if (levelMask & kLogWarning) { fprintf(fp,"WARNING: "); }
+      else if (levelMask & kLogInfo)    { } // fprintf(fp,"INFO: "); }
+      else                              { } // fprintf(fp,"UNKNOWN: "); }
+      
+      va_list argptr;
+      va_start(argptr,fmt);
+      vfprintf(fp,fmt,argptr);
+      va_end(argptr);
+      fputc('\n',fp);
+      
+      if (levelMask & kLogFatalError) {
+	fprintf(fp,"** Exiting on FATAL ERROR\n");
+	fflush(fp);
+	exit(-1);
+      }
+      
+      return 0;
+    }
+    
     
     // nbt parsing helpers
     int globalNbtListNumber=0;
@@ -557,22 +618,6 @@ namespace mcpe_viz {
     };
 
     
-    class StandardColorInfo {
-    public:
-      std::string name;
-      int32_t color;
-      StandardColorInfo() {
-	name = "(unknown)";
-	setColor(kColorDefault);
-      }
-      StandardColorInfo& setColor(int32_t rgb) {
-	// note: we DO NOT convert color because we'll probably need to adjust it
-	color = rgb;
-	return *this;
-      }
-    };
-    StandardColorInfo standardColorInfo[16];
-
     // these are read from level.dat
     int32_t worldSpawnX = 0;
     int32_t worldSpawnY = 0;
@@ -749,10 +794,10 @@ namespace mcpe_viz {
     
     void makePalettes() {
       // create red-green ramp; red to black and then black to green
-      makeHslRamp(palRedBlackGreen,  0,  63, 0.0,0.0, 0.9,0.9, 0.8,0.1);
-      makeHslRamp(palRedBlackGreen, 64, 127, 0.4,0.4, 0.9,0.9, 0.1,0.8);
-      // force 63 (sea level) to gray
-      palRedBlackGreen[63]=0x202020;
+      makeHslRamp(palRedBlackGreen,  0,  61, 0.0,0.0, 0.9,0.9, 0.8,0.1);
+      makeHslRamp(palRedBlackGreen, 63, 127, 0.4,0.4, 0.9,0.9, 0.1,0.8);
+      // force 62 (sea level) to gray
+      palRedBlackGreen[62]=0x303030;
       // fill 128..255 with purple (we should never see this color)
       for (int i=128; i < 256; i++) {
 	palRedBlackGreen[i] = kColorDefault;
@@ -836,19 +881,19 @@ namespace mcpe_viz {
     public:
       std::string name;
       int32_t color;
-      bool lookupColorFlag;
-      int32_t lookupColorOffset;
       bool colorSetFlag;
       bool solidFlag;
       int colorSetNeedCount;
+      int32_t blockdata;
+      std::vector< std::unique_ptr<BlockInfo> > variantList;
+
       BlockInfo() {
 	name = "(unknown)";
 	setColor(kColorDefault); // purple
-	lookupColorFlag = false;
-	lookupColorOffset = 0;
 	solidFlag = true;
 	colorSetFlag = false;
 	colorSetNeedCount = 0;
+	variantList.clear();
       }
       BlockInfo& setName(const std::string s) {
 	name = std::string(s);
@@ -860,19 +905,25 @@ namespace mcpe_viz {
 	colorSetFlag = true;
 	return *this;
       }
-      BlockInfo& setLookupColorFlag(bool f) {
-	lookupColorFlag = f;
-	return *this;
-      }
-      BlockInfo& setLookupColorOffset(int32_t o) {
-	lookupColorOffset = o;
-	return *this;
-      }
       BlockInfo& setSolidFlag(bool f) {
 	solidFlag = f;
 	return *this;
       }
       bool isSolid() { return solidFlag; }
+      bool hasVariants() {
+	return (variantList.size() > 0);
+      }
+      
+      void setBlockData(int32_t bd) {
+	blockdata = bd;
+      }
+      BlockInfo& addVariant(int32_t bd, std::string n) {
+	std::unique_ptr<BlockInfo> bv(new BlockInfo());
+	bv->setName(n);
+	bv->setBlockData(bd);
+	variantList.push_back( std::move(bv) );
+	return *(variantList.back());
+      }
     };
 
     BlockInfo blockInfoList[256];
@@ -1077,26 +1128,26 @@ namespace mcpe_viz {
       
     
       void doOutputStats() {
-	fprintf(control.fpLog,"\n%s Statistics:\n", name.c_str());
-	fprintf(control.fpLog,"chunk-count: %d\n", chunkCount);
-	fprintf(control.fpLog,"Min-dim:  %d %d\n", minChunkX, minChunkZ);
-	fprintf(control.fpLog,"Max-dim:  %d %d\n", maxChunkX, maxChunkZ);
+	logmsg(kLogInfo1,"\n%s Statistics:\n", name.c_str());
+	logmsg(kLogInfo1,"chunk-count: %d\n", chunkCount);
+	logmsg(kLogInfo1,"Min-dim:  %d %d\n", minChunkX, minChunkZ);
+	logmsg(kLogInfo1,"Max-dim:  %d %d\n", maxChunkX, maxChunkZ);
 	int32_t dx = (maxChunkX-minChunkX+1);
 	int32_t dz = (maxChunkZ-minChunkZ+1);
-	fprintf(control.fpLog,"diff-dim: %d %d\n", dx, dz);
-	fprintf(control.fpLog,"pixels:   %d %d\n", dx*16, dz*16);
+	logmsg(kLogInfo1,"diff-dim: %d %d\n", dx, dz);
+	logmsg(kLogInfo1,"pixels:   %d %d\n", dx*16, dz*16);
 
-	fprintf(control.fpLog,"\nGlobal Chunk Type Histogram:\n");
+	logmsg(kLogInfo1,"\nGlobal Chunk Type Histogram:\n");
 	for (int i=0; i < 256; i++) {
 	  if ( histoChunkType[i] > 0 ) {
-	    fprintf(control.fpLog,"hg-chunktype: %02x %6d\n", i, histoChunkType[i]);
+	    logmsg(kLogInfo1,"hg-chunktype: %02x %6d\n", i, histoChunkType[i]);
 	  }
 	}
 
-	fprintf(control.fpLog,"\nGlobal Biome Histogram:\n");
+	logmsg(kLogInfo1,"\nGlobal Biome Histogram:\n");
 	for (int i=0; i < 256; i++) {
 	  if ( histoGlobalBiome[i] > 0 ) {
-	    fprintf(control.fpLog,"hg-globalbiome: %02x %6d\n", i, histoGlobalBiome[i]);
+	    logmsg(kLogInfo1,"hg-globalbiome: %02x %6d\n", i, histoGlobalBiome[i]);
 	  }
 	}
       }
@@ -1229,13 +1280,11 @@ namespace mcpe_viz {
 	      }
 	      else if ( imageMode == kImageModeBlockLight ) {
 		// get block light value and expand it (is only 4-bits)
-		// todobig - why z/x here and x/z everywhere else... hmmm
 		uint8_t c = (it->topLight[cx][cz] & 0x0f) << 4;
 		color = (c << 24) | (c << 16) | (c << 8);
 	      }
 	      else if ( imageMode == kImageModeSkyLight ) {
 		// get sky light value and expand it (is only 4-bits)
-		// todobig - why z/x here and x/z everywhere else... hmmm
 		uint8_t c = (it->topLight[cx][cz] & 0xf0);
 		color = (c << 24) | (c << 16) | (c << 8);
 	      }
@@ -1243,9 +1292,25 @@ namespace mcpe_viz {
 		// regular image
 		int blockid = it->blocks[cx][cz];
 		
-		if ( blockInfoList[blockid].lookupColorFlag ) {
+		if ( blockInfoList[blockid].hasVariants() ) {
+		  // we need to get blockdata
 		  int blockdata = it->data[cx][cz];
-		  color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
+		  bool vfound = false;
+		  for (const auto& itbv : blockInfoList[blockid].variantList) {
+		    if ( itbv->blockdata == blockdata ) {
+		      vfound = true;
+		      color = itbv->color;
+		      break;
+		    }
+		  }
+		  if ( ! vfound ) {
+		    // todo - warn once per id/blockdata or the output volume could get ridiculous
+		    fprintf(stderr,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+			    , blockInfoList[blockid].name.c_str()
+			    , blockdata
+			    , blockdata
+			    );
+		  }
 		} else {
 		  color = blockInfoList[blockid].color;
 		  if ( ! blockInfoList[blockid].colorSetFlag ) {
@@ -1263,17 +1328,13 @@ namespace mcpe_viz {
 		}
 	      }
 
-	      // copy rgb color into output image
-#if 0
-	      int ix = (imageX + cx);
-	      int iz = (imageZ + cz);
-	      int off = (iz * imageW + ix) * 3;
-	      buf[ off ] = (color & 0xff0000) >> 16;
-	      buf[ off + 1 ] = (color & 0xff00) >> 8;
-	      buf[ off + 2 ] = (color & 0xff);
-#else
-	      // trickery to copy the 3-bytes of RGB
+#ifdef PIXEL_COPY_MEMCPY
 	      memcpy(&buf[ ((imageZ + cz) * imageW + (imageX + cx)) * 3], &pcolor[1], 3);
+#else
+	      // todo - any use in optimizing the offset calc?
+	      buf[((imageZ + cz) * imageW + (imageX + cx)) * 3] = pcolor[1];
+	      buf[((imageZ + cz) * imageW + (imageX + cx)) * 3 + 1] = pcolor[2];
+	      buf[((imageZ + cz) * imageW + (imageX + cx)) * 3 + 2] = pcolor[3];
 #endif
 
 	      if ( dimId == kDimIdOverworld && imageMode == kImageModeTerrain ) {
@@ -1454,7 +1515,6 @@ namespace mcpe_viz {
 	    foundCt++;
 	      
 	    // we step through the chunk in the natural order to speed things up
-	    // todobig todohere - use this info to correct the cx/cz order elsewhere in code
 	    for (int cx=0; cx < 16; cx++) {
 	      for (int cz=0; cz < 16; cz++) {
 		currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX+cx];
@@ -1479,14 +1539,29 @@ namespace mcpe_viz {
 		      
 		  } else {
 		    
-		    if ( blockInfoList[blockid].lookupColorFlag ) {
-		      // todo - do math directly instead of calling getBlockData?
+		    if ( blockInfoList[blockid].hasVariants() ) {
+		      // we need to get blockdata
 		      blockdata = getBlockData(ochunk, cx,cz,cy);
-		      color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
+		      bool vfound = false;
+		      for (const auto& itbv : blockInfoList[blockid].variantList) {
+			if ( itbv->blockdata == blockdata ) {
+			  vfound = true;
+			  color = itbv->color;
+			  break;
+			}
+		      }
+		      if ( ! vfound ) {
+			// todo - warn once per id/blockdata or the output volume could get ridiculous
+			fprintf(stderr,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+				, blockInfoList[blockid].name.c_str()
+				, blockdata
+				, blockdata
+				);
+		      }
 		    } else {
 		      color = blockInfoList[blockid].color;
 		    }
-
+		    
 #ifdef PIXEL_COPY_MEMCPY
 		    memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
 #else
@@ -1622,9 +1697,25 @@ namespace mcpe_viz {
 		    // however, we do NOT do this for the nether. because: the nether
 		  } else {
 		    
-		    if ( blockInfoList[blockid].lookupColorFlag ) {
-		      uint8_t blockdata = getBlockData(pchunk, cx,cz,cy);
-		      color = htobe32(standardColorInfo[blockdata].color + blockInfoList[blockid].lookupColorOffset);
+		    if ( blockInfoList[blockid].hasVariants() ) {
+		      // we need to get blockdata
+		      int blockdata = it->data[cx][cz];
+		      bool vfound = false;
+		      for (const auto& itbv : blockInfoList[blockid].variantList) {
+			if ( itbv->blockdata == blockdata ) {
+			  vfound = true;
+			  color = itbv->color;
+			  break;
+			}
+		      }
+		      if ( ! vfound ) {
+			// todo - warn once per id/blockdata or the output volume could get ridiculous
+			fprintf(stderr,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+				, blockInfoList[blockid].name.c_str()
+				, blockdata
+				, blockdata
+				);
+		      }
 		    } else {
 		      color = blockInfoList[blockid].color;
 		    }
@@ -1639,17 +1730,13 @@ namespace mcpe_viz {
 		      }
 		    }
 		  
-#if 0
-		    // copy rgb pixel into output image
-		    int ix = (imageX + cx);
-		    int iz = (imageZ + cz);
-		    int off = (iz * imageW + ix) * 3;
-		    buf[ off ] = (color & 0xff0000) >> 16;
-		    buf[ off + 1 ] = (color & 0xff00) >> 8;
-		    buf[ off + 2 ] = (color & 0xff);
-#else
-		    // trickery to copy the 3-bytes of RGB
+#ifdef PIXEL_COPY_MEMCPY
 		    memcpy(&buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3], &pcolor[1], 3);
+#else
+		    // todo - any use in optimizing the offset calc?
+		    buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3] = pcolor[1];
+		    buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3 + 1] = pcolor[2];
+		    buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3 + 2] = pcolor[3];
 #endif
 		  }
 		}
@@ -1773,109 +1860,109 @@ namespace mcpe_viz {
 
     int parseNbtTag( const char* hdr, int& indent, const MyTag& t ) {
 
-      fprintf(control.fpLog,"%s[%s] ", makeIndent(indent,hdr).c_str(), t.first.c_str());
+      logmsg(kLogInfo1,"%s[%s] ", makeIndent(indent,hdr).c_str(), t.first.c_str());
 
       nbt::tag_type tagType = t.second->get_type();
       
       switch ( tagType ) {
       case nbt::tag_type::End:
-	fprintf(control.fpLog,"TAG_END\n");
+	logmsg(kLogInfo1,"TAG_END\n");
 	break;
       case nbt::tag_type::Byte:
 	{
 	  nbt::tag_byte v = t.second->as<nbt::tag_byte>();
-	  fprintf(control.fpLog,"%d 0x%x (byte)\n", v.get(), v.get());
+	  logmsg(kLogInfo1,"%d 0x%x (byte)\n", v.get(), v.get());
 	}
 	break;
       case nbt::tag_type::Short:
 	{
 	  nbt::tag_short v = t.second->as<nbt::tag_short>();
-	  fprintf(control.fpLog,"%d 0x%x (short)\n", v.get(), v.get());
+	  logmsg(kLogInfo1,"%d 0x%x (short)\n", v.get(), v.get());
 	}
 	break;
       case nbt::tag_type::Int:
 	{
 	  nbt::tag_int v = t.second->as<nbt::tag_int>();
-	  fprintf(control.fpLog,"%d 0x%x (int)\n", v.get(), v.get());
+	  logmsg(kLogInfo1,"%d 0x%x (int)\n", v.get(), v.get());
 	}
 	break;
       case nbt::tag_type::Long:
 	{
 	  nbt::tag_long v = t.second->as<nbt::tag_long>();
 	  // note: silly work around for linux vs win32 weirdness
-	  fprintf(control.fpLog,"%lld 0x%llx (long)\n", (long long int)v.get(), (long long int)v.get());
+	  logmsg(kLogInfo1,"%lld 0x%llx (long)\n", (long long int)v.get(), (long long int)v.get());
 	}
 	break;
       case nbt::tag_type::Float:
 	{
 	  nbt::tag_float v = t.second->as<nbt::tag_float>();
-	  fprintf(control.fpLog,"%f (float)\n", v.get());
+	  logmsg(kLogInfo1,"%f (float)\n", v.get());
 	}
 	break;
       case nbt::tag_type::Double:
 	{
 	  nbt::tag_double v = t.second->as<nbt::tag_double>();
-	  fprintf(control.fpLog,"%lf (double)\n", v.get());
+	  logmsg(kLogInfo1,"%lf (double)\n", v.get());
 	}
 	break;
       case nbt::tag_type::Byte_Array:
 	{
 	  nbt::tag_byte_array v = t.second->as<nbt::tag_byte_array>();
-	  fprintf(control.fpLog,"[");
+	  logmsg(kLogInfo1,"[");
 	  int i=0;
 	  for (const auto& itt: v ) {
-	    if ( i++ > 0 ) { fprintf(control.fpLog," "); }
-	    fprintf(control.fpLog,"%02x", (int)itt);
+	    if ( i++ > 0 ) { logmsg(kLogInfo1," "); }
+	    logmsg(kLogInfo1,"%02x", (int)itt);
 	  }
-	  fprintf(control.fpLog,"] (hex byte array)\n");
+	  logmsg(kLogInfo1,"] (hex byte array)\n");
 	}
 	break;
       case nbt::tag_type::String:
 	{
 	  nbt::tag_string v = t.second->as<nbt::tag_string>();
-	  fprintf(control.fpLog,"'%s' (string)\n", v.get().c_str());
+	  logmsg(kLogInfo1,"'%s' (string)\n", v.get().c_str());
 	}
 	break;
       case nbt::tag_type::List:
 	{
 	  nbt::tag_list v = t.second->as<nbt::tag_list>();
 	  int lnum = ++globalNbtListNumber;
-	  fprintf(control.fpLog,"LIST-%d {\n",lnum);
+	  logmsg(kLogInfo1,"LIST-%d {\n",lnum);
 	  indent++;
 	  for ( const auto& it: v ) {
 	    parseNbtTag( hdr, indent, std::make_pair(std::string(""), it.get().clone() ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
-	  fprintf(control.fpLog,"%s} LIST-%d\n", makeIndent(indent,hdr).c_str(), lnum);
+	  logmsg(kLogInfo1,"%s} LIST-%d\n", makeIndent(indent,hdr).c_str(), lnum);
 	}
 	break;
       case nbt::tag_type::Compound:
 	{
 	  nbt::tag_compound v = t.second->as<nbt::tag_compound>();
 	  int cnum = ++globalNbtCompoundNumber;
-	  fprintf(control.fpLog,"COMPOUND-%d {\n",cnum);
+	  logmsg(kLogInfo1,"COMPOUND-%d {\n",cnum);
 	  indent++;
 	  for ( const auto& it: v ) {
 	    parseNbtTag( hdr, indent, std::make_pair( it.first, it.second.get().clone() ) );
 	  }
 	  if ( --indent < 0 ) { indent=0; }
-	  fprintf(control.fpLog,"%s} COMPOUND-%d\n", makeIndent(indent,hdr).c_str(),cnum);
+	  logmsg(kLogInfo1,"%s} COMPOUND-%d\n", makeIndent(indent,hdr).c_str(),cnum);
 	}
 	break;
       case nbt::tag_type::Int_Array:
 	{
 	  nbt::tag_int_array v = t.second->as<nbt::tag_int_array>();
-	  fprintf(control.fpLog,"[");
+	  logmsg(kLogInfo1,"[");
 	  int i=0;
 	  for ( const auto& itt: v ) {
-	    if ( i++ > 0 ) { fprintf(control.fpLog," "); }
-	    fprintf(control.fpLog,"%x", itt);
+	    if ( i++ > 0 ) { logmsg(kLogInfo1," "); }
+	    logmsg(kLogInfo1,"%x", itt);
 	  }
-	  fprintf(control.fpLog,"] (hex int array)\n");
+	  logmsg(kLogInfo1,"] (hex int array)\n");
 	}
 	break;
       default:
-	fprintf(control.fpLog,"[ERROR: Unknown tag type = %d]\n", (int)tagType);
+	logmsg(kLogInfo1,"[ERROR: Unknown tag type = %d]\n", (int)tagType);
 	break;
       }
 
@@ -1885,7 +1972,7 @@ namespace mcpe_viz {
     
     int parseNbt( const char* hdr, const char* buf, int bufLen, MyTagList& tagList ) {
       int indent=0;
-      fprintf(control.fpLog,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
+      logmsg(kLogInfo1,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
 
       // these help us look at dumped nbt data and match up LIST's and COMPOUND's
       globalNbtListNumber=0;
@@ -1924,7 +2011,7 @@ namespace mcpe_viz {
 	parseNbtTag( hdr, indent, itt );
       }
       
-      fprintf(control.fpLog,"%sNBT Decode End (%d tags)\n",makeIndent(indent,hdr).c_str(), (int)tagList.size());
+      logmsg(kLogInfo1,"%sNBT Decode End (%d tags)\n",makeIndent(indent,hdr).c_str(), (int)tagList.size());
 
       return 0;
     }
@@ -3059,7 +3146,7 @@ namespace mcpe_viz {
 	// stuff I found:
 	entity->checkOtherProp(tc, "SpawnedByNight");
 	
-	fprintf(control.fpLog, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(actualDimensionId).c_str());
+	logmsg(kLogInfo1, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(actualDimensionId).c_str());
 
 	listGeoJSON.push_back( entity->toGeoJSON(actualDimensionId) );
 
@@ -3132,12 +3219,12 @@ namespace mcpe_viz {
 	    parseFlag = true;
 	  }
 	  else {
-	    fprintf(control.fpLog,"ERROR: Unknown tileEntity id=(%s)\n", id.c_str());
+	    logmsg(kLogInfo1,"ERROR: Unknown tileEntity id=(%s)\n", id.c_str());
 	  }
 	}
 
 	if ( parseFlag ) {
-	  fprintf(control.fpLog, "%sParsedTileEntity: %s\n", dimName.c_str(), tileEntity->toString(dimensionId).c_str());
+	  logmsg(kLogInfo1, "%sParsedTileEntity: %s\n", dimName.c_str(), tileEntity->toString(dimensionId).c_str());
 
 	  std::string json = tileEntity->toGeoJSON(dimensionId);
 	  if ( json.size() > 0 ) {
@@ -3287,7 +3374,7 @@ namespace mcpe_viz {
 		
 		portal->add( pc );
 		
-		fprintf(control.fpLog, "ParsedPortal: %s\n", portal->toString().c_str());
+		logmsg(kLogInfo1, "ParsedPortal: %s\n", portal->toString().c_str());
 		
 		std::string json = portal->toGeoJSON();
 		if ( json.size() > 0 ) {
@@ -3306,18 +3393,18 @@ namespace mcpe_viz {
 
     
     int printKeyValue(const char* key, int key_size, const char* value, int value_size, bool printKeyAsStringFlag) {
-      fprintf(control.fpLog,"WARNING: Unknown Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
+      logmsg(kLogInfo1,"WARNING: Unknown Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
 	      (printKeyAsStringFlag ? key : "(SKIPPED)"));
       for (int i=0; i < key_size; i++) {
-	if ( i > 0 ) { fprintf(control.fpLog," "); }
-	fprintf(control.fpLog,"%02x",((int)key[i] & 0xff));
+	if ( i > 0 ) { logmsg(kLogInfo1," "); }
+	logmsg(kLogInfo1,"%02x",((int)key[i] & 0xff));
       }
-      fprintf(control.fpLog,"] value_size=%d value_hex=[",value_size);
+      logmsg(kLogInfo1,"] value_size=%d value_hex=[",value_size);
       for (int i=0; i < value_size; i++) {
-	if ( i > 0 ) { fprintf(control.fpLog," "); }
-	fprintf(control.fpLog,"%02x",((int)value[i] & 0xff));
+	if ( i > 0 ) { logmsg(kLogInfo1," "); }
+	logmsg(kLogInfo1,"%02x",((int)value[i] & 0xff));
       }
-      fprintf(control.fpLog,"]\n");
+      logmsg(kLogInfo1,"]\n");
       return 0;
     }
 
@@ -3598,21 +3685,21 @@ namespace mcpe_viz {
 	    fprintf(stderr, "  Reading records: %d\n", recordCt);
 	  }
 
-	  fprintf(control.fpLog,"\n");
+	  logmsg(kLogInfo1,"\n");
 
 	  if ( strncmp(key,"BiomeData",key_size) == 0 ) {
 	    // 0x61 +"BiomeData" -- snow accum? -- overworld only?
-	    fprintf(control.fpLog,"BiomeData value:\n");
+	    logmsg(kLogInfo1,"BiomeData value:\n");
 	    parseNbt("BiomeData: ", value, value_size, tagList);
 	    // todo - parse tagList? snow accumulation amounts
 	  }
 	  else if ( strncmp(key,"Overworld",key_size) == 0 ) {
-	    fprintf(control.fpLog,"Overworld value:\n");
+	    logmsg(kLogInfo1,"Overworld value:\n");
 	    parseNbt("Overworld: ", value, value_size, tagList);
 	    // todo - parse tagList? mostly a list of "LimboEntities"
 	  }
 	  else if ( strncmp(key,"~local_player",key_size) == 0 ) {
-	    fprintf(control.fpLog,"Local Player value:\n");
+	    logmsg(kLogInfo1,"Local Player value:\n");
 	    int ret = parseNbt("Local Player: ", value, value_size, tagList);
 	    if ( ret == 0 ) { 
 	      ParsedEntityList entityList;
@@ -3622,7 +3709,7 @@ namespace mcpe_viz {
 	  else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
 	    // note: key contains player id (e.g. "player_-1234")
 	    std::string playerRemoteId = &key[strlen("player_")];
-	    fprintf(control.fpLog,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
+	    logmsg(kLogInfo1,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
 	    int ret = parseNbt("Remote Player: ", value, value_size, tagList);
 	    if ( ret == 0 ) {
 	      ParsedEntityList entityList;
@@ -3630,17 +3717,17 @@ namespace mcpe_viz {
 	    }
 	  }
 	  else if ( strncmp(key,"villages",key_size) == 0 ) {
-	    fprintf(control.fpLog,"Villages value:\n");
+	    logmsg(kLogInfo1,"Villages value:\n");
 	    parseNbt("villages: ", value, value_size, tagList);
 	    // todo - parse tagList? usually empty, unless player is in range of village; test that!
 	  }
 	  else if ( strncmp(key,"Nether",key_size) == 0 ) {
-	    fprintf(control.fpLog,"Nether value:\n");
+	    logmsg(kLogInfo1,"Nether value:\n");
 	    parseNbt("Nether: ", value, value_size, tagList);
 	    // todo - parse tagList?  list of LimboEntities
 	  }
 	  else if ( strncmp(key,"portals",key_size) == 0 ) {
-	    fprintf(control.fpLog,"portals value:\n");
+	    logmsg(kLogInfo1,"portals value:\n");
 	    int ret = parseNbt("portals: ", value, value_size, tagList);
 	    if ( ret == 0 ) {
 	      ParsedPortalList portalList;
@@ -3688,7 +3775,7 @@ namespace mcpe_viz {
 		chunkstr+=tmpstring;
 	      }
 	      chunkstr += "\n";
-	      fprintf(control.fpLog, chunkstr.c_str());
+	      logmsg(kLogInfo1, chunkstr.c_str());
 
 	      switch ( chunkType ) {
 	      case 0x30:
@@ -3765,7 +3852,7 @@ namespace mcpe_viz {
 
 	    
 		// print chunk info
-		fprintf(control.fpLog,"Top Blocks (block-id:block-data:biome-id):\n");
+		logmsg(kLogInfo1,"Top Blocks (block-id:block-data:biome-id):\n");
 		// todobig - problem with cx/cz here?
 		for (int cz=0; cz<16; cz++) {
 		  for (int cx=0; cx<16; cx++) {
@@ -3773,39 +3860,39 @@ namespace mcpe_viz {
 		    int biomeId = (int)(rawData & 0xFF);
 		    histoBiome[biomeId]++;
 		    chunkList[chunkDimId].histoGlobalBiome[biomeId]++;
-		    fprintf(control.fpLog,"%02x:%x:%02x ", (int)topBlock[cx][cz], (int)topData[cx][cz], (int)biomeId);
+		    logmsg(kLogInfo1,"%02x:%x:%02x ", (int)topBlock[cx][cz], (int)topData[cx][cz], (int)biomeId);
 		  }
-		  fprintf(control.fpLog,"\n");
+		  logmsg(kLogInfo1,"\n");
 		}
-		fprintf(control.fpLog,"Block Histogram:\n");
+		logmsg(kLogInfo1,"Block Histogram:\n");
 		for (int i=0; i < 256; i++) {
 		  if ( histo[i] > 0 ) {
-		    fprintf(control.fpLog,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histo[i], blockInfoList[i].name.c_str());
+		    logmsg(kLogInfo1,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histo[i], blockInfoList[i].name.c_str());
 		  }
 		}
-		fprintf(control.fpLog,"Biome Histogram:\n");
+		logmsg(kLogInfo1,"Biome Histogram:\n");
 		for (int i=0; i < 256; i++) {
 		  if ( histoBiome[i] > 0 ) {
 		    std::string biomeName( getBiomeName(i) );
-		    fprintf(control.fpLog,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histoBiome[i], biomeName.c_str());
+		    logmsg(kLogInfo1,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histoBiome[i], biomeName.c_str());
 		  }
 		}
-		fprintf(control.fpLog,"Block Light (skylight:blocklight):\n");
+		logmsg(kLogInfo1,"Block Light (skylight:blocklight):\n");
 		for (int cz=0; cz<16; cz++) {
 		  for (int cx=0; cx<16; cx++) {
-		    fprintf(control.fpLog,"%x:%x ", (int)topSkyLight[cx][cz], (int)topBlockLight[cx][cz]);
+		    logmsg(kLogInfo1,"%x:%x ", (int)topSkyLight[cx][cz], (int)topBlockLight[cx][cz]);
 		  }
-		  fprintf(control.fpLog,"\n");
+		  logmsg(kLogInfo1,"\n");
 		}
 		// todo - grass-color is in high 3 bytes of coldata2
 		// todo - need to show this?
-		fprintf(control.fpLog,"Column Data (height-col:biome):\n");
+		logmsg(kLogInfo1,"Column Data (height-col:biome):\n");
 		for (int cz=0; cz<16; cz++) {
 		  for (int cx=0; cx<16; cx++) {
 		    int biomeId = (int)(colData2[cx][cz] & 0xFF);
-		    fprintf(control.fpLog,"%x:%02x ", (int)colData1[cx][cz], biomeId);
+		    logmsg(kLogInfo1,"%x:%02x ", (int)colData1[cx][cz], biomeId);
 		  }
-		  fprintf(control.fpLog,"\n");
+		  logmsg(kLogInfo1,"\n");
 		}
 
 		// store chunk
@@ -3817,7 +3904,7 @@ namespace mcpe_viz {
 
 	      case 0x31:
 		{
-		  fprintf(control.fpLog,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
+		  logmsg(kLogInfo1,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
 		  int ret = parseNbt("0x31-te: ", value, value_size, tagList);
 		  if ( ret == 0 ) { 
 		    ParsedTileEntityList tileEntityList;
@@ -3828,7 +3915,7 @@ namespace mcpe_viz {
 
 	      case 0x32:
 		{
-		  fprintf(control.fpLog,"%s 0x32 chunk (entity data):\n", dimName.c_str());
+		  logmsg(kLogInfo1,"%s 0x32 chunk (entity data):\n", dimName.c_str());
 		  int ret = parseNbt("0x32-e: ", value, value_size, tagList);
 		  if ( ret == 0 ) {
 		    ParsedEntityList entityList;
@@ -3839,14 +3926,14 @@ namespace mcpe_viz {
 
 	      case 0x33:
 		// todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
-		fprintf(control.fpLog,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
+		logmsg(kLogInfo1,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
 		parseNbt("0x33-tick: ", value, value_size, tagList);
 		// todo - parse tagList?
 		// todobig - could show location of active fires
 		break;
 
 	      case 0x34:
-		fprintf(control.fpLog,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
+		logmsg(kLogInfo1,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
 		printKeyValue(key,key_size,value,value_size,false);
 		/* 
 		   0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
@@ -3858,7 +3945,7 @@ namespace mcpe_viz {
 		break;
 
 	      case 0x35:
-		fprintf(control.fpLog,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
+		logmsg(kLogInfo1,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
 		printKeyValue(key,key_size,value,value_size,false);
 		/*
 		  0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
@@ -3873,13 +3960,13 @@ namespace mcpe_viz {
 		  // this record is not very interesting we usually hide it
 		  // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
 		  if ( control.verboseFlag || (value[0] != 2) ) { 
-		    fprintf(control.fpLog,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(value[0]));
+		    logmsg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(value[0]));
 		  }
 		}
 		break;
 
 	      default:
-		fprintf(control.fpLog,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
+		logmsg(kLogInfo1,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
 			key_size, chunkType, value_size);
 		printKeyValue(key,key_size,value,value_size,true);
 		if ( false ) {
@@ -3893,11 +3980,11 @@ namespace mcpe_viz {
 	    }
 	  }
 	  else {
-	    fprintf(control.fpLog,"WARNING: Unknown chunk - key_size=%d value_size=%d\n", key_size, value_size);
+	    logmsg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d value_size=%d\n", key_size, value_size);
 	    printKeyValue(key,key_size,value,value_size,true);
 	    if ( false ) { 
 	      // try to nbt decode
-	      fprintf(control.fpLog,"WARNING: Attempting NBT Decode:\n");
+	      logmsg(kLogInfo1,"WARNING: Attempting NBT Decode:\n");
 	      parseNbt("WARNING: ", value, value_size, tagList);
 	      // todo - parse tagList?
 	    }
@@ -3936,9 +4023,21 @@ namespace mcpe_viz {
 	// create javascript file w/ filenames etc
 	FILE *fp = fopen(control.fnJs.c_str(),"w");
 	if ( fp ) {
+	  time_t xtime = time(NULL);
+	  char timebuf[256];
+	  ctime_r(&xtime, timebuf);
+	  // todo - this is hideous.
+	  // fix time string
+	  char *p = strchr(timebuf,'\n');
+	  if ( p ) { *p = 0; }
+
 	  fprintf(fp,
 		  "// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
+		  "var worldName = '%s';\n"
+		  "var creationTime = '%s';\n"
 		  "var dimensionInfo = {\n"
+		  , escapeString(globalLevelName.c_str(), "'").c_str()
+		  , escapeString(timebuf,"'").c_str()
 		  );
 	  for (int did=0; did < kDimIdCount; did++) {
 	    fprintf(fp, "'%d': {\n", did);
@@ -3989,11 +4088,10 @@ namespace mcpe_viz {
 	    
 	  fprintf(fp,"var blockColorLUT = {\n");
 	  for (int i=0; i < 256; i++) {
-	    if ( blockInfoList[i].lookupColorFlag ) {
-	      for (int sc=0; sc < 16; sc++) {
-		int xcolor =  standardColorInfo[sc].color + blockInfoList[i].lookupColorOffset;
-		std::string xname = blockInfoList[i].name + ", " + standardColorInfo[sc].name;
-		fprintf(fp,"'%d': '%s',\n", xcolor, escapeString(xname,"'").c_str());
+	    if ( blockInfoList[i].hasVariants() ) {
+	      // we need to get blockdata
+	      for (const auto& itbv : blockInfoList[i].variantList) {
+		fprintf(fp,"'%d': '%s',\n", be32toh(itbv->color), escapeString(itbv->name,"'").c_str());
 	      }
 	    } else {
 	      if ( blockInfoList[i].colorSetFlag ) {
@@ -4078,20 +4176,20 @@ namespace mcpe_viz {
 	// create list of all colors and sort them by HSL
 	std::vector< std::unique_ptr<ColorInfo> > webColorList;
 
-	// todo - we should probably use same logic used in making the js helepr file (calculated colors)
 	webColorList.clear();
 	for (int i=0; i < 256; i++) {
-	  if ( blockInfoList[i].colorSetFlag ) {
-	    webColorList.push_back( std::unique_ptr<ColorInfo>
-				    ( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
+	  if ( blockInfoList[i].hasVariants() ) {
+	    for (const auto& itbv : blockInfoList[i].variantList) {
+	      webColorList.push_back( std::unique_ptr<ColorInfo>
+				      ( new ColorInfo(itbv->name, be32toh(itbv->color)) ) );
+	    }
 	  }
-	}
-
-	// add standard colors
-	for (int i=0; i < 16; i++) {
-	  // note: we don't need to be32toh
-	  webColorList.push_back( std::unique_ptr<ColorInfo>
-				  ( new ColorInfo("Standard Color: " + standardColorInfo[i].name, standardColorInfo[i].color) ) );
+	  else {
+	    if ( blockInfoList[i].colorSetFlag ) {
+	      webColorList.push_back( std::unique_ptr<ColorInfo>
+				      ( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
+	    }
+	  }
 	}
 
 	std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
@@ -4224,7 +4322,7 @@ namespace mcpe_viz {
       globalLevelName = buf;
       
       fprintf(stderr,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
-      fprintf(control.fpLog,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+      logmsg(kLogInfo1,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
       fclose(fp);
 
       return 0;
@@ -4437,19 +4535,81 @@ namespace mcpe_viz {
       }
       return s;
     }
+
+    int doParseXml_Unknown(xmlNodePtr cur) {
+      // some unknowns are fine (e.g. text and comment)
+      if ( cur->type == XML_TEXT_NODE ) {
+	// fine
+      }
+      else if ( cur->type == XML_COMMENT_NODE ) {
+	// fine
+      }
+      else {
+	fprintf(stderr, "WARNING: Unrecognized XML element: (parent=%s) name=(%s) type=(%d) content=(%s)\n"
+		, cur->parent ? (char*)cur->parent->name : "(NONE)"
+		, (char*)cur->name
+		, (int)cur->type
+		, cur->content ? (char*)cur->content : "(NULL)"
+		);
+      }
+      return 0;
+    }
+    
+    int doParseXML_blocklist_blockvariant(xmlNodePtr cur, BlockInfo& block) {
+      cur = cur->xmlChildrenNode;
+      while (cur != NULL) {
+	if ( xmlStrcmp(cur->name, (const xmlChar *)"blockvariant") == 0 ) {
+
+	  // example:
+	  //   <blockvariant blockdata="0x0" name="Oak Leaves" />
+
+	  bool blockDataValid, nameValid, colorValid, dcolorValid;
+	  
+	  int blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
+	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+	  int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+	  int dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
+
+	  // create data
+	  if ( blockDataValid && nameValid ) {
+	    BlockInfo& bv = block.addVariant(blockdata,name);
+	    if ( colorValid ) {
+	      if ( dcolorValid ) {
+		color += dcolor;
+	      }
+	      bv.setColor(color);
+	    } else {
+	      // no color specified, we increment the parent block's color w/ blockdata (to keep it unique)
+	      color = be32toh(block.color);
+	      color += blockdata;
+	      bv.setColor(color);
+	    }
+	  } else {
+	    // todo error
+	    fprintf(stderr,"WARNING: Did not find valid blockdata and name for blockvariant of block: (%s)\n"
+		    , block.name.c_str()
+		    );
+	  }
+	}
+	else {
+	  doParseXml_Unknown(cur);
+	}
+	
+	cur = cur->next;
+      }
+      return 0;
+    }
     
     int doParseXML_blocklist(xmlNodePtr cur) {
       cur = cur->xmlChildrenNode;
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
-
-	  bool idValid, nameValid, colorValid, lookupColorFlagValid, lookupColorOffsetValid, solidFlagValid;
+	  
+	  bool idValid, nameValid, colorValid, solidFlagValid;
 	  
 	  int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	  int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
-	  bool lookupColorFlag = xmlGetBool(cur, (const xmlChar*)"lookupColor", false, lookupColorFlagValid);
-	  int lookupColorOffset = xmlGetInt(cur, (const xmlChar*)"lookupColorOffset", lookupColorOffsetValid);
 	  bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
 
 	  // create data
@@ -4458,52 +4618,21 @@ namespace mcpe_viz {
 	    if ( colorValid ) {
 	      b.setColor(color);
 	    }
-	    b.setLookupColorFlag(lookupColorFlag);
-	    if ( lookupColorOffsetValid ) {
-	      b.setLookupColorOffset(lookupColorOffset);
-	    }
+
 	    b.setSolidFlag(solidFlag);
+
+	    doParseXML_blocklist_blockvariant(cur, b);
 	  } else {
 	    // todo error
-	    fprintf(stderr,"WARNING: Did not find valid id and name for block: (0x%x) (%s) (0x%x) (%s)\n"
+	    fprintf(stderr,"WARNING: Did not find valid id and name for block: (0x%x) (%s) (0x%x)\n"
 		    , id
 		    , name.c_str()
 		    , color
-		    , lookupColorFlag ? "true" : "false"
 		    );
 	  }
 	}
-	cur = cur->next;
-      }
-      return 0;
-    }
-
-    int doParseXML_standardcolorlist(xmlNodePtr cur) {
-      cur = cur->xmlChildrenNode;
-      while (cur != NULL) {
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"standardcolor") == 0 ) {
-
-	  bool idValid, nameValid, colorValid;
-
-	  int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
-	  std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	  int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
-
-	  // create data
-	  if ( idValid && nameValid && colorValid ) {
-	    if ( id >= 0 && id < 16 ) { 
-	      standardColorInfo[id].name = name;
-	      standardColorInfo[id].color = color;
-	    } else {
-	      fprintf(stderr,"WARNING: Found out of range standard color (id=%d)\n",id);
-	    }
-	  } else {
-	    // todo error
-	    fprintf(stderr,"WARNING: Did not find valid id, name and color for standardcolor: (0x%x) (0x%x)\n"
-		    , id
-		    , color
-		    );
-	  }
+	else {
+	  doParseXml_Unknown(cur);
 	}
 	cur = cur->next;
       }
@@ -4531,6 +4660,9 @@ namespace mcpe_viz {
 		    );
 	  }
 	}
+	else {
+	  doParseXml_Unknown(cur);
+	}
 	cur = cur->next;
       }
       return 0;
@@ -4556,6 +4688,9 @@ namespace mcpe_viz {
 		    , name.c_str()
 		    );
 	  }
+	}
+	else {
+	  doParseXml_Unknown(cur);
 	}
 	cur = cur->next;
       }
@@ -4588,6 +4723,9 @@ namespace mcpe_viz {
 		    );
 	  }
 	}
+	else {
+	  doParseXml_Unknown(cur);
+	}
 	cur = cur->next;
       }
       return 0;
@@ -4619,6 +4757,9 @@ namespace mcpe_viz {
 		    );
 	  }
 	}
+	else {
+	  doParseXml_Unknown(cur);
+	}
 	cur = cur->next;
       }
       return 0;
@@ -4629,24 +4770,26 @@ namespace mcpe_viz {
       while (cur != NULL) {
 
 	// todo - should count warning/errors and return this info
-	
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"blocklist") == 0 ) {
+
+	if ( false ) {
+	}
+	else if ( xmlStrcmp(cur->name, (const xmlChar *)"blocklist") == 0 ) {
 	  doParseXML_blocklist(cur);
 	}
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"standardcolorlist") == 0 ) {
-	  doParseXML_standardcolorlist(cur);
-	}
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"itemlist") == 0 ) {
+	else if ( xmlStrcmp(cur->name, (const xmlChar *)"itemlist") == 0 ) {
 	  doParseXML_itemlist(cur);
 	}
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"entitylist") == 0 ) {
+	else if ( xmlStrcmp(cur->name, (const xmlChar *)"entitylist") == 0 ) {
 	  doParseXML_entitylist(cur);
 	}
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"biomelist") == 0 ) {
+	else if ( xmlStrcmp(cur->name, (const xmlChar *)"biomelist") == 0 ) {
 	  doParseXML_biomelist(cur);
 	}
-	if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantmentlist") == 0 ) {
+	else if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantmentlist") == 0 ) {
 	  doParseXML_enchantmentlist(cur);
+	}
+	else {
+	  doParseXml_Unknown(cur);
 	}
 	
 	cur = cur->next;
@@ -4676,6 +4819,9 @@ namespace mcpe_viz {
       while (cur != NULL) {
 	if ( xmlStrcmp(cur->name, (const xmlChar *)"xml") == 0 ) {
 	  ret = doParseXML_xml(cur);
+	}
+	else {
+	  doParseXml_Unknown(cur);
 	}
 	cur = cur->next;
       }
@@ -5003,7 +5149,7 @@ namespace mcpe_viz {
 	  break;
 	case 'q':
 	  control.quietFlag = true;
-	  //setLogLevelMask ( klogWarning | klogError | klogFatalError ); // set immediately
+	  //setLogLevelMask ( kLogWarning | kLogError | kLogFatalError ); // set immediately
 	  break;
 
 	  /* Usage */

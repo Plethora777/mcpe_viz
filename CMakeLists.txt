@@ -125,7 +125,6 @@ if(MCPE_VIZ_WIN32)
     )
 elseif(MCPE_VIZ_WIN64)
   # package win64 w/ required dll's
-  # todo
   configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
   configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
   add_custom_target(create_zip ALL COMMAND

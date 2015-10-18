@@ -4,6 +4,10 @@
 
   todo
 
+  * todohere -- some mods in test-all2 -- combine raw layer + regular layer selector; experiments w/ multilevel dropdown for mobs
+
+  * put levelname + generation timestamp somewhere in the ui
+
   * goto X -- e.g. Player; World Spawn; Player Spawn; etc
   
   * some reporting of details in geojson -- counts of different items?
@@ -292,9 +296,9 @@ function doFeatureSelect(features, coordinate) {
 
     features.sort(function(a, b) { 
 	var ap = a.getProperties();
-	var astr = ap.Name + ' @ (' + ap.Pos[0] + ', ' + ap.Pos[1] + ', ' + ap.Pos[2] + ')';
+	var astr = ap.Name + ' @ ' + ap.Pos[0] + ', ' + ap.Pos[1] + ', ' + ap.Pos[2];
 	var bp = b.getProperties();
-	var bstr = bp.Name + ' @ (' + bp.Pos[0] + ', ' + bp.Pos[1] + ', ' + bp.Pos[2] + ')';
+	var bstr = bp.Name + ' @ ' + bp.Pos[0] + ', ' + bp.Pos[1] + ', ' + bp.Pos[2];
 	return astr.localeCompare(bstr);
     });
     
@@ -305,7 +309,7 @@ function doFeatureSelect(features, coordinate) {
 	// how to do this?
 	s += '<a href="#" data-id="' + i + '" class="list-group-item doFeatureHelper">' +
 	    correctGeoJSONName(props.Name) +
-	    ' @ ' + props.Pos[0] + ', ' + props.Pos[1] + ', ' + props.Pos[2] + ')' +
+	    ' @ ' + props.Pos[0] + ', ' + props.Pos[1] + ', ' + props.Pos[2] +
 	    '</a>';
     }
     s += '</div>';
@@ -444,7 +448,7 @@ function setLayerLoadListeners(src, fn) {
 // rewritten based on:
 //   http://edndoc.esri.com/arcobjects/9.2/net/shared/geoprocessing/spatial_analyst_tools/how_hillshade_works.htm
 
-// todo what does this comment for? (from openlayers version)
+// todo what does this comment do? (from openlayers version)
 // NOCOMPILE
 
 
@@ -813,20 +817,20 @@ function setLayer(fn, extraHelp) {
 		pixelData = ctx.getImageData(x, y, 1, 1).data;
 		var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
 		if (globalLayerMode === 0 && globalLayerId === 1) {
-		    pre = 'Biome: ';
+		    pre = 'Biome';
 		    pixelDataName = biomeColorLUT['' + cval];
 		} else {
-		    pre = 'Block: ';
+		    pre = 'Block';
 		    pixelDataName = blockColorLUT['' + cval];
 		}
 		if (pixelDataName === undefined || pixelDataName === '') {
 		    if (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0) {
 			pixelDataName = '(<i>Here be Monsters</i> -- unexplored chunk)';
 		    } else {
-			pixelDataName = pre + 'Unknown RGB: ' + pixelData[0] + ' ' + pixelData[1] + ' ' + pixelData[2] + ' (' + cval + ')';
+			pixelDataName = '<span class="lgray">' + pre + '</span> ' + 'Unknown RGB: ' + pixelData[0] + ' ' + pixelData[1] + ' ' + pixelData[2] + ' (' + cval + ')';
 		    }
 		} else {
-		    pixelDataName = pre + pixelDataName;
+		    pixelDataName = '<span class="lgray">' + pre + '</span> ' + pixelDataName;
 		}
 	    }
 	});
@@ -946,7 +950,7 @@ function initDimension() {
 		    new ol.control.FullScreen(),
 		    mousePositionControl
 		]),
-	    pixelRatio: 1, // todo - need this?
+	    // pixelRatio: 1, // todo - need this?
 	    target: 'map',
 	    view: new ol.View({
 		projection: projection,
@@ -958,7 +962,7 @@ function initDimension() {
 	var view = new ol.View({
 	    projection: projection,
 	    center: [dimensionInfo[globalDimensionId].playerPosX, dimensionInfo[globalDimensionId].playerPosY],
-	    zoom: 6
+	    resolution: 1
 	});
 	map.setView(view);
     }
@@ -1128,7 +1132,7 @@ var coordinateFormatFunction = function(coordinate) {
     var ix = coordinate[0];
     var iy = (dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1];
     var prec = 1;
-    var s = 'world: ' + cx.toFixed(prec) + ' ' + cy.toFixed(prec) + ' image: ' + ix.toFixed(prec) + ' ' + iy.toFixed(prec);
+    var s = '<span class="lgray">World</span> ' + cx.toFixed(prec) + ' ' + cy.toFixed(prec) + ' <span class="lgray">Image</span> ' + ix.toFixed(prec) + ' ' + iy.toFixed(prec);
     if (pixelDataName.length > 0) {
 	s += '<br/>' + pixelDataName;
     }
@@ -1139,6 +1143,7 @@ var coordinateFormatFunction = function(coordinate) {
 var fixContentHeight = function() {
     var viewHeight = $(window).height();
     var navbar = $('div[data-role="navbar"]:visible:visible');
+    // todo - this is not quite right, off by approx 7 pixels - why?
     var newMapH = viewHeight - navbar.outerHeight();
     var curMapSize = map.getSize();
     curMapSize[1] = newMapH;
@@ -1147,13 +1152,6 @@ var fixContentHeight = function() {
 
 $(function() {
 
-    // setup tooltips
-    $('.mytooltip').tooltip({
-	// this helps w/ btn groups
-	trigger: 'hover',
-	container: 'body'
-    });
-    
     // add the main layer
     setDimensionById(0);
 
@@ -1282,6 +1280,19 @@ $(function() {
 	if (rasterElevation !== null) {
 	    rasterElevation.changed();
 	}
+    });
+
+    // put the world info
+    $('#worldInfo').html(
+	'<span class="badge mytooltip" title="World Name">' + worldName + '</span>' +
+	    '<span class="label mytooltip" title="Imagery Creation Date">' + creationTime + '</span>'
+    );
+
+    // setup tooltips
+    $('.mytooltip').tooltip({
+	// this helps w/ btn groups
+	trigger: 'hover',
+	container: 'body'
     });
     
     // fix map size

@@ -4,12 +4,16 @@
 
   todo
 
+  * todobig -- Chrome appears to be demented about serving local files.  You get CORS errors.  Not at all clear that this can be resolved w/o really ugly workarounds (e.g. disabling chrome security); This could be the case with MS Edge on win10 also.
+  -- http://stackoverflow.com/questions/3102819/disable-same-origin-policy-in-chrome
+  -- https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?hl=en
+
   * todohere -- some mods in test-all2 -- combine raw layer + regular layer selector; experiments w/ multilevel dropdown for mobs
 
-  * put levelname + generation timestamp somewhere in the ui
-
-  * goto X -- e.g. Player; World Spawn; Player Spawn; etc
+  * goto X -- e.g. Player; World Origin; World Spawn; Player Spawn; etc
   
+  * improve the ui - it's sorta clunky :)
+
   * some reporting of details in geojson -- counts of different items?
 
   * online help/intro text -- bootstrap tour? (is there a CDN for bstour?)
@@ -30,10 +34,7 @@
   * web: why does click on point not always work?
 
   * ability to hover over a pixel and get info (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)"); switch image layers
-  
-  * hidden layers for more info in mouse pos window: biomes + height
-
-  * improve the ui - it's sorta clunky :)
+  -- hidden layers for more info in mouse pos window: biomes + height
 
   * rewrite/adapt to use the google closure tools?
 
@@ -79,6 +80,8 @@ var globalLayerMode = 0, globalLayerId = 0;
 var listEntityToggle = [];
 var listTileEntityToggle = [];
 
+var globalCORSWarning = 'MCPE Viz Hint: If you are loading files from the local filesystem, your browser might not be allowing us to load additional files or examine pixels in maps.  Firefox does not have this limitation.  See README.md for more info...';
+var globalCORSWarningFlag = false;
 
 // this removes the hideous blurriness when zoomed in
 var setCanvasSmoothingMode = function(evt) {
@@ -98,7 +101,8 @@ var resetCanvasSmoothingMode = function(evt) {
 var loadEventCount = 0;
 function updateLoadEventCount(delta) {
     loadEventCount += delta;
-
+    if (loadEventCount < 0) { loadEventCount = 0; }
+    
     if (loadEventCount > 0) {
         var pos = $('#map').offset();
         var x1 = pos.left + 70;
@@ -460,212 +464,230 @@ function setLayerLoadListeners(src, fn) {
  * @return {ImageData} Output image.
  */
 function shade(inputs, data) {
-    var elevationImage = inputs[0];
-    var width = elevationImage.width;
-    var height = elevationImage.height;
-    var elevationData = elevationImage.data;
-    var shadeData = new Uint8ClampedArray(elevationData.length);
-    var maxX = width - 1;
-    var maxY = height - 1;
-    var twoPi = 2 * Math.PI;
-    var halfPi = Math.PI / 2;
+    try {
+	var elevationImage = inputs[0];
+	var width = elevationImage.width;
+	var height = elevationImage.height;
+	var elevationData = elevationImage.data;
+	var shadeData = new Uint8ClampedArray(elevationData.length);
+	var maxX = width - 1;
+	var maxY = height - 1;
+	var twoPi = 2 * Math.PI;
+	var halfPi = Math.PI / 2;
 
-    // (2)  Zenith_deg = 90 - Altitude
-    // (3)  Zenith_rad = Zenith_deg * pi / 180.0
-    var zenithRad = (90 - data.sunEl) * Math.PI / 180;
+	// (2)  Zenith_deg = 90 - Altitude
+	// (3)  Zenith_rad = Zenith_deg * pi / 180.0
+	var zenithRad = (90 - data.sunEl) * Math.PI / 180;
 
-    // (4)  Azimuth_math = 360.0 - Azimuth + 90
-    var azimuthMath = 360 - data.sunAz + 90;
-    // (5)  if Azimth_math >= 360.0 : Azimuth_math = Azimuth_math - 360.0
-    if (azimuthMath >= 360.0) {
-	azimuthMath = azimuthMath - 360.0;
-    }
-    // (6)  Azimuth_rad = Azimuth_math *  pi / 180.0
-    var azimuthRad = azimuthMath * Math.PI / 180.0;
+	// (4)  Azimuth_math = 360.0 - Azimuth + 90
+	var azimuthMath = 360 - data.sunAz + 90;
+	// (5)  if Azimth_math >= 360.0 : Azimuth_math = Azimuth_math - 360.0
+	if (azimuthMath >= 360.0) {
+	    azimuthMath = azimuthMath - 360.0;
+	}
+	// (6)  Azimuth_rad = Azimuth_math *  pi / 180.0
+	var azimuthRad = azimuthMath * Math.PI / 180.0;
 
-    var cosZenithRad = Math.cos(zenithRad);
-    var sinZenithRad = Math.sin(zenithRad);
+	var cosZenithRad = Math.cos(zenithRad);
+	var sinZenithRad = Math.sin(zenithRad);
 
-    // todo - since we need to multiply x2 to expand 0..127 to 0..255 we instead halve this (would be 8)
-    var dp = data.resolution * 4.0;  // data.resolution * 8; // todo - not totally sure about the use of resolution here
+	// todo - since we need to multiply x2 to expand 0..127 to 0..255 we instead halve this (would be 8)
+	var dp = data.resolution * 4.0;  // data.resolution * 8; // todo - not totally sure about the use of resolution here
 
-    // notes: negative values simply reverse the sun azimuth; the range of interesting values is fairly narrow - somewhere on (0.001..0.8)
-    var zFactor = (data.vert / 10.0) - 0.075;
+	// notes: negative values simply reverse the sun azimuth; the range of interesting values is fairly narrow - somewhere on (0.001..0.8)
+	var zFactor = (data.vert / 10.0) - 0.075;
 
-    var x0, x1, x2, 
-	y0, y1, y2, 
-	offset,
-	z0, z2, 
-	dzdx, dzdy, 
-	slopeRad, aspectRad, hillshade, fhillshade;
+	var x0, x1, x2, 
+	    y0, y1, y2, 
+	    offset,
+	    z0, z2, 
+	    dzdx, dzdy, 
+	    slopeRad, aspectRad, hillshade, fhillshade;
 
-    /* 
-       our 3x3 grid:
-       a b c
-       d e f
-       g h i
-       
-       y0 is row above curr
-       y1 is curr
-       y2 is row below curr
+	/* 
+	   our 3x3 grid:
+	   a b c
+	   d e f
+	   g h i
+	   
+	   y0 is row above curr
+	   y1 is curr
+	   y2 is row below curr
 
-       x0 is col to left of curr
-       x1 is curr
-       x2 is col to right of curr
-    */
+	   x0 is col to left of curr
+	   x1 is curr
+	   x2 is col to right of curr
+	*/
 
-    for (y1 = 0; y1 <= maxY; ++y1) {
-	y0 = (y1 === 0) ? 0 : (y1 - 1);
-	y2 = (y1 === maxY) ? maxY : (y1 + 1);
+	for (y1 = 0; y1 <= maxY; ++y1) {
+	    y0 = (y1 === 0) ? 0 : (y1 - 1);
+	    y2 = (y1 === maxY) ? maxY : (y1 + 1);
 
-	for (x1 = 0; x1 <= maxX; ++x1) {
-	    x0 = (x1 === 0) ? 0 : (x1 - 1);
-	    x2 = (x1 === maxX) ? maxX : (x1 + 1);
+	    for (x1 = 0; x1 <= maxX; ++x1) {
+		x0 = (x1 === 0) ? 0 : (x1 - 1);
+		x2 = (x1 === maxX) ? maxX : (x1 + 1);
 
-	    // z0 = a + 2d + g
-	    z0 = 
-		elevationData[(y0 * width + x0) * 4] + 
-		elevationData[(y1 * width + x0) * 4] * 2.0 + 
-		elevationData[(y2 * width + x0) * 4];
+		// z0 = a + 2d + g
+		z0 = 
+		    elevationData[(y0 * width + x0) * 4] + 
+		    elevationData[(y1 * width + x0) * 4] * 2.0 + 
+		    elevationData[(y2 * width + x0) * 4];
 
-	    // z2 = c + 2f + i
-	    z2 = 
-		elevationData[(y0 * width + x2) * 4] + 
-		elevationData[(y1 * width + x2) * 4] * 2.0 + 
-		elevationData[(y2 * width + x2) * 4];
-	    
-	    // (7)  [dz/dx] = ((c + 2f + i) - (a + 2d + g)) / (8 * cellsize)
-	    dzdx = (z2 - z0) / dp;
+		// z2 = c + 2f + i
+		z2 = 
+		    elevationData[(y0 * width + x2) * 4] + 
+		    elevationData[(y1 * width + x2) * 4] * 2.0 + 
+		    elevationData[(y2 * width + x2) * 4];
+		
+		// (7)  [dz/dx] = ((c + 2f + i) - (a + 2d + g)) / (8 * cellsize)
+		dzdx = (z2 - z0) / dp;
 
 
-	    // z0 = a + 2b + c
-	    z0 = 
-		elevationData[(y0 * width + x0) * 4] + 
-		elevationData[(y0 * width + x1) * 4] * 2.0 + 
-		elevationData[(y0 * width + x2) * 4];
+		// z0 = a + 2b + c
+		z0 = 
+		    elevationData[(y0 * width + x0) * 4] + 
+		    elevationData[(y0 * width + x1) * 4] * 2.0 + 
+		    elevationData[(y0 * width + x2) * 4];
 
-	    // z2 = g + 2h + i
-	    z2 = 
-		elevationData[(y2 * width + x0) * 4] + 
-		elevationData[(y2 * width + x1) * 4] * 2.0 + 
-		elevationData[(y2 * width + x2) * 4];
+		// z2 = g + 2h + i
+		z2 = 
+		    elevationData[(y2 * width + x0) * 4] + 
+		    elevationData[(y2 * width + x1) * 4] * 2.0 + 
+		    elevationData[(y2 * width + x2) * 4];
 
-	    // (8)  [dz/dy] = ((g + 2h + i) - (a + 2b + c))  / (8 * cellsize)
-	    dzdy = (z2 - z0) / dp;
+		// (8)  [dz/dy] = ((g + 2h + i) - (a + 2b + c))  / (8 * cellsize)
+		dzdy = (z2 - z0) / dp;
 
-	    // (9)  Slope_rad = ATAN (z_factor * sqrt ([dz/dx]2 + [dz/dy]2)) 
-	    slopeRad = Math.atan(zFactor * Math.sqrt(dzdx * dzdx + dzdy * dzdy));
+		// (9)  Slope_rad = ATAN (z_factor * sqrt ([dz/dx]2 + [dz/dy]2)) 
+		slopeRad = Math.atan(zFactor * Math.sqrt(dzdx * dzdx + dzdy * dzdy));
 
-	    if (dzdx !== 0.0) { 
-		aspectRad = Math.atan2(dzdy, -dzdx);
+		if (dzdx !== 0.0) { 
+		    aspectRad = Math.atan2(dzdy, -dzdx);
 
-		if (aspectRad < 0) {
-		    aspectRad = twoPi + aspectRad;
-		}
-	    }
-	    else {
-		if (dzdy > 0.0) {
-		    aspectRad = halfPi;
-		} 
-		else if (dzdy < 0.0) {
-		    aspectRad = twoPi - halfPi;
+		    if (aspectRad < 0) {
+			aspectRad = twoPi + aspectRad;
+		    }
 		}
 		else {
-		    // aspectRad is fine
-		    aspectRad = 0.0; // todo - this is my guess; algo notes are ambiguous
+		    if (dzdy > 0.0) {
+			aspectRad = halfPi;
+		    } 
+		    else if (dzdy < 0.0) {
+			aspectRad = twoPi - halfPi;
+		    }
+		    else {
+			// aspectRad is fine
+			aspectRad = 0.0; // todo - this is my guess; algo notes are ambiguous
+		    }
 		}
+		
+		// (1)  Hillshade = 255.0 * ((cos(Zenith_rad) * cos(Slope_rad)) + 
+		//        (sin(Zenith_rad) * sin(Slope_rad) * cos(Azimuth_rad - Aspect_rad)))
+		// Note that if the calculation of Hillshade value is < 0, the cell value will be = 0.
+
+		fhillshade = 255.0 * ((cosZenithRad * Math.cos(slopeRad)) + (sinZenithRad * Math.sin(slopeRad) * Math.cos(azimuthRad - aspectRad)));
+
+		if (fhillshade < 0.0) {
+		    hillshade = 0;
+		} else {
+		    hillshade = Math.round(fhillshade);
+		}
+
+		offset = (y1 * width + x1) * 4;
+		shadeData[offset] =
+		    shadeData[offset + 1] =
+		    shadeData[offset + 2] = hillshade;
+		// note: reduce the opacity for brighter parts; idea is to reduce haziness
+		shadeData[offset + 3] = 255 - (hillshade / 2);
 	    }
-	    
-	    // (1)  Hillshade = 255.0 * ((cos(Zenith_rad) * cos(Slope_rad)) + 
-	    //        (sin(Zenith_rad) * sin(Slope_rad) * cos(Azimuth_rad - Aspect_rad)))
-	    // Note that if the calculation of Hillshade value is < 0, the cell value will be = 0.
-
-	    fhillshade = 255.0 * ((cosZenithRad * Math.cos(slopeRad)) + (sinZenithRad * Math.sin(slopeRad) * Math.cos(azimuthRad - aspectRad)));
-
-	    if (fhillshade < 0.0) {
-		hillshade = 0;
-	    } else {
-		hillshade = Math.round(fhillshade);
-	    }
-
-	    offset = (y1 * width + x1) * 4;
-	    shadeData[offset] =
-		shadeData[offset + 1] =
-		shadeData[offset + 2] = hillshade;
-	    shadeData[offset + 3] = 255;
 	}
-    }
 
-    return new ImageData(shadeData, width, height);
+	return new ImageData(shadeData, width, height);
+    } catch (e) {
+	// we are probably failing because of CORS
+	alert('Error accessing map pixels.  Disabling elevation overlay.\n\n' +
+	      'Error: ' + e.toString() + '\n\n' +
+	      globalCORSWarning);
+	map.removeLayer(layerElevation);
+    }
+    // todobig todohere - how to catch CORS issue here?
 }
 
 var srcElevation = null, rasterElevation = null, layerElevation = null;
 
 function doShadedRelief(enableFlag) {
-    if (enableFlag) {
-	var fn = dimensionInfo[globalDimensionId].fnLayerHeightGrayscale;
-	if (fn === undefined || fn.length <= 1) {
-	    alert('Data for elevation image is not available -- see README.md and re-run mcpe_viz\n' +
-		  '\n' +
-		  'Hint: You need to run mcpe_viz with --html-most (or --html-all)');
-	    return -1;
-	}
-	var doInitFlag = false;
-	if (srcElevation === null) {
-	    doInitFlag = true;
-	    srcElevation = new ol.source.ImageStatic({
-		url: fn,
-		projection: projection,
-		imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
-		// 'Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image.'
-		imageExtent: extent
-	    });
-
-	    setLayerLoadListeners(srcElevation, fn);
-
-	    rasterElevation = new ol.source.Raster({
-		sources: [srcElevation],
-		operationType: 'image',
-		operation: shade
-	    });
-
-	    layerElevation = new ol.layer.Image({
-		opacity: 0.3,
-		source: rasterElevation
-	    });
-	}
-
-	map.addLayer(layerElevation);
-
-	if (doInitFlag) {
-	    var controlIds = ['vert', 'sunEl', 'sunAz'];
-	    var controls = {};
-	    controlIds.forEach(function(id) {
-		var control = document.getElementById(id);
-		var output = document.getElementById(id + 'Out');
-		// todo - this does NOT update the text fields on firefox - why?
-		control.addEventListener('input', function() {
-		    output.innerText = control.value;
-		    rasterElevation.changed();
+    try {
+	if (enableFlag) {
+	    var fn = dimensionInfo[globalDimensionId].fnLayerHeightGrayscale;
+	    if (fn === undefined || fn.length <= 1) {
+		alert('Data for elevation image is not available -- see README.md and re-run mcpe_viz\n' +
+		      '\n' +
+		      'Hint: You need to run mcpe_viz with --html-most (or --html-all)');
+		return -1;
+	    }
+	    var doInitFlag = false;
+	    if (srcElevation === null) {
+		doInitFlag = true;
+		srcElevation = new ol.source.ImageStatic({
+		    url: fn,
+		    //crossOrigin: 'anonymous',
+		    projection: projection,
+		    imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+		    // 'Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image.'
+		    imageExtent: extent
 		});
-		output.innerText = control.value;
-		controls[id] = control;
-	    });
 
-	    rasterElevation.on('beforeoperations', function(event) {
-		// the event.data object will be passed to operations
-		var data = event.data;
-		data.resolution = event.resolution;
-		for (var id in controls) {
-		    data[id] = Number(controls[id].value);
-		}
-	    });
+		setLayerLoadListeners(srcElevation, fn);
+
+		rasterElevation = new ol.source.Raster({
+		    sources: [srcElevation],
+		    operationType: 'image',
+		    operation: shade
+		});
+
+		layerElevation = new ol.layer.Image({
+		    opacity: 0.3,
+		    source: rasterElevation
+		});
+	    }
+
+	    map.addLayer(layerElevation);
+
+	    if (doInitFlag) {
+		var controlIds = ['vert', 'sunEl', 'sunAz', 'shadeOpacity'];
+		var controls = {};
+		controlIds.forEach(function(id) {
+		    var control = document.getElementById(id);
+		    var output = document.getElementById(id + 'Out');
+		    // todo - this does NOT update the text fields on firefox - why?
+		    control.addEventListener('input', function() {
+			output.innerText = control.value;
+			rasterElevation.changed();
+		    });
+		    output.innerText = control.value;
+		    controls[id] = control;
+		});
+
+		rasterElevation.on('beforeoperations', function(event) {
+		    // the event.data object will be passed to operations
+		    var data = event.data;
+		    data.resolution = event.resolution;
+		    for (var id in controls) {
+			data[id] = Number(controls[id].value);
+		    }
+		});
+	    }
+	} else {
+	    if (layerElevation !== null) {
+		map.removeLayer(layerElevation);
+	    }
 	}
-    } else {
-	if (layerElevation !== null) {
-	    map.removeLayer(layerElevation);
-	}
+    } catch (e) {
+	alert('Error accessing map pixels.\n\n' +
+	      'Error: ' + e.toString() + '\n\n' +
+	      globalCORSWarning);
     }
+    // todobig todohere - how to catch CORS issue here?
     return 0;
 }
 
@@ -782,6 +804,7 @@ function setLayer(fn, extraHelp) {
 	    })
 	],
 	url: fn,
+	//crossOrigin: 'anonymous',
 	projection: projection,
 	imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
 	// 'Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image.'
@@ -805,32 +828,42 @@ function setLayer(fn, extraHelp) {
 	});
 	
 	layerMain.on('postcompose', function(event) {
-	    var ctx = event.context;
-	    var pixelRatio = event.frameState.pixelRatio;
-	    pixelDataName = '';
-	    if (globalMousePosition && 
-		((globalLayerMode === 0 && (globalLayerId === 0 || globalLayerId === 1)) || globalLayerMode !== 0)) {
-		// todo - this appears to be slightly off at times (e.g. block does not change crisply at src pixel boundaries)
-		var x = globalMousePosition[0] * pixelRatio;
-		var y = globalMousePosition[1] * pixelRatio;
-		var pre = '';
-		pixelData = ctx.getImageData(x, y, 1, 1).data;
-		var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
-		if (globalLayerMode === 0 && globalLayerId === 1) {
-		    pre = 'Biome';
-		    pixelDataName = biomeColorLUT['' + cval];
-		} else {
-		    pre = 'Block';
-		    pixelDataName = blockColorLUT['' + cval];
-		}
-		if (pixelDataName === undefined || pixelDataName === '') {
-		    if (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0) {
-			pixelDataName = '(<i>Here be Monsters</i> -- unexplored chunk)';
+	    try {
+		var ctx = event.context;
+		var pixelRatio = event.frameState.pixelRatio;
+		pixelDataName = '';
+		if (globalMousePosition && 
+		    ((globalLayerMode === 0 && (globalLayerId === 0 || globalLayerId === 1)) || globalLayerMode !== 0)) {
+		    // todo - this appears to be slightly off at times (e.g. block does not change crisply at src pixel boundaries)
+		    var x = globalMousePosition[0] * pixelRatio;
+		    var y = globalMousePosition[1] * pixelRatio;
+		    var pre = '';
+		    pixelData = ctx.getImageData(x, y, 1, 1).data;
+		    var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
+		    if (globalLayerMode === 0 && globalLayerId === 1) {
+			pre = 'Biome';
+			pixelDataName = biomeColorLUT['' + cval];
 		    } else {
-			pixelDataName = '<span class="lgray">' + pre + '</span> ' + 'Unknown RGB: ' + pixelData[0] + ' ' + pixelData[1] + ' ' + pixelData[2] + ' (' + cval + ')';
+			pre = 'Block';
+			pixelDataName = blockColorLUT['' + cval];
 		    }
-		} else {
-		    pixelDataName = '<span class="lgray">' + pre + '</span> ' + pixelDataName;
+		    if (pixelDataName === undefined || pixelDataName === '') {
+			if (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0) {
+			    pixelDataName = '(<i>Here be Monsters</i> -- unexplored chunk)';
+			} else {
+			    pixelDataName = '<span class="lgray">' + pre + '</span> ' + 'Unknown RGB: ' + pixelData[0] + ' ' + pixelData[1] + ' ' + pixelData[2] + ' (' + cval + ')';
+			}
+		    } else {
+			pixelDataName = '<span class="lgray">' + pre + '</span> ' + pixelDataName;
+		    }
+		}
+	    } catch (e) {
+		pixelDataName = '<i>Browser will not let us access map pixels - See README.md</i>';
+		if ( ! globalCORSWarningFlag ) {
+		    alert('Error accessing map pixels.\n\n' +
+			  'Error: ' + e.toString() + '\n\n' +
+			  globalCORSWarning);
+		    globalCORSWarningFlag = true;
 		}
 	    }
 	});
@@ -1059,25 +1092,55 @@ function loadVectors() {
 	map.removeLayer(vectorPoints);
     }
 
-    var src = new ol.source.Vector({
-	url: dimensionInfo[globalDimensionId].fnGeoJSON,
-	format: new ol.format.GeoJSON()
-    });
-
-    updateLoadEventCount(1);
-    var listenerKey = src.on('change', function(e) {
-	if (src.getState() == 'ready') {
-	    updateLoadEventCount(-1);
-	    ol.Observable.unByKey(listenerKey);
+    try {
+	var src;
+	if ( loadGeoJSONFlag ) { 
+	    src = new ol.source.Vector({
+		url: dimensionInfo[globalDimensionId].fnGeoJSON,
+		//crossOrigin: 'anonymous',
+		format: new ol.format.GeoJSON()
+	    });
+	    updateLoadEventCount(1);
+	} else {
+	    // we are loading the geojson directly to work-around silly chrome (et al) CORS issue
+	    // adapted from ol/featureloader.js
+	    var format = new ol.format.GeoJSON();
+	    var features = format.readFeatures(geojson, {featureProjection: projection});
+	    src = new ol.source.Vector({
+		features: features
+	    });
 	}
-    });
-
-    vectorPoints = new ol.layer.Vector({
-	source: src,
-	style: createPointStyleFunction()
-    });
-    
-    map.addLayer(vectorPoints);
+	
+	var listenerKey = src.on('change', function(e) {
+	    if (src.getState() == 'ready') {
+		updateLoadEventCount(-1);
+		ol.Observable.unByKey(listenerKey);
+	    }
+	    else if (src.getState() == 'error') {
+		updateLoadEventCount(-1);
+		ol.Observable.unByKey(listenerKey);
+		alert('Image load error.\n' +
+		      '\n' +
+		      'Could not load file: ' + src.url + '\n' +
+		      globalCORSWarning);
+	    }
+	});
+	
+	vectorPoints = new ol.layer.Vector({
+	    source: src,
+	    style: createPointStyleFunction()
+	});
+	
+	map.addLayer(vectorPoints);
+    } catch (e) {
+	updateLoadEventCount(-1);
+	alert('Vector load error.\n' +
+	      '\n' +
+	      'Error: ' + e.toString() + '\n' +
+	      '\n' +
+	      globalCORSWarning);
+    } 
+    // todobig todohere - how to catch CORS issue here?
 }
 
 
@@ -1265,6 +1328,11 @@ $(function() {
     });
     
     $('#elevationToggle').click(function() {
+	if ( globalCORSWarningFlag ) {
+	    alert('Error accessing map pixels.  We cannot enable the elevation overlay.\n\n' +
+		  globalCORSWarning);
+	    return;
+	}
 	if ($('#elevationToggle').parent().hasClass('active')) {
 	    $('#elevationToggle').parent().removeClass('active');
 	    doShadedRelief(false);
@@ -1277,11 +1345,18 @@ $(function() {
 	$('#vert').val($('#vert').attr('data-default'));
 	$('#sunEl').val($('#sunEl').attr('data-default'));
 	$('#sunAz').val($('#sunAz').attr('data-default'));
+	$('#shadeOpacity').val($('#shadeOpacity').attr('data-default'));
 	if (rasterElevation !== null) {
 	    rasterElevation.changed();
 	}
     });
 
+    $('#shadeOpacity').change(function() {
+	if (layerElevation !== null) {
+	    layerElevation.setOpacity( $('#shadeOpacity').val() / 100.0 );
+	}
+    });
+    
     // put the world info
     $('#worldInfo').html(
 	'<span class="badge mytooltip" title="World Name">' + worldName + '</span>' +

@@ -279,7 +279,29 @@ namespace mcpe_viz {
       kHeightModeTop = 0,
 	kHeightModeLevelDB = 1
 	};
-    
+
+    std::string escapeString(const std::string& s, const std::string& escapeChars) {
+      if ( escapeChars.size() == 0 ) {
+	return s;
+      }
+      std::string ret="";
+      for ( const auto& ch : s ) {
+	bool replaced = false;
+	for ( const auto& escape : escapeChars ) {
+	  if ( ch == escape ) {
+	    ret += "\\";
+	    ret += escape;
+	    replaced = true;
+	    break;
+	  }
+	}
+	if (!replaced) {
+	  ret += ch;
+	}
+      }
+      return ret;
+    }
+
     // all user options are stored here
     class Control {
     public:
@@ -313,6 +335,7 @@ namespace mcpe_viz {
       int doImageHeightColGrayscale;
       int doImageLightBlock;
       int doImageLightSky;
+      bool noForceGeoJSONFlag;
       bool shortRunFlag;
       bool colorTestFlag;
       bool verboseFlag;
@@ -340,23 +363,30 @@ namespace mcpe_viz {
 	if ( fpGeoJSON != nullptr ) {
 	  // todo - this is a silly place to do this; make it a function
 	  // put the geojson preamble stuff
+
+	  if ( noForceGeoJSONFlag ) {
+	  } else {
+	    fprintf(fpGeoJSON, "var geojson =\n" );
+	  }
 	  fprintf(fpGeoJSON,
-		  "{\n"
-		  "\"type\": \"FeatureCollection\",\n"
+		  "{ \"type\": \"FeatureCollection\",\n"
 		  // todo - correct way to specify this?
 		  "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
-		  "\n"
 		  "\"features\": [\n"
 		  );
 	  int i = listGeoJSON.size();
 	  for ( const auto& it: listGeoJSON ) {
-	    fprintf(fpGeoJSON,"%s",it.c_str());
+	    fputs(it.c_str(), fpGeoJSON);
 	    if ( --i > 0 ) {
 	      fputc(',',fpGeoJSON);
 	    }
 	    fputc('\n',fpGeoJSON);
 	  }
-	  fprintf(fpGeoJSON,"]\n}\n");
+	  if ( noForceGeoJSONFlag ) {
+	    fprintf(fpGeoJSON,"] }\n");
+	  } else {
+	    fprintf(fpGeoJSON,"] };\n");
+	  }
 	  fclose(fpGeoJSON);
 	}
       }
@@ -381,6 +411,7 @@ namespace mcpe_viz {
 	doImageHeightColGrayscale = kDoOutputNone;
 	doImageLightBlock = kDoOutputNone;
 	doImageLightSky = kDoOutputNone;
+	noForceGeoJSONFlag = false;
 	
 	shortRunFlag = false;
 	colorTestFlag = false;
@@ -2044,21 +2075,6 @@ namespace mcpe_viz {
       }
     };
 
-    std::string escapeString(const std::string& s, const std::string& escapeChars) {
-      std::string ret="";
-      for ( const auto& ch : s ) {
-	for ( const auto& escape : escapeChars ) {
-	  if ( ch == escape ) {
-	    ret += "\\";
-	    ret += escape;
-	  } else {
-	    ret += ch;
-	  }
-	}
-      }
-      return ret;
-    }
-
     template<class T>
     class Point2d {
     public:
@@ -2166,7 +2182,7 @@ namespace mcpe_viz {
 	    s += tmpstring;
 	  }
 	  //s += "\"Level\": \"";
-	  sprintf(tmpstring," (%d)\"\n", level.value);
+	  sprintf(tmpstring," (%d)\"", level.value);
 	  s += tmpstring;
 	} else {
 	  s += "\"valid\": \"false\"";
@@ -2304,16 +2320,15 @@ namespace mcpe_viz {
 	}
 	
 	if ( enchantmentList.size() > 0 ) {
-	  s = "\"Enchantments\": [\n";
+	  s = "\"Enchantments\": [ ";
 	  int i = enchantmentList.size();
 	  for ( const auto& it: enchantmentList ) {
 	    s+="{ " + it->toGeoJSON() + " }";
 	    if ( --i > 0 ) {
 	      s += ",";
 	    }
-	    s+="\n";
 	  }
-	  s += "]\n";
+	  s += "]";
 	  list.push_back(s);
 	}
 
@@ -2325,7 +2340,6 @@ namespace mcpe_viz {
 	  if ( --i > 0 ) {
 	    s += ",";
 	  }
-	  s += "\n";
 	}
 	
 	return s;
@@ -2529,14 +2543,14 @@ namespace mcpe_viz {
 	worldPointToImagePoint(forceDimensionId, pos.x,pos.z, ix,iy, true);
 	sprintf(tmpstring,"%d, %d",ix,iy);
 	s +=
-	  "{\n"
-	  "\"type\": \"Feature\",\n"
+	  "{ "
+	  "\"type\": \"Feature\", "
 	  "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
 	  ;
 	s += tmpstring;
 	s +=
-	  "] },\n"
-	  "\"properties\": {\n"
+	  "] }, "
+	  "\"properties\": { "
 	  ;
 
 	if ( has_key(entityInfoList, id) ) {
@@ -2585,14 +2599,13 @@ namespace mcpe_viz {
 	    }
 	  }
 	  if ( tlist.size() > 0 ) {
-	    std::string ts = "\"Armor\": [\n";
+	    std::string ts = "\"Armor\": [ ";
 	    int i = tlist.size();
 	    for (const auto& iter : tlist ) {
 	      ts += iter;
 	      if ( --i > 0 ) {
 		ts += ",";
 	      }
-	      ts += "\n";
 	    }
 	    ts += "]";
 	    list.push_back(ts);
@@ -2608,14 +2621,13 @@ namespace mcpe_viz {
 	    }
 	  }
 	  if ( tlist.size() > 0 ) {
-	    std::string ts = "\"Inventory\": [\n";
+	    std::string ts = "\"Inventory\": [ ";
 	    int i = tlist.size();
 	    for (const auto& iter : tlist ) {
 	      ts += iter;
 	      if ( --i > 0 ) {
 		ts += ",";
 	      }
-	      ts += "\n";
 	    }
 	    ts += "]";
 	    list.push_back(ts);
@@ -2654,10 +2666,9 @@ namespace mcpe_viz {
 	    if ( --i > 0 ) {
 	      s += ",";
 	    }
-	    s += "\n";
 	  }
 	}
-	s += "}\n}\n";
+	s += "} }";
 	
 	return s;
       }
@@ -2835,14 +2846,13 @@ namespace mcpe_viz {
 	    }
 	  }
 	  if ( tlist.size() > 0 ) {
-	    std::string ts = "\"Items\": [\n";
+	    std::string ts = "\"Items\": [ ";
 	    int i = tlist.size();
 	    for (const auto& iter : tlist ) {
 	      ts += "{ " + iter + " }";
 	      if ( --i > 0 ) {
 		ts += ",";
 	      }
-	      ts += "\n";
 	    }
 	    ts += "]";
 	    list.push_back(ts);
@@ -2880,7 +2890,7 @@ namespace mcpe_viz {
 	    sprintf(tmpstring,"\"Name\": \"(UNKNOWN: id=%d 0x%x)\"",eid,eid);
 	    ts += tmpstring;
 	  }
-	  ts += "}\n";
+	  ts += "}";
 	  list.push_back(ts);
 	}
 
@@ -2898,14 +2908,14 @@ namespace mcpe_viz {
 	  worldPointToImagePoint(forceDimensionId, pos.x,pos.z, ix,iy, true);
 	  sprintf(tmpstring,"%d, %d",ix,iy);
 	  s +=
-	    "{\n"
-	    "\"type\": \"Feature\",\n"
+	    "{ "
+	    "\"type\": \"Feature\", "
 	    "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
 	    ;
 	  s += tmpstring;
 	  s +=
-	    "] },\n"
-	    "\"properties\": {\n"
+	    "] }, "
+	    "\"properties\": { "
 	    ;
 	  
 	  int i = list.size();
@@ -2914,9 +2924,8 @@ namespace mcpe_viz {
 	    if ( --i > 0 ) {
 	      s += ",";
 	    }
-	    s += "\n";
 	  }
-	  s += "}\n}\n";
+	  s += "} }";
 	  return s;
 	}
 
@@ -3298,14 +3307,14 @@ namespace mcpe_viz {
 	  worldPointToImagePoint(dimId, pos.x,pos.z, ix,iy, true);
 	  sprintf(tmpstring,"%d, %d",ix,iy);
 	  s +=
-	    "{\n"
-	    "\"type\": \"Feature\",\n"
+	    "{ "
+	    "\"type\": \"Feature\", "
 	    "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
 	    ;
 	  s += tmpstring;
 	  s +=
-	    "] },\n"
-	    "\"properties\": {\n"
+	    "] }, "
+	    "\"properties\": { "
 	    ;
 	  
 	  int i = list.size();
@@ -3314,9 +3323,8 @@ namespace mcpe_viz {
 	    if ( --i > 0 ) {
 	      s += ",";
 	    }
-	    s += "\n";
 	  }
-	  s += "}\n}\n";
+	  s += "} }";
 	  return s;
 	}
 
@@ -4017,7 +4025,25 @@ namespace mcpe_viz {
 	  
 	// create html file -- need to substitute one variable (extra js file)
 	StringReplacementList replaceStrings;
-	replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"), std::string(mybasename(control.fnJs.c_str())) ) );
+
+	if ( control.noForceGeoJSONFlag ) {
+	  replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
+						    "<script src=\"" +
+						    std::string(mybasename(control.fnJs.c_str())) +
+						    "\"></script>"
+						    )
+				    );
+	} else {
+	  replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
+						    "<script src=\"" +
+						    std::string(mybasename(control.fnJs.c_str())) +
+						    "\"></script>\n" +
+						    "<script src=\"" +
+						    std::string(mybasename(control.fnGeoJSON.c_str())) +
+						    "\"></script>"
+						    )
+				    );
+	}
 	copyFileWithStringReplacement(fnHtmlSrc, control.fnHtml, replaceStrings);
 	  
 	// create javascript file w/ filenames etc
@@ -4035,9 +4061,11 @@ namespace mcpe_viz {
 		  "// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
 		  "var worldName = '%s';\n"
 		  "var creationTime = '%s';\n"
+		  "var loadGeoJSONFlag = %s;\n"
 		  "var dimensionInfo = {\n"
 		  , escapeString(globalLevelName.c_str(), "'").c_str()
 		  , escapeString(timebuf,"'").c_str()
+		  , control.noForceGeoJSONFlag ? "true" : "false"
 		  );
 	  for (int did=0; did < kDimIdCount; did++) {
 	    fprintf(fp, "'%d': {\n", did);
@@ -4891,7 +4919,7 @@ namespace mcpe_viz {
 	      //"  --detail                 Log extensive details about the world to the log file\n"
 	      "  --html                   Create html and javascript files to use as a fancy viewer\n"
 	      "  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
-	      "  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer (slow)\n"
+	      "  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
 	      //"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
 	      "\n"
 	      "  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
@@ -4914,6 +4942,8 @@ namespace mcpe_viz {
 	      "\n"
 	      "  --xml fn                 XML file containing data definitions\n"
 	      "  --log fn                 Send log to a file\n"
+	      "\n"
+	      "  --no-force-geojson       Don't load geojson in html because we are going to use a web server (or Firefox)\n"
 	      "\n"
 	      // todo - re-enable when we use these:
 	      "  --verbose                verbose output\n"
@@ -4972,6 +5002,7 @@ namespace mcpe_viz {
 	{"html", no_argument, NULL, ')'},
 	{"html-most", no_argument, NULL, '='},
 	{"html-all", no_argument, NULL, '_'},
+	{"no-force-geojson", no_argument, NULL, ':'},
 
 	{"shortrun", no_argument, NULL, '$'}, // this is just for testing
 	{"colortest", no_argument, NULL, '!'}, // this is just for testing
@@ -5091,6 +5122,10 @@ namespace mcpe_viz {
 	    control.doImageLightBlock = 
 	    control.doImageLightSky = kDoOutputAll;
 	  control.doSlices = kDoOutputAll;
+	  break;
+
+	case ':':
+	  control.noForceGeoJSONFlag = true;
 	  break;
 	  
 	case 'B':

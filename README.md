@@ -61,33 +61,12 @@ Note: Replace "path-to-your-world-file-dir/" with the actual directory which con
 This will produce a bunch of image files and "out1.html". Open "out1.html" in your browser.
 
 
-## Experimental win32 and win64 builds
+## win32 and win64 builds
 
 I used mingw to build win32 and win64 executables.  You can find the exe and required dll's in mcpe_viz.win32.zip and mcpe_viz.win64.zip.  To try it out on windows, download either of the zip files, unzip it and run the exe.
 
 
-## Usage
-
-**DO NOT RUN THIS ON YOUR ORIGINAL MCPE DATA FILES**
-
-**DO NOT RUN THIS ON YOUR ONLY BACKUP OF MCPE DATA FILES**
-
-**MAKE A COPY OF YOUR DATA AND RUN THIS AGAINST THAT COPY ONLY!**
-
-See "./mcpe_viz --help" for the most up-to-date usage info
-
-Here's an example invocation:
-
-```
-> ./mcpe_viz --grid --db ./mcpe/another1/ --out ./mcpe/output/out1
-```
-
-This will read the leveldb from "./mcpe/another1" and name output files starting with "./mcpe/output/out1", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "out1.log".  The log file has a *ton* of interesting information about your world.  "grep" is your friend.
-
-Please note that --db expects the directory which contains "level.dat".
-
-
-### Experimental Browser-based Openlayers Viewer
+## Web App
 
 You can create a browser-based viewer for your world files.  It will allow you to pan, zoom and switch between the different images.  It's pretty spiffy!
 
@@ -116,10 +95,38 @@ Web App Usage Notes:
   * Choose Overworld or Nether
   * Scroll through the layers from 0 (bedrock) to 127 (build limit)
   * Choose Overview, Biome etc
-  * Show Mobs and Items -- click on an entry and the map will be updated with labeled points.  You can toggle on as many different types as you like.  Click on the points or labels to get more info on the item.  Note that labels are not drawn when you are zoomed out.
+  * Show Mobs and Objects -- click on an entry and the map will be updated with labeled points.  You can toggle on as many different types as you like.  Click on the points or labels to get more info on the item.  Note that labels are not drawn when you are zoomed out.
   * Enable elevation overlay (shaded relief)
   * Enable chunk grid overlay
-  
+
+
+## Web App Notes
+
+If you are loading the web app from a local file -- that is, not accessing it from a web server -- your browser may impose restrictions on image loading and access to image pixels which makes it very difficult for the web app to deliver the best experience.  Currently, Firefox appears to be the browser most willing to play nicely.  The web app will let you know if you are impacted by this issue.  For example, on Chrome, you will not see block information on mouse over, or be able to see the elevation overlay -- both of which are totally cool :)
+
+If you are running Firefox or serving the files from a web server, you can make the web app load a little bit faster by adding the option "--no-force-geojson" to your command line.  This prevents mcpe_viz from using a workaround for the above issue.
+
+
+## Usage
+
+**DO NOT RUN THIS ON YOUR ORIGINAL MCPE DATA FILES**
+
+**DO NOT RUN THIS ON YOUR ONLY BACKUP OF MCPE DATA FILES**
+
+**MAKE A COPY OF YOUR DATA AND RUN THIS AGAINST THAT COPY ONLY!**
+
+See "./mcpe_viz --help" for the most up-to-date usage info
+
+Here's an example invocation:
+
+```
+> ./mcpe_viz --grid --db ./mcpe/another1/ --out ./mcpe/output/out1
+```
+
+This will read the leveldb from "./mcpe/another1" and name output files starting with "./mcpe/output/out1", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "out1.log".  The log file has a *ton* of interesting information about your world.  "grep" is your friend.
+
+Please note that --db expects the directory which contains "level.dat".
+
 
 ## Customization
 

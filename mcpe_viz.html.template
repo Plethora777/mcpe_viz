@@ -9,7 +9,7 @@
     <script src="http://openlayers.org/en/v3.9.0/build/ol.js"></script>
     <link rel="stylesheet" href="mcpe_viz.css" type="text/css" />
     <script src="mcpe_viz.js"></script>
-    <script src="%JSFILE%"></script>
+    %JSFILE%
   </head>
   <body>
     <div class="container-fluid" data-role="content">
@@ -161,6 +161,10 @@
 	    <li class="input-group">
 	      <span class="input-group-addon">Azimuth: <span id="sunAzOut"></span></span>
 	      <input id="sunAz" class="mytooltip" title="Sun Azimuth" type="range" min="0" max="360" data-default="315" value="315"/>
+	    </li>
+	    <li class="input-group">
+	      <span class="input-group-addon">Opacity: <span id="shadeOpacityOut"></span></span>
+	      <input id="shadeOpacity" class="mytooltip" title="Overlay Opacity" type="range" min="0" max="100" data-default="30" value="30"/>
 	    </li>
 	    <li><a href="#" id="elevationReset">Reset Elevation Settings</a></li>
 	  </ul>

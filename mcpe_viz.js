@@ -198,7 +198,7 @@ var MeasureTool = function(xmap) {
 		' ' + 'km';
 	} else {
 	    output = (Math.round(length * 100) / 100) +
-	    ' ' + 'm';
+		' ' + 'm';
 	}
 	return output;
     };
@@ -218,7 +218,7 @@ var MeasureTool = function(xmap) {
 		' ' + 'km';
 	} else {
 	    output = (Math.round(length * 100) / 100) +
-	    ' ' + 'm';
+		' ' + 'm';
 	}
 	return output;
     };
@@ -238,7 +238,7 @@ var MeasureTool = function(xmap) {
 		' ' + 'km<sup>2</sup>';
 	} else {
 	    output = (Math.round(area * 100) / 100) +
-	    ' ' + 'm<sup>2</sup>';
+		' ' + 'm<sup>2</sup>';
 	}
 	return output;
     };
@@ -254,10 +254,10 @@ var MeasureTool = function(xmap) {
 	helpTooltipElement = document.createElement('div');
 	helpTooltipElement.className = 'measureTooltip hidden';
 	helpTooltip = new ol.Overlay({
-		element: helpTooltipElement,
-		offset: [15, 0],
-		positioning: 'center-left'
-	    });
+	    element: helpTooltipElement,
+	    offset: [15, 0],
+	    positioning: 'center-left'
+	});
 	overlays.push(helpTooltip);
 	map.addOverlay(helpTooltip);
     };
@@ -273,10 +273,10 @@ var MeasureTool = function(xmap) {
 	measureTooltipElement = document.createElement('div');
 	measureTooltipElement.className = 'measureTooltip measureTooltip-measure';
 	measureTooltip = new ol.Overlay({
-		element: measureTooltipElement,
-		offset: [0, -15],
-		positioning: 'bottom-center'
-	    });
+	    element: measureTooltipElement,
+	    offset: [0, -15],
+	    positioning: 'bottom-center'
+	});
 	overlays.push(measureTooltip);
 	map.addOverlay(measureTooltip);
     };
@@ -288,30 +288,30 @@ var MeasureTool = function(xmap) {
 
     var createInteraction = function() {
 	draw = new ol.interaction.Draw({
-		source: sourceDraw,
-		type: /** @type {ol.geom.GeometryType} */ (drawType)
-		/*
-		style: new ol.style.Style({
-			fill: new ol.style.Fill({
-				color: 'rgba(255, 255, 255, 0.2)'
-			    }),
-			stroke: new ol.style.Stroke({
-				color: 'rgba(0, 0, 0, 0.5)',
-				lineDash: [3, 3],
-				width: 2
-			    }),
-			image: new ol.style.Circle({
-				radius: 5,
-				stroke: new ol.style.Stroke({
-					color: 'rgba(0, 0, 0, 0.7)'
-				    }),
-				fill: new ol.style.Fill({
-					color: 'rgba(255, 255, 255, 0.2)'
-				    })
-			    })
-		    })
-		*/
-	    });
+	    source: sourceDraw,
+	    type: /** @type {ol.geom.GeometryType} */ (drawType)
+	    /*
+	      style: new ol.style.Style({
+	      fill: new ol.style.Fill({
+	      color: 'rgba(255, 255, 255, 0.2)'
+	      }),
+	      stroke: new ol.style.Stroke({
+	      color: 'rgba(0, 0, 0, 0.5)',
+	      lineDash: [3, 3],
+	      width: 2
+	      }),
+	      image: new ol.style.Circle({
+	      radius: 5,
+	      stroke: new ol.style.Stroke({
+	      color: 'rgba(0, 0, 0, 0.7)'
+	      }),
+	      fill: new ol.style.Fill({
+	      color: 'rgba(255, 255, 255, 0.2)'
+	      })
+	      })
+	      })
+	    */
+	});
 	map.addInteraction(draw);
 	
 	createMeasureTooltip();
@@ -326,28 +326,28 @@ var MeasureTool = function(xmap) {
 		    /** @type {ol.Coordinate|undefined} */
 		    var tooltipCoord = evt.coordinate;
 
-			listener = sketch.getGeometry().on('change', function(evt) {
-				var geom = evt.target;
-				var output;
-				if (geom instanceof ol.geom.Polygon) {
-				    output = formatArea(/** @type {ol.geom.Polygon} */ (geom));
-				    tooltipCoord = geom.getInteriorPoint().getCoordinates();
-				} else if (geom instanceof ol.geom.LineString) {
-				    output = formatLength( /** @type {ol.geom.LineString} */ (geom));
-				    tooltipCoord = geom.getLastCoordinate();
-				    // we move the coordinate slightly (this avoids the "not able to continue line" problem)
-				    var res = map.getView().getResolution() * 1.5;
-				    tooltipCoord[0] += res;
-				    tooltipCoord[1] += res;
-				} else if (geom instanceof ol.geom.Circle) {
-				    output = formatRadius( /** @type {ol.geom.Circle} */ (geom));
-				    tooltipCoord = geom.getLastCoordinate();
-				} else {
-				    //console.log("unknown geom type in sketch listener");
-				}
-				measureTooltipElement.innerHTML = output;
-				measureTooltip.setPosition(tooltipCoord);
-			    }, this_);
+		    listener = sketch.getGeometry().on('change', function(evt) {
+			var geom = evt.target;
+			var output;
+			if (geom instanceof ol.geom.Polygon) {
+			    output = formatArea(/** @type {ol.geom.Polygon} */ (geom));
+			    tooltipCoord = geom.getInteriorPoint().getCoordinates();
+			} else if (geom instanceof ol.geom.LineString) {
+			    output = formatLength( /** @type {ol.geom.LineString} */ (geom));
+			    tooltipCoord = geom.getLastCoordinate();
+			    // we move the coordinate slightly (this avoids the "not able to continue line" problem)
+			    var res = map.getView().getResolution() * 1.5;
+			    tooltipCoord[0] += res;
+			    tooltipCoord[1] += res;
+			} else if (geom instanceof ol.geom.Circle) {
+			    output = formatRadius( /** @type {ol.geom.Circle} */ (geom));
+			    tooltipCoord = geom.getLastCoordinate();
+			} else {
+			    //console.log("unknown geom type in sketch listener");
+			}
+			measureTooltipElement.innerHTML = output;
+			measureTooltip.setPosition(tooltipCoord);
+		    }, this_);
 		}, this_);
 	draw.on('drawend',
 		function(evt) {
@@ -382,25 +382,25 @@ var MeasureTool = function(xmap) {
 	    var width = 3;
 	    var color = '#f22929';
 	    layerDraw = new ol.layer.Vector({
-		    source: sourceDraw,
-		    style: [ 
-			    new ol.style.Style({
-				    fill: new ol.style.Fill({
-					    color: 'rgba(255, 255, 255, 0.2)'
-					}),
-				    stroke: new ol.style.Stroke({ color: '#ffffff', width: width + 2 }),
-				    image: new ol.style.Circle({
-					    radius: 7,
-					    fill: new ol.style.Fill({
-						    color: color
-						})
-					})
-				}),
-			    new ol.style.Style({
-				    stroke: new ol.style.Stroke({ color: color, width: width })
-				})
-			    ]
-		});
+		source: sourceDraw,
+		style: [ 
+		    new ol.style.Style({
+			fill: new ol.style.Fill({
+			    color: 'rgba(255, 255, 255, 0.2)'
+			}),
+			stroke: new ol.style.Stroke({ color: '#ffffff', width: width + 2 }),
+			image: new ol.style.Circle({
+			    radius: 7,
+			    fill: new ol.style.Fill({
+				color: color
+			    })
+			})
+		    }),
+		    new ol.style.Style({
+			stroke: new ol.style.Stroke({ color: color, width: width })
+		    })
+		]
+	    });
 	    map.addLayer(layerDraw);
 	    map.on('pointermove', pointerMoveHandler);
 	    $(map.getViewport()).on('mouseout', hideHelpTooltip);
@@ -516,9 +516,9 @@ var MeasureControl = function(opt_options) {
     element.appendChild(btnCircle);
     
     ol.control.Control.call(this, {
-	    element: element,
-		target: options.target
-		});
+	element: element,
+	target: options.target
+    });
 
 };
 ol.inherits(MeasureControl, ol.control.Control);
@@ -1464,25 +1464,25 @@ function initDimension() {
     if (map === null) {
 	measureControl = new MeasureControl();
 	map = new ol.Map({
-		controls: ol.control.defaults({
-			attribution: true,
-			attributionOptions: { collapsed: false, collapsible: false, target: '_blank' }
-		    })
+	    controls: ol.control.defaults({
+		attribution: true,
+		attributionOptions: { collapsed: false, collapsible: false, target: '_blank' }
+	    })
 		.extend([
-			 new ol.control.ZoomToExtent(),
-			 new ol.control.ScaleLine(),
-			 new ol.control.FullScreen(),
-			 measureControl,
-			 mousePositionControl
-			 ]),
-		// pixelRatio: 1, // todo - need this?
-		target: 'map',
-		view: new ol.View({
-			projection: projection,
-			center: [dimensionInfo[globalDimensionId].playerPosX, dimensionInfo[globalDimensionId].playerPosY],
-			resolution: 1
-		    })
-	    });
+		    new ol.control.ZoomToExtent(),
+		    new ol.control.ScaleLine(),
+		    new ol.control.FullScreen(),
+		    measureControl,
+		    mousePositionControl
+		]),
+	    // pixelRatio: 1, // todo - need this?
+	    target: 'map',
+	    view: new ol.View({
+		projection: projection,
+		center: [dimensionInfo[globalDimensionId].playerPosX, dimensionInfo[globalDimensionId].playerPosY],
+		resolution: 1
+	    })
+	});
     } else {
 	var view = new ol.View({
 	    projection: projection,
@@ -1729,7 +1729,7 @@ $(function() {
     }
 
     map.on('singleclick', function(evt) {
-	    displayFeatureInfo(evt);
+	displayFeatureInfo(evt);
     });
 
     $('.dimensionSelect').click(function() {
@@ -1862,21 +1862,23 @@ $(function() {
 	container: 'body'
     });
     
-    // setup keyboard functions
-    $(document).keypress(function(evt) {
-	    // escape key will quit any special modes
-	    if ( evt.keyCode == 27 ) {
-		doGlobalQuit();
-	    }
-	    // 'l' or 'm' will put us in line measurement mode
-	    else if ( evt.key === 'l' || evt.key === 'm' ) {
-		measureControl.forceDrawType('LineString');
-	    }
-	    // 'c' will put us in circle measurement mode
-	    else if ( evt.key === 'c' ) {
-		measureControl.forceDrawType('Circle');
-	    }
-	});
+    // setup hotkeys
+    $(document).on('keydown', function(evt) {
+	var key = String.fromCharCode(evt.which);
+
+	// escape key will quit any special modes
+	if ( evt.keyCode == 27 ) {
+	    doGlobalQuit();
+	}
+	// 'l' or 'm' will put us in line measurement mode
+	else if ( key === 'L' || key === 'M' ) {
+	    measureControl.forceDrawType('LineString');
+	}
+	// 'c' will put us in circle measurement mode
+	else if ( key === 'C' ) {
+	    measureControl.forceDrawType('Circle');
+	}
+    });
 
     // fix map size
     window.addEventListener('resize', fixContentHeight);

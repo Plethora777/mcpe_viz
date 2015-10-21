@@ -61,11 +61,6 @@ Note: Replace "path-to-your-world-file-dir/" with the actual directory which con
 This will produce a bunch of image files and "out1.html". Open "out1.html" in your browser.
 
 
-## win32 and win64 builds
-
-I used mingw to build win32 and win64 executables.  You can find the exe and required dll's in mcpe_viz.win32.zip and mcpe_viz.win64.zip.  To try it out on windows, download either of the zip files, unzip it and run the exe.
-
-
 ## Web App
 
 You can create a browser-based viewer for your world files.  It will allow you to pan, zoom and switch between the different images.  It's pretty spiffy!

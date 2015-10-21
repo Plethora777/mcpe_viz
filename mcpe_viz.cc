@@ -4,7 +4,7 @@
 
   GPL'ed code - see LICENSE
 
-  Requires Mojang's modified LevelDB library! (see README.md for details)
+  Requires Mojang's modified LevelDB library (see README.md for details)
   Requires libnbt++ (see README.md for details)
 
   To build it, use cmake
@@ -13,14 +13,11 @@
   todobig
 
   * check --out -- error if it is a directory
+
   * see reddit test1 world -- has this:
   -- WARNING: Did not find block variant for block(Wooden Double Slab) with blockdata=8 (0x8)
 
-  * xml <block> needs to be expanded to allow block_data values so that we can get complete info (e.g. wood types)
-  -- block[id][block_data] = foo
-  -- compare wiki re block info for mc vs mcpe
-  -- same for items + entities
-  -- THIS: perhaps <block ...><variant .../></block>?
+  * do variants for items + entities?
 
   * parse potions etc in inventories etc
 

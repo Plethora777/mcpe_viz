@@ -116,7 +116,6 @@ namespace mcpe_viz {
       }
       
       // todobig - be more clever about logging - if very important or interesting, we might want to print to log AND to stderr
-      // todobig - use a FILE*fp which we set to fpLog or stderr
       FILE *fp = fpStdout;
 
       if ( fp == nullptr ) {
@@ -165,13 +164,16 @@ namespace mcpe_viz {
       row_pointers = nullptr;
       openFlag = false;
     }
+
     ~PngHelper() {
       close();
     }
+
     int init(const std::string xfn, const std::string imageDescription, int w, int h, int numRowPointers) {
       fn = std::string(xfn);
       return open(imageDescription,w,h,numRowPointers);
     }
+
     int open(const std::string imageDescription, int width, int height, int numRowPointers) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
@@ -235,6 +237,7 @@ namespace mcpe_viz {
       openFlag = true;
       return 0;
     }
+
     int close() {
       if ( fp != nullptr && openFlag ) {
 	png_write_end(png, info);
@@ -246,6 +249,7 @@ namespace mcpe_viz {
       openFlag = false;
       return 0;
     }
+
     int addText(const std::string key, const std::string val) {
       png_text text[1];
       char* skey = new char[key.size()+1];
@@ -286,7 +290,9 @@ namespace mcpe_viz {
       color = c;
       calcHSL();
     }
+
     ColorInfo& operator=(const ColorInfo& other) = default;
+
     int calcHSL() {
       r = (color & 0xFF0000) >> 16;
       g = (color & 0xFF00) >> 8;
@@ -295,11 +301,12 @@ namespace mcpe_viz {
       rgb2hsb(r,g,b, h,s,l);
       //rgb2hsv(r,g,b, h,s,l);
 
-      // todo -we could adjust some items to help with the sort
+      // todo - we could adjust some items to help with the sort
       //if ( s < 0.2 ) { s=0.0; }
 	
       return 0;
     }
+
     std::string toHtml() const {
       char tmpstring[256];
       std::string ret = "<div class=\"colorBlock";

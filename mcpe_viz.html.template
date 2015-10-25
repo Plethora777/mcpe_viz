@@ -5,8 +5,8 @@
     <script src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="http://openlayers.org/en/v3.9.0/css/ol.css" type="text/css" />
-    <script src="http://openlayers.org/en/v3.9.0/build/ol.js"></script>
+    <link rel="stylesheet" href="http://openlayers.org/en/v3.10.1/css/ol.css" type="text/css" />
+    <script src="http://openlayers.org/en/v3.10.1/build/ol.js"></script>
     <link rel="stylesheet" href="mcpe_viz.css" type="text/css" />
     <script src="mcpe_viz.js"></script>
     %JSFILE%
@@ -95,8 +95,8 @@
 	    <li><a href="#" class="entityToggle" data-id="64">Dropped Item</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="63">Player</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="entityToggleAddAll" data-type="P">Add All</a></li>
-	    <li><a href="#" class="entityToggleRemoveAll">Remove All</a></li>
+	    <li><a href="#" class="entityToggleAddAll" data-type="P">Show All</a></li>
+	    <li><a href="#" class="entityToggleRemoveAll">Hide All</a></li>
           </ul>
 	</div>
 
@@ -122,8 +122,8 @@
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="63">Player</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="entityToggleAddAll" data-type="H">Add All</a></li>
-	    <li><a href="#" class="entityToggleRemoveAll">Remove All</a></li>
+	    <li><a href="#" class="entityToggleAddAll" data-type="H">Show All</a></li>
+	    <li><a href="#" class="entityToggleRemoveAll">Hide All</a></li>
           </ul>
 	</div>
 
@@ -137,8 +137,8 @@
 	    <li><a href="#" class="tileEntityToggle" data-id="NetherPortal">Nether Portal</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="Sign">Sign</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="tileEntityToggleAddAll">Add All</a></li>
-	    <li><a href="#" class="tileEntityToggleRemoveAll">Remove All</a></li>
+	    <li><a href="#" class="tileEntityToggleAddAll">Show All</a></li>
+	    <li><a href="#" class="tileEntityToggleRemoveAll">Hide All</a></li>
           </ul>
 	</div>
 

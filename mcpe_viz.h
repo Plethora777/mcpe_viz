@@ -49,21 +49,26 @@ namespace mcpe_viz {
       colorSetNeedCount = 0;
       variantList.clear();
     }
+
     BlockInfo& setName(const std::string s) {
       name = std::string(s);
       return *this;
     }
+
     BlockInfo& setColor(int32_t rgb) {
       // note: we convert color storage to big endian so that we can memcpy when creating images
       color = htobe32(rgb);
       colorSetFlag = true;
       return *this;
     }
+
     BlockInfo& setSolidFlag(bool f) {
       solidFlag = f;
       return *this;
     }
+
     bool isSolid() { return solidFlag; }
+
     bool hasVariants() {
       return (variantList.size() > 0);
     }
@@ -71,6 +76,7 @@ namespace mcpe_viz {
     void setBlockData(int32_t bd) {
       blockdata = bd;
     }
+
     BlockInfo& addVariant(int32_t bd, std::string n) {
       std::unique_ptr<BlockInfo> bv(new BlockInfo());
       bv->setName(n);
@@ -87,9 +93,11 @@ namespace mcpe_viz {
   class ItemInfo {
   public:
     std::string name;
+
     ItemInfo(const char* n) {
       setName(n);
     }
+
     ItemInfo& setName (const std::string s) {
       name = std::string(s);
       return *this;
@@ -105,9 +113,11 @@ namespace mcpe_viz {
   class EntityInfo {
   public:
     std::string name;
+
     EntityInfo(const char* n) {
       setName(n);
     }
+
     EntityInfo& setName (const std::string s) {
       name = std::string(s);
       return *this;
@@ -125,19 +135,23 @@ namespace mcpe_viz {
     std::string name;
     int32_t color;
     bool colorSetFlag;
+
     BiomeInfo(const char* n) {
       setName(n);
       setColor(kColorDefault);
       colorSetFlag = false;
     }
+
     BiomeInfo(const char* n, int32_t rgb) {
       setName(n);
       setColor(rgb);
     }
+
     BiomeInfo& setName (const std::string s) {
       name = std::string(s);
       return *this;
     }
+
     BiomeInfo& setColor(int32_t rgb) {
       // note: we convert color storage to big endian so that we can memcpy when creating images
       color = htobe32(rgb);
@@ -156,14 +170,17 @@ namespace mcpe_viz {
   public:
     std::string name;
     std::string officialName;
+
     EnchantmentInfo(const char* n) {
       setName(n);
       officialName="";
     }
+
     EnchantmentInfo& setName (const std::string s) {
       name = std::string(s);
       return *this;
     }
+
     EnchantmentInfo& setOfficialName (const std::string s) {
       officialName = std::string(s);
       return *this;

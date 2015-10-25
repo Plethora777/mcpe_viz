@@ -356,7 +356,7 @@ namespace mcpe_viz {
       return 1;
     }
 
-    // todobig - use verboseflag to show all items as they are processed
+    // todo - use verboseflag to show all items as they are processed
     fprintf(stderr,"Reading XML from %s\n", fn.c_str());
       
     int ret = 2;

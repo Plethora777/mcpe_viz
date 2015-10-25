@@ -12,6 +12,8 @@
 
   todobig
 
+  * use boost for filesystem stuff?
+
   * try with clang; possible to mingw w/ clang?
 
   * check --out -- error if it is a directory
@@ -347,7 +349,7 @@ namespace mcpe_viz {
     }
   }
 
-  // todo - block light is light value from torches et al -- super cool looking as an image, but it looks like block light is probably stored in air blocks which are above top block
+  // block light is light value from torches et al -- super cool looking as an image, but it looks like block light is probably stored in air blocks which are above top block
   uint8_t getBlockBlockLight(const char* p, int x, int z, int y) {
     int off =  _calcOffsetBlock(x,z,y);
     int off2 = off / 2;
@@ -360,15 +362,15 @@ namespace mcpe_viz {
     }
   }
 
-  // todo rename - height of top *solid* block? (e.g. a glass block will NOT be the top block here)
-  uint8_t getColData1(const char *buf, int x, int z) {
+  // height of top *solid* block? (e.g. a glass block will NOT be the top block here)
+  uint8_t getColData_Height(const char *buf, int x, int z) {
     int off = _calcOffsetColumn(x,z);
     int8_t v = buf[32768 + 16384 + 16384 + 16384 + off];
     return v;
   }
 
-  // todo rename - this is 4-bytes: lsb is biome, the high 3-bytes are RGB grass color
-  uint32_t getColData2(const char *buf, int x, int z) {
+  // this is 4-bytes: lsb is biome, the high 3-bytes are RGB grass color
+  uint32_t getColData_GrassAndBiome(const char *buf, int x, int z) {
     int off = _calcOffsetColumn(x,z) * 4;
     int32_t v;
     memcpy(&v,&buf[32768 + 16384 + 16384 + 16384 + 256 + off],4);
@@ -464,7 +466,6 @@ namespace mcpe_viz {
 		data[cx][cz] = getBlockData(value, cx,cz,cy);
 		topBlockY[cx][cz] = cy;
 		
-		// todo topLight here
 #if 1
 		// todo - we are getting the block light ABOVE this block (correct?)
 		// todo - this will break if we are using force-top stuff
@@ -490,8 +491,8 @@ namespace mcpe_viz {
       // get per-column data
       for (int cx=0; cx < 16; cx++) {
 	for (int cz=0; cz < 16; cz++) {
-	  heightCol[cx][cz] = getColData1(value, cx,cz);
-	  grassAndBiome[cx][cz] = getColData2(value, cx,cz);
+	  heightCol[cx][cz] = getColData_Height(value, cx,cz);
+	  grassAndBiome[cx][cz] = getColData_GrassAndBiome(value, cx,cz);
 	  
 	  biomeId = (uint8_t)(grassAndBiome[cx][cz] & 0xFF);
 	  histogramBiome[biomeId]++;
@@ -499,7 +500,7 @@ namespace mcpe_viz {
 	  
 #if 0
 	  // todo - testing idea about lighting - get lighting from top solid block - result is part good, part crazy
-	  int ty = colData1[cx][cz] + 1;
+	  int ty = heightCol[cx][cz] + 1;
 	  if ( ty > 127 ) { ty=127; }
 	  uint8_t sl = getBlockSkyLight(value, cx,cz,ty);
 	  uint8_t bl = getBlockBlockLight(value, cx,cz,ty);
@@ -537,20 +538,10 @@ namespace mcpe_viz {
 	  logger.msg(kLogInfo1,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBiome[i], biomeName.c_str());
 	}
       }
-      logger.msg(kLogInfo1,"Block Light (skylight:blocklight):\n");
+      logger.msg(kLogInfo1,"Block Light (skylight:blocklight:heightcol):\n");
       for (int cz=0; cz<16; cz++) {
 	for (int cx=0; cx<16; cx++) {
-	  logger.msg(kLogInfo1,"%x:%x ", (int)((topLight[cx][cz] >> 4) & 0xf), (int)(topLight[cx][cz] & 0xf));
-	}
-	logger.msg(kLogInfo1,"\n");
-      }
-      // todo - grass-color is in high 3 bytes of coldata2
-      // todo - need to show this?
-      logger.msg(kLogInfo1,"Column Data (height-col:biome):\n");
-      for (int cz=0; cz<16; cz++) {
-	for (int cx=0; cx<16; cx++) {
-	  biomeId = (uint8_t)(grassAndBiome[cx][cz] & 0xFF);
-	  logger.msg(kLogInfo1,"%x:%02x ", (int)heightCol[cx][cz], biomeId);
+	  logger.msg(kLogInfo1,"%x:%x:%02x ", (int)((topLight[cx][cz] >> 4) & 0xf), (int)(topLight[cx][cz] & 0xf), (int)heightCol[cx][cz]);
 	}
 	logger.msg(kLogInfo1,"\n");
       }
@@ -741,11 +732,10 @@ namespace mcpe_viz {
 	for (int cz=0; cz < 16; cz++) {
 	  for (int cx=0; cx < 16; cx++) {
 
-	    // todobig - we could do the same thing we do w/ genSlices here -- open a png for each file and do it in one pass
-	    // todobig - actually -- we could do it all in one pass (individual images + raw layers)
-	    // todobig - acutally, actually -- we could EVERYTHING (but initial key scan) in one pass: do images here, then iterate over chunkspace again looking for items that populate geojson list
+	    // todobig - we could do EVERYTHING (but initial key scan) in one pass:
+	    //   do images here, then iterate over chunkspace again looking for items that populate geojson list
 	      
-	    // todo - this conditional inside an inner loop, not so good
+	    // todo - this big conditional inside an inner loop, not so good
 
 	    if ( imageMode == kImageModeBiome ) {
 	      // get biome color
@@ -841,6 +831,7 @@ namespace mcpe_viz {
 	    buf[((imageZ + cz) * imageW + (imageX + cx)) * 3 + 2] = pcolor[3];
 #endif
 
+	    // report interesting coordinates
 	    if ( dimId == kDimIdOverworld && imageMode == kImageModeTerrain ) {
 	      int ix = (imageX + cx);
 	      int iz = (imageZ + cz);
@@ -862,6 +853,7 @@ namespace mcpe_viz {
 
       delete [] buf;
 
+      // report items that need to have their color set properly (in the XML file)
       if ( imageMode == kImageModeTerrain ) {
 	for (int i=0; i < 256; i++) {
 	  if ( blockInfoList[i].colorSetNeedCount ) {
@@ -978,7 +970,7 @@ namespace mcpe_viz {
       int foundCt = 0, notFoundCt2 = 0;
       uint8_t blockid, blockdata;
 	  
-      // we operate on sets of 16 rows of image z
+      // we operate on sets of 16 rows (which is one chunk high) of image z
       int runCt = 0;
       for (int32_t imageZ=0, chunkZ=minChunkZ; imageZ < imageH; imageZ += 16, chunkZ++) {
 
@@ -1131,7 +1123,7 @@ namespace mcpe_viz {
       memset(buf, 0, cropW*cropH*3);
 
       // todobig - we *could* write image data to flat files during parseDb and then convert 
-      //   these flat files into png here (but temp disk space requirements are *huge*)
+      //   these flat files into png here (but temp disk space requirements are *huge*); could try gzwrite etc
 
       leveldb::ReadOptions readOptions;
       readOptions.fill_cache=false; // may improve performance?
@@ -1464,8 +1456,10 @@ namespace mcpe_viz {
 	  chunkType = myParseInt8(key, 8);
 	    
 	  // sanity checks
-	  if ( chunkType == 0x30 && legalChunkPos(chunkX,chunkZ) ) {
-	    chunkList[0].addToChunkBounds(chunkX, chunkZ);
+	  if ( chunkType == 0x30 ) {
+	    if ( legalChunkPos(chunkX,chunkZ) ) {
+	      chunkList[0].addToChunkBounds(chunkX, chunkZ);
+	    }
 	  }
 	}
 	else if ( key_size == 13 ) {
@@ -1475,8 +1469,10 @@ namespace mcpe_viz {
 	  chunkType = myParseInt8(key, 12);
 	    
 	  // sanity checks
-	  if ( chunkType == 0x30 && legalChunkPos(chunkX,chunkZ) ) {
-	    chunkList[chunkDimId].addToChunkBounds(chunkX, chunkZ);
+	  if ( chunkType == 0x30 ) {
+	    if ( legalChunkPos(chunkX,chunkZ) ) {
+	      chunkList[chunkDimId].addToChunkBounds(chunkX, chunkZ);
+	    }
 	  }
 	}
       }
@@ -1515,7 +1511,7 @@ namespace mcpe_viz {
 
 
     // this is where we go through every item in the leveldb, we parse interesting things as we go
-    leveldb::Status parseDb () {
+    int parseDb () {
 
       char tmpstring[256];
 
@@ -1549,6 +1545,7 @@ namespace mcpe_viz {
       }
 	    
       fprintf(stderr,"Parse all leveldb records\n");
+
       MyNbtTagList tagList;
       int recordCt = 0, ret;
 
@@ -1668,6 +1665,7 @@ namespace mcpe_viz {
 
 	  chunkList[chunkDimId].histogramChunkType[chunkType]++;
 
+	  // report info about the chunk
 	  chunkstr = dimName + "-chunk: ";
 	  sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
 	  chunkstr += tmpstring;
@@ -1680,7 +1678,8 @@ namespace mcpe_viz {
 	  }
 	  chunkstr += "\n";
 	  logger.msg(kLogInfo1, "%s", chunkstr.c_str());
-	    
+
+	  // see what kind of chunk we have
 	  switch ( chunkType ) {
 	  case 0x30:
 	    // chunk block data
@@ -1778,7 +1777,7 @@ namespace mcpe_viz {
       }
       delete iter;
 
-      return leveldb::Status::OK();
+      return 0;
     }
 
       
@@ -1800,6 +1799,7 @@ namespace mcpe_viz {
       StringReplacementList replaceStrings;
 
       if ( control.noForceGeoJSONFlag ) {
+	// we do not include the geojson file
 	replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
 						  "<script src=\"" +
 						  std::string(mybasename(control.fnJs.c_str())) +
@@ -1807,6 +1807,7 @@ namespace mcpe_viz {
 						  )
 				  );
       } else {
+	// we do include the geojson file
 	replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
 						  "<script src=\"" +
 						  std::string(mybasename(control.fnJs.c_str())) +
@@ -2127,7 +2128,6 @@ namespace mcpe_viz {
       if ( control.colorTestFlag ) {
 	doOutput_colortest();
       }
-
 	
       return 0;
     }

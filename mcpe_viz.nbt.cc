@@ -151,7 +151,7 @@ namespace mcpe_viz {
     std::istream& pis = reader.get_istr();
     while ( !done && (pis) && (!pis.eof()) ) {
       try {
-	// todobig emplace_back?
+	// todo emplace_back?
 	tagList.push_back(reader.read_tag());
       }
       catch (std::exception& e) {

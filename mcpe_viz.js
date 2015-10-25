@@ -4,6 +4,9 @@
 
   todo
 
+  * toggle btwn overworld / nether - show player est. spot in nether even if they are in overworld
+  -- some tool to help w/ planning portals (e.g. mark a spot in overworld and show where it maps in nether)
+
   * todobig -- Chrome appears to be demented about serving local files.  You get CORS errors.  Not at all clear that this can be resolved w/o really ugly workarounds (e.g. disabling chrome security); This could be the case with MS Edge on win10 also.
   -- http://stackoverflow.com/questions/3102819/disable-same-origin-policy-in-chrome
   -- https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?hl=en
@@ -21,9 +24,6 @@
   * online help/intro text -- bootstrap tour? (is there a CDN for bstour?)
 
   * idea from /u/sturace -- filter by pixel value (e.g. show only oak trees)
-
-  * toggle btwn overworld / nether - show player est. spot in nether even if they are in overworld
-  -- some tool to help w/ planning portals (e.g. mark a spot in overworld and show where it maps in nether)
 
   * when in raw layer mode, auto load layer before/after the layer that gets loaded? (improve perceived speed)
 
@@ -44,9 +44,6 @@
 
   vector icons
   http://openlayers.org/en/v3.9.0/examples/icon.html
-
-  measuring
-  http://openlayers.org/en/v3.9.0/examples/measure.html
 
   nav controls
   http://openlayers.org/en/v3.9.0/examples/navigation-controls.html
@@ -561,6 +558,11 @@ function doGlobalQuit() {
     if (measureControl.isEnabled()) {
 	measureControl.forceStop();
     }
+    
+    // make popover disappear
+    var element = popover.getElement();
+    $(element).popover('destroy');
+    
     // todo - others?
 }
 
@@ -862,7 +864,7 @@ var getText = function(feature, resolution) {
     var maxResolution = 2;
     var text = correctGeoJSONName(feature.get('Name'));
 
-    if (true) {
+    if (false) {
 	if (resolution > maxResolution) {
 	    text = '';
 	} else if (type == 'hide') {
@@ -882,9 +884,19 @@ var createTextStyle = function(feature, resolution) {
     var baseline = 'bottom';
     var size = '14pt';
     var offsetX = 3;
-    var offsetY = -3;
+    var offsetY = -2;
     var weight = 'bold';
     var rotation = 0;
+	
+    // smaller font when we are zoomed out
+    if ( resolution > 3 ) {
+	size = '8pt';
+    } else if ( resolution > 2 ) {
+	size = '10pt';
+    } else {
+	size = '12pt';
+    }
+    
     var font = weight + ' ' + size + ' Calibri,sans-serif';
     var fillColor = '#ffffff';
     var outlineColor = '#000000';

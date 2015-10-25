@@ -91,22 +91,22 @@
     </block>
     <block id="0x12" name="Leaves" color="0x184d1e" solid="0">
       <!-- todo colors per tree would be good to id them visually in overview map -->
-      <blockvariant blockdata="0x0" name="Oak Leaves" />
-      <blockvariant blockdata="0x1" name="Spruce Leaves" />
-      <blockvariant blockdata="0x2" name="Birch Leaves" />
-      <blockvariant blockdata="0x3" name="Junge Leaves" />
-      <blockvariant blockdata="0x4" name="Oak Leaves (no decay)" />
-      <blockvariant blockdata="0x5" name="Spruce Leaves (no decay)" />
-      <blockvariant blockdata="0x6" name="Birch Leaves (no decay)" />
-      <blockvariant blockdata="0x7" name="Jungle Leaves (no decay)" />
-      <blockvariant blockdata="0x8" name="Oak Leaves (check decay" />
-      <blockvariant blockdata="0x9" name="Spruce Leaves (check decay)" />
-      <blockvariant blockdata="0xa" name="Birch Leaves (check decay)" />
-      <blockvariant blockdata="0xb" name="Jungle Leaves (check decay)" />
-      <blockvariant blockdata="0xc" name="Oak Leaves (no + check decay" />
-      <blockvariant blockdata="0xd" name="Spruce Leaves (no + check decay)" />
-      <blockvariant blockdata="0xe" name="Birch Leaves (no + check decay)" />
-      <blockvariant blockdata="0xf" name="Jungle Leaves (no + check decay)" />
+      <blockvariant blockdata="0x0" name="Leaves, Oak" />
+      <blockvariant blockdata="0x1" name="Leaves, Spruce" />
+      <blockvariant blockdata="0x2" name="Leaves, Birch" />
+      <blockvariant blockdata="0x3" name="Leaves, Junge" />
+      <blockvariant blockdata="0x4" name="Leaves, Oak (no decay)" />
+      <blockvariant blockdata="0x5" name="Leaves, Spruce (no decay)" />
+      <blockvariant blockdata="0x6" name="Leaves, Birch (no decay)" />
+      <blockvariant blockdata="0x7" name="Leaves, Jungle (no decay)" />
+      <blockvariant blockdata="0x8" name="Leaves, Oak (check decay" />
+      <blockvariant blockdata="0x9" name="Leaves, Spruce (check decay)" />
+      <blockvariant blockdata="0xa" name="Leaves, Birch (check decay)" />
+      <blockvariant blockdata="0xb" name="Leaves, Jungle (check decay)" />
+      <blockvariant blockdata="0xc" name="Leaves, Oak (no + check decay" />
+      <blockvariant blockdata="0xd" name="Leaves, Spruce (no + check decay)" />
+      <blockvariant blockdata="0xe" name="Leaves, Birch (no + check decay)" />
+      <blockvariant blockdata="0xf" name="Leaves, Jungle (no + check decay)" />
     </block>    <!-- *B -->
     <block id="0x13" name="Sponge" color="0xb3ae61">
       <blockvariant blockdata="0x0" name="Sponge, Dry" />

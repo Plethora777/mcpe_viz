@@ -81,8 +81,6 @@ var globalLayerMode = 0, globalLayerId = 0;
 var listEntityToggle = [];
 var listTileEntityToggle = [];
 
-var globalDebugFlag = false;
-
 var globalCORSWarning = 'MCPE Viz Hint: If you are loading files from the local filesystem, your browser might not be allowing us to load additional files or examine pixels in maps.  Firefox does not have this limitation.  See README for more info...';
 var globalCORSWarningFlag = false;
 
@@ -941,10 +939,8 @@ function setLayerLoadListeners(src, fn) {
  */
 function shade(inputs, data) {
     try {
-	var tstart;
-	if (globalDebugFlag) {
-	    tstart = Date.now();
-	}
+	// testing
+	//var tstart = Date.now();
 	var elevationImage = inputs[0];
 	var width = elevationImage.width;
 	var height = elevationImage.height;
@@ -1083,12 +1079,11 @@ function shade(inputs, data) {
 	    }
 	}
 
-	if ( globalDebugFlag ) {
-	    var tdiff = Date.now() - tstart;
-	    var npixel = width * height;
-	    var tpixel = npixel / tdiff;
-	    console.log('shade() t=' + tdiff + ' pixels=' + npixel + ' p/t=' + tpixel);
-	}
+	// testing:
+	//	var tdiff = Date.now() - tstart;
+	//	var npixel = width * height;
+	//	var tpixel = npixel / tdiff;
+	//	console.log('shade() t=' + tdiff + ' pixels=' + npixel + ' p/t=' + tpixel);
 
 	return new ImageData(shadeData, width, height);
     } catch (e) {

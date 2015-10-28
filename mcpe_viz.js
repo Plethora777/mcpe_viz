@@ -1053,7 +1053,7 @@ function shade(inputs, data) {
 		    aspectRad = Math.atan2(dzdy, -dzdx);
 
 		    if (aspectRad < 0) {
-			aspectRad = twoPi + aspectRad;
+			aspectRad += twoPi;
 		    }
 		}
 		else {

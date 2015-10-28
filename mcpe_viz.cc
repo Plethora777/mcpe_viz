@@ -12,6 +12,10 @@
 
   todobig
 
+  * add support for tiling images -- see eferris world that is too big for firefox
+  -- can we hack this into openlayers static image using imageextent? if so, we could improve performance for all
+  -- perhaps 256x256?
+
   * use boost for filesystem stuff?
 
   * try with clang; possible to mingw w/ clang?

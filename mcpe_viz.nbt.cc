@@ -225,6 +225,13 @@ namespace mcpe_viz {
       y=(T)0;
       valid=false;
     }
+    std::string toGeoJSON() {
+      // todo - how to report invalid in geojson?
+      // if ( valid ) {
+      std::ostringstream str;
+      str << x << ", " << y;
+      return str.str();
+    }
     std::string toString() {
       if ( valid ) {
 	std::ostringstream str;
@@ -257,6 +264,13 @@ namespace mcpe_viz {
       y=(T)0;
       z=(T)0;
       valid=false;
+    }
+    std::string toGeoJSON() {
+      // todo - how to report invalid in geojson?
+      // if ( valid ) {
+      std::ostringstream str;
+      str << x << ", " << y << ", " << z;
+      return str.str();
     }
     std::string toString() {
       if ( valid ) {
@@ -718,16 +732,16 @@ namespace mcpe_viz {
 	list.push_back(std::string(tmpstring));
       }
 
-      sprintf(tmpstring, "\"Pos\": [%s]", pos.toString().c_str());
+      sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
       list.push_back(std::string(tmpstring));
 
-      sprintf(tmpstring, "\"Rotation\": [%s]", rotation.toString().c_str());
+      sprintf(tmpstring, "\"Rotation\": [%s]", rotation.toGeoJSON().c_str());
       list.push_back(std::string(tmpstring));
 	
       if ( playerLocalFlag || playerRemoteFlag ) {
-	sprintf(tmpstring,"\"BedPos\": [%s]", bedPosition.toString().c_str());
+	sprintf(tmpstring,"\"BedPos\": [%s]", bedPosition.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
-	sprintf(tmpstring,"\"Spawn\": [%s]", spawn.toString().c_str());
+	sprintf(tmpstring,"\"Spawn\": [%s]", spawn.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
       }
 
@@ -978,7 +992,7 @@ namespace mcpe_viz {
 	  
 	if ( pairChest.valid ) {
 	  // todobig - should we keep lists and combine chests so that we can show full content of double chests?
-	  list.push_back("\"pairchest\": [" + pairChest.toString() + "]");
+	  list.push_back("\"pairchest\": [" + pairChest.toGeoJSON() + "]");
 	}
 	  
 	std::vector<std::string> tlist;
@@ -1044,7 +1058,7 @@ namespace mcpe_viz {
 	sprintf(tmpstring,"\"Dimension\": \"%d\"", forceDimensionId);
 	list.push_back(std::string(tmpstring));
 
-	sprintf(tmpstring, "\"Pos\": [%s]", pos.toString().c_str());
+	sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
 	  
 	int ix, iy;
@@ -1449,7 +1463,7 @@ namespace mcpe_viz {
 	sprintf(tmpstring,"\"Dimension\": \"%d\"", dimId);
 	list.push_back(std::string(tmpstring));
 
-	sprintf(tmpstring, "\"Pos\": [%s]", pos.toString().c_str());
+	sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
 	  
 	int ix, iy;

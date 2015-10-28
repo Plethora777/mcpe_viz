@@ -94,7 +94,7 @@
       <blockvariant blockdata="0x0" name="Leaves, Oak" />
       <blockvariant blockdata="0x1" name="Leaves, Spruce" />
       <blockvariant blockdata="0x2" name="Leaves, Birch" />
-      <blockvariant blockdata="0x3" name="Leaves, Junge" />
+      <blockvariant blockdata="0x3" name="Leaves, Jungle" />
       <blockvariant blockdata="0x4" name="Leaves, Oak (no decay)" />
       <blockvariant blockdata="0x5" name="Leaves, Spruce (no decay)" />
       <blockvariant blockdata="0x6" name="Leaves, Birch (no decay)" />

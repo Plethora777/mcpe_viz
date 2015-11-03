@@ -12,9 +12,27 @@
 
   todobig
 
+  * slime chunks
+  -- web: use it as an overlay
+  -- alter opacity so non-slime chunks are CLEAR
+  -- iterate over all chunk space (current just does explored)
+  -- don't do it for the nether?
+
   * add support for tiling images -- see eferris world that is too big for firefox
-  -- can we hack this into openlayers static image using imageextent? if so, we could improve performance for all
-  -- perhaps 256x256?
+
+  ** elevation overlay is broken when we use tiles in web app (turn it on; seems to work; zoom out; it's way off)
+  ---- this is the only thing keeping me from publishing tiled web app
+
+  ** create an elevation overlay here instead of js? (work around OL bugs)
+
+  ** do away with image coord space for web app? 
+  ---- coords are crazy -- confirmed that negative-Z is north
+
+  ** web: overlay slime chunks -- find slime chunk calculation
+
+  ** do slime chunks overlay here?  it's very hard to do in OL because of, well, OL (can't easily use Long.js lib for Java Random number emulator)
+  ---- if we do that, we might want to do chunk grid overlay here also
+
 
   * use boost for filesystem stuff?
 
@@ -118,7 +136,8 @@ namespace mcpe_viz {
   int32_t worldSpawnX = 0;
   int32_t worldSpawnY = 0;
   int32_t worldSpawnZ = 0;
-
+  int64_t worldSeed = 0;
+  
   // palettes
   int32_t palRedBlackGreen[256];
 
@@ -149,7 +168,8 @@ namespace mcpe_viz {
       kImageModeHeightCol = 3,
       kImageModeHeightColGrayscale = 4,
       kImageModeBlockLight = 5,
-      kImageModeSkyLight = 6
+      kImageModeSkyLight = 6,
+      kImageModeSlimeChunks = 7
       };
 
 
@@ -173,6 +193,7 @@ namespace mcpe_viz {
     std::string fnLayerHeightGrayscale[kDimIdCount];
     std::string fnLayerBlockLight[kDimIdCount];
     std::string fnLayerSkyLight[kDimIdCount];
+    std::string fnLayerSlimeChunks[kDimIdCount];
     std::string fnLayerGrass[kDimIdCount];
     std::string fnLayerRaw[kDimIdCount][128];
       
@@ -181,12 +202,14 @@ namespace mcpe_viz {
     int doSlices;
     int doGrid;
     int doHtml;
+    int doTiles;
     int doImageBiome;
     int doImageGrass;
     int doImageHeightCol;
     int doImageHeightColGrayscale;
     int doImageLightBlock;
     int doImageLightSky;
+    int doImageSlimeChunks;
     bool noForceGeoJSONFlag;
     bool shortRunFlag;
     bool colorTestFlag;
@@ -196,6 +219,10 @@ namespace mcpe_viz {
 
     int heightMode;
 
+    // todobig - param?
+    int tileWidth = 2048;
+    int tileHeight = 512;
+    
     bool fpLogNeedCloseFlag;
     FILE *fpLog;
 
@@ -224,12 +251,14 @@ namespace mcpe_viz {
       doSlices = kDoOutputNone;
       doGrid = kDoOutputNone;
       doHtml = 0;
+      doTiles = 0;
       doImageBiome = kDoOutputNone;
       doImageGrass = kDoOutputNone;
       doImageHeightCol = kDoOutputNone;
       doImageHeightColGrayscale = kDoOutputNone;
       doImageLightBlock = kDoOutputNone;
       doImageLightSky = kDoOutputNone;
+      doImageSlimeChunks = kDoOutputNone;
       noForceGeoJSONFlag = false;
 	
       shortRunFlag = false;
@@ -250,6 +279,7 @@ namespace mcpe_viz {
 	fnLayerHeightGrayscale[did] = "";
 	fnLayerBlockLight[did] = "";
 	fnLayerSkyLight[did] = "";
+	fnLayerSlimeChunks[did] = "";
 	fnLayerGrass[did] = "";
 	for ( int i=0; i < 128; i++ ) {
 	  fnLayerRaw[did][i] = "";
@@ -677,6 +707,9 @@ namespace mcpe_viz {
       case kImageModeSkyLight:
 	ret += "Top Block Sky Light Map";
 	break;
+      case kImageModeSlimeChunks:
+	ret += "Slime Chunks Map";
+	break;
       case -1:
 	// special marker for raw layers
 	{
@@ -696,10 +729,9 @@ namespace mcpe_viz {
       ret += ")";
       return ret;
     }
-    
-      
+
     int outputPNG(const std::string fname, const std::string imageDescription, uint8_t* buf, int width, int height) {
-      PngHelper png;
+      PngWriter png;
       if ( png.init(fname, imageDescription, width, height, height) != 0 ) {
 	return -1;
       }
@@ -710,7 +742,7 @@ namespace mcpe_viz {
       png.close();
       return 0;
     }
-
+    
     void generateImage(const std::string fname, const ImageModeType imageMode = kImageModeTerrain) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
@@ -719,7 +751,11 @@ namespace mcpe_viz {
       const int32_t chunkH = (maxChunkZ-minChunkZ+1);
       const int32_t imageW = chunkW * 16;
       const int32_t imageH = chunkH * 16;
-	
+
+      JavaRandom rnd;
+      int32_t slimeChunkX = 0, slimeChunkZ = 0;
+      bool slimeChunkFlag = false, slimeChunkInit = false;
+      
       // note RGB pixels
       uint8_t *buf = new uint8_t[ imageW * imageH * 3 ];
       memset(buf, 0, imageW*imageH*3);
@@ -785,6 +821,40 @@ namespace mcpe_viz {
 	      // get sky light value and expand it (is only 4-bits)
 	      uint8_t c = (it->topLight[cx][cz] & 0xf0);
 	      color = (c << 24) | (c << 16) | (c << 8);
+	    }
+	    else if ( imageMode == kImageModeSlimeChunks ) {
+	      if ( slimeChunkInit && slimeChunkX == it->chunkX && slimeChunkZ == it->chunkZ ) {
+		// we already have our flag
+	      } else {
+		/*
+		Random rnd = new Random(seed +
+					(long) (xPosition * xPosition * 0x4c1906) +
+					(long) (xPosition * 0x5ac0db) +
+					(long) (zPosition * zPosition) * 0x4307a7L +
+					(long) (zPosition * 0x5f24f) ^ 0x3ad8025f);
+		return rnd.nextInt(10) == 0;
+		*/
+		slimeChunkInit = true;
+		slimeChunkX = it->chunkX;
+		slimeChunkZ = it->chunkZ;
+		int64_t seed =
+		  ( worldSeed +
+		    (int64_t) (slimeChunkX * slimeChunkX * (int64_t)0x4c1906) +
+		    (int64_t) (slimeChunkX * (int64_t)0x5ac0db) +
+		    (int64_t) (slimeChunkZ * slimeChunkZ * (int64_t)0x4307a7) +
+		    (int64_t) (slimeChunkZ * (int64_t)0x5f24f)
+		    )
+		  ^ 0x3ad8025f
+		  ;
+	      
+		rnd.setSeed(seed);
+		slimeChunkFlag = (rnd.nextInt(10) == 0);
+	      }
+	      if ( slimeChunkFlag ) {
+		color = (0xff << 16);
+	      } else {
+		color = 0;
+	      }
 	    }
 	    else {
 	      // regular image
@@ -933,7 +1003,7 @@ namespace mcpe_viz {
       const char *pcolor = (const char*)&color;
 
       // create png helpers
-      PngHelper png[128];
+      PngWriter png[128];
       for (int cy=0; cy<128; cy++) {
 	std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.full.";
 	fnameTmp += name;
@@ -1323,6 +1393,11 @@ namespace mcpe_viz {
 	control.fnLayerSkyLight[dimId] = std::string(control.fnOutputBase + "." + name + ".light_sky.png");
 	generateImage(control.fnLayerSkyLight[dimId], kImageModeSkyLight);
       }
+      if ( checkDoForDim(control.doImageSlimeChunks) ) {
+	fprintf(stderr,"  Generate Slime Chunks Image\n");
+	control.fnLayerSlimeChunks[dimId] = std::string(control.fnOutputBase + "." + name + ".slime_chunks.png");
+	generateImage(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
+      }
 
       if ( checkDoForDim(control.doMovie) ) {
 	fprintf(stderr,"  Generate movie\n");
@@ -1620,6 +1695,13 @@ namespace mcpe_viz {
 	  // todo - parse tagList? usually empty, unless player is in range of village; test that!
 	}
 
+	else if ( strncmp(key,"mVillages",key_size) == 0 ) {
+	  // todobig todohere -- new for 0.13?
+	  logger.msg(kLogInfo1,"mVillages value:\n");
+	  parseNbt("mVillages: ", value, value_size, tagList);
+	  // todo - parse tagList?
+	}
+
 	else if ( strncmp(key,"Nether",key_size) == 0 ) {
 	  logger.msg(kLogInfo1,"Nether value:\n");
 	  parseNbt("Nether: ", value, value_size, tagList);
@@ -1784,7 +1866,178 @@ namespace mcpe_viz {
       return 0;
     }
 
+    // todobig - move to util.h
+    class PngTiler {
+    public:
+      std::string filename;
+      int tileWidth;
+      int tileHeight;
+      std::string dirOutput;
+	
+      PngTiler(const std::string fn, int tileW, int tileH, const std::string dirOut) {
+	filename = fn;
+	tileWidth = tileW;
+	tileHeight = tileH;
+	dirOutput = dirOut;
+      }
+
+      int doTile() {
+	// todobig - store tile filenames?
+
+	// todobig todohere:
+	// open src file
+	// determine number of tiles
+	// iterate over src image space
+	// close src file
+	char tmpstring[256];
+
+	// open source file
+	PngReader pngSrc;
+	pngSrc.init(filename);
+	pngSrc.read();
+
+	int srcW = pngSrc.getWidth();
+	int srcH = pngSrc.getHeight();
+
+	int numPngW = (int)ceil((double)srcW / (double)tileWidth);
+
+	PngWriter *pngOut = new PngWriter[numPngW];
+	uint8_t **buf;
+	buf = new uint8_t*[numPngW];
+	for (int i=0; i < numPngW; i++) {
+	  buf[i] = new uint8_t[tileWidth * tileHeight * 3];
+	}
+	
+	bool initPngFlag = false;
+	int tileCounterY=0;
+
+	for (int sy=0; sy < srcH; sy++) {
+
+	  // initialize png helpers
+	  if ( ! initPngFlag ) {
+	    initPngFlag = true;
+	    for (int i=0; i < numPngW; i++) {
+	      sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
+		      tileCounterY, i);
+	      std::string fname = tmpstring;
+	      pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight);
+
+	      // clear buffer
+	      memset(&buf[i][0], 0, tileWidth * tileHeight * 3);
+	      
+	      // setup row_pointers
+	      for (int ty=0; ty < tileHeight; ty++) {
+		pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * 3];
+	      }
+	    }
+	    tileCounterY++;
+	  }
+
+	  uint8_t *srcbuf = pngSrc.row_pointers[sy];
+
+	  int tileOffsetY = sy % tileHeight;
+	  
+	  // todobig - step in tileWidth and memcpy as we go - need to check the last one for out of bounds
+	  for (int sx=0; sx < srcW; sx++) {
+	    int tileCounterX = sx / tileWidth;
+	    int tileOffsetX = sx % tileWidth;
+	    memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * 3], &srcbuf[sx*3], 3);
+	  }
+	  
+	  // write tile png files when they are ready
+	  if ( ((sy+1) % tileHeight) == 0 ) {
+	    // write pngs
+	    for (int i=0; i < numPngW; i++) {
+	      png_write_image(pngOut[i].png, pngOut[i].row_pointers);
+	      pngOut[i].close();
+	    }
+	    initPngFlag = false;
+	  }
+	}
+
+	// close final tiles
+	if ( initPngFlag ) {
+	  // write pngs
+	  for (int i=0; i < numPngW; i++) {
+	    png_write_image(pngOut[i].png, pngOut[i].row_pointers);
+	    pngOut[i].close();
+	  }
+	}
+
+	delete [] pngOut;
+
+	for (int i=0; i < numPngW; i++) {
+	  delete [] buf[i];
+	}
+	delete [] buf;
+
+	pngSrc.close();
+	
+	return 0;
+      }
       
+    };
+
+    int doOutput_Tile_image(const std::string& fn) {
+      if ( fn.size() <= 0 ) {
+	return -1;
+      }
+      
+      std::string dirOut = mydirname(control.fnOutputBase) + "/tiles";
+      // todobig - check if dir exists first
+#ifdef WINVER
+      mkdir(dirOut.c_str());
+#else
+      mkdir(dirOut.c_str(),0755);
+#endif
+
+      fprintf(stderr,"Creating tiles for %s...\n", mybasename(fn).c_str());
+      PngTiler pngTiler(fn, control.tileWidth, control.tileHeight, dirOut);
+      if ( pngTiler.doTile() == 0 ) {
+	// all is good
+      } else {
+	// todobig - error
+      }
+
+      return 0;
+    }
+
+    int doOutput_Tile() {
+      // todobig todohere - should we tile no matter what? would make js side easier
+      if ( ! control.doTiles ) {
+	return 0;
+      }
+
+      for (int dimid=0; dimid < kDimIdCount; dimid++) {
+	doOutput_Tile_image(control.fnLayerTop[dimid]);
+	doOutput_Tile_image(control.fnLayerBiome[dimid]);
+	doOutput_Tile_image(control.fnLayerHeight[dimid]);
+	doOutput_Tile_image(control.fnLayerHeightGrayscale[dimid]);
+	doOutput_Tile_image(control.fnLayerBlockLight[dimid]);
+	doOutput_Tile_image(control.fnLayerSkyLight[dimid]);
+	doOutput_Tile_image(control.fnLayerSlimeChunks[dimid]);
+	doOutput_Tile_image(control.fnLayerGrass[dimid]);
+	for (int cy=0; cy<128; cy++) {
+	  doOutput_Tile_image(control.fnLayerRaw[dimid][cy]);
+	}
+      }
+
+      return 0;
+    }
+
+    
+    std::string makeTileURL(const std::string fn) {
+      std::string ret = mybasename(fn);
+      if ( ! control.doTiles ) {
+	return ret;
+      }
+      if ( ret.size() > 1 ) {
+	return "tiles/" + ret + ".{y}.{x}.png";
+      }
+      return "";
+    }
+
+    
     int doOutput_html() {
       char tmpstring[1025];
 	
@@ -1838,12 +2091,20 @@ namespace mcpe_viz {
 	fprintf(fp,
 		"// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
 		"var worldName = '%s';\n"
+		"var worldSeed = %lld;\n"
 		"var creationTime = '%s';\n"
 		"var loadGeoJSONFlag = %s;\n"
+		"var fnGeoJSON = '%s';\n"
+		"var tileW = %d;\n"
+		"var tileH = %d;\n"
 		"var dimensionInfo = {\n"
 		, escapeString(globalLevelName.c_str(), "'").c_str()
+		, (long long int)worldSeed
 		, escapeString(timebuf,"'").c_str()
 		, control.noForceGeoJSONFlag ? "true" : "false"
+		, mybasename(control.fnGeoJSON).c_str()
+		, control.tileWidth
+		, control.tileHeight
 		);
 	for (int did=0; did < kDimIdCount; did++) {
 	  fprintf(fp, "'%d': {\n", did);
@@ -1851,7 +2112,7 @@ namespace mcpe_viz {
 	  fprintf(fp,"  maxWorldX: %d + 15,\n", chunkList[did].maxChunkX*16);
 	  fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
 	  fprintf(fp,"  maxWorldY: %d + 15,\n", chunkList[did].maxChunkZ*16);
-
+	  
 	  int32_t px, py;
 	  if ( did == kDimIdNether ) {
 	    px = playerPositionImageX / 8;
@@ -1863,18 +2124,18 @@ namespace mcpe_viz {
 	  fprintf(fp,"  playerPosX: %d,\n", px);
 	  fprintf(fp,"  playerPosY: %d,\n", py);
 
-	  // todo - a diff geojson for overworld + nether?
-	  fprintf(fp,"  fnGeoJSON: '%s',\n", mybasename(control.fnGeoJSON).c_str());
-	  fprintf(fp,"  fnLayerTop: '%s',\n", mybasename(control.fnLayerTop[did]).c_str());
-	  fprintf(fp,"  fnLayerBiome: '%s',\n", mybasename(control.fnLayerBiome[did]).c_str());
-	  fprintf(fp,"  fnLayerHeight: '%s',\n", mybasename(control.fnLayerHeight[did]).c_str());
-	  fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", mybasename(control.fnLayerHeightGrayscale[did]).c_str());
-	  fprintf(fp,"  fnLayerBlockLight: '%s',\n", mybasename(control.fnLayerBlockLight[did]).c_str());
-	  fprintf(fp,"  fnLayerGrass: '%s',\n", mybasename(control.fnLayerGrass[did]).c_str());
+	  // todobig todohere - need conditional on adding {y}{x}
+	  fprintf(fp,"  fnLayerTop: '%s',\n", makeTileURL(control.fnLayerTop[did]).c_str());
+	  fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
+	  fprintf(fp,"  fnLayerHeight: '%s',\n", makeTileURL(control.fnLayerHeight[did]).c_str());
+	  fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", makeTileURL(control.fnLayerHeightGrayscale[did]).c_str());
+	  fprintf(fp,"  fnLayerBlockLight: '%s',\n", makeTileURL(control.fnLayerBlockLight[did]).c_str());
+	  fprintf(fp,"  fnLayerSlimeChunks: '%s',\n", makeTileURL(control.fnLayerSlimeChunks[did]).c_str());
+	  fprintf(fp,"  fnLayerGrass: '%s',\n", makeTileURL(control.fnLayerGrass[did]).c_str());
 	      
 	  fprintf(fp,"  listLayers: [\n");
 	  for (int i=0; i < 128; i++) {
-	    fprintf(fp, "    '%s',\n", mybasename(control.fnLayerRaw[did][i]).c_str());
+	    fprintf(fp, "    '%s',\n", makeTileURL(control.fnLayerRaw[did][i]).c_str());
 	  }
 	  fprintf(fp,"  ]\n");
 	  if ( (did+1) < kDimIdCount ) {
@@ -2125,6 +2386,7 @@ namespace mcpe_viz {
       }
 
       if ( control.doHtml ) {
+	doOutput_Tile();
 	doOutput_html();
 	doOutput_GeoJSON();
       }
@@ -2199,6 +2461,8 @@ namespace mcpe_viz {
 	worldSpawnY = tc["SpawnY"].as<nbt::tag_int>().get();
 	worldSpawnZ = tc["SpawnZ"].as<nbt::tag_int>().get();
 	fprintf(stderr, "  Found World Spawn: x=%d y=%d z=%d\n", worldSpawnX, worldSpawnY, worldSpawnZ);
+
+	worldSeed = tc["RandomSeed"].as<nbt::tag_long>().get();
       }
 
       delete [] buf;
@@ -2428,6 +2692,7 @@ namespace mcpe_viz {
 	    "  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
 	    "  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
 	    //"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
+	    "  --tiles[=tilew,tileh]    Create tiles in subdirectory tiles/ (useful for LARGE worlds)\n"
 	    "\n"
 	    "  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
 	    "  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
@@ -2509,6 +2774,8 @@ namespace mcpe_viz {
       {"html-most", no_argument, NULL, '='},
       {"html-all", no_argument, NULL, '_'},
       {"no-force-geojson", no_argument, NULL, ':'},
+
+      {"tiles", optional_argument, NULL, '['},
 
       {"shortrun", no_argument, NULL, '$'}, // this is just for testing
       {"colortest", no_argument, NULL, '!'}, // this is just for testing
@@ -2607,6 +2874,20 @@ namespace mcpe_viz {
 	control.doHtml = true;
 	break;
 
+      case '[':
+	control.doTiles = true;
+	{
+	  int tw, th;
+	  if ( optarg ) {
+	    if ( sscanf(optarg,"%d,%d",&tw,&th) == 2 ) {
+	      control.tileWidth = tw;
+	      control.tileHeight = th;
+	      fprintf(stderr,"Overriding tile dimensions: %d x %d\n", control.tileWidth, control.tileHeight);
+	    }
+	  }
+	}
+	break;
+	
       case '=':
 	// html most
 	control.doHtml = true;
@@ -2615,7 +2896,9 @@ namespace mcpe_viz {
 	  control.doImageHeightCol = 
 	  control.doImageHeightColGrayscale =
 	  control.doImageLightBlock = 
-	  control.doImageLightSky = kDoOutputAll;
+	  control.doImageLightSky =
+	  control.doImageSlimeChunks =
+	  kDoOutputAll;
 	break;
 
       case '_':
@@ -2626,7 +2909,9 @@ namespace mcpe_viz {
 	  control.doImageHeightCol = 
 	  control.doImageHeightColGrayscale =
 	  control.doImageLightBlock = 
-	  control.doImageLightSky = kDoOutputAll;
+	  control.doImageLightSky =
+	  control.doImageSlimeChunks =
+	  kDoOutputAll;
 	control.doSlices = kDoOutputAll;
 	break;
 
@@ -2653,13 +2938,17 @@ namespace mcpe_viz {
 	control.doImageLightSky = parseDimIdOptArg(optarg);
 	break;
 
+	// todobig option for slime chunks
+	
       case 'A':
 	control.doImageBiome = 
 	  control.doImageGrass = 
 	  control.doImageHeightCol = 
 	  control.doImageHeightColGrayscale =
 	  control.doImageLightBlock = 
-	  control.doImageLightSky = parseDimIdOptArg(optarg);
+	  control.doImageLightSky =
+	  control.doImageSlimeChunks =
+	  parseDimIdOptArg(optarg);
 	break;
       
       case '(':

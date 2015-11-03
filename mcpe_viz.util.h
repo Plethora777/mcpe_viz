@@ -147,7 +147,7 @@ namespace mcpe_viz {
 
 
   
-  class PngHelper {
+  class PngWriter {
   public:
     std::string fn;
     FILE *fp;
@@ -156,7 +156,7 @@ namespace mcpe_viz {
     png_bytep *row_pointers;
     bool openFlag;
 
-    PngHelper() {
+    PngWriter() {
       fn = "";
       fp = nullptr;
       png = nullptr;
@@ -165,7 +165,7 @@ namespace mcpe_viz {
       openFlag = false;
     }
 
-    ~PngHelper() {
+    ~PngWriter() {
       close();
     }
 
@@ -230,7 +230,7 @@ namespace mcpe_viz {
       addText("Description", imageDescription);
       addText("URL", "https://github.com/Plethora777/mcpe_viz");
       // todo - other text?
-
+      
       png_write_info(png, info);
 	
       row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
@@ -269,6 +269,114 @@ namespace mcpe_viz {
   };
 
 
+
+  class PngReader {
+  public:
+    std::string fn;
+    FILE *fp;
+    png_structp png;
+    png_infop info;
+    png_infop end_info;
+    png_bytepp row_pointers;
+    bool openFlag;
+
+    PngReader() {
+      fn = "";
+      fp = nullptr;
+      png = nullptr;
+      info = nullptr;
+      row_pointers = nullptr;
+      openFlag = false;
+    }
+
+    ~PngReader() {
+      close();
+    }
+
+    int init(const std::string xfn) {
+      fn = std::string(xfn);
+      return open();
+    }
+
+    int open() {
+      fp = fopen(fn.c_str(), "rb");
+      if(!fp) {
+	fprintf(stderr,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+	return -1;
+      }
+	
+      // todo - add handlers for warn/err etc?
+      /*
+	png_structp   png_create_write_struct   (
+	png_const_charp   user_png_ver,  
+	png_voidp  error_ptr,  
+	png_error_ptr  error_fn, 
+	png_error_ptr warn_fn);
+      */
+      png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+      if (!png) {
+	fprintf(stderr,"ERROR: Failed png_create_write_struct\n");
+	fclose(fp);
+	return -2;
+      }
+
+      info = png_create_info_struct(png);
+      if (!info) {
+	fprintf(stderr,"ERROR: Failed png_create_info_struct (info)\n");
+	fclose(fp);
+	png_destroy_read_struct(&png,
+				(png_infopp)NULL, (png_infopp)NULL);
+	return -3;
+      }
+      
+      end_info = png_create_info_struct(png);
+      if (!end_info) {
+	fprintf(stderr,"ERROR: Failed png_create_info_struct (end_info)\n");
+	fclose(fp);
+	png_destroy_read_struct(&png, &info,(png_infopp)NULL);
+	return -4;
+      }
+      
+      // todobig - can we do something more clever here?
+      if (setjmp(png_jmpbuf(png))) {
+	fprintf(stderr,"ERROR: PngReader setjmp triggered\n");
+	png_destroy_read_struct(&png, &info, &end_info);
+	fclose(fp);
+	return -5;
+      }
+	
+      png_init_io(png, fp);
+	
+      openFlag = true;
+      return 0;
+    }
+
+    int getWidth() {
+      return png_get_image_width(png,info);
+    }
+    int getHeight() {
+      return png_get_image_height(png,info);
+    }
+    
+    int read() {
+      png_read_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
+      row_pointers = png_get_rows(png, info);
+      return 0;
+    }
+
+    int close() {
+      if ( fp != nullptr && openFlag ) {
+	// png_read_end(png, end_info);
+	png_destroy_read_struct(&png, &info, &end_info);
+	fclose(fp);
+	fp = nullptr;
+      }
+      openFlag = false;
+      return 0;
+    }
+  };
+
+  
   
   int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness);
     
@@ -329,6 +437,43 @@ namespace mcpe_viz {
     
   bool compareColorInfo(std::unique_ptr<ColorInfo> const& a, std::unique_ptr<ColorInfo> const& b);
 
+
+
+  // quick-n-dirty emulation of java random number generator
+  // details from: https://docs.oracle.com/javase/8/docs/api/java/util/Random.html
+  class JavaRandom {
+  public:
+    int64_t seed;
+    
+    void setSeed(int64_t newseed) {
+      seed = (newseed ^ (int64_t)0x5DEECE66D) & (((int64_t)1 << 48) - 1);
+    }
+    
+    int32_t next(int64_t bits) {
+      // seed = (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1)
+      seed = (seed * (int64_t)0x5DEECE66D + (int64_t)0xB) & (((int64_t)1 << 48) - 1);
+      
+      // return (int)(seed >>> (48 - bits)).
+      // todo - unsigned shift right?
+      int64_t ret = (int32_t)(seed >> (48 - bits));
+      
+      return (int32_t)ret;
+    }
+    
+    int32_t nextInt(int64_t bound) {
+      if ((bound & -bound) == bound)  // i.e., bound is a power of 2
+	return ((bound * this->next(31)) >> 31);
+      
+      int32_t bits, val;
+      do {
+	bits = this->next(31);
+	val = bits % bound;
+      } while (bits - val + (bound - 1) < 0);
+      
+      return val;
+    }
+  };
+  
 } // namespace mcpe_viz
 
 #endif // __MCPE_VIZ_UTIL_H__

@@ -148,6 +148,7 @@
 	    <span class="caret"></span></button>
 	  <ul class="dropdown-menu">
 	    <li><a href="#" id="gridToggle">Show Chunk Grid</a></li>
+	    <li><a href="#" id="slimeChunksToggle">Show Slime Chunks</a></li>
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" id="elevationToggle">Show Elevation Overlay</a></li>
 	    <li class="input-group">

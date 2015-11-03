@@ -10,7 +10,7 @@
   * todobig -- Chrome appears to be demented about serving local files.  You get CORS errors.  Not at all clear that this can be resolved w/o really ugly workarounds (e.g. disabling chrome security); This could be the case with MS Edge on win10 also.
   -- http://stackoverflow.com/questions/3102819/disable-same-origin-policy-in-chrome
   -- https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?hl=en
-
+  
   * todohere -- some mods in test-all2 -- combine raw layer + regular layer selector; experiments w/ multilevel dropdown for mobs
 
   * goto X -- e.g. Player; World Origin; World Spawn; Player Spawn; etc
@@ -68,6 +68,7 @@ var pixelData = null, pixelDataName = '';
 
 var layerRawIndex = 63;
 var layerMain = null, srcLayerMain = null;
+var layerSlimeChunks = null, srcLayerSlimeChunks = null;
 
 var measureControl = null;
 var mousePositionControl = null;
@@ -1282,6 +1283,29 @@ function doChunkGrid(enableFlag) {
     return 0;
 }
 
+function doSlimeChunks(enabled) {
+    if ( enabled ) {
+	srcLayerSlimeChunks = new ol.source.ImageStatic({
+		url: dimensionInfo[globalDimensionId].fnLayerSlimeChunks,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+		imageExtent: extent
+	    });
+	layerSlimeChunks = new ol.layer.Image({
+		opacity: 0.5,
+		source: srcLayerSlimeChunks
+	    });
+	map.addLayer(layerSlimeChunks);
+    } else {
+	if ( layerSlimeChunks ) {
+	    map.removeLayer(layerSlimeChunks);
+	    layerSlimeChunks = null;
+	    srcLayerSlimeChunks = null;
+	}
+    }
+}
+
 function setLayer(fn, extraHelp) {
     if (fn.length <= 1) {
 	if ( extraHelp === undefined ) {
@@ -1595,7 +1619,7 @@ function loadVectors() {
 	var src;
 	if ( loadGeoJSONFlag ) { 
 	    src = new ol.source.Vector({
-		url: dimensionInfo[globalDimensionId].fnGeoJSON,
+		url: fnGeoJSON,
 		//crossOrigin: 'anonymous',
 		format: new ol.format.GeoJSON()
 	    });
@@ -1823,6 +1847,16 @@ $(function() {
 	} else {
 	    $('#gridToggle').parent().addClass('active');
 	    doChunkGrid(true);
+	}
+    });
+    
+    $('#slimeChunksToggle').click(function() {
+	if ($('#slimeChunksToggle').parent().hasClass('active')) {
+	    $('#slimeChunksToggle').parent().removeClass('active');
+	    doSlimeChunks(false);
+	} else {
+	    $('#slimeChunksToggle').parent().addClass('active');
+	    doSlimeChunks(true);
 	}
     });
     

@@ -1388,8 +1388,20 @@ namespace mcpe_viz {
 	  tileEntity->addMobSpawner(tc);
 	  parseFlag = true;
 	}
+	else if ( id == "DaylightDetector" ) {
+	  // todo - new for 0.13
+	  // todo - anything interesting?
+	}
+	else if ( id == "Skull" ) {
+	  // todo - new for 0.13
+	  // todo - anything interesting?
+	}
+	else if ( id == "Music" ) {
+	  // todo - new for 0.13
+	  // todo - anything interesting?
+	}
 	else {
-	  logger.msg(kLogInfo1,"ERROR: Unknown tileEntity id=(%s)\n", id.c_str());
+	  logger.msg(kLogInfo1,"WARNING: Unknown tileEntity id=(%s)\n", id.c_str());
 	}
       }
 

@@ -169,12 +169,12 @@ namespace mcpe_viz {
       close();
     }
 
-    int init(const std::string xfn, const std::string imageDescription, int w, int h, int numRowPointers) {
+    int init(const std::string xfn, const std::string imageDescription, int w, int h, int numRowPointers, bool rgbaFlag) {
       fn = std::string(xfn);
-      return open(imageDescription,w,h,numRowPointers);
+      return open(imageDescription,w,h,numRowPointers,rgbaFlag);
     }
 
-    int open(const std::string imageDescription, int width, int height, int numRowPointers) {
+    int open(const std::string imageDescription, int width, int height, int numRowPointers, bool rgbaFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
 	fprintf(stderr,"ERROR: Failed to open output file (%s)\n", fn.c_str());
@@ -209,12 +209,16 @@ namespace mcpe_viz {
       png_init_io(png, fp);
 	
       // Output is 8bit depth, RGB format.
+      int color_type = PNG_COLOR_TYPE_RGB;
+      if ( rgbaFlag ) {
+	color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+      }
       png_set_IHDR(
 		   png,
 		   info,
 		   width, height,
 		   8,
-		   PNG_COLOR_TYPE_RGB,
+		   color_type,
 		   PNG_INTERLACE_NONE,
 		   PNG_COMPRESSION_TYPE_DEFAULT,
 		   PNG_FILTER_TYPE_DEFAULT
@@ -357,6 +361,9 @@ namespace mcpe_viz {
     int getHeight() {
       return png_get_image_height(png,info);
     }
+    int getColorType() {
+      return png_get_color_type(png,info);
+    }
     
     int read() {
       png_read_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
@@ -455,7 +462,7 @@ namespace mcpe_viz {
       
       // return (int)(seed >>> (48 - bits)).
       // todo - unsigned shift right?
-      int64_t ret = (int32_t)(seed >> (48 - bits));
+      int64_t ret = (uint64_t)seed >> (48 - bits);
       
       return (int32_t)ret;
     }

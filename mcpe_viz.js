@@ -1293,7 +1293,7 @@ function doSlimeChunks(enabled) {
 		imageExtent: extent
 	    });
 	layerSlimeChunks = new ol.layer.Image({
-		opacity: 0.5,
+		opacity: 0.65,
 		source: srcLayerSlimeChunks
 	    });
 	map.addLayer(layerSlimeChunks);

@@ -12,12 +12,6 @@
 
   todobig
 
-  * slime chunks
-  -- web: use it as an overlay
-  -- alter opacity so non-slime chunks are CLEAR
-  -- iterate over all chunk space (current just does explored)
-  -- don't do it for the nether?
-
   * add support for tiling images -- see eferris world that is too big for firefox
 
   ** elevation overlay is broken when we use tiles in web app (turn it on; seems to work; zoom out; it's way off)
@@ -28,10 +22,7 @@
   ** do away with image coord space for web app? 
   ---- coords are crazy -- confirmed that negative-Z is north
 
-  ** web: overlay slime chunks -- find slime chunk calculation
-
-  ** do slime chunks overlay here?  it's very hard to do in OL because of, well, OL (can't easily use Long.js lib for Java Random number emulator)
-  ---- if we do that, we might want to do chunk grid overlay here also
+  * do chunk grid here instead of in web ui? (same func as slime chunks)
 
 
   * use boost for filesystem stuff?
@@ -219,7 +210,7 @@ namespace mcpe_viz {
 
     int heightMode;
 
-    // todobig - param?
+    // todobig - reasonable default? strike a balance between speed/# of files
     int tileWidth = 2048;
     int tileHeight = 512;
     
@@ -730,20 +721,24 @@ namespace mcpe_viz {
       return ret;
     }
 
-    int outputPNG(const std::string fname, const std::string imageDescription, uint8_t* buf, int width, int height) {
+    int outputPNG(const std::string fname, const std::string imageDescription, uint8_t* buf, int width, int height, bool rgbaFlag) {
       PngWriter png;
-      if ( png.init(fname, imageDescription, width, height, height) != 0 ) {
+      if ( png.init(fname, imageDescription, width, height, height, rgbaFlag) != 0 ) {
 	return -1;
       }
+      int bpp = 3;
+      if (rgbaFlag) {
+	bpp = 4;
+      }
       for(int y = 0; y < height; y++) {
-	png.row_pointers[y] = &buf[ y * width * 3 ];
+	png.row_pointers[y] = &buf[ y * width * bpp ];
       }
       png_write_image(png.png, png.row_pointers);
       png.close();
       return 0;
     }
     
-    void generateImage(const std::string fname, const ImageModeType imageMode = kImageModeTerrain) {
+    void generateImage(const std::string fname, const ImageModeType imageMode) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -753,6 +748,7 @@ namespace mcpe_viz {
       const int32_t imageH = chunkH * 16;
 
       JavaRandom rnd;
+      int64_t rndseed;
       int32_t slimeChunkX = 0, slimeChunkZ = 0;
       bool slimeChunkFlag = false, slimeChunkInit = false;
       
@@ -837,7 +833,7 @@ namespace mcpe_viz {
 		slimeChunkInit = true;
 		slimeChunkX = it->chunkX;
 		slimeChunkZ = it->chunkZ;
-		int64_t seed =
+		rndseed =
 		  ( worldSeed +
 		    (int64_t) (slimeChunkX * slimeChunkX * (int64_t)0x4c1906) +
 		    (int64_t) (slimeChunkX * (int64_t)0x5ac0db) +
@@ -846,8 +842,7 @@ namespace mcpe_viz {
 		    )
 		  ^ 0x3ad8025f
 		  ;
-	      
-		rnd.setSeed(seed);
+		rnd.setSeed(rndseed);
 		slimeChunkFlag = (rnd.nextInt(10) == 0);
 	      }
 	      if ( slimeChunkFlag ) {
@@ -923,7 +918,7 @@ namespace mcpe_viz {
       }
 	
       // output the image
-      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH);
+      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH, false);
 
       delete [] buf;
 
@@ -936,6 +931,79 @@ namespace mcpe_viz {
 	}
       }
     }
+
+
+    void generateImageSpecial(const std::string fname, const ImageModeType imageMode) {
+      const int32_t chunkW = (maxChunkX-minChunkX+1);
+      const int32_t chunkH = (maxChunkZ-minChunkZ+1);
+      const int32_t imageW = chunkW * 16;
+      const int32_t imageH = chunkH * 16;
+
+      JavaRandom rnd;
+      int64_t rndseed;
+      bool slimeChunkFlag = false;
+
+      int bpp = 3;
+      bool rgbaFlag = false;
+      if ( imageMode == kImageModeSlimeChunks ) {
+	bpp = 4;
+	rgbaFlag = true;
+      }
+      
+      // note RGB pixels
+      uint8_t *buf = new uint8_t[ imageW * imageH * bpp ];
+      memset(buf, 0, imageW*imageH*bpp);
+
+      int32_t color;
+      for (int32_t iz=0, chunkZ=minChunkZ; iz < imageH; iz+=16, chunkZ++) {
+	for (int32_t ix=0, chunkX=minChunkX; ix < imageW; ix+=16, chunkX++) {
+
+	  if ( 0 ) {
+	  }
+	  else if ( imageMode == kImageModeSlimeChunks ) {
+	    /*
+	      Random rnd = new Random(seed +
+	      (long) (xPosition * xPosition * 0x4c1906) +
+	      (long) (xPosition * 0x5ac0db) +
+					(long) (zPosition * zPosition) * 0x4307a7L +
+					(long) (zPosition * 0x5f24f) ^ 0x3ad8025f);
+					return rnd.nextInt(10) == 0;
+	      */
+	    rndseed =
+	      ( worldSeed +
+		(int64_t) (chunkX * chunkX * (int64_t)0x4c1906) +
+		(int64_t) (chunkX * (int64_t)0x5ac0db) +
+		(int64_t) (chunkZ * chunkZ * (int64_t)0x4307a7) +
+		(int64_t) (chunkZ * (int64_t)0x5f24f)
+		)
+	      ^ 0x3ad8025f
+	      ;
+	    rnd.setSeed(rndseed);
+	    slimeChunkFlag = (rnd.nextInt(10) == 0);
+
+	    if ( slimeChunkFlag ) {
+	      color = (0xff << 24) | (0xff << 8);
+	    } else {
+	      color = 0;
+	    }
+
+	    for (int sz=0; sz < 16; sz++) {
+	      for (int sx=0; sx < 16; sx++) {
+		memcpy(&buf[((iz + sz) * imageW + (ix + sx)) * bpp], &color, bpp);
+	      }
+	    }
+	  }
+	  
+	}
+      }
+	
+      // output the image
+      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH, rgbaFlag);
+
+      delete [] buf;
+    }
+
+
 
 
     // a run on old code (generateMovie):
@@ -1014,7 +1082,7 @@ namespace mcpe_viz {
 
 	control.fnLayerRaw[dimId][cy] = fnameTmp;
 	  
-	png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16);
+	png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16, false);
       }
 	
       // create row buffers
@@ -1327,7 +1395,7 @@ namespace mcpe_viz {
 
 	control.fnLayerRaw[dimId][cy] = fnameTmp;
 	  
-	outputPNG(fnameTmp, makeImageDescription(-1,cy), buf, cropW, cropH);
+	outputPNG(fnameTmp, makeImageDescription(-1,cy), buf, cropW, cropH, false);
       }
 
       delete [] buf;
@@ -1361,7 +1429,7 @@ namespace mcpe_viz {
 	
       fprintf(stderr,"  Generate Image\n");
       control.fnLayerTop[dimId] = std::string(control.fnOutputBase + "." + name + ".map.png");
-      generateImage(control.fnLayerTop[dimId]);
+      generateImage(control.fnLayerTop[dimId], kImageModeTerrain);
 	
       if ( checkDoForDim(control.doImageBiome) ) {
 	fprintf(stderr,"  Generate Biome Image\n");
@@ -1396,7 +1464,7 @@ namespace mcpe_viz {
       if ( checkDoForDim(control.doImageSlimeChunks) ) {
 	fprintf(stderr,"  Generate Slime Chunks Image\n");
 	control.fnLayerSlimeChunks[dimId] = std::string(control.fnOutputBase + "." + name + ".slime_chunks.png");
-	generateImage(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
+	generateImageSpecial(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
       }
 
       if ( checkDoForDim(control.doMovie) ) {
@@ -1884,11 +1952,6 @@ namespace mcpe_viz {
       int doTile() {
 	// todobig - store tile filenames?
 
-	// todobig todohere:
-	// open src file
-	// determine number of tiles
-	// iterate over src image space
-	// close src file
 	char tmpstring[256];
 
 	// open source file
@@ -1898,14 +1961,20 @@ namespace mcpe_viz {
 
 	int srcW = pngSrc.getWidth();
 	int srcH = pngSrc.getHeight();
-
+	int colorType = pngSrc.getColorType();
+	bool rgbaFlag = false;
+	int bpp = 3;
+	if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
+	  bpp = 4;
+	  rgbaFlag = true;
+	}
 	int numPngW = (int)ceil((double)srcW / (double)tileWidth);
 
 	PngWriter *pngOut = new PngWriter[numPngW];
 	uint8_t **buf;
 	buf = new uint8_t*[numPngW];
 	for (int i=0; i < numPngW; i++) {
-	  buf[i] = new uint8_t[tileWidth * tileHeight * 3];
+	  buf[i] = new uint8_t[tileWidth * tileHeight * bpp];
 	}
 	
 	bool initPngFlag = false;
@@ -1920,14 +1989,14 @@ namespace mcpe_viz {
 	      sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
 		      tileCounterY, i);
 	      std::string fname = tmpstring;
-	      pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight);
+	      pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag);
 
 	      // clear buffer
-	      memset(&buf[i][0], 0, tileWidth * tileHeight * 3);
+	      memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
 	      
 	      // setup row_pointers
 	      for (int ty=0; ty < tileHeight; ty++) {
-		pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * 3];
+		pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * bpp];
 	      }
 	    }
 	    tileCounterY++;
@@ -1941,7 +2010,7 @@ namespace mcpe_viz {
 	  for (int sx=0; sx < srcW; sx++) {
 	    int tileCounterX = sx / tileWidth;
 	    int tileOffsetX = sx % tileWidth;
-	    memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * 3], &srcbuf[sx*3], 3);
+	    memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &srcbuf[sx*bpp], bpp);
 	  }
 	  
 	  // write tile png files when they are ready
@@ -2124,7 +2193,6 @@ namespace mcpe_viz {
 	  fprintf(fp,"  playerPosX: %d,\n", px);
 	  fprintf(fp,"  playerPosY: %d,\n", py);
 
-	  // todobig todohere - need conditional on adding {y}{x}
 	  fprintf(fp,"  fnLayerTop: '%s',\n", makeTileURL(control.fnLayerTop[did]).c_str());
 	  fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
 	  fprintf(fp,"  fnLayerHeight: '%s',\n", makeTileURL(control.fnLayerHeight[did]).c_str());

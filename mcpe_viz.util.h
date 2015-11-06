@@ -22,7 +22,7 @@
 
 namespace mcpe_viz {
 
-  const std::string mcpe_viz_version("mcpe_viz v0.0.7 by Plethora777");
+  const std::string mcpe_viz_version("mcpe_viz v0.0.8 by Plethora777");
 
 #ifndef htobe32
   int32_t local_htobe32(const int32_t src);
@@ -60,7 +60,7 @@ namespace mcpe_viz {
       kLogInfo2 = 0x0002,
       kLogInfo3 = 0x0004,
       kLogInfo4 = 0x0008,
-	
+
       kLogInfo = 0x0010,
       kLogWarning = 0x0020,
       kLogError = 0x0040,
@@ -80,7 +80,8 @@ namespace mcpe_viz {
     int32_t logLevelMask;
     FILE *fpStdout;
     FILE *fpStderr;
-
+    bool doFlushFlag;
+    
     Logger() {
       init();
     }
@@ -91,6 +92,10 @@ namespace mcpe_viz {
       fpStderr = nullptr;
     }
 
+    void setFlush(bool f) {
+      doFlushFlag = f;
+    }
+    
     void setLogLevelMask(int32_t m) {
       logLevelMask = m;
     }
@@ -139,12 +144,18 @@ namespace mcpe_viz {
 	fflush(fp);
 	exit(-1);
       }
+
+      if ( doFlushFlag ) {
+	fflush(fp);
+      }
       
       return 0;
     }
     
   };    
 
+  extern Logger slogger;
+  
 
   
   class PngWriter {
@@ -177,7 +188,7 @@ namespace mcpe_viz {
     int open(const std::string imageDescription, int width, int height, int numRowPointers, bool rgbaFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
-	fprintf(stderr,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
 	return -1;
       }
 	
@@ -191,14 +202,14 @@ namespace mcpe_viz {
       */
       png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
       if (!png) {
-	fprintf(stderr,"ERROR: Failed png_create_write_struct\n");
+	slogger.msg(kLogInfo1,"ERROR: Failed png_create_write_struct\n");
 	fclose(fp);
 	return -2;
       }
 	
       info = png_create_info_struct(png);
       if (!info) {
-	fprintf(stderr,"ERROR: Failed png_create_info_struct\n");
+	slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct\n");
 	fclose(fp);
 	return -2;
       }
@@ -305,7 +316,7 @@ namespace mcpe_viz {
     int open() {
       fp = fopen(fn.c_str(), "rb");
       if(!fp) {
-	fprintf(stderr,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
 	return -1;
       }
 	
@@ -319,14 +330,14 @@ namespace mcpe_viz {
       */
       png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
       if (!png) {
-	fprintf(stderr,"ERROR: Failed png_create_write_struct\n");
+	slogger.msg(kLogInfo1,"ERROR: Failed png_create_write_struct\n");
 	fclose(fp);
 	return -2;
       }
 
       info = png_create_info_struct(png);
       if (!info) {
-	fprintf(stderr,"ERROR: Failed png_create_info_struct (info)\n");
+	slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct (info)\n");
 	fclose(fp);
 	png_destroy_read_struct(&png,
 				(png_infopp)NULL, (png_infopp)NULL);
@@ -335,7 +346,7 @@ namespace mcpe_viz {
       
       end_info = png_create_info_struct(png);
       if (!end_info) {
-	fprintf(stderr,"ERROR: Failed png_create_info_struct (end_info)\n");
+	slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct (end_info)\n");
 	fclose(fp);
 	png_destroy_read_struct(&png, &info,(png_infopp)NULL);
 	return -4;
@@ -343,7 +354,7 @@ namespace mcpe_viz {
       
       // todobig - can we do something more clever here?
       if (setjmp(png_jmpbuf(png))) {
-	fprintf(stderr,"ERROR: PngReader setjmp triggered\n");
+	slogger.msg(kLogInfo1,"ERROR: PngReader setjmp triggered\n");
 	png_destroy_read_struct(&png, &info, &end_info);
 	fclose(fp);
 	return -5;
@@ -461,7 +472,7 @@ namespace mcpe_viz {
       seed = (seed * (int64_t)0x5DEECE66D + (int64_t)0xB) & (((int64_t)1 << 48) - 1);
       
       // return (int)(seed >>> (48 - bits)).
-      // todo - unsigned shift right?
+      // todo - is this good enough for an unsigned shift right?
       int64_t ret = (uint64_t)seed >> (48 - bits);
       
       return (int32_t)ret;

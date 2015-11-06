@@ -12,39 +12,37 @@
 
   todobig
 
+  * gui - auto-check github for update?
+
+  * check --out -- error if it is a directory
+
+  * parse potions etc in inventories etc
+
+  * do variants for items + entities?
+
   * add support for tiling images -- see eferris world that is too big for firefox
-
-  ** elevation overlay is broken when we use tiles in web app (turn it on; seems to work; zoom out; it's way off)
+  -- elevation overlay is broken when we use tiles in web app (turn it on; seems to work; zoom out; it's way off)
   ---- this is the only thing keeping me from publishing tiled web app
+  -- create an elevation overlay here instead of js? (work around OL bugs)
 
-  ** create an elevation overlay here instead of js? (work around OL bugs)
-
-  ** do away with image coord space for web app? 
-  ---- coords are crazy -- confirmed that negative-Z is north
+  ** do away with image coord space for web app? coords are crazy -- confirmed that negative-Z is north
 
   * do chunk grid here instead of in web ui? (same func as slime chunks)
+
 
 
   * use boost for filesystem stuff?
 
   * try with clang; possible to mingw w/ clang?
 
-  * check --out -- error if it is a directory
 
   * see reddit test1 world -- has this (could be result of bad mcedit or similar):
   -- WARNING: Did not find block variant for block(Wooden Double Slab) with blockdata=8 (0x8)
-
-  * parse potions etc in inventories etc
-
-  * do variants for items + entities?
 
   * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
   -- put ALL chests in a map<x,y,z>; go through list of chests and put PairChest in matching sets and mark all as unprocessed; go thru list and do all, if PairChest mark both as done
 
   * how to handle really large maps (e.g. someone that explores mane thousounds of chunks N and E so that result image is 30k x 30k)
-
-  * simple gui -- db location; output path; output basename; checkbox: all images, html, html-most, html-all
-  -- https://wiki.qt.io/Qt_for_Beginners
 
   * see if there is interesting info re colors for overview map: http://minecraft.gamepedia.com/Map_item_format
 
@@ -116,6 +114,7 @@ namespace mcpe_viz {
   std::string dirExec;
   
   Logger logger;
+  Logger slogger;
 
   int32_t playerPositionImageX=0, playerPositionImageY=0;
   std::string globalLevelName = "(Unknown)";
@@ -300,8 +299,7 @@ namespace mcpe_viz {
       // setup logger
       logger.setStdout(fpLog);
       logger.setStderr(stderr);
-	
-	
+
       if ( doHtml ) {
 	fnGeoJSON = fnOutputBase + ".geojson";
 	  
@@ -779,7 +777,7 @@ namespace mcpe_viz {
 	      if ( has_key(biomeInfoList, biomeId) ) {
 		color = biomeInfoList[biomeId]->color;
 	      } else {
-		fprintf(stderr,"ERROR: Unknown biome %d 0x%x\n", biomeId, biomeId);
+		slogger.msg(kLogInfo1,"ERROR: Unknown biome %d 0x%x\n", biomeId, biomeId);
 		color = htobe32(0xff2020);
 	      }
 	    }
@@ -868,7 +866,7 @@ namespace mcpe_viz {
 		}
 		if ( ! vfound ) {
 		  // todo - warn once per id/blockdata or the output volume could get ridiculous
-		  fprintf(stderr,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+		  slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
 			  , blockInfoList[blockid].name.c_str()
 			  , blockdata
 			  , blockdata
@@ -907,10 +905,10 @@ namespace mcpe_viz {
 	      int wx = (worldX + cx);
 	      int wz = (worldZ + cz);
 	      if ( (wx == 0) && (wz == 0) ) {
-		fprintf(stderr,"    Info: World (0, 0) is at image (%d, %d)\n", ix,iz);
+		slogger.msg(kLogInfo1,"    Info: World (0, 0) is at image (%d, %d)\n", ix,iz);
 	      }
 	      if ( (wx == worldSpawnX) && (wz == worldSpawnZ) ) {
-		fprintf(stderr,"    Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
+		slogger.msg(kLogInfo1,"    Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
 	      }
 	    }
 	  }
@@ -926,7 +924,7 @@ namespace mcpe_viz {
       if ( imageMode == kImageModeTerrain ) {
 	for (int i=0; i < 256; i++) {
 	  if ( blockInfoList[i].colorSetNeedCount ) {
-	    fprintf(stderr,"    Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfoList[i].name.c_str(), blockInfoList[i].colorSetNeedCount);
+	    slogger.msg(kLogInfo1,"    Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfoList[i].name.c_str(), blockInfoList[i].colorSetNeedCount);
 	  }
 	}
       }
@@ -1058,7 +1056,7 @@ namespace mcpe_viz {
       uint8_t kt = 0x30;
       leveldb::Status dstatus;
 	
-      fprintf(stderr,"    Writing all 128 images in one pass\n");
+      slogger.msg(kLogInfo1,"    Writing all 128 images in one pass\n");
 	  
       leveldb::ReadOptions readOptions;
       readOptions.fill_cache=false; // may improve performance?
@@ -1117,7 +1115,7 @@ namespace mcpe_viz {
       for (int32_t imageZ=0, chunkZ=minChunkZ; imageZ < imageH; imageZ += 16, chunkZ++) {
 
 	if ( (runCt++ % 20) == 0 ) {
-	  fprintf(stderr,"    Row %d of %d\n", imageZ, imageH);
+	  slogger.msg(kLogInfo1,"    Row %d of %d\n", imageZ, imageH);
 	}
 	    
 	for (int32_t imageX=0, chunkX=minChunkX; imageX < imageW; imageX += 16, chunkX++) {
@@ -1141,7 +1139,7 @@ namespace mcpe_viz {
 	  dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
 	  if ( ! dstatus.ok() ) {
 	    notFoundCt2++;
-	    // fprintf(stderr,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
+	    // slogger.msg(kLogInfo1,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
 	    // we need to clear this area
 	    for (int cy=0; cy < 128; cy++) {
 	      for (int cz=0; cz < 16; cz++) {
@@ -1188,7 +1186,7 @@ namespace mcpe_viz {
 		    }
 		    if ( ! vfound ) {
 		      // todo - warn once per id/blockdata or the output volume could get ridiculous
-		      fprintf(stderr,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
 			      , blockInfoList[blockid].name.c_str()
 			      , blockdata
 			      , blockdata
@@ -1226,7 +1224,7 @@ namespace mcpe_viz {
 
       delete [] tbuf;
 	
-      // fprintf(stderr,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
+      // slogger.msg(kLogInfo1,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
 	
       return 0;
     }
@@ -1279,7 +1277,7 @@ namespace mcpe_viz {
       const char *pcolor = (const char*)&color;
       for (int cy=0; cy < 128; cy++) {
 	// todo - make this part a func so that user can ask for specific slices from the cmdline?
-	fprintf(stderr,"  Layer %d\n", cy);
+	slogger.msg(kLogInfo1,"  Layer %d\n", cy);
 	for ( const auto& it : list ) {
 	  int imageX = (it->chunkX + chunkOffsetX) * 16;
 	  int imageZ = (it->chunkZ + chunkOffsetZ) * 16;
@@ -1319,7 +1317,7 @@ namespace mcpe_viz {
 		  leveldb::Slice key(keybuf,keybuflen);
 		  leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
 		  if (!dstatus.ok()) {
-		    fprintf(stderr,"WARNING: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+		    slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
 		  }
 		  pchunk = svalue.data();
 		  pchunkX = it->chunkX;
@@ -1347,7 +1345,7 @@ namespace mcpe_viz {
 		    }
 		    if ( ! vfound ) {
 		      // todo - warn once per id/blockdata or the output volume could get ridiculous
-		      fprintf(stderr,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
 			      , blockInfoList[blockid].name.c_str()
 			      , blockdata
 			      , blockdata
@@ -1412,7 +1410,7 @@ namespace mcpe_viz {
 	cmdline += fname;
 	int ret = system(cmdline.c_str());
 	if ( ret != 0 ) {
-	  fprintf(stderr,"Failed to create movie ret=(%d) cmd=(%s)\n",ret,cmdline.c_str());
+	  slogger.msg(kLogInfo1,"Failed to create movie ret=(%d) cmd=(%s)\n",ret,cmdline.c_str());
 	}
 	
 	// todo - delete temp slice files? cmdline option to NOT delete
@@ -1423,57 +1421,57 @@ namespace mcpe_viz {
 
       
     int doOutput(leveldb::DB* db) {
-      fprintf(stderr,"Do Output: %s\n",name.c_str());
+      slogger.msg(kLogInfo1,"Do Output: %s\n",name.c_str());
 	
       doOutputStats();
 	
-      fprintf(stderr,"  Generate Image\n");
+      slogger.msg(kLogInfo1,"  Generate Image\n");
       control.fnLayerTop[dimId] = std::string(control.fnOutputBase + "." + name + ".map.png");
       generateImage(control.fnLayerTop[dimId], kImageModeTerrain);
 	
       if ( checkDoForDim(control.doImageBiome) ) {
-	fprintf(stderr,"  Generate Biome Image\n");
+	slogger.msg(kLogInfo1,"  Generate Biome Image\n");
 	control.fnLayerBiome[dimId] = std::string(control.fnOutputBase + "." + name + ".biome.png");
 	generateImage(control.fnLayerBiome[dimId], kImageModeBiome);
       }
       if ( checkDoForDim(control.doImageGrass) ) {
-	fprintf(stderr,"  Generate Grass Image\n");
+	slogger.msg(kLogInfo1,"  Generate Grass Image\n");
 	control.fnLayerGrass[dimId] = std::string(control.fnOutputBase + "." + name + ".grass.png");
 	generateImage(control.fnLayerGrass[dimId], kImageModeGrass);
       }
       if ( checkDoForDim(control.doImageHeightCol) ) {
-	fprintf(stderr,"  Generate Height Column Image\n");
+	slogger.msg(kLogInfo1,"  Generate Height Column Image\n");
 	control.fnLayerHeight[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col.png");
 	generateImage(control.fnLayerHeight[dimId], kImageModeHeightCol);
       }
       if ( checkDoForDim(control.doImageHeightColGrayscale) ) {
-	fprintf(stderr,"  Generate Height Column (grayscale) Image\n");
+	slogger.msg(kLogInfo1,"  Generate Height Column (grayscale) Image\n");
 	control.fnLayerHeightGrayscale[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col_grayscale.png");
 	generateImage(control.fnLayerHeightGrayscale[dimId], kImageModeHeightColGrayscale);
       }
       if ( checkDoForDim(control.doImageLightBlock) ) {
-	fprintf(stderr,"  Generate Block Light Image\n");
+	slogger.msg(kLogInfo1,"  Generate Block Light Image\n");
 	control.fnLayerBlockLight[dimId] = std::string(control.fnOutputBase + "." + name + ".light_block.png");
 	generateImage(control.fnLayerBlockLight[dimId], kImageModeBlockLight);
       }
       if ( checkDoForDim(control.doImageLightSky) ) {
-	fprintf(stderr,"  Generate Sky Light Image\n");
+	slogger.msg(kLogInfo1,"  Generate Sky Light Image\n");
 	control.fnLayerSkyLight[dimId] = std::string(control.fnOutputBase + "." + name + ".light_sky.png");
 	generateImage(control.fnLayerSkyLight[dimId], kImageModeSkyLight);
       }
       if ( checkDoForDim(control.doImageSlimeChunks) ) {
-	fprintf(stderr,"  Generate Slime Chunks Image\n");
+	slogger.msg(kLogInfo1,"  Generate Slime Chunks Image\n");
 	control.fnLayerSlimeChunks[dimId] = std::string(control.fnOutputBase + "." + name + ".slime_chunks.png");
 	generateImageSpecial(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
       }
 
       if ( checkDoForDim(control.doMovie) ) {
-	fprintf(stderr,"  Generate movie\n");
+	slogger.msg(kLogInfo1,"  Generate movie\n");
 	generateMovie(db, std::string(control.fnOutputBase + "." + name + ".mp4"), true, true);
       }
 
       if ( checkDoForDim(control.doSlices) ) {
-	fprintf(stderr,"  Generate full-size slices\n");
+	slogger.msg(kLogInfo1,"  Generate full-size slices\n");
 	generateSlices(db);
       }
 	
@@ -1542,11 +1540,11 @@ namespace mcpe_viz {
       
     int dbOpen(std::string dirDb) {
       // todobig - leveldb read-only? snapshot?
-      fprintf(stderr,"DB Open: dir=%s\n",dirDb.c_str());
+      slogger.msg(kLogInfo1,"DB Open: dir=%s\n",dirDb.c_str());
       leveldb::Status dstatus = leveldb::DB::Open(dbOptions, std::string(dirDb+"/db"), &db);
-      fprintf(stderr,"DB Open Status: %s\n", dstatus.ToString().c_str()); fflush(stderr);
+      slogger.msg(kLogInfo1,"DB Open Status: %s\n", dstatus.ToString().c_str()); fflush(stderr);
       if (!dstatus.ok()) {
-	fprintf(stderr,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+	slogger.msg(kLogInfo1,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
 	exit(-2);
       }
       dbReadOptions.fill_cache=false; // may improve performance?
@@ -1579,7 +1577,7 @@ namespace mcpe_viz {
 
       int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
 	
-      fprintf(stderr,"Scan keys to get world boundaries\n");
+      slogger.msg(kLogInfo1,"Scan keys to get world boundaries\n");
       int recordCt = 0;
 
       // todobig - is there a faster way to enumerate the keys?
@@ -1625,7 +1623,7 @@ namespace mcpe_viz {
       }
 
       if (!iter->status().ok()) {
-	fprintf(stderr,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
+	slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
       }
       delete iter;
 
@@ -1638,12 +1636,12 @@ namespace mcpe_viz {
 	const int32_t imageW = chunkW * 16;
 	const int32_t imageH = chunkH * 16;
 
-	fprintf(stderr,"  Bounds (chunk): DimId=%d X=(%d %d) Z=(%d %d)\n"
+	slogger.msg(kLogInfo1,"  Bounds (chunk): DimId=%d X=(%d %d) Z=(%d %d)\n"
 		, i
 		, chunkList[i].minChunkX, chunkList[i].maxChunkX
 		, chunkList[i].minChunkZ, chunkList[i].maxChunkZ
 		);
-	fprintf(stderr,"  Bounds (pixel): DimId=%d X=(%d %d) Z=(%d %d) Image=(%d %d)\n"
+	slogger.msg(kLogInfo1,"  Bounds (pixel): DimId=%d X=(%d %d) Z=(%d %d) Image=(%d %d)\n"
 		, i
 		, chunkList[i].minChunkX*16, chunkList[i].maxChunkX*16
 		, chunkList[i].minChunkZ*16, chunkList[i].maxChunkZ*16
@@ -1651,7 +1649,7 @@ namespace mcpe_viz {
 		);
       }
 
-      fprintf(stderr,"  %d records\n", recordCt);
+      slogger.msg(kLogInfo1,"  %d records\n", recordCt);
 	
       return 0;
     }
@@ -1669,29 +1667,29 @@ namespace mcpe_viz {
 
       // report hide and force lists
       {
-	fprintf(stderr,"Active 'hide-top' and 'force-top':\n");
+	slogger.msg(kLogInfo1,"Active 'hide-top' and 'force-top':\n");
 	int itemCt = 0;
 	int32_t blockId;
 	for (int dimId=0; dimId < kDimIdCount; dimId++) {
 	  chunkList[dimId].updateFastLists();
 	  for ( const auto& iter : chunkList[dimId].blockHideList ) {
 	    blockId = iter;
-	    fprintf(stderr,"  'hide-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
+	    slogger.msg(kLogInfo1,"  'hide-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
 	    itemCt++;
 	  }
 
 	  for ( const auto& iter : chunkList[dimId].blockForceTopList ) {
 	    blockId = iter;
-	    fprintf(stderr,"  'force-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
+	    slogger.msg(kLogInfo1,"  'force-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
 	    itemCt++;
 	  }
 	}
 	if ( itemCt == 0 ) {
-	  fprintf(stderr,"None\n");
+	  slogger.msg(kLogInfo1,"None\n");
 	}
       }
 	    
-      fprintf(stderr,"Parse all leveldb records\n");
+      slogger.msg(kLogInfo1,"Parse all leveldb records\n");
 
       MyNbtTagList tagList;
       int recordCt = 0, ret;
@@ -1719,7 +1717,7 @@ namespace mcpe_viz {
 	  break;
 	}
 	if ( (recordCt % 10000) == 0 ) {
-	  fprintf(stderr, "  Reading records: %d\n", recordCt);
+	  slogger.msg(kLogInfo1, "  Reading records: %d\n", recordCt);
 	}
 
 	logger.msg(kLogInfo1,"\n");
@@ -1806,14 +1804,14 @@ namespace mcpe_viz {
 
 	    // check for new dim id's
 	    if ( chunkDimId != kDimIdNether ) {
-	      fprintf(stderr, "HEY! Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
+	      slogger.msg(kLogInfo1, "HEY! Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
 	      continue;
 	    }
 	  }
 
 	  // we check for corrupt chunks
 	  if ( ! legalChunkPos(chunkX,chunkZ) ) {
-	    fprintf(stderr,"WARNING: Found a chunk with invalid chunk coordinates cx=%d cz=%d\n", chunkX, chunkZ);
+	    slogger.msg(kLogInfo1,"WARNING: Found a chunk with invalid chunk coordinates cx=%d cz=%d\n", chunkX, chunkZ);
 	    continue;
 	  }
 
@@ -1923,11 +1921,11 @@ namespace mcpe_viz {
 	  }
 	}
       }
-      fprintf(stderr,"Read %d records\n", recordCt);
-      fprintf(stderr,"Status: %s\n", iter->status().ToString().c_str());
+      slogger.msg(kLogInfo1,"Read %d records\n", recordCt);
+      slogger.msg(kLogInfo1,"Status: %s\n", iter->status().ToString().c_str());
       
       if (!iter->status().ok()) {
-	fprintf(stderr,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
+	slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
       }
       delete iter;
 
@@ -2060,7 +2058,7 @@ namespace mcpe_viz {
       mkdir(dirOut.c_str(),0755);
 #endif
 
-      fprintf(stderr,"Creating tiles for %s...\n", mybasename(fn).c_str());
+      slogger.msg(kLogInfo1,"Creating tiles for %s...\n", mybasename(fn).c_str());
       PngTiler pngTiler(fn, control.tileWidth, control.tileHeight, dirOut);
       if ( pngTiler.doTile() == 0 ) {
 	// all is good
@@ -2110,7 +2108,7 @@ namespace mcpe_viz {
     int doOutput_html() {
       char tmpstring[1025];
 	
-      fprintf(stderr,"Do Output: html viewer\n");
+      slogger.msg(kLogInfo1,"Do Output: html viewer\n");
 	
       sprintf(tmpstring,"%s/mcpe_viz.html.template", dirExec.c_str());
       std::string fnHtmlSrc = tmpstring;
@@ -2261,7 +2259,7 @@ namespace mcpe_viz {
 	fclose(fp);
 	    
       } else {
-	fprintf(stderr,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
+	slogger.msg(kLogInfo1,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
       }
 	  
       // copy helper files to destination directory
@@ -2285,13 +2283,13 @@ namespace mcpe_viz {
 
       
     int doOutput_colortest() {
-      fprintf(stderr,"Do Output: html colortest\n");
+      slogger.msg(kLogInfo1,"Do Output: html colortest\n");
 	
       std::string fnOut = control.fnOutputBase + ".colortest.html";
       FILE *fp = fopen(fnOut.c_str(), "w");
 	
       if ( !fp ) {
-	fprintf(stderr, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
+	slogger.msg(kLogInfo1, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
 	return -1;
       } 
 	  
@@ -2365,7 +2363,7 @@ namespace mcpe_viz {
 	
 	gzFile_s* fpGeoJSON = gzopen(control.fnGeoJSON.c_str(), "w");
 	if ( ! fpGeoJSON ) {
-	  fprintf(stderr,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
+	  slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
 	  return -1;
 	}
 	
@@ -2408,7 +2406,7 @@ namespace mcpe_viz {
 	
 	FILE* fpGeoJSON = fopen(control.fnGeoJSON.c_str(), "w");
 	if ( ! fpGeoJSON ) {
-	  fprintf(stderr,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
+	  slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
 	  return -1;
 	}
 	
@@ -2510,7 +2508,7 @@ namespace mcpe_viz {
     fread(&fVersion, sizeof(int32_t), 1, fp);
     fread(&bufLen, sizeof(int32_t), 1, fp);
 
-    fprintf(stderr,"parseLevelFile: name=%s version=%d len=%d\n", fname.c_str(), fVersion, bufLen);
+    slogger.msg(kLogInfo1,"parseLevelFile: name=%s version=%d len=%d\n", fname.c_str(), fVersion, bufLen);
 
     int ret = -2;
     if ( bufLen > 0 ) { 
@@ -2528,7 +2526,7 @@ namespace mcpe_viz {
 	worldSpawnX = tc["SpawnX"].as<nbt::tag_int>().get();
 	worldSpawnY = tc["SpawnY"].as<nbt::tag_int>().get();
 	worldSpawnZ = tc["SpawnZ"].as<nbt::tag_int>().get();
-	fprintf(stderr, "  Found World Spawn: x=%d y=%d z=%d\n", worldSpawnX, worldSpawnY, worldSpawnZ);
+	slogger.msg(kLogInfo1, "  Found World Spawn: x=%d y=%d z=%d\n", worldSpawnX, worldSpawnY, worldSpawnZ);
 
 	worldSeed = tc["RandomSeed"].as<nbt::tag_long>().get();
       }
@@ -2554,7 +2552,7 @@ namespace mcpe_viz {
 
     globalLevelName = buf;
       
-    fprintf(stderr,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+    slogger.msg(kLogInfo1,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
     logger.msg(kLogInfo1,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
     fclose(fp);
 
@@ -2574,11 +2572,11 @@ namespace mcpe_viz {
       
     FILE *fp = fopen(fn.c_str(), "r");
     if ( ! fp ) {
-      fprintf(stderr,"ERROR: Failed to open file (%s)\n", fn.c_str());
+      slogger.msg(kLogInfo1,"ERROR: Failed to open file (%s)\n", fn.c_str());
       return 1;
     }
 
-    fprintf(stderr,"Reading config from %s\n", fn.c_str());
+    slogger.msg(kLogInfo1,"Reading config from %s\n", fn.c_str());
       
     char buf[1025], *p;
     while ( !feof(fp) ) {
@@ -2614,7 +2612,7 @@ namespace mcpe_viz {
 	  // add to hide list
 	  world.chunkList[dimId].blockHideList.push_back(blockId);
 	} else {
-	  fprintf(stderr,"%sERROR: Failed to parse cfg item 'hide-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'hide-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
 	}
       }
 
@@ -2636,13 +2634,13 @@ namespace mcpe_viz {
 	  // add to hide list
 	  world.chunkList[dimId].blockForceTopList.push_back(blockId);
 	} else {
-	  fprintf(stderr,"%sERROR: Failed to parse cfg item 'hide': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'hide': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
 	}
       }
 
       else {
 	if ( strlen(buf) > 0 ) {
-	  fprintf(stderr,"%sWARNING: Unparsed config line: [%s]\n", makeIndent(indent,hdr).c_str(),buf);
+	  slogger.msg(kLogInfo1,"%sWARNING: Unparsed config line: [%s]\n", makeIndent(indent,hdr).c_str(),buf);
 	}
       }
 	
@@ -2691,7 +2689,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    //fprintf(stderr,"WARNING: Did not find a valid config file\n");
+    //slogger.msg(kLogInfo1,"WARNING: Did not find a valid config file\n");
     return -1;
   }
 
@@ -2740,21 +2738,21 @@ namespace mcpe_viz {
       return ret;
     }
 
-    fprintf(stderr,"ERROR: Did not find a valid XML file\n");
+    slogger.msg(kLogInfo1,"ERROR: Did not find a valid XML file\n");
     return -1;
   }
     
 
     
   void print_usage(const char* fn) {
-    fprintf(stderr,"Usage:\n\n");
-    fprintf(stderr,"  %s [required parameters] [options]\n\n",fn);
-    fprintf(stderr,"Required Parameters:\n"
+    slogger.msg(kLogInfo1,"Usage:\n\n");
+    slogger.msg(kLogInfo1,"  %s [required parameters] [options]\n\n",fn);
+    slogger.msg(kLogInfo1,"Required Parameters:\n"
 	    "  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
 	    "  --out fn-part            Filename base for output file(s)\n"
 	    "\n"
 	    );
-    fprintf(stderr,"Options:\n"
+    slogger.msg(kLogInfo1,"Options:\n"
 	    //"  --detail                 Log extensive details about the world to the log file\n"
 	    "  --html                   Create html and javascript files to use as a fancy viewer\n"
 	    "  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
@@ -2800,7 +2798,7 @@ namespace mcpe_viz {
       if ( did >= kDimIdOverworld && did < kDimIdCount ) {
 	// all is good
       } else {
-	fprintf(stderr,"ERROR: Invalid dimension-id supplied (%d), defaulting to Overworld only\n", did);
+	slogger.msg(kLogInfo1,"ERROR: Invalid dimension-id supplied (%d), defaulting to Overworld only\n", did);
 	did=kDimIdOverworld;
       }
     } else {
@@ -2847,7 +2845,9 @@ namespace mcpe_viz {
 
       {"shortrun", no_argument, NULL, '$'}, // this is just for testing
       {"colortest", no_argument, NULL, '!'}, // this is just for testing
-    
+
+      {"flush", no_argument, NULL, 'f'},
+      
       {"verbose", no_argument, NULL, 'v'},
       {"quiet", no_argument, NULL, 'q'},
       {"help", no_argument, NULL, 'h'},
@@ -2877,6 +2877,9 @@ namespace mcpe_viz {
       case '@':
 	control.doDetailParseFlag = true;
 	break;
+      case 'f':
+	slogger.setFlush(true);
+	break;
 
       case 'H':
 	{
@@ -2900,7 +2903,7 @@ namespace mcpe_viz {
 	  }
 
 	  if ( ! pass ) {
-	    fprintf(stderr,"ERROR: Failed to parse --hide-top %s\n",optarg);
+	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --hide-top %s\n",optarg);
 	    errct++;
 	  }
 	}
@@ -2928,7 +2931,7 @@ namespace mcpe_viz {
 	  }
 
 	  if ( ! pass ) {
-	    fprintf(stderr,"ERROR: Failed to parse --force-top %s\n",optarg);
+	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --force-top %s\n",optarg);
 	    errct++;
 	  }
 	}
@@ -2950,7 +2953,7 @@ namespace mcpe_viz {
 	    if ( sscanf(optarg,"%d,%d",&tw,&th) == 2 ) {
 	      control.tileWidth = tw;
 	      control.tileHeight = th;
-	      fprintf(stderr,"Overriding tile dimensions: %d x %d\n", control.tileWidth, control.tileHeight);
+	      slogger.msg(kLogInfo1,"Overriding tile dimensions: %d x %d\n", control.tileWidth, control.tileHeight);
 	    }
 	  }
 	}
@@ -3030,7 +3033,7 @@ namespace mcpe_viz {
 	if ( sscanf(optarg,"%d,%d,%d,%d", &control.movieX, &control.movieY, &control.movieW, &control.movieH) == 4 ) {
 	  // good
 	} else {
-	  fprintf(stderr,"ERROR: Failed to parse --movie-dim\n");
+	  slogger.msg(kLogInfo1,"ERROR: Failed to parse --movie-dim\n");
 	  errct++;
 	}
 	break;
@@ -3052,7 +3055,7 @@ namespace mcpe_viz {
 
 	/* Usage */
       default:
-	fprintf(stderr,"ERROR: Unrecognized option: '%c'\n",optc);
+	slogger.msg(kLogInfo1,"ERROR: Unrecognized option: '%c'\n",optc);
       case 'h':
 	return -1;
       }
@@ -3061,11 +3064,11 @@ namespace mcpe_viz {
     // verify/test args
     if ( control.dirLeveldb.length() <= 0 ) {
       errct++;
-      fprintf(stderr,"ERROR: Must specify --db\n");
+      slogger.msg(kLogInfo1,"ERROR: Must specify --db\n");
     }
     if ( control.fnOutputBase.length() <= 0 ) {
       errct++;
-      fprintf(stderr,"ERROR: Must specify --out\n");
+      slogger.msg(kLogInfo1,"ERROR: Must specify --out\n");
     }
 
     if ( errct <= 0 ) {
@@ -3078,6 +3081,9 @@ namespace mcpe_viz {
   int init(int argc, char** argv) {
     int ret;
 
+    slogger.setStdout(stderr);
+    slogger.setStderr(stderr);
+    
     ret = parse_args(argc, argv);
     if (ret != 0) {
       print_usage(basename(argv[0]));
@@ -3086,8 +3092,8 @@ namespace mcpe_viz {
     
     ret = parseXml();
     if ( ret != 0 ) {
-      fprintf(stderr,"ERROR: Failed to parse XML file.  Exiting...\n");
-      fprintf(stderr,"** Hint: Make sure that mcpe_viz.xml is in any of: current dir, exec dir, ~/.mcpe_viz/\n");
+      slogger.msg(kLogInfo1,"ERROR: Failed to parse XML file.  Exiting...\n");
+      slogger.msg(kLogInfo1,"** Hint: Make sure that mcpe_viz.xml is in any of: current dir, exec dir, ~/.mcpe_viz/\n");
       return -1;
     }
     
@@ -3095,15 +3101,15 @@ namespace mcpe_viz {
     
     ret = parseLevelFile(std::string(control.dirLeveldb + "/level.dat"));
     if ( ret != 0 ) {
-      fprintf(stderr,"ERROR: Failed to parse level.dat file.  Exiting...\n");
-      fprintf(stderr,"** Hint: --db must point to the dir which contains level.dat\n");
+      slogger.msg(kLogInfo1,"ERROR: Failed to parse level.dat file.  Exiting...\n");
+      slogger.msg(kLogInfo1,"** Hint: --db must point to the dir which contains level.dat\n");
       return -1;
     }
     
     ret = parseLevelName(std::string(control.dirLeveldb + "/levelname.txt"));
     if ( ret != 0 ) {
-      fprintf(stderr,"WARNING: Failed to parse levelname.txt file.\n");
-      fprintf(stderr,"** Hint: --db must point to the dir which contains levelname.txt\n");
+      slogger.msg(kLogInfo1,"WARNING: Failed to parse levelname.txt file.\n");
+      slogger.msg(kLogInfo1,"** Hint: --db must point to the dir which contains levelname.txt\n");
     }
     
     makePalettes();

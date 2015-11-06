@@ -1,0 +1,7 @@
+debug/
+release/
+Makefile*
+ui_mainwindow.h
+mcpe_viz_helper.pro.user
+*.exe
+*.dll

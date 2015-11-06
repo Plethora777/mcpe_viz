@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
-  VERSION 0.0.7)
+  VERSION 0.0.8)
 
 option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
 option(MCPE_VIZ_WIN64 "Build win64 using mingw" OFF)
@@ -123,8 +123,14 @@ configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.html.template mcpe_viz.html.templa
 
 # zip win32 and win64 builds
 if(MCPE_VIZ_WIN32)
-  configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
-  configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
+
+  # copy the gui exe and dll's
+  # todo - this appears to not work?
+  #file(GLOB GUI_EXE "${PROJECT_SOURCE_DIR}/gui/release/*.exe")
+  #file(GLOB GUI_DLL "${PROJECT_SOURCE_DIR}/gui/release/*.dll")
+  #file(COPY ${GUI_EXE} DESTINATION "${PROJECT_SOURCE_DIR}/wbuild/")
+  #file(COPY ${GUI_DLL} DESTINATION "${PROJECT_SOURCE_DIR}/wbuild/")
+  
   # todo - would be cool to auto-gather dll's - but this doesn't work yet
   #add_custom_target(remove_dll ALL COMMAND
   #  ${CMAKE_COMMAND} -E rm -f "./*.dll"
@@ -134,21 +140,33 @@ if(MCPE_VIZ_WIN32)
   #  ${CMAKE_COMMAND} -E ../Research/mingw/mingw-bundledlls/mingw-bundledlls --copy mcpe_viz.exe
   #  DEPENDS remove_dll
   #  )
+  configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
+  configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
   add_custom_target(create_zip ALL COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win32.zip" --format=zip
     "mcpe_viz.*"
+    "mcpe_viz_helper.exe"
     "*.dll"
     "README.txt"
     "LICENSE.txt"
     DEPENDS mcpe_viz.exe
     )
 elseif(MCPE_VIZ_WIN64)
+
+  # copy the gui exe and dll's
+  # todo - this appears to not work?
+  #file(GLOB GUI_EXE "${PROJECT_SOURCE_DIR}/gui/release/*.exe")
+  #file(GLOB GUI_DLL "${PROJECT_SOURCE_DIR}/gui/release/*.dll")
+  #file(COPY ${GUI_EXE} DESTINATION "${PROJECT_SOURCE_DIR}/wbuild64/")
+  #file(COPY ${GUI_DLL} DESTINATION "${PROJECT_SOURCE_DIR}/wbuild64/")
+  
   # package win64 w/ required dll's
   configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
   configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
   add_custom_target(create_zip ALL COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win64.zip" --format=zip
     "mcpe_viz.*"
+    "mcpe_viz_helper.exe"
     "*.dll"
     "README.txt"
     "LICENSE.txt"

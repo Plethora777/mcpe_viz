@@ -38,7 +38,7 @@ Here are example images: http://imgur.com/a/YiIWe
 Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
 
 
-## Quick Start -- How to run it on Windows
+## Quick Start -- How to run it on Windows with a GUI
 
 * Download the zip file: https://github.com/Plethora777/mcpe_viz/archive/master.zip
 
@@ -46,7 +46,16 @@ Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
 
 * Inside you will find "mcpe_viz.win32.zip" (windows 32-bit) and "mcpe_viz.win64.zip" (windows 64-bit).  Choose one that is appropriate for your system.  Unzip it.
 
-* Inside you will find mcpe_viz.exe
+* Inside you will find mcpe_viz_helper.exe
+
+* Run mcpe_viz_helper.exe
+
+Use the app to select the MCPE world file, the output directory, output name, and mode.  Press "Go!".  Watch the progress of mcpe_viz.  If it completes successfully, you can click the "Launch Web App" button.  If there was a problem, you should look in the "Progress" window for details that might help you resolve the issue.
+
+
+## Quick Start -- How to run it on Windows from the command-line
+
+* Same as above to get the files.
 
 * Open a command prompt and run it something like this:
 

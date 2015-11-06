@@ -323,7 +323,7 @@
     <block id="0x92" name="Trapped Chest" color="0xb37c4f" solid="0" /> <!-- *E 0.13 -->
     <block id="0x93" name="Pressure Plate, Weighted Light" color="0xd3d526" solid="0" /> <!-- *S 0.13 -->
     <block id="0x94" name="Pressure Plate, Weighted Heavy" color="0x575757" solid="0" /> <!-- *S 0.13 -->
-    <block id="0x97" name="Daylight Sensors" color="0x989898" solid="0" /> <!-- *E 0.13 -->
+    <block id="0x97" name="Daylight Sensor" color="0x989898" solid="0" /> <!-- *E 0.13 -->
     <block id="0x98" name="Block of Redstone" color="0xcd5c5c" />
     <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
     <block id="0x9B" name="Block of Quartz" color="0xfffff8"> <!-- *B -->

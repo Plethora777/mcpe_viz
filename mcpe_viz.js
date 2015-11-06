@@ -95,6 +95,10 @@ var resetCanvasSmoothingMode = function(evt) {
     evt.context.msImageSmoothingEnabled = true;
     evt.context.imageSmoothingEnabled = true;
 };
+var disableLayerSmoothing = function(layer) {
+    layer.on('precompose', setCanvasSmoothingMode);
+    layer.on('postcompose', resetCanvasSmoothingMode);
+};
 
 
 
@@ -1297,6 +1301,7 @@ function doSlimeChunks(enabled) {
 		source: srcLayerSlimeChunks
 	    });
 	map.addLayer(layerSlimeChunks);
+	disableLayerSmoothing(layerSlimeChunks);
     } else {
 	if ( layerSlimeChunks ) {
 	    map.removeLayer(layerSlimeChunks);
@@ -1389,11 +1394,7 @@ function setLayer(fn, extraHelp) {
 	    }
 	});
 	
-	var bindLayerListeners = function(layer) {
-	    layer.on('precompose', setCanvasSmoothingMode);
-	    layer.on('postcompose', resetCanvasSmoothingMode);
-	};
-	bindLayerListeners(layerMain);
+	disableLayerSmoothing(layerMain);
     } else {
 	layerMain.setSource(srcLayerMain);
     }

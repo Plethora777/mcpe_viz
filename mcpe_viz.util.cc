@@ -96,16 +96,16 @@ namespace mcpe_viz {
 				      const StringReplacementList& replaceStrings ) {
     char buf[1025];
 
-    //fprintf(stderr,"  copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
+    //slogger.msg(kLogInfo1,"  copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
 
     FILE *fpsrc = fopen(fnSrc.c_str(),"r");
     if ( ! fpsrc ) {
-      fprintf(stderr,"ERROR: copyFileWithStringReplacement failed to open src (%s)\n", fnSrc.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFileWithStringReplacement failed to open src (%s)\n", fnSrc.c_str());
       return -1;
     }
     FILE *fpdest = fopen(fnDest.c_str(),"w");
     if ( ! fpdest ){
-      fprintf(stderr,"ERROR: copyFileWithStringReplacement failed to open dest (%s)\n", fnDest.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFileWithStringReplacement failed to open dest (%s)\n", fnDest.c_str());
       fclose(fpsrc);
       return -1;
     }
@@ -148,16 +148,16 @@ namespace mcpe_viz {
     char buf[1025];
     memset(buf,0,1025);
 
-    //fprintf(stderr,"  copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
+    //slogger.msg(kLogInfo1,"  copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
   
     FILE *fpsrc = fopen(fnSrc.c_str(),"r");
     if ( ! fpsrc ) {
-      fprintf(stderr,"ERROR: copyFile failed to open src (%s)\n", fnSrc.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open src (%s)\n", fnSrc.c_str());
       return -1;
     }
     FILE *fpdest = fopen(fnDest.c_str(),"w");
     if ( ! fpdest ){
-      fprintf(stderr,"ERROR: copyFile failed to open dest (%s)\n", fnDest.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open dest (%s)\n", fnDest.c_str());
       fclose(fpsrc);
       return -1;
     }

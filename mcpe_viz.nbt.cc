@@ -445,7 +445,7 @@ namespace mcpe_viz {
       }
 	
       s = "\"Name\": ";
-      if ( id>=0 && id <= 255 ) {
+      if ( id >= 0 && id <= 255 ) {
 	s += "\"" + blockInfoList[id].name + "\"";
       } else if ( has_key(itemInfoList, id) ) {
 	s += "\"" + itemInfoList[id]->name + "\"";
@@ -511,7 +511,7 @@ namespace mcpe_viz {
 	
       std::string s = "[";
 
-      if ( id>=0 && id <= 255 ) {
+      if ( id >= 0 && id <= 255 ) {
 	s += "Block:" + blockInfoList[id].name;
       } else if ( has_key(itemInfoList, id) ) {
 	s += "Item:" + itemInfoList[id]->name;

@@ -1,23 +1,27 @@
 # MCPE Viz
 by Plethora777
 
-MCPE Viz is a command-line tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, and reports *lots* of details on your world.
+MCPE Viz is a tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, and reports *lots* of details on your world.
 
 It can also create a powerful Google Maps-like Web App for viewing your world.
 
 Additional Features:
 
 * Create a powerful Google Maps-like web app viewer for your world.
+  * Browse through all 128 layers of your world (Overworld and Nether) from bedrock to build limit.
+  * Examine the location and details of mobs and items in your world.
+  * Visualize chunk boundaries -- consider it an extremely cumbersome F3/debug mode!
+  * Find slime chunks -- well, maybe... slime chunk finding code not confirmed to work on MCPE yet :)
+  * Explore the biomes of your world.
+  * Shaded-relief elevation overlay -- get a sense of the topography of your world.
+  * Measure distances in your world
 
-* Create images of individual layers of your world
-
-* Create an image of the biomes in your world
-
-* Create an image of block light in your world (kind of like an image from space at night)
-
-* Create an image of the block height in your world (kind of like a topographic map)
-
-* Create an image of the grass color in your world (it's pretty interesting!)
+* Create many types of images:
+  * All layers of your world
+  * Biomes in your world (very interesting!)
+  * Block light in your world (kind of like an image from space at night)
+  * Block height in your world (kind of like a topographic map)
+  * Grass color in your world (it's neater than it sounds)
 
 * Create movies of all layers from bedrock to build limit (*ffmpeg* required)
 
@@ -50,7 +54,11 @@ Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
 
 * Run mcpe_viz_helper.exe
 
+**DO NOT RUN THIS ON YOUR ORIGINAL MCPE DATA FILES; MAKE A BACKUP COPY OF YOUR DATA AND RUN THIS AGAINST THAT COPY ONLY!**
+
 Use the app to select the MCPE world file, the output directory, output name, and mode.  Press "Go!".  Watch the progress of mcpe_viz.  If it completes successfully, you can click the "Launch Web App" button.  If there was a problem, you should look in the "Progress" window for details that might help you resolve the issue.
+
+See below for Web App usage notes.
 
 
 ## Quick Start -- How to run it on Windows from the command-line

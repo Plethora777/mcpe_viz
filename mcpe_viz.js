@@ -2,6 +2,10 @@
   mcpe_viz openlayers viewer
   by Plethora777 - 2015.10.08
 
+  todobig
+
+  * tiling - see test-xyz* dirs for code; BUT tiling breaks the elevation overlay
+
   todo
 
   * toggle btwn overworld / nether - show player est. spot in nether even if they are in overworld
@@ -29,10 +33,11 @@
 
   * how to get navbar + popovers in full screen?
 
-  * web: why does click on point not always work?
+  * web: why does click on feature not always work?
 
   * ability to hover over a pixel and get info (e.g. "Jungle Biome - Watermelon @ (X,Z,Y)"); switch image layers
   -- hidden layers for more info in mouse pos window: biomes + height
+  -- this could be very easy when tiling works
 
   * rewrite/adapt to use the google closure tools?
 

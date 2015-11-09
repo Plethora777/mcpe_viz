@@ -19,10 +19,9 @@
 #include <png.h>
 #include <sys/stat.h>
 #include <libgen.h>
+#include "mcpe_viz.version.h"
 
 namespace mcpe_viz {
-
-  const std::string mcpe_viz_version("mcpe_viz v0.0.8 by Plethora777");
 
 #ifndef htobe32
   int32_t local_htobe32(const int32_t src);

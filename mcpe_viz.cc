@@ -36,13 +36,13 @@
   * try with clang; possible to mingw w/ clang?
 
 
-  * see reddit test1 world -- has this (could be result of bad mcedit or similar):
+  * see reddit test1 world -- has this msg (could be result of bad mcedit or similar):
   -- WARNING: Did not find block variant for block(Wooden Double Slab) with blockdata=8 (0x8)
 
   * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
   -- put ALL chests in a map<x,y,z>; go through list of chests and put PairChest in matching sets and mark all as unprocessed; go thru list and do all, if PairChest mark both as done
 
-  * how to handle really large maps (e.g. someone that explores mane thousounds of chunks N and E so that result image is 30k x 30k)
+  * how to handle really large maps (e.g. someone that explores mane thousounds of chunks N and E so that result image is 30k x 30k) -- answer is tiling, see above
 
   * see if there is interesting info re colors for overview map: http://minecraft.gamepedia.com/Map_item_format
 
@@ -745,11 +745,6 @@ namespace mcpe_viz {
       const int32_t imageW = chunkW * 16;
       const int32_t imageH = chunkH * 16;
 
-      JavaRandom rnd;
-      int64_t rndseed;
-      int32_t slimeChunkX = 0, slimeChunkZ = 0;
-      bool slimeChunkFlag = false, slimeChunkInit = false;
-      
       // note RGB pixels
       uint8_t *buf = new uint8_t[ imageW * imageH * 3 ];
       memset(buf, 0, imageW*imageH*3);
@@ -815,39 +810,6 @@ namespace mcpe_viz {
 	      // get sky light value and expand it (is only 4-bits)
 	      uint8_t c = (it->topLight[cx][cz] & 0xf0);
 	      color = (c << 24) | (c << 16) | (c << 8);
-	    }
-	    else if ( imageMode == kImageModeSlimeChunks ) {
-	      if ( slimeChunkInit && slimeChunkX == it->chunkX && slimeChunkZ == it->chunkZ ) {
-		// we already have our flag
-	      } else {
-		/*
-		Random rnd = new Random(seed +
-					(long) (xPosition * xPosition * 0x4c1906) +
-					(long) (xPosition * 0x5ac0db) +
-					(long) (zPosition * zPosition) * 0x4307a7L +
-					(long) (zPosition * 0x5f24f) ^ 0x3ad8025f);
-		return rnd.nextInt(10) == 0;
-		*/
-		slimeChunkInit = true;
-		slimeChunkX = it->chunkX;
-		slimeChunkZ = it->chunkZ;
-		rndseed =
-		  ( worldSeed +
-		    (int64_t) (slimeChunkX * slimeChunkX * (int64_t)0x4c1906) +
-		    (int64_t) (slimeChunkX * (int64_t)0x5ac0db) +
-		    (int64_t) (slimeChunkZ * slimeChunkZ * (int64_t)0x4307a7) +
-		    (int64_t) (slimeChunkZ * (int64_t)0x5f24f)
-		    )
-		  ^ 0x3ad8025f
-		  ;
-		rnd.setSeed(rndseed);
-		slimeChunkFlag = (rnd.nextInt(10) == 0);
-	      }
-	      if ( slimeChunkFlag ) {
-		color = (0xff << 16);
-	      } else {
-		color = 0;
-	      }
 	    }
 	    else {
 	      // regular image
@@ -960,13 +922,14 @@ namespace mcpe_viz {
 	  }
 	  else if ( imageMode == kImageModeSlimeChunks ) {
 	    /*
+	      from: http://minecraft.gamepedia.com/Slime_chunk#Low_layers
 	      Random rnd = new Random(seed +
 	      (long) (xPosition * xPosition * 0x4c1906) +
 	      (long) (xPosition * 0x5ac0db) +
-					(long) (zPosition * zPosition) * 0x4307a7L +
-					(long) (zPosition * 0x5f24f) ^ 0x3ad8025f);
-					return rnd.nextInt(10) == 0;
-	      */
+	      (long) (zPosition * zPosition) * 0x4307a7L +
+	      (long) (zPosition * 0x5f24f) ^ 0x3ad8025f);
+	      return rnd.nextInt(10) == 0;
+	    */
 	    rndseed =
 	      ( worldSeed +
 		(int64_t) (chunkX * chunkX * (int64_t)0x4c1906) +
@@ -3123,7 +3086,7 @@ namespace mcpe_viz {
   
 int main ( int argc, char **argv ) {
 
-  fprintf(stderr,"%s\n", mcpe_viz::mcpe_viz_version.c_str());
+  fprintf(stderr,"%s\n", mcpe_viz_version.c_str());
 
   mcpe_viz::dirExec = dirname(argv[0]);
 

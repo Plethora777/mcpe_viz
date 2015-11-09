@@ -6,6 +6,7 @@
  *
  * todo
  *   auto-check for update on github?
+ *   optionally, play sound on success / failure?
  *
  */
 
@@ -18,6 +19,7 @@
 #include <vector>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "../mcpe_viz.version.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -27,7 +29,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     this->setWindowTitle(tr("MCPE Viz Helper by Plethora777"));
 
-    QLabel *label = new QLabel(tr("<html><a href=\"https://github.com/Plethora777/mcpe_viz\">MCPE Viz Helper</a> by Plethora777</html>"));
+    QLabel *label =
+      new QLabel(tr(std::string("<html><a href=\"https://github.com/Plethora777/mcpe_viz\">MCPE Viz Helper</a> v" + mcpe_viz_version_short + " by Plethora777</html>").c_str()));
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     label->setOpenExternalLinks(true);
     statusBar()->addPermanentWidget(label);
@@ -85,7 +88,7 @@ int MainWindow::getCommandLine(std::string &cmd) {
     fi = QFileInfo(ui->txtMCPEWorld->text());
     QString dirDb = fi.absolutePath();
     if (dirDb.length() > 0) {
-        cmd_args.push_back("--db " + dirDb.toStdString());
+      cmd_args.push_back("--db \"" + dirDb.toStdString() + "\"");
     } else {
         err_list.push_back("Invalid MCPE World directory");
     }
@@ -101,7 +104,7 @@ int MainWindow::getCommandLine(std::string &cmd) {
     QString dirOutput = ui->txtOutputDirectory->text();
     QString outputName = QFileInfo(ui->txtOutputName->text()).baseName();
     if (dirOutput.length() > 0 && outputName.length() > 0) {
-        cmd_args.push_back("--out " + dirOutput.toStdString() + "/" + outputName.toStdString());
+      cmd_args.push_back("--out \"" + dirOutput.toStdString() + "/" + outputName.toStdString() + "\"");
     } else {
         err_list.push_back("Invalid Output Directory and/or Output Name");
     }

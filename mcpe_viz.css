@@ -21,10 +21,6 @@ html, body, .container-fluid, #map {
 }
 
 /* full screen support */
-.ol-full-screen {
-    /* move button down a bit */
-    top: 4.5em;
-}
 .map:-moz-full-screen {
     height: 100%;
 }
@@ -37,8 +33,12 @@ html, body, .container-fluid, #map {
 .map:fullscreen {
     height: 100%;
 }
+.ol-full-screen {
+    /* move button down a bit */
+    top: 4.5em;
+}
 .ol-rotate {
-    top: 3em;
+    top: 7em;
 }
 
 .popover {
@@ -103,11 +103,8 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
 
 /* support for measuring tools */
 .measure {
-  top: 7.5em;
+  top: 8em;
   left: .5em;
-}
-.ol-touch .measure {
-  top: 80px;
 }
 
 .measureTooltip {
@@ -141,4 +138,8 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
 }
 .measureTooltip-static:before {
   border-top-color: #f9ec1f;
+}
+
+.nobreak {
+    white-space:nowrap;
 }

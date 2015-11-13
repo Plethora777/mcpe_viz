@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 #include <libxml/xmlreader.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include "mcpe_viz.util.h"
 #include "mcpe_viz.h"
 #include "mcpe_viz.xml.h"
@@ -173,6 +175,28 @@ namespace mcpe_viz {
   }
 
 
+
+  int copyDirToDir ( const std::string dirSrc, const std::string dirDest ) {
+    struct dirent *dp;
+    DIR *dfd = opendir(dirSrc.c_str());
+    if (dfd != NULL) {
+      while ((dp = readdir(dfd)) != NULL) {
+	if ( strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0 ) {
+	  // skip
+	} else {
+	  std::string fnSrc = dirSrc + "/" + dp->d_name;
+	  std::string fnDest = dirDest + "/" + mybasename(dp->d_name);
+	  copyFile(dirSrc + "/" + dp->d_name, fnDest);
+	}
+      }
+      closedir(dfd);
+      return 0;
+    }
+    slogger.msg(kLogInfo1, "ERROR: copyDirToDir( src=%s dest=%s ) failed to open source directory\n", dirSrc.c_str(), dirDest.c_str());
+    return -1;
+  }
+
+  
 
   // from: http://kickjava.com/src/org/eclipse/swt/graphics/RGB.java.htm
   int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness) {
@@ -347,4 +371,12 @@ namespace mcpe_viz {
     return s;
   }
 
+  int local_mkdir(std::string path) {
+#ifdef WINVER
+    return mkdir(path.c_str());
+#else
+    return mkdir(path.c_str(),0755);
+#endif
+  }
+  
 } // namespace mcpe_viz

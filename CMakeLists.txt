@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
-  VERSION 0.0.8)
+  VERSION 0.0.10)
 
 option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
 option(MCPE_VIZ_WIN64 "Build win64 using mingw" OFF)
@@ -121,6 +121,14 @@ configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.js mcpe_viz.js COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.css mcpe_viz.css COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/mcpe_viz.html.template mcpe_viz.html.template COPYONLY)
 
+configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap.min.css js/bootstrap.min.css COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap-tour.min.css js/bootstrap-tour.min.css COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/ol.css js/ol.css COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap.min.js js/bootstrap.min.js COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap-tour.min.js js/bootstrap-tour.min.js COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/jquery-1.11.2.min.js js/jquery-1.11.2.min.js COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/ol.js js/ol.js COPYONLY)
+
 # zip win32 and win64 builds
 if(MCPE_VIZ_WIN32)
 
@@ -149,6 +157,7 @@ if(MCPE_VIZ_WIN32)
     "*.dll"
     "README.txt"
     "LICENSE.txt"
+    "js"
     DEPENDS mcpe_viz.exe
     )
 elseif(MCPE_VIZ_WIN64)
@@ -170,6 +179,7 @@ elseif(MCPE_VIZ_WIN64)
     "*.dll"
     "README.txt"
     "LICENSE.txt"
+    "js"
     DEPENDS mcpe_viz.exe
     )
 endif()

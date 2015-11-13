@@ -1,5 +1,5 @@
 # MCPE Viz
-by Plethora777
+by Plethora777 -- Twitter: [@Plethora777](https://twitter.com/Plethora777) -- Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
 MCPE Viz is a tool that parses Minecraft Pocket Edition (MCPE) world files.  It creates overview images from the world files, and reports *lots* of details on your world.
 
@@ -207,6 +207,18 @@ From the top directory of mcpe_viz:
 ```
 
 If all goes well, you will have "mcpe_viz" in build/
+
+
+#### Compile mcpe_viz_helper
+
+From the top directory of mcpe_viz:
+
+```
+> cd gui
+> qmake
+```
+
+If all goes well, you will have "mcpe_viz_helper" in release/
 
 
 ## TODO

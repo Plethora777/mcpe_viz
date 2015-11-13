@@ -29,6 +29,8 @@
 
   * do chunk grid here instead of in web ui? (same func as slime chunks)
 
+  * tobomori: ability to hide only a block variant (e.g. Tall Grass)
+
 
 
   * use boost for filesystem stuff?
@@ -109,7 +111,6 @@
 
 namespace mcpe_viz {
   // todobig - removed anonymous namespace here
-
 
   std::string dirExec;
   
@@ -2015,11 +2016,7 @@ namespace mcpe_viz {
       
       std::string dirOut = mydirname(control.fnOutputBase) + "/tiles";
       // todobig - check if dir exists first
-#ifdef WINVER
-      mkdir(dirOut.c_str());
-#else
-      mkdir(dirOut.c_str(),0755);
-#endif
+      local_mkdir(dirOut.c_str());
 
       slogger.msg(kLogInfo1,"Creating tiles for %s...\n", mybasename(fn).c_str());
       PngTiler pngTiler(fn, control.tileWidth, control.tileHeight, dirOut);
@@ -2237,6 +2234,13 @@ namespace mcpe_viz {
 	sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnCssSrc).c_str());
 	std::string fnCssDest = tmpstring;
 	copyFile(fnCssSrc, fnCssDest);
+
+	// copy javascript files
+	// todobig - check if dir exists first
+	std::string dirJs = dirDest + "/js";
+	local_mkdir(dirJs);
+	copyDirToDir(dirExec + "/js", dirJs);
+	
       } else {
 	// if same dir, don't copy files
       }
@@ -3024,6 +3028,8 @@ namespace mcpe_viz {
       }
     }
 
+    // todobig - be more clever about dirLeveldb -- allow it to be the dir or the level.dat file
+    
     // verify/test args
     if ( control.dirLeveldb.length() <= 0 ) {
       errct++;

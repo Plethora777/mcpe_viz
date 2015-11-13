@@ -32,6 +32,8 @@ namespace mcpe_viz {
   int32_t local_be32toh(const int32_t src);
 #define be32toh local_be32toh
 #endif
+
+  int local_mkdir(std::string path);
   
   // these hacks work around "const char*" problems
   std::string mybasename( const std::string fn );
@@ -49,6 +51,8 @@ namespace mcpe_viz {
   
   int copyFile ( const std::string fnSrc, const std::string fnDest );
 
+  int copyDirToDir ( const std::string dirSrc, const std::string dirDest );
+  
   bool vectorContains( const std::vector<int> &v, int i );
 
   
@@ -490,6 +494,7 @@ namespace mcpe_viz {
       return val;
     }
   };
+
   
 } // namespace mcpe_viz
 

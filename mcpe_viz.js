@@ -5,6 +5,27 @@
   todobig
 
   * tiling - see test-xyz* dirs for code; BUT tiling breaks the elevation overlay
+  -- it appears that since we fake the Z in tiles that we always get resolution=1 data in the shade() function.  Sigh.
+
+  * introduce layers -- e.g. rail; leaves; water -- that can be toggled on/off.  could be quite cool.  
+  -- requires re-think of mcpe_viz program -- need to produce a base layer (solid blocks) and then overlay layers with other things (e.g. rail; leaves; water; torches: etc)
+  -- how to prioritize layers? hmmm... 
+  -- ideas for layers:
+  - trees: leaves; saplings; vines; cocoa; wood that is up/down?
+  - rails: all types
+  - flowers etc: grasses; dead bush; dandelion; flower; cactus; lily pad; large flowers
+  - light: torch; jack o'lantern; redstone lamp; glowstone; fire?
+  - chests; chest; trapped chest
+  - redstone: redstone wire; lever; pressure plates; r.torch; buttons; tripwire; tripwire hooks; daylight sensor
+  - crops: wheat; sugar cane; pumpkin stem; melon stem; netherwart; carrot; potato; beetroot;  mushrooms
+  - tools: crafting table; stone cutter; furnace; brewing stand; enchantment table; anvil
+  - fences: fences; fencegates; walls
+  - decorations: bed; flower pot; mob head; carpet; cake; sign; cobweb
+  - doors: doors; trapdoors
+  - glass: glass; glass pane
+  - ???: ladder; ironbars; snow
+  - water
+
 
   todo
 
@@ -46,6 +67,9 @@
 
 /*
   todo - interesting openlayers examples:
+
+  color manipulation -- color space conversion funcs
+  http://openlayers.org/en/v3.11.0/examples/color-manipulation.html
 
   vector icons
   http://openlayers.org/en/v3.9.0/examples/icon.html
@@ -897,7 +921,7 @@ var createTextStyle = function(feature, resolution) {
     var offsetY = -2;
     var weight = 'bold';
     var rotation = 0;
-	
+    
     // smaller font when we are zoomed out
     if ( resolution > 3 ) {
 	size = '8pt';
@@ -1212,16 +1236,23 @@ function makeChunkGrid(inputs, data) {
 
     // todo - so fiddly.  it's still off a bit (not 100% locked to src pixels)
     
+    var truncate = function(value) {
+	if (value < 0) {
+	    return Math.ceil(value);
+	}
+	return Math.floor(value);
+    };
+    
     var cy = data.extent[3];
     for (var pixelY = 0; pixelY < height; ++pixelY, cy -= dy) {
-	var icy = Math.round(((data.worldHeight - 1) - cy) + data.globalOffsetY);
-	var chunkY = Math.round(icy / 16);
+	var icy = truncate(((data.worldHeight - 1) - cy) + data.globalOffsetY);
+	var chunkY = (icy / 16) | 0;
 	var cx = data.extent[0];
 	for (var pixelX = 0; pixelX < width; ++pixelX, cx += dx) {
 	    var offset = (pixelY * width + pixelX) * 4;
 
-	    var icx = Math.round(cx + data.globalOffsetX);
-	    var chunkX = Math.round(icx / 16);
+	    var icx = truncate(cx + data.globalOffsetX);
+	    var chunkX = (icx / 16) | 0;
 	    if (((icx % 16) === 0) || ((icy % 16) === 0)) {
 		if (chunkX === 0 && chunkY === 0) {
 		    gridData[offset] = 255;
@@ -1295,16 +1326,16 @@ function doChunkGrid(enableFlag) {
 function doSlimeChunks(enabled) {
     if ( enabled ) {
 	srcLayerSlimeChunks = new ol.source.ImageStatic({
-		url: dimensionInfo[globalDimensionId].fnLayerSlimeChunks,
-		//crossOrigin: 'anonymous',
-		projection: projection,
-		imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
-		imageExtent: extent
-	    });
+	    url: dimensionInfo[globalDimensionId].fnLayerSlimeChunks,
+	    //crossOrigin: 'anonymous',
+	    projection: projection,
+	    imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+	    imageExtent: extent
+	});
 	layerSlimeChunks = new ol.layer.Image({
-		opacity: 0.65,
-		source: srcLayerSlimeChunks
-	    });
+	    opacity: 0.65,
+	    source: srcLayerSlimeChunks
+	});
 	map.addLayer(layerSlimeChunks);
 	disableLayerSmoothing(layerSlimeChunks);
     } else {
@@ -1470,6 +1501,8 @@ function initDimension() {
     
     projection = new ol.proj.Projection({
 	code: 'mcpe_viz-image',
+	// todobig - this appears to break loading geojson
+	// code: 'EPSG:3857',
 	units: 'm',
 	extent: extent,
 	getPointResolution: function(resolution, coordinate) {
@@ -1742,6 +1775,146 @@ var fixContentHeight = function() {
     map.setSize(curMapSize);
 };
 
+function doTour() {
+    var featureExtra = '<br/><br/>' +
+	'You can click on mobs/objects on the map to get information about them.<br/>';
+
+    var tour = new Tour({
+	backdropContainer: 'body',
+	storage: false,
+	container: 'body',
+	orphan: true,
+	// backdrop: true,
+	
+	steps: [
+	    {
+		title: 'Welcome to MCPE Viz!',
+		content: 'This tour will show you the features of the <span class="nobreak"><b>MCPE Viz Viewer</b></span> web app.<br/>' +
+		    '<br/>' +
+		    'You can naviate the steps of this tour with your arrow keys (<kbd>&larr;</kbd> and <kbd>&rarr;</kbd>).  You can stop it by pressing <kbd>ESC</kbd>.'
+	    },
+	    {
+		element: '#map',
+		title: 'The Map',
+		content: 'The main area of the web app.<br/>' +
+		    '<br/>' + 
+		    'Some ways to interact with the map:<br/><ul>' +
+		    '<li>Drag the map to move it</li>' +
+		    '<li>Double click to zoom in</li>' +
+		    '<li><kbd>Shift</kbd> + Double click to zoom out</li>' +
+		    '<li>Rotate map with <kbd>Shift</kbd> + <kbd>Alt</kbd> + drag</li>' +
+		    '</ul>'
+	    },
+	    {
+		element: '.ol-zoom',
+		title: 'Zoom Controls',
+		content: 'You can also zoom in and out with these buttons.'
+	    },
+	    {
+		element: '.ol-zoom-extent',
+		title: 'Zoom to Full Extent',
+		content: 'Zoom out so that the entire world is visible.'
+	    },
+	    {
+		element: '.measure',
+		title: 'Measurement Tools',
+		content: 'You can measure distances with Lines and Circles.<br/>' +
+		    '<br/>' +
+		    'You can quit measurement mode by pressing <kbd>ESC</kbd><br/>' +
+		    '<br/>' +
+		    'You can quickly access Line measurement mode by pressing <kbd>L</kbd><br/>' +
+		    '<br/>' +
+		    'You can quickly access Circle measurement mode by pressing <kbd>C</kbd><br/>' +
+		    ''
+	    },
+	    {
+		element: '.ol-mouse-position',
+		placement: 'left',
+		title: 'Mouse Position',
+		content: 'Position of the mouse is shown here as well as information on the block under the mouse cursor.'
+	    },
+	    {
+		element: '#dimensionSelectName',
+		placement: 'top',
+		title: 'Select Dimension',
+		content: 'You can switch between dimensions (e.g. Overworld, The Nether).'
+	    },
+	    {
+		element: '#layerNumber',
+		placement: 'top',
+		title: 'Select Raw Layer',
+		content: 'You can view individual layers of your world, if you ran MCPE Viz in "html-all" mode.'
+	    },
+	    {
+		element: '#imageSelectName',
+		placement: 'top',
+		title: 'Select Image',
+		content: 'You can view different images of your world.<br/>' +
+		    '<br/><ul>' +
+		    '<li><b>Overview</b> is an image of the highest blocks in your world.</li>' +
+		    '<li><b>Biome</b> is an image of the biomes in your world.</li>' +
+		    '<li><b>Height</b> is an image of the heights of the highest blocks in your world.  Red is below sea level, Green is above.</li>' +
+		    '<li><b>Height (Grayscale)</b> is an image of the heights of the highest blocks in your world in grayscale.</li>' +
+		    '<li><b>Block Light</b> is an image of the block light levels of the highest blocks in your world.</li>' +
+		    '<li><b>Grass Color</b> is an image of the color of grass in all parts of your world.</li>' +
+		    '</ul>'
+	    },
+	    {
+		element: '#menuPassiveMobs',
+		placement: 'top',
+		title: 'Passive Mobs',
+		content: 'You can display the location of passive mobs here.' +
+		    featureExtra
+	    },
+	    {
+		element: '#menuHostileMobs',
+		placement: 'top',
+		title: 'Hostile Mobs',
+		content: 'You can display the location of hostile mobs here.' + 
+		    featureExtra
+	    },
+	    {
+		element: '#menuObjects',
+		placement: 'top',
+		title: 'Objects',
+		content: 'You can display the location of objects here.' + 
+		    featureExtra
+	    },
+	    {
+		element: '#menuOptions',
+		placement: 'top',
+		title: 'Options',
+		content: 'You can set options here.<br/>' +
+		    '<br/><ul>' +
+		    '<li><b>Show Chunk Grid</b> overlays a grid showing the chunk boundaries in your world.</li>' +
+		    '<li><b>Show Slime Chunks</b> overlays green on slime chunks.  <i>Note: we\'re currently using the MCPC slime chunk calculation.  It is not known if this is accurate for MCPE.</i></li>' +
+		    '<li><b>Show Elevation Overlay</b> overlays a shaded relief elevation map.  You can alter the settings to change the display.</li>' +
+		    '</ul>'
+	    },
+	    {
+		element: '#worldName',
+		placement: 'top',
+		title: 'World Name',
+		content: 'The name of your world, and the date/time that you ran MCPE Viz on it.'
+	    },
+	    {
+		title: 'About MCPE Viz',
+		content: '' +
+		    '<a href="https://github.com/Plethora777/mcpe_viz" target="_blank">MCPE Viz by Plethora777<br/>' +
+		    'Please be sure to check back often for updates!</a><br/>' +
+		    '<br/>' +
+		    '<b>MCPE Viz Viewer</b> is built using these fine javascript libraries:<br/><ul>' +
+		    '<li><a href="http://openlayers.org/" target="_blank">OpenLayers 3</a></li>' +
+		    '<li><a href="http://getbootstrap.com/" target="_blank">Bootstrap</a></li>' +
+		    '<li><a href="http://bootstraptour.com/" target="_blank">Bootstrap Tour</a></li>' +
+		    '<li><a href="http://jquery.com/" target="_blank">jQuery</a></li>' +
+		    '</ul>'
+	    }
+	]});
+    tour.init();
+    tour.start();
+}
+
 $(function() {
 
     // add the main layer
@@ -1895,11 +2068,15 @@ $(function() {
 	    layerElevation.setOpacity( $('#shadeOpacity').val() / 100.0 );
 	}
     });
+
+    $('#btnHelp').click(function() {
+	doTour();
+    });
     
     // put the world info
     $('#worldInfo').html(
-	'<span class="badge mytooltip" title="World Name">' + worldName + '</span>' +
-	    '<span class="label mytooltip" title="Imagery Creation Date">' + creationTime + '</span>'
+	'<span id="worldName" class="badge mytooltip" title="World Name">' + worldName + '</span>' +
+	    '<span id="creationTime" class="label mytooltip" title="Imagery Creation Date">' + creationTime + '</span>'
     );
 
     // setup tooltips

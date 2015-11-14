@@ -76,7 +76,7 @@
 	  </ul>
 	</div>
 	
-	<div class="btn-group dropup navbar-btn">
+	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuPassiveMobs" title="Show Passive Mobs">
 	    Passive Mobs
           <span class="caret"></span></button>
@@ -102,7 +102,7 @@
           </ul>
 	</div>
 
-	<div class="btn-group dropup navbar-btn">
+	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuHostileMobs" title="Show Hostile Mobs">
 	    Hostile Mobs
           <span class="caret"></span></button>
@@ -129,7 +129,7 @@
           </ul>
 	</div>
 
-	<div class="btn-group dropup navbar-btn">
+	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuObjects" title="Show Objects">
 	    Objects
           <span class="caret"></span></button>
@@ -137,14 +137,15 @@
 	    <li><a href="#" class="tileEntityToggle" data-id="Chest">Chest</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="MobSpawner">Mob Spawner</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="NetherPortal">Nether Portal</a></li>
-	    <li><a href="#" class="tileEntityToggle" data-id="Sign">Sign</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-id="SignNonBlank">Sign (Non-blank)</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-id="SignBlank">Sign (Blank)</a></li>
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="tileEntityToggleAddAll">Show All</a></li>
 	    <li><a href="#" class="tileEntityToggleRemoveAll">Hide All</a></li>
           </ul>
 	</div>
 
-	<div class="btn-group dropup navbar-btn">
+	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuOptions" title="Options">
 	    Options
 	    <span class="caret"></span></button>

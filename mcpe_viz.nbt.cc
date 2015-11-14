@@ -940,6 +940,7 @@ namespace mcpe_viz {
     std::string id;
     std::vector< std::unique_ptr<ParsedItem> > items;
     std::vector< std::string > text;
+    int32_t signTotalStringLength;
     int32_t entityId;
       
     ParsedTileEntity() {
@@ -952,6 +953,7 @@ namespace mcpe_viz {
       entityId = -1;
       items.clear();
       text.clear();
+      signTotalStringLength = 0;
     }
     int addItem ( nbt::tag_compound &iitem ) {
       std::unique_ptr<ParsedItem> it(new ParsedItem());
@@ -964,6 +966,11 @@ namespace mcpe_viz {
       text.push_back( tc["Text2"].as<nbt::tag_string>().get() );
       text.push_back( tc["Text3"].as<nbt::tag_string>().get() );
       text.push_back( tc["Text4"].as<nbt::tag_string>().get() );
+      signTotalStringLength=0;
+      for ( const auto& it : text ) {
+	// todo this should trim leading/trailing whitespace
+	signTotalStringLength += it.length();
+      }
       return 0;
     }
     int addMobSpawner ( nbt::tag_compound &tc ) {
@@ -1017,8 +1024,16 @@ namespace mcpe_viz {
       }
 	
       if ( text.size() > 0 ) {
-	list.push_back("\"Name\": \"Sign\"");
-	std::string ts = "\"Sign\": {";
+	std::string xname;
+	if (signTotalStringLength <= 0) {
+	  xname = "SignBlank";
+	} else {
+	  xname = "SignNonBlank";
+	}
+
+	list.push_back("\"Name\": \"" + xname + "\"");
+	std::string ts = "\"" + xname + "\": {";
+
 	int i = text.size();
 	int t=1;
 	for ( const auto& it: text ) {

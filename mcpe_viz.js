@@ -46,8 +46,6 @@
 
   * some reporting of details in geojson -- counts of different items?
 
-  * online help/intro text -- bootstrap tour? (is there a CDN for bstour?)
-
   * idea from /u/sturace -- filter by pixel value (e.g. show only oak trees)
 
   * when in raw layer mode, auto load layer before/after the layer that gets loaded? (improve perceived speed)
@@ -691,9 +689,42 @@ var featureOverlay = new ol.layer.Vector({
     }
 });
 
-function correctGeoJSONName(name) {
-    if (name == 'MobSpawner') { name = 'Mob Spawner'; }
-    if (name == 'NetherPortal') { name = 'Nether Portal'; }
+function correctGeoJSONName(feature) {
+    var name = feature.get('Name');
+    if (name == 'MobSpawner') {
+	// rename spawner so that feature shows spawner type
+	var props = feature.getProperties();
+	name = props[name].Name + ' Spawner';
+    }
+    else if (name == 'NetherPortal') {
+	name = 'Nether Portal';
+    }
+    else if (name == 'Dropped item') {
+	// rename dropped item so that it is visible in map
+	var props = feature.getProperties();
+	name = 'Drop: ' + props.Item.Name;
+	// todo - highlight interesting drops? e.g. armor / weapons (i.e. indication of a player death spot)
+    }
+    else if (name == 'SignNonBlank' || name == 'SignBlank') {
+	// rename sign so that it is visible in map
+	var props = feature.getProperties();
+	var a = [];
+	var pushTrimmedString = function(a, str) {
+	    var s = str.trim();
+	    if (s.length > 0 ) {
+		a.push(s);
+	    }
+	};
+	pushTrimmedString(a, props[name].Text1);
+	pushTrimmedString(a, props[name].Text2);
+	pushTrimmedString(a, props[name].Text3);
+	pushTrimmedString(a, props[name].Text4);
+	if ( a.length > 0 ) {
+	    name = 'Sign: ' + a.join(' / ');
+	} else {
+	    name = 'Sign';
+	}
+    }
     return name;
 }
 
@@ -701,7 +732,7 @@ function doFeaturePopover(feature, coordinate) {
     var element = popover.getElement();
     var props = feature.getProperties();
 
-    var name = correctGeoJSONName(props.Name);
+    var name = correctGeoJSONName(feature);
 
     var stitle;
     if (props.Entity !== undefined) {
@@ -814,7 +845,7 @@ function doFeatureSelect(features, coordinate) {
 	var props = feature.getProperties();
 	// how to do this?
 	s += '<a href="#" data-id="' + i + '" class="list-group-item doFeatureHelper">' +
-	    correctGeoJSONName(props.Name) +
+	    correctGeoJSONName(feature) +
 	    ' @ ' + props.Pos[0] + ', ' + props.Pos[1] + ', ' + props.Pos[2] +
 	    '</a>';
     }
@@ -896,7 +927,7 @@ function stringDivider(str, width, spaceReplacer) {
 var getText = function(feature, resolution) {
     var type = 'normal';
     var maxResolution = 2;
-    var text = correctGeoJSONName(feature.get('Name'));
+    var text = correctGeoJSONName(feature);
 
     if (false) {
 	if (resolution > maxResolution) {
@@ -936,12 +967,14 @@ var createTextStyle = function(feature, resolution) {
     var outlineColor = '#000000';
     var outlineWidth = 3;
 
+    var txt = getText(feature, resolution);
+    
     return new ol.style.Text({
 	textAlign: align,
 	textBaseline: baseline,
 	font: font,
 	color: '#ffffff',
-	text: getText(feature, resolution),
+	text: txt,
 	fill: new ol.style.Fill({color: fillColor}),
 	stroke: new ol.style.Stroke({color: outlineColor, width: outlineWidth}),
 	offsetX: offsetX,
@@ -2071,6 +2104,13 @@ $(function() {
 
     $('#btnHelp').click(function() {
 	doTour();
+    });
+
+    // don't close dropdowns when an item in them is clicked
+    $('.menu-stay .dropdown-menu').on({
+	'click': function(e) {
+	    e.stopPropagation();
+	}
     });
     
     // put the world info

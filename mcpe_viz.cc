@@ -12,7 +12,15 @@
 
   todobig
 
+  * change git layout 
+  -- remove winX.zip files; make "release" for each update w/ the winX.zip files
+  -- put code in subdirs?
+
+  * write script to check for updates to js/ files?
+
   * gui - auto-check github for update?
+  -- could check: https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/mcpe_viz.version.h
+  ---- parse this: mcpe_viz_version_short("X.Y.Z");
 
   * check --out -- error if it is a directory
 
@@ -25,26 +33,19 @@
   ---- this is the only thing keeping me from publishing tiled web app
   -- create an elevation overlay here instead of js? (work around OL bugs)
 
-  ** do away with image coord space for web app? coords are crazy -- confirmed that negative-Z is north
+  * do away with image coord space for web app? coords are crazy -- confirmed that negative-Z is north
 
   * do chunk grid here instead of in web ui? (same func as slime chunks)
-
-  * tobomori: ability to hide only a block variant (e.g. Tall Grass)
-
-
 
   * use boost for filesystem stuff?
 
   * try with clang; possible to mingw w/ clang?
-
 
   * see reddit test1 world -- has this msg (could be result of bad mcedit or similar):
   -- WARNING: Did not find block variant for block(Wooden Double Slab) with blockdata=8 (0x8)
 
   * join chests for geojson? (pairchest) - would require that we wait to toGeoJSON until we parse all chunks
   -- put ALL chests in a map<x,y,z>; go through list of chests and put PairChest in matching sets and mark all as unprocessed; go thru list and do all, if PairChest mark both as done
-
-  * how to handle really large maps (e.g. someone that explores mane thousounds of chunks N and E so that result image is 30k x 30k) -- answer is tiling, see above
 
   * see if there is interesting info re colors for overview map: http://minecraft.gamepedia.com/Map_item_format
 
@@ -53,8 +54,8 @@
   * use "solid" info from block info to do something? could it fix the light map?
 
   * update block xml w/ transparency info - bool or int? or just solid/nonsolid?
-  * use this transparency (or something else? e.g. spawnable flag?) to determine which block is the top block for purposes of the light map
-  * go and look at wiki to see the type of info that is stored per block
+  -- use this transparency (or something else? e.g. spawnable flag?) to determine which block is the top block for purposes of the light map
+  -- go and look at wiki to see the type of info that is stored per block
 
   * produce another light map that shows areas that ARE spawnable? (e.g. use this to make an area 100% mob spawn proof)
 
@@ -62,7 +63,13 @@
 
   * adapt for MCPC?
 
-  * find better hsl/hsv to/from rgb funcs
+  * find better hsl/hsv to/from rgb funcs; or really, better way to sort colors so that colortest is more useful
+
+
+  user suggestions
+
+  * tobomori: ability to hide only a block variant (e.g. Tall Grass)
+  -- difficult because of fastBlockHideList etc
 
   todo
 

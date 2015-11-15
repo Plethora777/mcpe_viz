@@ -5,7 +5,6 @@
  * GPL'ed code - please see LICENSE
  *
  * todo
- *   auto-check for update on github?
  *   optionally, play sound on success / failure?
  *
  */
@@ -16,10 +15,14 @@
 #include <QDesktopServices>
 #include <QSettings>
 #include <QUrl>
+#include <QRegExp>
 #include <vector>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "../mcpe_viz.version.h"
+
+
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -30,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowTitle(tr("MCPE Viz Helper by Plethora777"));
 
     QLabel *label =
-      new QLabel(tr(std::string("<html><a href=\"https://github.com/Plethora777/mcpe_viz\">MCPE Viz Helper</a> v" + mcpe_viz_version_short + " by Plethora777</html>").c_str()));
+      new QLabel(tr(std::string("<html><a href=\"https://github.com/Plethora777/mcpe_viz\">MCPE Viz Helper</a> v" + mcpe_viz_version_short + " by <a href=\"https://twitter.com/Plethora777\">Plethora777</a></html>").c_str()));
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     label->setOpenExternalLinks(true);
     statusBar()->addPermanentWidget(label);
@@ -44,6 +47,8 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
     
     loadSettings();
+
+    m_naManager = new QNetworkAccessManager(this);
 }
 
 MainWindow::~MainWindow()
@@ -229,10 +234,86 @@ void MainWindow::on_btnWebApp_clicked()
     }
 }
 
+// from: http://stackoverflow.com/a/1053134
+void MainWindow::on_btnCheckUpdate_clicked()
+{
+  QUrl url("https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/mcpe_viz.version.h");
+  
+  connect(m_naManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseCheckUpdate(QNetworkReply*)));
+  m_naManager->get(QNetworkRequest(url));
+}
+
+
+void MainWindow::parseCheckUpdate(QNetworkReply* pReply)
+{
+  QNetworkReply::NetworkError err = pReply->error();
+  if ( err != QNetworkReply::NoError ) {
+    char tmpstring[1025];
+    sprintf(tmpstring,
+	    "Network Error<br/>"
+	    "errorCode=%d<br/>"
+	    "errorString=%s<br/>"
+	    "httpStatus=%d<br/>"
+	    , (int)err
+	    , pReply->errorString().toStdString().c_str()
+	    , pReply->attribute( QNetworkRequest::HttpStatusCodeAttribute).toInt()
+	    );
+    QMessageBox::critical(this, "Network Error", tmpstring);
+    pReply->deleteLater();
+    return;
+  }
+  
+  QByteArray data=pReply->readAll();
+
+  QString str(data);
+  std::string origStr = str.toStdString();
+  
+  // parse this: mcpe_viz_version_short("X.Y.Z");
+  QRegExp rx("mcpe_viz_version_short\\(\"(.+)\"\\)");
+  rx.setMinimal(true);
+  
+  QStringList slist = str.split("\n");
+
+  for (int i=0; i < slist.size(); i++) {
+
+    int pos = 0;
+    if ((pos = rx.indexIn(slist.at(i), pos)) != -1) {
+      if ( rx.cap(1) == QString(mcpe_viz_version_short.c_str()) ) {
+	// no update
+	QMessageBox::information(this, "No Update",
+				 "No update available.<br/><br/>"
+				 "You are running the most current version."
+				 );
+	pReply->deleteLater();
+	return;
+      } else {
+	// update
+	std::string newVersion = rx.cap(1).toStdString();
+	std::string msg = "You are running v" + mcpe_viz_version_short + " and v" + newVersion + " is available on GitHub.<br/><br/>" +
+	  "<a href=\"https://github.com/Plethora777/mcpe_viz\">Click Here</a> to go to GitHub and grab the update."
+	  ;
+	QMessageBox::warning(this, "Update Available!", msg.c_str());
+	pReply->deleteLater();
+	return;
+      }
+    }
+
+  }
+
+  // problem
+  // todo - error details?
+  std::string msg = "Sorry, failed to check for update.<br/><br/>" 
+    "Data:<br/><code>" + origStr + "</code>"
+    ;
+  QMessageBox::critical(this, "Error", msg.c_str());
+  pReply->deleteLater();
+}
+
+
 void MainWindow::on_action_About_triggered()
 {
     QMessageBox::information(this, "About...",
-                             "<html>MCPE Viz Helper by Plethora777<br/><br/>"
+                             "<html>MCPE Viz Helper by <a href=\"https://twitter.com/Plethora777\">Plethora777</a><br/><br/>"
                              "<a href=\"https://github.com/Plethora777/mcpe_viz\">MCPE Viz on GitHub</a>"
                              "</html>"
                              );

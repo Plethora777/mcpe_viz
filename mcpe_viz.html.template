@@ -171,6 +171,8 @@
 	      <input id="shadeOpacity" class="mytooltip" title="Overlay Opacity" type="range" min="0" max="100" data-default="30" value="30"/>
 	    </li>
 	    <li><a href="#" id="elevationReset">Reset Elevation Settings</a></li>
+	    <li role="separator" class="divider"></li>
+	    <li><a href="#" id="btnCheckUpdate">Check for <b>MCPE Viz</b> update...</a></li>
 	  </ul>
 	</div>
 
@@ -181,7 +183,9 @@
 	<div class="navbar-header navbar-right">
 	  <div id="worldInfo" class="navbar-text">
 	  </div>
-	  <a class="navbar-brand" target="_blank" href="https://github.com/Plethora777/mcpe_viz">&nbsp;MCPE Viz Viewer by Plethora777</a>
+	  <div class="navbar-brand">
+	    <a target="_blank" href="https://github.com/Plethora777/mcpe_viz">MCPE Viz Viewer</a> by <a target="_blank" href="https://twitter.com/Plethora777">Plethora777</a>
+	  </div>
 	</div>
       </div>
     </div>

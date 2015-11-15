@@ -218,7 +218,17 @@
       </property>
      </widget>
     </item>
-   </layout>
+    <item>
+     <widget class="QPushButton" name="btnCheckUpdate">
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click this to check for MCPE Viz updates on GitHub.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="text">
+       <string>Check for MCPE Viz Update</string>
+      </property>
+     </widget>
+    </item>
+  </layout>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="action_About">
@@ -238,6 +248,7 @@
   <tabstop>btnGo</tabstop>
   <tabstop>txtProgress</tabstop>
   <tabstop>btnWebApp</tabstop>
+  <tabstop>btnCheckUpdate</tabstop>
  </tabstops>
  <resources/>
  <connections/>

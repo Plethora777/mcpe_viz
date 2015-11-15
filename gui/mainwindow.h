@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkRequest>
+#include <QtNetwork/QNetworkReply>
 
 namespace Ui {
 class MainWindow;
@@ -21,27 +24,27 @@ private slots:
 
     void on_btnOutputDirectory_clicked();
 
-    void on_btnOutputName_clicked() {};
-
     void on_btnGo_clicked();
 
     void on_btnWebApp_clicked();
 
+    void on_btnCheckUpdate_clicked();
+
     void on_action_About_triggered();
-
-    void on_btnMCPEWorld_2_clicked() {};
-
-    void on_btnOutputDirectory_2_clicked() {};
 
     void processStandardOutput();
     void processStandardError();
     void processFinished(int exitCode,  QProcess::ExitStatus exitStatus);
 
+    void parseCheckUpdate(QNetworkReply* pReply);
+    
 private:
     Ui::MainWindow *ui;
     QProcess *mcpeVizProcess;
     QString m_sSettingsFile;
 
+    QNetworkAccessManager* m_naManager;
+    
     int getCommandLine(std::string &cmd);
     void saveSettings();
     void loadSettings();

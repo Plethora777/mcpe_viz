@@ -12,15 +12,15 @@
 
   todobig
 
+  * add changelog -- reconstruct older stuff from git commit msgs
+
   * change git layout 
   -- remove winX.zip files; make "release" for each update w/ the winX.zip files
   -- put code in subdirs?
 
-  * write script to check for updates to js/ files?
+  * android/ios app
 
-  * gui - auto-check github for update?
-  -- could check: https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/mcpe_viz.version.h
-  ---- parse this: mcpe_viz_version_short("X.Y.Z");
+  * write script to check for updates to js/ files?
 
   * check --out -- error if it is a directory
 
@@ -1903,7 +1903,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    // todobig - move to util.h
+    // todobig todohere - move to util.h
     class PngTiler {
     public:
       std::string filename;
@@ -2127,6 +2127,7 @@ namespace mcpe_viz {
 		"var worldName = '%s';\n"
 		"var worldSeed = %lld;\n"
 		"var creationTime = '%s';\n"
+		"var creationMcpeVizVersion = '%s';\n"
 		"var loadGeoJSONFlag = %s;\n"
 		"var fnGeoJSON = '%s';\n"
 		"var tileW = %d;\n"
@@ -2135,6 +2136,7 @@ namespace mcpe_viz {
 		, escapeString(globalLevelName.c_str(), "'").c_str()
 		, (long long int)worldSeed
 		, escapeString(timebuf,"'").c_str()
+		, mcpe_viz_version_short.c_str()
 		, control.noForceGeoJSONFlag ? "true" : "false"
 		, mybasename(control.fnGeoJSON).c_str()
 		, control.tileWidth

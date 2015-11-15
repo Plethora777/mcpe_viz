@@ -1948,6 +1948,40 @@ function doTour() {
     tour.start();
 }
 
+
+function doCheckUpdate() {
+    // get data from github
+    var url = 'https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/mcpe_viz.version.h';
+
+    $.ajax({
+	type: 'GET',
+	url: url,
+	dataType: 'text',
+	cache: false,
+	success: function(result, textStatus, jqxhr) {
+	    
+	    // parse this: mcpe_viz_version_short("X.Y.Z");
+	    var res = result.match(/mcpe_viz_version_short\("(.+?)"\)\;/);
+	    if ( res ) {
+		if ( res[1] === creationMcpeVizVersion ) {
+		    alert('No update available.\n\nYou are running the most current version.');
+		} else {
+		    alert('Update available!\n\n' +
+			  'You are running v' + creationMcpeVizVersion + ' and v' + res[1] + ' is available on GitHub.\n\n' +
+			  'Click the "MCPE Viz Viewer" link in the footer to go to GitHub and grab the update.');
+		}
+	    } else {
+		alert('Sorry, failed to find version info on GitHub.');
+	    }
+
+	},
+	error: function(jqXHR, textStatus, errorThrown, execptionObject) {
+	    alert('Sorry, failed to check for update: Status [' + textStatus + '] error [' + errorThrown + ']');
+	}
+    });
+}
+
+
 $(function() {
 
     // add the main layer
@@ -2106,6 +2140,10 @@ $(function() {
 	doTour();
     });
 
+    $('#btnCheckUpdate').click(function() {
+	doCheckUpdate();
+    });
+    
     // don't close dropdowns when an item in them is clicked
     $('.menu-stay .dropdown-menu').on({
 	'click': function(e) {

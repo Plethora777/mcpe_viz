@@ -12,6 +12,16 @@
 
   todobig
 
+  * add "interesting" blocks to geojson (this is something like the "layers" idea)
+  -- end portal frame
+  -- diamonds
+  -- ores: gold, iron, coal, redstone, lapis
+  -- trees: (by type -- use wood up/down?)
+  -- cobwebs
+  -- flowers?
+  -- crops: beetroot esp + netherwart + melon stem + pumpkin stem; lily pad?
+  -- ice + packed ice (how to coalesce?)
+
   * add changelog -- reconstruct older stuff from git commit msgs
 
   * change git layout 
@@ -458,8 +468,9 @@ namespace mcpe_viz {
 
     // we parse the block (et al) data in a chunk from leveldb
     ChunkData(int32_t tchunkX, int32_t tchunkZ, const char* value,
-	      const std::string dimName, int* histogramGlobalBiome,
-	      const bool* fastBlockHideList, const bool* fastBlockForceTopList ) {
+	      int32_t dimensionId, const std::string dimName, int* histogramGlobalBiome,
+	      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
+	      const bool* fastBlockToGeoJSON) {
       chunkX = tchunkX;
       chunkZ = tchunkZ;
 
@@ -485,6 +496,30 @@ namespace mcpe_viz {
 	  for ( int cz=0; cz < 16; cz++ ) {
 	    blockId = getBlockId(value, cx,cz,cy);
 	    histogramBlock[blockId]++;
+
+	    // todobig - handle block variant?
+	    if ( fastBlockToGeoJSON[blockId] ) {
+	      int ix, iy;
+	      char tmpstring[512];
+	      worldPointToImagePoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy, true);
+	      sprintf(tmpstring, ""
+		      "\"Name\": \"%s\", "
+		      "\"Block\": true, "
+		      "\"Dimension\": \"%d\", "
+		      "\"Pos\": [%d, %d, %d]"
+		      "} }"
+		      , blockInfoList[blockId].name.c_str()
+		      , dimensionId
+		      , chunkX*16 + cx
+		      , cy
+		      , chunkZ*16 + cz
+		      );
+	      std::string json = ""
+		+ makeGeojsonHeader(ix,iy)
+		+ tmpstring
+		;
+	      listGeoJSON.push_back( json );
+	    }
 	    
 	    // todo - check for isSolid?
 
@@ -593,11 +628,13 @@ namespace mcpe_viz {
     int32_t histogramChunkType[256];
     int32_t histogramGlobalBiome[256];
 
-    bool fastBlockHideList[256];
     bool fastBlockForceTopList[256];
+    bool fastBlockHideList[256];
+    bool fastBlockToGeoJSONList[256];
 
     std::vector<int> blockForceTopList;
     std::vector<int> blockHideList;
+    std::vector<int> blockToGeoJSONList;
       
     ChunkDataList() {
       name = "(UNKNOWN)";
@@ -611,6 +648,7 @@ namespace mcpe_viz {
       for (int bid=0; bid < 256; bid++) {
 	fastBlockHideList[bid] = vectorContains(blockHideList, bid);
 	fastBlockForceTopList[bid] = vectorContains(blockForceTopList, bid);
+	fastBlockToGeoJSONList[bid] = vectorContains(blockToGeoJSONList, bid);
       }
     }
 
@@ -637,8 +675,8 @@ namespace mcpe_viz {
     int addChunk ( int32_t chunkX, int32_t chunkZ, const char* value) {
       // todobig emplace_back? does this do a copy?
       list.push_back( std::unique_ptr<ChunkData>
-		      (new ChunkData(chunkX, chunkZ, value, name,
-				     histogramGlobalBiome, fastBlockHideList, fastBlockForceTopList)) );
+		      (new ChunkData(chunkX, chunkZ, value, dimId, name,
+				     histogramGlobalBiome, fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList)) );
       return 0;
     }
       
@@ -1638,7 +1676,7 @@ namespace mcpe_viz {
 
       // report hide and force lists
       {
-	slogger.msg(kLogInfo1,"Active 'hide-top' and 'force-top':\n");
+	slogger.msg(kLogInfo1,"Active 'hide-top', 'force-top', and 'geojson-block':\n");
 	int itemCt = 0;
 	int32_t blockId;
 	for (int dimId=0; dimId < kDimIdCount; dimId++) {
@@ -1652,6 +1690,12 @@ namespace mcpe_viz {
 	  for ( const auto& iter : chunkList[dimId].blockForceTopList ) {
 	    blockId = iter;
 	    slogger.msg(kLogInfo1,"  'force-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
+	    itemCt++;
+	  }
+
+	  for ( const auto& iter : chunkList[dimId].blockToGeoJSONList ) {
+	    blockId = iter;
+	    slogger.msg(kLogInfo1,"  'geojson' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", chunkList[dimId].name.c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
 	    itemCt++;
 	  }
 	}
@@ -2148,7 +2192,8 @@ namespace mcpe_viz {
 	  fprintf(fp,"  maxWorldX: %d + 15,\n", chunkList[did].maxChunkX*16);
 	  fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
 	  fprintf(fp,"  maxWorldY: %d + 15,\n", chunkList[did].maxChunkZ*16);
-	  
+
+	  // todobig this needs to be refined - check if player is in nether
 	  int32_t px, py;
 	  if ( did == kDimIdNether ) {
 	    px = playerPositionImageX / 8;
@@ -2160,6 +2205,17 @@ namespace mcpe_viz {
 	  fprintf(fp,"  playerPosX: %d,\n", px);
 	  fprintf(fp,"  playerPosY: %d,\n", py);
 
+	  // list of blocks that were added to geojson
+	  fprintf(fp,"  geojsonBlocks: [ ");
+	  int llen = chunkList[did].blockToGeoJSONList.size();
+	  for ( const auto& it : chunkList[did].blockToGeoJSONList ) {
+	    fprintf(fp,"'%s'", blockInfoList[it].name.c_str());
+	    if ( --llen > 0 ) {
+	      fprintf(fp, ", ");
+	    }
+	  }
+	  fprintf(fp," ],\n");
+	  
 	  fprintf(fp,"  fnLayerTop: '%s',\n", makeTileURL(control.fnLayerTop[did]).c_str());
 	  fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
 	  fprintf(fp,"  fnLayerHeight: '%s',\n", makeTileURL(control.fnLayerHeight[did]).c_str());
@@ -2610,7 +2666,29 @@ namespace mcpe_viz {
 	  // add to hide list
 	  world.chunkList[dimId].blockForceTopList.push_back(blockId);
 	} else {
-	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'hide': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'force-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+	}
+      }
+
+      else if ( (p=strstr(buf,"geojson-block:")) ) {
+	int32_t dimId = -1;
+	int blockId = -1;
+	int pass = false;
+	if ( sscanf(&p[14],"%d 0x%x", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+	else if ( sscanf(&p[14],"%d %d", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+	// check dimId
+	if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	  pass = false;
+	}
+	if ( pass ) {
+	  // add to list
+	  world.chunkList[dimId].blockToGeoJSONList.push_back(blockId);
+	} else {
+	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'geojson-block': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
 	}
       }
 
@@ -2738,6 +2816,7 @@ namespace mcpe_viz {
 	    "\n"
 	    "  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
 	    "  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
+	    "  --geojson-block=did,bid  Add block to GeoJSON file for use in web app (did=dimension id, bid=block id)\n"
 	    "\n"
 	    "  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
 	    "  --grid[=did]             Display chunk grid on top of images\n"
@@ -2796,6 +2875,7 @@ namespace mcpe_viz {
 
       {"hide-top", required_argument, NULL, 'H'},
       {"force-top", required_argument, NULL, 'F'},
+      {"geojson-block", required_argument, NULL, '+'},
 	
       {"all-image", optional_argument, NULL, 'A'},
       {"biome", optional_argument, NULL, 'B'},
@@ -2908,6 +2988,34 @@ namespace mcpe_viz {
 
 	  if ( ! pass ) {
 	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --force-top %s\n",optarg);
+	    errct++;
+	  }
+	}
+	break;
+	  
+      case '+':
+	{
+	  bool pass = false;
+	  int32_t dimId, blockId;
+	  if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
+	    pass = true;
+	  }
+	  else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
+	    pass = true;
+	  }
+
+	  if ( pass ) {
+	    // check dimId
+	    if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	      pass = false;
+	    }
+	    if ( pass ) {
+	      world.chunkList[dimId].blockToGeoJSONList.push_back(blockId);
+	    }
+	  }
+
+	  if ( ! pass ) {
+	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --geojson-block %s\n",optarg);
 	    errct++;
 	  }
 	}

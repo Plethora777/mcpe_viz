@@ -102,9 +102,11 @@ var mousePositionControl = null;
 
 var globalDimensionId = -1;
 var globalLayerMode = 0, globalLayerId = 0;
+var globalStyleBlock = null;
 
 var listEntityToggle = [];
 var listTileEntityToggle = [];
+var listBlockToggle = [];
 
 var globalCORSWarning = 'MCPE Viz Hint: If you are loading files from the local filesystem, your browser might not be allowing us to load additional files or examine pixels in maps.  Firefox does not have this limitation.  See README for more info...';
 var globalCORSWarningFlag = false;
@@ -748,6 +750,7 @@ function doFeaturePopover(feature, coordinate) {
 	if (i !== 'geometry' &&
 	    i !== 'TileEntity' &&
 	    i !== 'Entity' &&
+	    i !== 'Block' &&
 	    i !== 'pairchest' &&
 	    i !== 'player' &&
 	    i !== 'Name' &&
@@ -1595,6 +1598,50 @@ function initDimension() {
 	map.setView(view);
     }
 
+    // setup per-dimension block select menu
+
+    // todobig - clear selected items?
+    
+    // clear existing items
+    $('#blockSelectList .blockToggle').remove();
+    var newItems = '';
+    for (var b in  dimensionInfo[globalDimensionId].geojsonBlocks) {
+	var block = dimensionInfo[globalDimensionId].geojsonBlocks[b];
+	newItems += '<li><a href="#" class="blockToggle" data-id="' + block + '">' + block + '</a></li>';
+    }
+    if ( newItems.length > 0 ) {
+	$(newItems).prependTo('#blockSelectList');
+    }
+    // todobig - could disable button if the menu is empty
+    
+    $('.blockToggleAddAll').click(function() {
+	if ( vectorPoints === null ) {
+	    loadVectors();
+	}
+	$('.blockToggle').each(function(index) {
+	    listBlockToggle[$(this).attr('data-id')] = true;
+	    $(this).parent().addClass('active');
+	});
+	vectorPoints.changed();
+    });
+    $('.blockToggleRemoveAll').click(function() {
+	listBlockToggle = [];
+	if (vectorPoints !== null) { 
+	    vectorPoints.changed();
+	}
+	$('.blockToggle').parent().removeClass('active');
+    });
+    $('.blockToggle').click(function() {
+	var id = $(this).attr('data-id');
+	blockToggle(id);
+	if (listBlockToggle[id]) {
+	    $('.blockToggle[data-id="' + id + '"]').parent().addClass('active');
+	} else {
+	    $('.blockToggle[data-id="' + id + '"]').parent().removeClass('active');
+	}
+    });
+
+    
     // finally load the proper layer
     if (globalLayerMode === 0) {
 	return setLayerById(globalLayerId);
@@ -1628,6 +1675,7 @@ var createPointStyleFunction = function() {
 	var style;
 	var entity = feature.get('Entity');
 	var tileEntity = feature.get('TileEntity');
+	var block = feature.get('Block');
 	var did = feature.get('Dimension');
 
 	// hack for pre-0.12 worlds
@@ -1673,8 +1721,19 @@ var createPointStyleFunction = function() {
 		}
 	    }
 	}
+	else if (block !== undefined) {
+	    if (did === globalDimensionId) {
+		var Name = feature.get('Name');
+		if (listBlockToggle[Name] !== undefined) {
+		    if (listBlockToggle[Name]) {
+			// we return a single style to reduce memory consumption
+			return [globalStyleBlock];
+		    }
+		}
+	    }
+	}
 	else {
-	    console.log('Weird.  Found a GeoJSON item that is not an entity or a tileEntitiy');
+	    console.log('Weird.  Found a GeoJSON item that is not an entity, tileEntitiy or block');
 	}
 	return null;
     };
@@ -1760,6 +1819,18 @@ function tileEntityToggle(name) {
 	listTileEntityToggle[name] = true;
     } else {
 	listTileEntityToggle[name] = !listTileEntityToggle[name];
+    }
+    vectorPoints.changed();
+}
+
+function blockToggle(name) {
+    if (vectorPoints === null) {
+	loadVectors();
+    }
+    if (listBlockToggle[name] === undefined) {
+	listBlockToggle[name] = true;
+    } else {
+	listBlockToggle[name] = !listBlockToggle[name];
     }
     vectorPoints.changed();
 }
@@ -1914,6 +1985,14 @@ function doTour() {
 		    featureExtra
 	    },
 	    {
+		element: '#menuBlocks',
+		placement: 'top',
+		title: 'Blocks',
+		content: 'You can display the location of blocks here.<br/><br/>' +
+		    'Please note that to improve performance labels are not shown.  Click on a dot to get information about the block.<br/><br/>' +
+		    'You can change which blocks are available by using the command-line switch <i>--geojson-block</i>, or you can add <i>geojson-block</i> items to your config file.  See <i>mcpe_viz.cfg</i> for more details.'
+	    },
+	    {
 		element: '#menuOptions',
 		placement: 'top',
 		title: 'Options',
@@ -1922,6 +2001,7 @@ function doTour() {
 		    '<li><b>Show Chunk Grid</b> overlays a grid showing the chunk boundaries in your world.</li>' +
 		    '<li><b>Show Slime Chunks</b> overlays green on slime chunks.  <i>Note: we\'re currently using the MCPC slime chunk calculation.  It is not known if this is accurate for MCPE.</i></li>' +
 		    '<li><b>Show Elevation Overlay</b> overlays a shaded relief elevation map.  You can alter the settings to change the display.</li>' +
+		    '<li><b>Check for update</b> checks MCPE Viz updates on GitHub.</li>' +
 		    '</ul>'
 	    },
 	    {
@@ -1987,6 +2067,16 @@ $(function() {
     // add the main layer
     setDimensionById(0);
 
+    // create default style for blocks
+    // we do this to reduce memory consumption for blocks
+    globalStyleBlock = new ol.style.Style({
+	image: new ol.style.Circle({
+	    radius: 4,
+	    fill: new ol.style.Fill({color: 'rgba(255, 255, 128, 0.8)'}),
+	    stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.8)', width: 1})
+	})
+    });
+    
     popover = new ol.Overlay({
 	element: document.getElementById('popover'),
 	autoPan: true,
@@ -2053,9 +2143,9 @@ $(function() {
 	var id = $(this).attr('data-id');
 	entityToggle(id);
 	if (listEntityToggle[id]) {
-	    $('.entityToggle[data-id=' + id + ']').parent().addClass('active');
+	    $('.entityToggle[data-id="' + id + '"]').parent().addClass('active');
 	} else {
-	    $('.entityToggle[data-id=' + id + ']').parent().removeClass('active');
+	    $('.entityToggle[data-id="' + id + '"]').parent().removeClass('active');
 	}
     });
 
@@ -2080,9 +2170,9 @@ $(function() {
 	var id = $(this).attr('data-id');
 	tileEntityToggle(id);
 	if (listTileEntityToggle[id]) {
-	    $('.tileEntityToggle[data-id=' + id + ']').parent().addClass('active');
+	    $('.tileEntityToggle[data-id="' + id + '"]').parent().addClass('active');
 	} else {
-	    $('.tileEntityToggle[data-id=' + id + ']').parent().removeClass('active');
+	    $('.tileEntityToggle[data-id="' + id + '"]').parent().removeClass('active');
 	}
     });
 

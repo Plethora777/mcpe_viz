@@ -145,6 +145,17 @@
           </ul>
 	</div>
 
+	<div class="btn-group dropup navbar-btn menu-stay" id="blockSelectButton">
+	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuBlocks" title="Show Blocks">
+	    Blocks
+          <span class="caret"></span></button>
+          <ul class="dropdown-menu" id="blockSelectList">
+	    <li role="separator" class="divider"></li>
+	    <li><a href="#" class="blockToggleAddAll">Show All</a></li>
+	    <li><a href="#" class="blockToggleRemoveAll">Hide All</a></li>
+          </ul>
+	</div>
+
 	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuOptions" title="Options">
 	    Options

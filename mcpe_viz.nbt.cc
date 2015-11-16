@@ -15,6 +15,22 @@
 
 namespace mcpe_viz {
 
+  std::string makeGeojsonHeader(int32_t ix, int32_t iy) {
+    char tmpstring[256];
+    sprintf(tmpstring,"%d, %d",ix,iy);
+    std::string s =
+      "{ "
+      "\"type\": \"Feature\", "
+      "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
+      ;
+    s += tmpstring;
+    s +=
+      "] }, "
+      "\"properties\": { "
+      ;
+    return s;
+  }
+  
   // nbt parsing helpers
   int globalNbtListNumber=0;
   int globalNbtCompoundNumber=0;
@@ -696,17 +712,7 @@ namespace mcpe_viz {
 	
       int ix, iy;
       worldPointToImagePoint(forceDimensionId, pos.x,pos.z, ix,iy, true);
-      sprintf(tmpstring,"%d, %d",ix,iy);
-      s +=
-	"{ "
-	"\"type\": \"Feature\", "
-	"\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
-	;
-      s += tmpstring;
-      s +=
-	"] }, "
-	"\"properties\": { "
-	;
+      s += makeGeojsonHeader(ix,iy);
 
       if ( has_key(entityInfoList, id) ) {
 	sprintf(tmpstring,"\"Name\": \"%s\"", entityInfoList[id]->name.c_str());
@@ -1078,17 +1084,7 @@ namespace mcpe_viz {
 	  
 	int ix, iy;
 	worldPointToImagePoint(forceDimensionId, pos.x,pos.z, ix,iy, true);
-	sprintf(tmpstring,"%d, %d",ix,iy);
-	s +=
-	  "{ "
-	  "\"type\": \"Feature\", "
-	  "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
-	  ;
-	s += tmpstring;
-	s +=
-	  "] }, "
-	  "\"properties\": { "
-	  ;
+	s += makeGeojsonHeader(ix,iy);
 	  
 	int i = list.size();
 	for (const auto& iter : list ) {
@@ -1495,17 +1491,7 @@ namespace mcpe_viz {
 	  
 	int ix, iy;
 	worldPointToImagePoint(dimId, pos.x,pos.z, ix,iy, true);
-	sprintf(tmpstring,"%d, %d",ix,iy);
-	s +=
-	  "{ "
-	  "\"type\": \"Feature\", "
-	  "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
-	  ;
-	s += tmpstring;
-	s +=
-	  "] }, "
-	  "\"properties\": { "
-	  ;
+	s += makeGeojsonHeader(ix,iy);
 	  
 	int i = list.size();
 	for (const auto& iter : list ) {

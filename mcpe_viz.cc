@@ -9,9 +9,18 @@
 
   To build it, use cmake
 
+  todohere
+
+  * js in tile mode, zoom to extent, does not show full extent (right side is chopped for 'another1')
+
+  * optimize tiler 
+
+  * finalize new elevation stuff
+  -- simplify it?  combine the shaded relief and the alpha into one web app ui control + opacity slider -- or into one layer
+
 
   todobig
-
+  
   * add "interesting" blocks to geojson (this is something like the "layers" idea)
   -- end portal frame
   -- diamonds
@@ -23,6 +32,7 @@
   -- ice + packed ice (how to coalesce?)
 
   * add changelog -- reconstruct older stuff from git commit msgs
+  -- show top of changelog in update notification (gui and js)
 
   * change git layout 
   -- remove winX.zip files; make "release" for each update w/ the winX.zip files
@@ -113,6 +123,7 @@
 #include <vector>
 #include <algorithm>
 #include <getopt.h>
+#include <math.h>
 
 #include "leveldb/db.h"
 // hide innocuous warnings here
@@ -134,7 +145,7 @@ namespace mcpe_viz {
   Logger logger;
   Logger slogger;
 
-  int32_t playerPositionImageX=0, playerPositionImageY=0;
+  int32_t playerPositionImageX=0, playerPositionImageY=0, playerPositionDimensionId=kDimIdOverworld;
   std::string globalLevelName = "(Unknown)";
 
   // list of geojson items
@@ -177,7 +188,9 @@ namespace mcpe_viz {
       kImageModeHeightColGrayscale = 4,
       kImageModeBlockLight = 5,
       kImageModeSkyLight = 6,
-      kImageModeSlimeChunks = 7
+      kImageModeSlimeChunks = 7,
+      kImageModeHeightColAlpha = 8,
+      kImageModeShadedRelief = 9
       };
 
 
@@ -199,10 +212,12 @@ namespace mcpe_viz {
     std::string fnLayerBiome[kDimIdCount];
     std::string fnLayerHeight[kDimIdCount];
     std::string fnLayerHeightGrayscale[kDimIdCount];
+    std::string fnLayerHeightAlpha[kDimIdCount];
     std::string fnLayerBlockLight[kDimIdCount];
     std::string fnLayerSkyLight[kDimIdCount];
     std::string fnLayerSlimeChunks[kDimIdCount];
     std::string fnLayerGrass[kDimIdCount];
+    std::string fnLayerShadedRelief[kDimIdCount];
     std::string fnLayerRaw[kDimIdCount][128];
       
     bool doDetailParseFlag;
@@ -215,9 +230,12 @@ namespace mcpe_viz {
     int doImageGrass;
     int doImageHeightCol;
     int doImageHeightColGrayscale;
+    int doImageHeightColAlpha;
     int doImageLightBlock;
     int doImageLightSky;
     int doImageSlimeChunks;
+    int doImageShadedRelief;
+    bool autoTileFlag;
     bool noForceGeoJSONFlag;
     bool shortRunFlag;
     bool colorTestFlag;
@@ -228,8 +246,9 @@ namespace mcpe_viz {
     int heightMode;
 
     // todobig - reasonable default? strike a balance between speed/# of files
-    int tileWidth = 2048;
-    int tileHeight = 512;
+    // int tileWidth = 2048;
+    int tileWidth = 1024;
+    int tileHeight = 1024;
     
     bool fpLogNeedCloseFlag;
     FILE *fpLog;
@@ -264,10 +283,13 @@ namespace mcpe_viz {
       doImageGrass = kDoOutputNone;
       doImageHeightCol = kDoOutputNone;
       doImageHeightColGrayscale = kDoOutputNone;
+      doImageHeightColAlpha = kDoOutputNone;
       doImageLightBlock = kDoOutputNone;
       doImageLightSky = kDoOutputNone;
       doImageSlimeChunks = kDoOutputNone;
+      doImageShadedRelief = kDoOutputNone;
       noForceGeoJSONFlag = false;
+      autoTileFlag = false;
 	
       shortRunFlag = false;
       colorTestFlag = false;
@@ -285,9 +307,11 @@ namespace mcpe_viz {
 	fnLayerBiome[did] = "";
 	fnLayerHeight[did] = "";
 	fnLayerHeightGrayscale[did] = "";
+	fnLayerHeightAlpha[did] = "";
 	fnLayerBlockLight[did] = "";
 	fnLayerSkyLight[did] = "";
 	fnLayerSlimeChunks[did] = "";
+	fnLayerShadedRelief[did] = "";
 	fnLayerGrass[did] = "";
 	for ( int i=0; i < 128; i++ ) {
 	  fnLayerRaw[did][i] = "";
@@ -736,6 +760,12 @@ namespace mcpe_viz {
       case kImageModeHeightColGrayscale:
 	ret += "Top Block Height Map (grayscale)";
 	break;
+      case kImageModeHeightColAlpha:
+	ret += "Top Block Height Map (alpha)";
+	break;
+      case kImageModeShadedRelief:
+	ret += "Shaded Relief";
+	break;
       case kImageModeBlockLight:
 	ret += "Top Block Light Map";
 	break;
@@ -791,12 +821,38 @@ namespace mcpe_viz {
       const int32_t imageW = chunkW * 16;
       const int32_t imageH = chunkH * 16;
 
+      int bpp = 3;
+      bool rgbaFlag = false;
+      uint8_t lut[256];
+      
+      if ( imageMode == kImageModeHeightColAlpha ) {
+	bpp = 4;
+	rgbaFlag = true;
+	// todobig - experiment with other ways to do this lut for height alpha
+	double vmax = 128.0 * 128.0;
+	for (int i=0; i < 128; i++) {
+	  // todobig make the offset (32) a cmdline param
+	  double ti = (128 + 32) - i;
+	  double v = ((double)(ti * ti) / vmax) * 255.0;
+	  if ( v > 235.0 ) { v = 235.0; }
+	  if ( v < 0.0 ) { v = 0.0; }
+	  lut[i] = v;
+	}
+      }
+      
       // note RGB pixels
-      uint8_t *buf = new uint8_t[ imageW * imageH * 3 ];
-      memset(buf, 0, imageW*imageH*3);
+      uint8_t *buf = new uint8_t[ imageW * imageH * bpp ];
+      memset(buf, 0, imageW*imageH*bpp);
 
       int32_t color;
-      const char *pcolor = (const char*)&color;
+      const char *pcolor;
+      if ( bpp == 4 ) {
+	pcolor = (const char*)&color;
+      } else {
+	const char* pcolor_temp = (const char*)&color;
+	pcolor = &pcolor_temp[1];
+      }
+      
       for ( const auto& it: list ) {
 	int32_t imageX = (it->chunkX + chunkOffsetX) * 16;
 	int32_t imageZ = (it->chunkZ + chunkOffsetZ) * 16;
@@ -847,6 +903,18 @@ namespace mcpe_viz {
 		color = (c << 24) | (c << 16) | (c << 8);
 	      }
 	    }
+	    else if ( imageMode == kImageModeHeightColAlpha ) {
+	      // get height value and make it alpha
+	      uint8_t c;
+	      if ( control.heightMode == kHeightModeTop ) {
+		c = it->topBlockY[cx][cz];
+	      } else {
+		c = it->heightCol[cx][cz];
+	      }
+	      // c = (90 - (int32_t)it->heightCol[cx][cz]) * 2;
+	      c = lut[c];
+	      color = ((c & 0xff) << 24);
+	    }
 	    else if ( imageMode == kImageModeBlockLight ) {
 	      // get block light value and expand it (is only 4-bits)
 	      uint8_t c = (it->topLight[cx][cz] & 0x0f) << 4;
@@ -875,10 +943,10 @@ namespace mcpe_viz {
 		if ( ! vfound ) {
 		  // todo - warn once per id/blockdata or the output volume could get ridiculous
 		  slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-			  , blockInfoList[blockid].name.c_str()
-			  , blockdata
-			  , blockdata
-			  );
+			      , blockInfoList[blockid].name.c_str()
+			      , blockdata
+			      , blockdata
+			      );
 		}
 	      } else {
 		color = blockInfoList[blockid].color;
@@ -898,8 +966,9 @@ namespace mcpe_viz {
 	    }
 
 #ifdef PIXEL_COPY_MEMCPY
-	    memcpy(&buf[ ((imageZ + cz) * imageW + (imageX + cx)) * 3], &pcolor[1], 3);
+	    memcpy(&buf[ ((imageZ + cz) * imageW + (imageX + cx)) * bpp], pcolor, bpp);
 #else
+	    // todobig - support for bpp here
 	    // todo - any use in optimizing the offset calc?
 	    buf[((imageZ + cz) * imageW + (imageX + cx)) * 3] = pcolor[1];
 	    buf[((imageZ + cz) * imageW + (imageX + cx)) * 3 + 1] = pcolor[2];
@@ -924,7 +993,7 @@ namespace mcpe_viz {
       }
 	
       // output the image
-      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH, false);
+      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH, rgbaFlag);
 
       delete [] buf;
 
@@ -1011,6 +1080,205 @@ namespace mcpe_viz {
     }
 
 
+    // originally from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
+    // but that code is actually *quite* insane
+    // rewritten based on:
+    //   http://edndoc.esri.com/arcobjects/9.2/net/shared/geoprocessing/spatial_analyst_tools/how_hillshade_works.htm
+    int generateShadedRelief(const std::string fnSrc, const std::string fnDest) {
+
+      //todobig - make these params
+      double data_vert = 5;
+
+      double data_sunEl = 45.0;
+      double data_sunAz = 315;
+      double data_resolution = 1;
+
+      PngReader pngSrc;
+      if ( pngSrc.init(fnSrc) != 0 ) {
+	slogger.msg(kLogInfo1, "ERROR: Failed to open src png");
+	return -1;
+      }
+      pngSrc.read();
+
+      int32_t srcW = pngSrc.getWidth();
+      int32_t srcH = pngSrc.getHeight();
+      int colorType = pngSrc.getColorType();
+      int32_t bppSrc = 3;
+      if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
+	bppSrc = 4;
+      }
+
+      // todobig - pngwriter support for 8-bit images (don't need RGBA for this)
+      int32_t bppDest = 4;
+
+      int32_t destW = srcW;
+      int32_t destH = srcH;
+      uint8_t *buf = new uint8_t[ destW * destH * bppDest ];
+      memset(buf, 0, destW * destH * bppDest);
+
+      PngWriter pngOut;
+      pngOut.init(fnDest, makeImageDescription(kImageModeShadedRelief,0), destW, destH, destH, true);
+      for (int ty=0; ty < destH; ty++) {
+	pngOut.row_pointers[ty] = &buf[ty * destW * bppDest];
+      }
+
+      /*
+	uint8_t lut[256];
+      
+	double vmax = 128.0 * 128.0;
+	for (int i=0; i < 128; i++) {
+	// (log( 1.0 + (double)(128 - i)/4.0 ) / logmax) * 255;
+	double ti = (128 + 32) - i;
+	double v = ((double)(ti * ti) / vmax) * 255.0;
+	if ( v > 230.0 ) { v = 230.0; }
+	if ( v < 0.0 ) { v = 0.0; }
+	lut[i] = v;
+	}
+      */
+
+      // weird - mingw32 doesn't get M_PI? - copied from math.h
+#ifndef M_PI
+#define M_PI            3.14159265358979323846
+#endif
+      
+      int32_t maxX = srcW - 1;
+      int32_t maxY = srcH - 1;
+      double twoPi = 2.0 * M_PI;
+      double halfPi = M_PI / 2.0;
+      
+      // (2)  Zenith_deg = 90 - Altitude
+      // (3)  Zenith_rad = Zenith_deg * pi / 180.0
+      double zenithRad = (90.0 - data_sunEl) * M_PI / 180.0;
+      
+      // (4)  Azimuth_math = 360.0 - Azimuth + 90
+      double azimuthMath = 360.0 - data_sunAz + 90.0;
+      // (5)  if Azimth_math >= 360.0 : Azimuth_math = Azimuth_math - 360.0
+      if (azimuthMath >= 360.0) {
+	azimuthMath = azimuthMath - 360.0;
+      }
+      // (6)  Azimuth_rad = Azimuth_math *  pi / 180.0
+      double azimuthRad = azimuthMath * M_PI / 180.0;
+
+      double cosZenithRad = cos(zenithRad);
+      double sinZenithRad = sin(zenithRad);
+
+      // todo - since we need to multiply x2 to expand 0..127 to 0..255 we instead halve this (would be 8)
+      double dp = data_resolution * 4.0;  // data.resolution * 8; // todo - not totally sure about the use of resolution here
+
+      // notes: negative values simply reverse the sun azimuth; the range of interesting values is fairly narrow - somewhere on (0.001..0.8)
+      double zFactor = (data_vert / 10.0) - 0.075;
+
+      int32_t x0, x2, 
+	y0, y2, 
+	offset;
+      double z0, z2,
+	dzdx, dzdy, 
+	slopeRad, aspectRad, hillshade, fhillshade;
+      
+      for (int y1=0; y1 < srcH; y1++) {
+	y0 = (y1 == 0) ? 0 : (y1 - 1);
+	y2 = (y1 == maxY) ? maxY : (y1 + 1);
+
+	uint8_t *srcbuf0 = pngSrc.row_pointers[y0];
+	uint8_t *srcbuf1 = pngSrc.row_pointers[y1];
+	uint8_t *srcbuf2 = pngSrc.row_pointers[y2];
+
+	for (int x1=0; x1 < srcW; x1++) {
+	  x0 = (x1 == 0) ? 0 : (x1 - 1);
+	  x2 = (x1 == maxX) ? maxX : (x1 + 1);
+
+	  // z0 = a + 2d + g
+	  z0 = 
+	    srcbuf0[x0 * bppSrc] + 
+	    srcbuf1[x0 * bppSrc] * 2.0 + 
+	    srcbuf2[x0 * bppSrc];
+	  
+	  // z2 = c + 2f + i
+	  z2 = 
+	    srcbuf0[x2 * bppSrc] + 
+	    srcbuf1[x2 * bppSrc] * 2.0 + 
+	    srcbuf2[x2 * bppSrc];
+	  
+	  // (7)  [dz/dx] = ((c + 2f + i) - (a + 2d + g)) / (8 * cellsize)
+	  dzdx = (z2 - z0) / dp;
+	  
+	  
+	  // z0 = a + 2b + c
+	  z0 = 
+	    srcbuf0[x0 * bppSrc] + 
+	    srcbuf0[x1 * bppSrc] * 2.0 + 
+	    srcbuf0[x2 * bppSrc];
+	  
+	  // z2 = g + 2h + i
+	  z2 = 
+	    srcbuf2[x0 * bppSrc] + 
+	    srcbuf2[x1 * bppSrc] * 2.0 + 
+	    srcbuf2[x2 * bppSrc];
+	  
+	  // (8)  [dz/dy] = ((g + 2h + i) - (a + 2b + c))  / (8 * cellsize)
+	  dzdy = (z2 - z0) / dp;
+	  
+	  // (9)  Slope_rad = ATAN (z_factor * sqrt ([dz/dx]2 + [dz/dy]2)) 
+	  slopeRad = atan(zFactor * sqrt(dzdx * dzdx + dzdy * dzdy));
+	  
+	  if (dzdx != 0.0) { 
+	    aspectRad = atan2(dzdy, -dzdx);
+	    
+	    if (aspectRad < 0) {
+	      aspectRad += twoPi;
+	    }
+	  }
+	  else {
+	    if (dzdy > 0.0) {
+	      aspectRad = halfPi;
+	    } 
+	    else if (dzdy < 0.0) {
+	      aspectRad = twoPi - halfPi;
+	    }
+	    else {
+	      // aspectRad is fine
+	      aspectRad = 0.0; // todo - this is my guess; algo notes are ambiguous
+	    }
+	  }
+	  
+	  // (1)  Hillshade = 255.0 * ((cos(Zenith_rad) * cos(Slope_rad)) + 
+	  //        (sin(Zenith_rad) * sin(Slope_rad) * cos(Azimuth_rad - Aspect_rad)))
+	  // Note that if the calculation of Hillshade value is < 0, the cell value will be = 0.
+	  
+	  // todo - worth doing a sin/cos LUT?
+	  fhillshade = 255.0 * ((cosZenithRad * cos(slopeRad)) + (sinZenithRad * sin(slopeRad) * cos(azimuthRad - aspectRad)));
+	  
+	  if (fhillshade < 0.0) {
+	    hillshade = 0;
+	  } else {
+	    hillshade = round(fhillshade);
+	  }
+	  
+	  offset = (y1 * destW + x1) * bppDest;
+	  // rgb
+	  buf[offset] =
+	    buf[offset + 1] =
+	    buf[offset + 2] = hillshade;
+
+	  // alpha
+	  // note: reduce the opacity for brighter parts; idea is to reduce haziness
+	  // todo - adjust this -- we want BLACK to be opaque; WHITE to be transparent (or is it gray that should be transparent)
+	  //buf[offset+3] = 255 - (hillshade / 2);
+	  //buf[offset+3] = lut[ srcbuf1[x1 * bppSrc] ];
+	  buf[offset + 3] = 255;
+	}
+      }
+
+      png_write_image(pngOut.png, pngOut.row_pointers);
+      pngOut.close();
+
+      delete [] buf;
+
+      pngSrc.close();
+
+      return 0;
+    }
+    
 
 
     // a run on old code (generateMovie):
@@ -1196,10 +1464,10 @@ namespace mcpe_viz {
 		    if ( ! vfound ) {
 		      // todo - warn once per id/blockdata or the output volume could get ridiculous
 		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-			      , blockInfoList[blockid].name.c_str()
-			      , blockdata
-			      , blockdata
-			      );
+				  , blockInfoList[blockid].name.c_str()
+				  , blockdata
+				  , blockdata
+				  );
 		    }
 		  } else {
 		    color = blockInfoList[blockid].color;
@@ -1355,10 +1623,10 @@ namespace mcpe_viz {
 		    if ( ! vfound ) {
 		      // todo - warn once per id/blockdata or the output volume could get ridiculous
 		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-			      , blockInfoList[blockid].name.c_str()
-			      , blockdata
-			      , blockdata
-			      );
+				  , blockInfoList[blockid].name.c_str()
+				  , blockdata
+				  , blockdata
+				  );
 		    }
 		  } else {
 		    color = blockInfoList[blockid].color;
@@ -1458,6 +1726,11 @@ namespace mcpe_viz {
 	control.fnLayerHeightGrayscale[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col_grayscale.png");
 	generateImage(control.fnLayerHeightGrayscale[dimId], kImageModeHeightColGrayscale);
       }
+      if ( checkDoForDim(control.doImageHeightColAlpha) ) {
+	slogger.msg(kLogInfo1,"  Generate Height Column (alpha) Image\n");
+	control.fnLayerHeightAlpha[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col_alpha.png");
+	generateImage(control.fnLayerHeightAlpha[dimId], kImageModeHeightColAlpha);
+      }
       if ( checkDoForDim(control.doImageLightBlock) ) {
 	slogger.msg(kLogInfo1,"  Generate Block Light Image\n");
 	control.fnLayerBlockLight[dimId] = std::string(control.fnOutputBase + "." + name + ".light_block.png");
@@ -1472,6 +1745,24 @@ namespace mcpe_viz {
 	slogger.msg(kLogInfo1,"  Generate Slime Chunks Image\n");
 	control.fnLayerSlimeChunks[dimId] = std::string(control.fnOutputBase + "." + name + ".slime_chunks.png");
 	generateImageSpecial(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
+      }
+
+      if ( checkDoForDim(control.doImageShadedRelief) ) {
+	slogger.msg(kLogInfo1,"  Generate Shaded Relief Image\n");
+	control.fnLayerShadedRelief[dimId] = std::string(control.fnOutputBase + "." + name + ".shaded_relief.png");
+
+	if ( false ) {
+	  // todobig - idea is to oversample the src image and then get higher resolution shaded relief - but, openlayers does not cooperate with this idea :) -- could fiddle with it later
+	  // todo - param for oversample
+	  std::string fnTemp = std::string(control.fnOutputBase + "." + name + ".shaded_relief.temp.png");
+	  if ( oversampleImage(control.fnLayerHeightGrayscale[dimId], fnTemp, 2) == 0 ) {
+	    generateShadedRelief(fnTemp, control.fnLayerShadedRelief[dimId]);
+	    // remove temporary file
+	    deleteFile(fnTemp);
+	  }
+	} else {
+	  generateShadedRelief(control.fnLayerHeightGrayscale[dimId], control.fnLayerShadedRelief[dimId]);
+	}
       }
 
       if ( checkDoForDim(control.doMovie) ) {
@@ -1646,16 +1937,16 @@ namespace mcpe_viz {
 	const int32_t imageH = chunkH * 16;
 
 	slogger.msg(kLogInfo1,"  Bounds (chunk): DimId=%d X=(%d %d) Z=(%d %d)\n"
-		, i
-		, chunkList[i].minChunkX, chunkList[i].maxChunkX
-		, chunkList[i].minChunkZ, chunkList[i].maxChunkZ
-		);
+		    , i
+		    , chunkList[i].minChunkX, chunkList[i].maxChunkX
+		    , chunkList[i].minChunkZ, chunkList[i].maxChunkZ
+		    );
 	slogger.msg(kLogInfo1,"  Bounds (pixel): DimId=%d X=(%d %d) Z=(%d %d) Image=(%d %d)\n"
-		, i
-		, chunkList[i].minChunkX*16, chunkList[i].maxChunkX*16
-		, chunkList[i].minChunkZ*16, chunkList[i].maxChunkZ*16
-		, imageW, imageH
-		);
+		    , i
+		    , chunkList[i].minChunkX*16, chunkList[i].maxChunkX*16
+		    , chunkList[i].minChunkZ*16, chunkList[i].maxChunkZ*16
+		    , imageW, imageH
+		    );
       }
 
       slogger.msg(kLogInfo1,"  %d records\n", recordCt);
@@ -1777,7 +2068,7 @@ namespace mcpe_viz {
 	}
 
 	else if ( strncmp(key,"mVillages",key_size) == 0 ) {
-	  // todobig todohere -- new for 0.13?
+	  // todobig -- new for 0.13? what is it?
 	  logger.msg(kLogInfo1,"mVillages value:\n");
 	  parseNbt("mVillages: ", value, value_size, tagList);
 	  // todo - parse tagList?
@@ -1947,126 +2238,12 @@ namespace mcpe_viz {
       return 0;
     }
 
-    // todobig todohere - move to util.h
-    class PngTiler {
-    public:
-      std::string filename;
-      int tileWidth;
-      int tileHeight;
-      std::string dirOutput;
-	
-      PngTiler(const std::string fn, int tileW, int tileH, const std::string dirOut) {
-	filename = fn;
-	tileWidth = tileW;
-	tileHeight = tileH;
-	dirOutput = dirOut;
-      }
-
-      int doTile() {
-	// todobig - store tile filenames?
-
-	char tmpstring[256];
-
-	// open source file
-	PngReader pngSrc;
-	pngSrc.init(filename);
-	pngSrc.read();
-
-	int srcW = pngSrc.getWidth();
-	int srcH = pngSrc.getHeight();
-	int colorType = pngSrc.getColorType();
-	bool rgbaFlag = false;
-	int bpp = 3;
-	if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
-	  bpp = 4;
-	  rgbaFlag = true;
-	}
-	int numPngW = (int)ceil((double)srcW / (double)tileWidth);
-
-	PngWriter *pngOut = new PngWriter[numPngW];
-	uint8_t **buf;
-	buf = new uint8_t*[numPngW];
-	for (int i=0; i < numPngW; i++) {
-	  buf[i] = new uint8_t[tileWidth * tileHeight * bpp];
-	}
-	
-	bool initPngFlag = false;
-	int tileCounterY=0;
-
-	for (int sy=0; sy < srcH; sy++) {
-
-	  // initialize png helpers
-	  if ( ! initPngFlag ) {
-	    initPngFlag = true;
-	    for (int i=0; i < numPngW; i++) {
-	      sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
-		      tileCounterY, i);
-	      std::string fname = tmpstring;
-	      pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag);
-
-	      // clear buffer
-	      memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
-	      
-	      // setup row_pointers
-	      for (int ty=0; ty < tileHeight; ty++) {
-		pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * bpp];
-	      }
-	    }
-	    tileCounterY++;
-	  }
-
-	  uint8_t *srcbuf = pngSrc.row_pointers[sy];
-
-	  int tileOffsetY = sy % tileHeight;
-	  
-	  // todobig - step in tileWidth and memcpy as we go - need to check the last one for out of bounds
-	  for (int sx=0; sx < srcW; sx++) {
-	    int tileCounterX = sx / tileWidth;
-	    int tileOffsetX = sx % tileWidth;
-	    memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &srcbuf[sx*bpp], bpp);
-	  }
-	  
-	  // write tile png files when they are ready
-	  if ( ((sy+1) % tileHeight) == 0 ) {
-	    // write pngs
-	    for (int i=0; i < numPngW; i++) {
-	      png_write_image(pngOut[i].png, pngOut[i].row_pointers);
-	      pngOut[i].close();
-	    }
-	    initPngFlag = false;
-	  }
-	}
-
-	// close final tiles
-	if ( initPngFlag ) {
-	  // write pngs
-	  for (int i=0; i < numPngW; i++) {
-	    png_write_image(pngOut[i].png, pngOut[i].row_pointers);
-	    pngOut[i].close();
-	  }
-	}
-
-	delete [] pngOut;
-
-	for (int i=0; i < numPngW; i++) {
-	  delete [] buf[i];
-	}
-	delete [] buf;
-
-	pngSrc.close();
-	
-	return 0;
-      }
-      
-    };
-
     int doOutput_Tile_image(const std::string& fn) {
       if ( fn.size() <= 0 ) {
 	return -1;
       }
       
       std::string dirOut = mydirname(control.fnOutputBase) + "/tiles";
-      // todobig - check if dir exists first
       local_mkdir(dirOut.c_str());
 
       slogger.msg(kLogInfo1,"Creating tiles for %s...\n", mybasename(fn).c_str());
@@ -2081,7 +2258,6 @@ namespace mcpe_viz {
     }
 
     int doOutput_Tile() {
-      // todobig todohere - should we tile no matter what? would make js side easier
       if ( ! control.doTiles ) {
 	return 0;
       }
@@ -2091,10 +2267,12 @@ namespace mcpe_viz {
 	doOutput_Tile_image(control.fnLayerBiome[dimid]);
 	doOutput_Tile_image(control.fnLayerHeight[dimid]);
 	doOutput_Tile_image(control.fnLayerHeightGrayscale[dimid]);
+	doOutput_Tile_image(control.fnLayerHeightAlpha[dimid]);
 	doOutput_Tile_image(control.fnLayerBlockLight[dimid]);
 	doOutput_Tile_image(control.fnLayerSkyLight[dimid]);
 	doOutput_Tile_image(control.fnLayerSlimeChunks[dimid]);
 	doOutput_Tile_image(control.fnLayerGrass[dimid]);
+	doOutput_Tile_image(control.fnLayerShadedRelief[dimid]);
 	for (int cy=0; cy<128; cy++) {
 	  doOutput_Tile_image(control.fnLayerRaw[dimid][cy]);
 	}
@@ -2174,6 +2352,7 @@ namespace mcpe_viz {
 		"var creationMcpeVizVersion = '%s';\n"
 		"var loadGeoJSONFlag = %s;\n"
 		"var fnGeoJSON = '%s';\n"
+		"var useTilesFlag = %s;\n"
 		"var tileW = %d;\n"
 		"var tileH = %d;\n"
 		"var dimensionInfo = {\n"
@@ -2183,6 +2362,7 @@ namespace mcpe_viz {
 		, mcpe_viz_version_short.c_str()
 		, control.noForceGeoJSONFlag ? "true" : "false"
 		, mybasename(control.fnGeoJSON).c_str()
+		, control.doTiles ? "true" : "false"
 		, control.tileWidth
 		, control.tileHeight
 		);
@@ -2193,14 +2373,20 @@ namespace mcpe_viz {
 	  fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
 	  fprintf(fp,"  maxWorldY: %d + 15,\n", chunkList[did].maxChunkZ*16);
 
-	  // todobig this needs to be refined - check if player is in nether
-	  int32_t px, py;
+	  int32_t px = playerPositionImageX;
+	  int32_t py = playerPositionImageY;
+
+	  // auto-adjust player position based on where they actually are
 	  if ( did == kDimIdNether ) {
-	    px = playerPositionImageX / 8;
-	    py = playerPositionImageY / 8;
+	    if ( playerPositionDimensionId != kDimIdNether ) {
+	      px /= 8;
+	      py /= 8;
+	    }
 	  } else {
-	    px = playerPositionImageX;
-	    py = playerPositionImageY;
+	    if ( playerPositionDimensionId == kDimIdNether ) {
+	      px *= 8;
+	      py *= 8;
+	    }
 	  }
 	  fprintf(fp,"  playerPosX: %d,\n", px);
 	  fprintf(fp,"  playerPosY: %d,\n", py);
@@ -2220,6 +2406,8 @@ namespace mcpe_viz {
 	  fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
 	  fprintf(fp,"  fnLayerHeight: '%s',\n", makeTileURL(control.fnLayerHeight[did]).c_str());
 	  fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", makeTileURL(control.fnLayerHeightGrayscale[did]).c_str());
+	  fprintf(fp,"  fnLayerHeightAlpha: '%s',\n", makeTileURL(control.fnLayerHeightAlpha[did]).c_str());
+	  fprintf(fp,"  fnLayerShadedRelief: '%s',\n", makeTileURL(control.fnLayerShadedRelief[did]).c_str());
 	  fprintf(fp,"  fnLayerBlockLight: '%s',\n", makeTileURL(control.fnLayerBlockLight[did]).c_str());
 	  fprintf(fp,"  fnLayerSlimeChunks: '%s',\n", makeTileURL(control.fnLayerSlimeChunks[did]).c_str());
 	  fprintf(fp,"  fnLayerGrass: '%s',\n", makeTileURL(control.fnLayerGrass[did]).c_str());
@@ -2301,7 +2489,6 @@ namespace mcpe_viz {
 	copyFile(fnCssSrc, fnCssDest);
 
 	// copy javascript files
-	// todobig - check if dir exists first
 	std::string dirJs = dirDest + "/js";
 	local_mkdir(dirJs);
 	copyDirToDir(dirExec + "/js", dirJs);
@@ -2484,6 +2671,22 @@ namespace mcpe_viz {
       }
 
       if ( control.doHtml ) {
+
+	if ( control.autoTileFlag ) {
+	  int32_t xdimId = kDimIdOverworld;
+	  const int32_t chunkW = (chunkList[xdimId].maxChunkX - chunkList[xdimId].minChunkX + 1);
+	  const int32_t imageW = chunkW * 16;
+	  const int32_t chunkH = (chunkList[xdimId].maxChunkZ - chunkList[xdimId].minChunkZ + 1);
+	  const int32_t imageH = chunkH * 16;
+	  
+	  // todobig - 5000 a reasonable default max image size before we auto-tile?
+	  int32_t maxImageSize = 5000;
+	  if ( imageW > maxImageSize || imageH > maxImageSize ) {
+	    slogger.msg(kLogInfo1, "Detected large images and 'auto-tile' is enabled, enabling tiles!\n");
+	    control.doTiles = true;
+	  }
+	}
+
 	doOutput_Tile();
 	doOutput_html();
 	doOutput_GeoJSON();
@@ -2496,9 +2699,9 @@ namespace mcpe_viz {
       return 0;
     }
   };
-
+    
   McpeWorld world;
-
+    
     
   void worldPointToImagePoint(int32_t dimId, float wx, float wz, int &ix, int &iy, bool geoJsonFlag) {
     // hack to avoid using wrong dim on pre-0.12 worlds
@@ -2802,46 +3005,49 @@ namespace mcpe_viz {
     slogger.msg(kLogInfo1,"Usage:\n\n");
     slogger.msg(kLogInfo1,"  %s [required parameters] [options]\n\n",fn);
     slogger.msg(kLogInfo1,"Required Parameters:\n"
-	    "  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
-	    "  --out fn-part            Filename base for output file(s)\n"
-	    "\n"
-	    );
+		"  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
+		"  --out fn-part            Filename base for output file(s)\n"
+		"\n"
+		);
     slogger.msg(kLogInfo1,"Options:\n"
-	    //"  --detail                 Log extensive details about the world to the log file\n"
-	    "  --html                   Create html and javascript files to use as a fancy viewer\n"
-	    "  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
-	    "  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
-	    //"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
-	    "  --tiles[=tilew,tileh]    Create tiles in subdirectory tiles/ (useful for LARGE worlds)\n"
-	    "\n"
-	    "  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
-	    "  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
-	    "  --geojson-block=did,bid  Add block to GeoJSON file for use in web app (did=dimension id, bid=block id)\n"
-	    "\n"
-	    "  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
-	    "  --grid[=did]             Display chunk grid on top of images\n"
-	    "\n"
-	    "  --all-image[=did]        Create all image types\n"
-	    "  --biome[=did]            Create a biome map image\n"
-	    "  --grass[=did]            Create a grass color map image\n"
-	    "  --height-col[=did]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
-	    "  --height-col-gs[=did]    Create a height column map image (grayscale)\n"
-	    "  --blocklight[=did]       Create a block light map image\n"
-	    "  --skylight[=did]         Create a sky light map image\n"
-	    "\n"
-	    "  --slices[=did]           Create slices (one image for each layer)\n"
-	    "  --movie[=did]            Create movie of layers\n"
-	    "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
-	    "\n"
-	    "  --xml fn                 XML file containing data definitions\n"
-	    "  --log fn                 Send log to a file\n"
-	    "\n"
-	    "  --no-force-geojson       Don't load geojson in html because we are going to use a web server (or Firefox)\n"
-	    "\n"
-	    "  --verbose                verbose output\n"
-	    "  --quiet                  supress normal output, continue to output warning and error messages\n"
-	    "  --help                   this info\n"
-	    );
+		//"  --detail                 Log extensive details about the world to the log file\n"
+		"  --html                   Create html and javascript files to use as a fancy viewer\n"
+		"  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
+		"  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
+		//"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
+		"  --tiles[=tilew,tileh]    Create tiles in subdirectory tiles/ (useful for LARGE worlds)\n"
+		"\n"
+		"  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
+		"  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
+		"  --geojson-block=did,bid  Add block to GeoJSON file for use in web app (did=dimension id, bid=block id)\n"
+		"\n"
+		"  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
+		"  --grid[=did]             Display chunk grid on top of images\n"
+		"\n"
+		"  --all-image[=did]        Create all image types\n"
+		"  --biome[=did]            Create a biome map image\n"
+		"  --grass[=did]            Create a grass color map image\n"
+		"  --height-col[=did]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
+		"  --height-col-gs[=did]    Create a height column map image (grayscale)\n"
+		"  --height-col-alpha[=did] Create a height column map image (alpha)\n"
+		"  --shaded-relief[=did]    Create a shaded relief image\n"
+		"  --blocklight[=did]       Create a block light map image\n"
+		"  --skylight[=did]         Create a sky light map image\n"
+		"  --slime-chunk[=did]      Create a slime chunk map image\n"
+		"\n"
+		"  --slices[=did]           Create slices (one image for each layer)\n"
+		"  --movie[=did]            Create movie of layers\n"
+		"  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
+		"\n"
+		"  --xml fn                 XML file containing data definitions\n"
+		"  --log fn                 Send log to a file\n"
+		"\n"
+		"  --no-force-geojson       Don't load geojson in html because we are going to use a web server (or Firefox)\n"
+		"\n"
+		"  --verbose                verbose output\n"
+		"  --quiet                  supress normal output, continue to output warning and error messages\n"
+		"  --help                   this info\n"
+		);
   }
 
   int parseDimIdOptArg(const char* arg) {
@@ -2882,8 +3088,11 @@ namespace mcpe_viz {
       {"grass", optional_argument, NULL, 'g'},
       {"height-col", optional_argument, NULL, 'd'},
       {"height-col-gs", optional_argument, NULL, '#'},
+      {"height-col-alpha", optional_argument, NULL, 'a'},
+      {"shaded-relief", optional_argument, NULL, 'S'},
       {"blocklight", optional_argument, NULL, 'b'},
       {"skylight", optional_argument, NULL, 's'},
+      {"slime-chunk", optional_argument, NULL, '%'},
     
       {"slices", optional_argument, NULL, '('},
 
@@ -2897,6 +3106,7 @@ namespace mcpe_viz {
       {"html-all", no_argument, NULL, '_'},
       {"no-force-geojson", no_argument, NULL, ':'},
 
+      {"auto-tile", no_argument, NULL, ']'},
       {"tiles", optional_argument, NULL, '['},
 
       {"shortrun", no_argument, NULL, '$'}, // this is just for testing
@@ -3042,6 +3252,9 @@ namespace mcpe_viz {
 	  }
 	}
 	break;
+      case ']':
+	control.autoTileFlag = true;
+	break;
 	
       case '=':
 	// html most
@@ -3050,6 +3263,8 @@ namespace mcpe_viz {
 	  control.doImageGrass = 
 	  control.doImageHeightCol = 
 	  control.doImageHeightColGrayscale =
+	  control.doImageHeightColAlpha =
+	  control.doImageShadedRelief =
 	  control.doImageLightBlock = 
 	  control.doImageLightSky =
 	  control.doImageSlimeChunks =
@@ -3063,6 +3278,8 @@ namespace mcpe_viz {
 	  control.doImageGrass = 
 	  control.doImageHeightCol = 
 	  control.doImageHeightColGrayscale =
+	  control.doImageHeightColAlpha =
+	  control.doImageShadedRelief =
 	  control.doImageLightBlock = 
 	  control.doImageLightSky =
 	  control.doImageSlimeChunks =
@@ -3086,20 +3303,29 @@ namespace mcpe_viz {
       case '#':
 	control.doImageHeightColGrayscale = parseDimIdOptArg(optarg);
 	break;
+      case 'a':
+	control.doImageHeightColAlpha = parseDimIdOptArg(optarg);
+	break;
+      case 'S':
+	control.doImageShadedRelief = parseDimIdOptArg(optarg);
+	break;
       case 'b':
 	control.doImageLightBlock = parseDimIdOptArg(optarg);
 	break;
       case 's':
 	control.doImageLightSky = parseDimIdOptArg(optarg);
 	break;
+      case '%':
+	control.doImageSlimeChunks = parseDimIdOptArg(optarg);
+	break;
 
-	// todobig option for slime chunks
-	
       case 'A':
 	control.doImageBiome = 
 	  control.doImageGrass = 
 	  control.doImageHeightCol = 
 	  control.doImageHeightColGrayscale =
+	  control.doImageHeightColAlpha =
+	  control.doImageShadedRelief =
 	  control.doImageLightBlock = 
 	  control.doImageLightSky =
 	  control.doImageSlimeChunks =

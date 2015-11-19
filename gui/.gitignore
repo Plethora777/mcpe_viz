@@ -3,5 +3,7 @@ release/
 Makefile*
 ui_mainwindow.h
 mcpe_viz_helper.pro.user
+mcpe_viz_helper
+mcpe_viz_helper.ini
 *.exe
 *.dll

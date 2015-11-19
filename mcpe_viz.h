@@ -18,7 +18,7 @@ namespace mcpe_viz {
 
   // todo ugly globals
   extern Logger logger;
-  extern int32_t playerPositionImageX, playerPositionImageY;
+  extern int32_t playerPositionImageX, playerPositionImageY, playerPositionDimensionId;
   extern std::vector<std::string> listGeoJSON;
 
   // dimensions

@@ -1,0 +1,52 @@
+MCPE Viz Changelog
+
+by Plethora777
+  Twitter: [@Plethora777](https://twitter.com/Plethora777)
+  Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
+
+Highlight: Added web app support for tiled images, supports very large MCPE worlds
+
+v0.0.13 - 2015.11.19
+Web - Added support for tiled images - this allows us to handle very large MCPE worlds;
+GUI - Added 'auto-tile' to mcpe_viz run so that images are automatically tiled if they are big;
+Web - Added pre-generated shaded relief layer because dynamic shaded relief does not (currently) work in tiled image mode;
+Web - Added height shading layer;
+Web - Fixed handling of player position with respect to the Nether;
+Web - Tweaked layout of controls for 'Options';
+Web - Fixed updating slider labels in UI;
+Web - Changed all alert() to bootstrap modal dialogs;
+GUI - Added command-line text field that users can copy to modify the way mcpe_viz runs;
+GUI/Web - Added new version 'highlight' to update checker;
+Added ChangeLog;
+Version bump
+
+v0.0.12 - 2015.11.16
+Web - Added 'Blocks' menu where you can show blocks in the web app - controlled via geojson-block command-line switch and/or config file entries;
+Version bump
+
+v0.0.11 - 2015.11.15
+GUI - Added button to check for updates on GitHub;
+Web - Added option to check for updates on GitHub;
+Web - Keep drop-up menu visible after clicking a selection (suggestion from TheThoughtNinja);
+Web - Name mob spawners with name of mob spawned (suggestion from TheThoughtNinja);
+Web - Added 'Sign (Non-blank)' and 'Sign (Blank)';
+Web - Show item name for 'Dropped item'
+Version bump
+
+v0.0.10 - 2015.11.13
+Web - Added Help -- a guided tour of the web app UI;
+Web - Added bundled javascript libraries -- web app will now work offline;
+Updated README.md;
+Version bump
+
+v0.0.9 - 2015.11.9
+GUI - Wrap mcpe_viz arguments in quotes to avoid issues with path names on Windows;
+GUI - Add version number in UI;
+Share mcpe_viz.version.h with main code and gui code;
+Version bump
+
+(Older changes are in "git log" :)
+
+	
+	
+

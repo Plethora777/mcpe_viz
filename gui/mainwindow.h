@@ -8,18 +8,18 @@
 #include <QtNetwork/QNetworkReply>
 
 namespace Ui {
-class MainWindow;
+  class MainWindow;
 }
 
 class MainWindow : public QMainWindow
 {
-    Q_OBJECT
+  Q_OBJECT
 
-public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+ public:
+  explicit MainWindow(QWidget *parent = 0);
+  ~MainWindow();
 
-private slots:
+  private slots:
     void on_btnMCPEWorld_clicked();
 
     void on_btnOutputDirectory_clicked();
@@ -37,15 +37,18 @@ private slots:
     void processFinished(int exitCode,  QProcess::ExitStatus exitStatus);
 
     void parseCheckUpdate(QNetworkReply* pReply);
+    void parseChangeLog(QNetworkReply* pReply);
     
-private:
+ private:
     Ui::MainWindow *ui;
     QProcess *mcpeVizProcess;
     QString m_sSettingsFile;
-
+    std::string newVersion;
+    
     QNetworkAccessManager* m_naManager;
     
     int getCommandLine(std::string &cmd);
+    int checkNetworkError(QNetworkReply* pReply);
     void saveSettings();
     void loadSettings();
 };

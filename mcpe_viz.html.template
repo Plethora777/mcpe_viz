@@ -28,7 +28,7 @@
 	<div class="btn-group dropup navbar-btn">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Dimension">
 	    <span id="dimensionSelectName">Dimension</span>
-	  <span class="caret"></span></button>
+	    <span class="caret"></span></button>
 	  <ul class="dropdown-menu">
 	    <li><a href="#" class="dimensionSelect" data-id="0">Overworld</a></li>
 	    <li><a href="#" class="dimensionSelect" data-id="1">Nether</a></li>
@@ -40,7 +40,7 @@
 	  <div class="btn-group dropup">
 	    <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Layer">
 	      <span id="layerNumber">Go to Layer</span>
-	    <span class="caret"></span></button>
+	      <span class="caret"></span></button>
 	    <ul class="dropdown-menu">
 	      <li><a href="#" class="layerGoto" data-id="127" href="#">Layer 127 (Build Limit)</a></li>
 	      <li><a href="#" class="layerGoto" data-id="120" href="#">Layer 120</a></li>
@@ -65,7 +65,7 @@
 	<div class="btn-group dropup navbar-btn">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" title="Select Main Image">
 	    <span id="imageSelectName">Main Image</span>
-	  <span class="caret"></span></button>
+	    <span class="caret"></span></button>
 	  <ul class="dropdown-menu">
 	    <li><a href="#" class="imageSelect" data-id="0">Overview</a></li>
 	    <li><a href="#" class="imageSelect" data-id="1">Biome</a></li>
@@ -79,7 +79,7 @@
 	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuPassiveMobs" title="Show Passive Mobs">
 	    Passive Mobs
-          <span class="caret"></span></button>
+            <span class="caret"></span></button>
           <ul class="dropdown-menu">
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="19">Bat</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="10">Chicken</a></li>
@@ -105,7 +105,7 @@
 	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuHostileMobs" title="Show Hostile Mobs">
 	    Hostile Mobs
-          <span class="caret"></span></button>
+            <span class="caret"></span></button>
           <ul class="dropdown-menu">
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="40">Cave Spider</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="33">Creeper</a></li>
@@ -132,7 +132,7 @@
 	<div class="btn-group dropup navbar-btn menu-stay">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuObjects" title="Show Objects">
 	    Objects
-          <span class="caret"></span></button>
+            <span class="caret"></span></button>
           <ul class="dropdown-menu">
 	    <li><a href="#" class="tileEntityToggle" data-id="Chest">Chest</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-id="MobSpawner">Mob Spawner</a></li>
@@ -148,7 +148,7 @@
 	<div class="btn-group dropup navbar-btn menu-stay" id="blockSelectButton">
 	  <button type="button" class="btn btn-primary dropdown-toggle mytooltip" data-toggle="dropdown" id="menuBlocks" title="Show Blocks">
 	    Blocks
-          <span class="caret"></span></button>
+            <span class="caret"></span></button>
           <ul class="dropdown-menu" id="blockSelectList">
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="blockToggleAddAll">Show All</a></li>
@@ -163,26 +163,55 @@
 	  <ul class="dropdown-menu">
 	    <li><a href="#" id="gridToggle">Show Chunk Grid</a></li>
 	    <li><a href="#" id="slimeChunksToggle">Show Slime Chunks</a></li>
+
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" id="elevationToggle">Show Elevation Overlay</a></li>
-	    <li class="input-group">
-	      <span class="input-group-addon">Intensity: <span id="vertOut"></span></span>
-	      <input id="vert" class="mytooltip" title="Vertical Exaggeration" type="range" min="1" max="10" data-default="3" value="3"/>
+
+	    <li><a href="#" id="elevationAlphaToggle">Show Height Shading</a>
+	      <ul>
+		<li class="input-group">
+		  <span class="input-group-addon">Opacity: <span id="elevationAlphaOpacityOut"></span>%</span>
+		  <input id="elevationAlphaOpacity" class="mytooltip" title="Overlay Opacity" type="range" min="0" max="100" data-default="60" value="60"/>
+		</li>
+	      </ul>
 	    </li>
-	    <li class="input-group">
-	      <span class="input-group-addon">Altitude: <span id="sunElOut"></span></span>
-	      <input id="sunEl" class="mytooltip" title="Sun Altitude" type="range" min="0" max="90" data-default="45" value="45"/>
-	    </li>
-	    <li class="input-group">
-	      <span class="input-group-addon">Azimuth: <span id="sunAzOut"></span></span>
-	      <input id="sunAz" class="mytooltip" title="Sun Azimuth" type="range" min="0" max="360" data-default="315" value="315"/>
-	    </li>
-	    <li class="input-group">
-	      <span class="input-group-addon">Opacity: <span id="shadeOpacityOut"></span></span>
-	      <input id="shadeOpacity" class="mytooltip" title="Overlay Opacity" type="range" min="0" max="100" data-default="30" value="30"/>
-	    </li>
-	    <li><a href="#" id="elevationReset">Reset Elevation Settings</a></li>
+
 	    <li role="separator" class="divider"></li>
+
+	    <li><a href="#" id="elevationStaticToggle">Show Shaded Relief (Pre-generated)</a>
+	      <ul>
+		<li class="input-group">
+		  <span class="input-group-addon">Opacity: <span id="elevationStaticOpacityOut"></span>%</span>
+		  <input id="elevationStaticOpacity" class="mytooltip" title="Overlay Opacity" type="range" min="0" max="100" data-default="30" value="30"/>
+		</li>
+	      </ul>
+	    </li>
+
+	    <li role="separator" class="divider dynamicShadedRelief"></li>
+
+	    <li class="dynamicShadedRelief"><a href="#" id="elevationToggle">Show Shaded Relief (Dynamic)</a>
+	      <ul class="input-group">
+		<li class="input-group dynamicShadedRelief">
+		  <span class="input-group-addon">Intensity: <span id="vertOut"></span></span>
+		  <input id="vert" class="mytooltip" title="Vertical Exaggeration" type="range" min="1" max="10" data-default="3" value="3"/>
+		</li>
+		<li class="input-group dynamicShadedRelief">
+		  <span class="input-group-addon">Altitude: <span id="sunElOut"></span>&deg;</span>
+		  <input id="sunEl" class="mytooltip" title="Sun Altitude" type="range" min="0" max="90" data-default="45" value="45"/>
+		</li>
+		<li class="input-group dynamicShadedRelief">
+		  <span class="input-group-addon">Azimuth: <span id="sunAzOut"></span>&deg;</span>
+		  <input id="sunAz" class="mytooltip" title="Sun Azimuth" type="range" min="0" max="360" data-default="315" value="315"/>
+		</li>
+		<li class="input-group dynamicShadedRelief">
+		  <span class="input-group-addon">Opacity: <span id="shadeOpacityOut"></span>%</span>
+		  <input id="shadeOpacity" class="mytooltip" title="Overlay Opacity" type="range" min="0" max="100" data-default="30" value="30"/>
+		</li>
+		<li class="input-group dynamicShadedRelief"><button type="button" class="btn" id="elevationReset">Reset Settings</button></li>
+	      </ul>
+	    </li>
+
+	    <li role="separator" class="divider"></li>
+
 	    <li><a href="#" id="btnCheckUpdate">Check for <b>MCPE Viz</b> update...</a></li>
 	  </ul>
 	</div>
@@ -211,5 +240,21 @@
       </div>
     </div>
 
+    <div class="modal fade" style="display;none;">
+      <div class="modal-dialog">
+	<div class="modal-content">
+	  <div class="modal-header">
+	    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	    <h4 class="modal-title"></h4>
+	  </div>
+	  <div class="modal-body">
+	  </div>
+	  <div class="modal-footer">
+	    <button type="button" class="btn btn-default" data-dismiss="modal">Ok</button>
+	  </div>
+	</div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    
   </body>
 </html>

@@ -36,7 +36,7 @@
   -- http://stackoverflow.com/questions/3102819/disable-same-origin-policy-in-chrome
   -- https://chrome.google.com/webstore/detail/allow-control-allow-origi/nlfbmbojpeacfghkpbjhddihlkkiljbi?hl=en
   
-  * todohere -- some mods in test-all2 -- combine raw layer + regular layer selector; experiments w/ multilevel dropdown for mobs
+  * some mods in test-all2 -- combine raw layer + regular layer selector; experiments w/ multilevel dropdown for mobs
 
   * goto X -- e.g. Player; World Origin; World Spawn; Player Spawn; etc
 
@@ -996,9 +996,8 @@ function setLayerLoadListeners(src, fn) {
     });
     src.on('imageloaderror', function(event) {
 	updateLoadEventCount(-1);
-	alert('Image load error.\n' +
-	      '\n' +
-	      'Could not load file: ' + fn);
+	doModal('Image Load Error',
+		'Could not load file: ' + fn);
     });
 }
 
@@ -1172,12 +1171,107 @@ function shade(inputs, data) {
 	console.log('shade() exception: ' + e.toString());
 
 	// we are probably failing because of CORS
-	alert('Error accessing map pixels.  Disabling elevation overlay.\n\n' +
-	      'Error: ' + e.toString() + '\n\n' +
-	      globalCORSWarning);
+	doModal('CORS Error',
+		'Error accessing map pixels.  Disabling elevation overlay.\n\n' +
+		'Error: ' + e.toString() + '\n\n' +
+		globalCORSWarning);
 	map.removeLayer(layerElevation);
     }
-    // todobig todohere - how to catch CORS issue here?
+    // todobig - how to catch CORS issue here?
+}
+
+var srcLayerElevationAlpha = null, layerElevationAlpha = null;
+
+function doElevationAlpha(enableFlag) {
+    if (enableFlag) {
+	var fn = dimensionInfo[globalDimensionId].fnLayerHeightAlpha;
+	if ( useTilesFlag ) {
+	    srcLayerElevationAlpha = new ol.source.XYZ({
+		url: fn,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		extent: extent,
+		//wrapX: false,
+		tileSize: [ tileW, tileH ],
+		tileGrid: srcLayerMain.getTileGrid()
+	    });
+	    layerElevationAlpha = new ol.layer.Tile({
+		preload: Infinity,
+		projection: projection,
+		extent: extent,
+		source: srcLayerElevationAlpha,
+		opacity: $('#elevationAlphaOpacity').val() / 100.0
+	    });
+	} else {
+	    srcLayerElevationAlpha = new ol.source.ImageStatic({
+		url: fn,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+		imageExtent: extent
+	    });
+	    layerElevationAlpha = new ol.layer.Image({
+		opacity: $('#elevationAlphaOpacity').val() / 100.0,
+		source: srcLayerElevationAlpha
+	    });
+	}
+	setLayerLoadListeners(srcLayerElevationAlpha, fn);
+	map.addLayer(layerElevationAlpha);
+	disableLayerSmoothing(layerElevationAlpha);
+    } else {
+	if (layerElevationAlpha !== null ) {
+	    map.removeLayer(layerElevationAlpha);
+	    layerElevationAlpha = null;
+	    srcLayerElevationAlpha = null;
+	}
+    }
+}
+
+var srcLayerShadedReliefStatic = null, layerShadedReliefStatic = null;
+
+function doElevationStatic(enableFlag) {
+    if (enableFlag) {
+	var fn = dimensionInfo[globalDimensionId].fnLayerShadedRelief;	
+	if ( useTilesFlag ) {
+	    srcLayerShadedReliefStatic = new ol.source.XYZ({
+		url: fn,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		extent: extent,
+		//wrapX: false,
+		tileSize: [ tileW, tileH ],
+		tileGrid: srcLayerMain.getTileGrid()
+	    });
+	    layerShadedReliefStatic = new ol.layer.Tile({
+		preload: Infinity,
+		projection: projection,
+		extent: extent,
+		source: srcLayerShadedReliefStatic,
+		opacity: $('#elevationStaticOpacity').val() / 100.0
+	    });
+	} else {
+	    srcLayerShadedReliefStatic = new ol.source.ImageStatic({
+		url: fn,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+		imageExtent: extent
+	    });
+	    layerShadedReliefStatic = new ol.layer.Image({
+		opacity: $('#elevationStaticOpacity').val() / 100.0,
+		source: srcLayerShadedReliefStatic
+	    });
+	}
+	setLayerLoadListeners(srcLayerShadedReliefStatic, fn);
+	map.addLayer(layerShadedReliefStatic);
+	disableLayerSmoothing(layerShadedReliefStatic);
+    } else {
+	if (layerShadedReliefStatic !== null ) {
+	    map.removeLayer(layerShadedReliefStatic);
+	    layerShadedReliefStatic = null;
+	    srcLayerShadedReliefStatic = null;
+	}
+    }
 }
 
 var srcElevation = null, rasterElevation = null, layerElevation = null;
@@ -1187,9 +1281,10 @@ function doShadedRelief(enableFlag) {
 	if (enableFlag) {
 	    var fn = dimensionInfo[globalDimensionId].fnLayerHeightGrayscale;
 	    if (fn === undefined || fn.length <= 1) {
-		alert('Data for elevation image is not available -- see README and re-run mcpe_viz\n' +
-		      '\n' +
-		      'Hint: You need to run mcpe_viz with --html-most (or --html-all)');
+		doModal('CORS Error',
+			'Data for elevation image is not available -- see README and re-run mcpe_viz\n' +
+			'\n' +
+			'Hint: You need to run mcpe_viz with --html-most (or --html-all)');
 		return -1;
 	    }
 	    var doInitFlag = false;
@@ -1213,7 +1308,7 @@ function doShadedRelief(enableFlag) {
 		});
 
 		layerElevation = new ol.layer.Image({
-		    opacity: 0.3,
+		    opacity: $('#shadeOpacity').val() / 100.0,
 		    source: rasterElevation
 		});
 	    }
@@ -1225,13 +1320,12 @@ function doShadedRelief(enableFlag) {
 		var controls = {};
 		controlIds.forEach(function(id) {
 		    var control = document.getElementById(id);
-		    var output = document.getElementById(id + 'Out');
-		    // todo - this does NOT update the text fields on firefox - why?
+		    var nameOutput = '#' + id + 'Out';
 		    control.addEventListener('input', function() {
-			output.innerText = control.value;
+			$(nameOutput).html('' + control.value);
 			rasterElevation.changed();
 		    });
-		    output.innerText = control.value;
+		    $(nameOutput).html('' + control.value);
 		    controls[id] = control;
 		});
 
@@ -1250,11 +1344,12 @@ function doShadedRelief(enableFlag) {
 	    }
 	}
     } catch (e) {
-	alert('Error accessing map pixels.\n\n' +
-	      'Error: ' + e.toString() + '\n\n' +
-	      globalCORSWarning);
+	doModal('CORS Error',
+		'Error accessing map pixels.\n\n' +
+		'Error: ' + e.toString() + '\n\n' +
+		globalCORSWarning);
     }
-    // todobig todohere - how to catch CORS issue here?
+    // todobig - how to catch CORS issue here?
     return 0;
 }
 
@@ -1317,7 +1412,7 @@ var rasterChunkGrid = null, layerChunkGrid = null;
 function doChunkGrid(enableFlag) {
     if (enableFlag) {
 	if (srcLayerMain === null) {
-	    alert('Werid.  Main layer source is null.  Cannot proceed.');
+	    doModal('Error', 'Weird.  Main layer source is null.  Cannot proceed.');
 	    return -1;
 	}
 	var doInitFlag = false;
@@ -1361,17 +1456,38 @@ function doChunkGrid(enableFlag) {
 
 function doSlimeChunks(enabled) {
     if ( enabled ) {
-	srcLayerSlimeChunks = new ol.source.ImageStatic({
-	    url: dimensionInfo[globalDimensionId].fnLayerSlimeChunks,
-	    //crossOrigin: 'anonymous',
-	    projection: projection,
-	    imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
-	    imageExtent: extent
-	});
-	layerSlimeChunks = new ol.layer.Image({
-	    opacity: 0.65,
-	    source: srcLayerSlimeChunks
-	});
+	var fn = dimensionInfo[globalDimensionId].fnLayerSlimeChunks;
+	if ( useTilesFlag ) {
+	    srcLayerSlimeChunks = new ol.source.XYZ({
+		url: fn,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		extent: extent,
+		//wrapX: false,
+		tileSize: [ tileW, tileH ],
+		tileGrid: srcLayerMain.getTileGrid()
+	    });
+	    layerSlimeChunks = new ol.layer.Tile({
+		preload: Infinity,
+		projection: projection,
+		extent: extent,
+		source: srcLayerSlimeChunks,
+		opacity: 0.65,
+	    });
+	} else {
+	    srcLayerSlimeChunks = new ol.source.ImageStatic({
+		url: fn,
+		//crossOrigin: 'anonymous',
+		projection: projection,
+		imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+		imageExtent: extent
+	    });
+	    layerSlimeChunks = new ol.layer.Image({
+		opacity: 0.65,
+		source: srcLayerSlimeChunks
+	    });
+	}
+	setLayerLoadListeners(srcLayerSlimeChunks, fn);
 	map.addLayer(layerSlimeChunks);
 	disableLayerSmoothing(layerSlimeChunks);
     } else {
@@ -1390,29 +1506,64 @@ function setLayer(fn, extraHelp) {
 	} else {
 	    extraHelp = '\n\nHint: ' + extraHelp;
 	}
-	alert('That image is not available -- see README and re-run mcpe_viz.' + extraHelp);
+	doModal('Error', 'That image is not available -- see README and re-run mcpe_viz.' + extraHelp);
 	return -1;
     }
     
     // todo - attribution is small and weird in map - why?
-    srcLayerMain = new ol.source.ImageStatic({
-	attributions: [
-	    new ol.Attribution({
-		html: 'Created by <a href="https://github.com/Plethora777/mcpe_viz" target="_blank">mcpe_viz</a>'
+    if ( useTilesFlag ) {
+	srcLayerMain = new ol.source.XYZ({
+	    attributions: [
+		new ol.Attribution({
+		    html: 'Created by <a href="https://github.com/Plethora777/mcpe_viz" target="_blank">mcpe_viz</a>'
+		})
+	    ],
+	    url: fn,
+	    //crossOrigin: 'anonymous',
+	    projection: projection,
+	    //wrapX: false,
+	    tileSize: [ tileW, tileH ],
+	    tileGrid: new ol.tilegrid.TileGrid({
+		//extent: [ 0, 0, 39, 25 ],
+		extent: extent,
+		minZoom: 0,
+		maxZoom: 1,
+		tileSize: [ tileW, tileH ],
+		resolutions: [ 1 ]
 	    })
-	],
-	url: fn,
-	//crossOrigin: 'anonymous',
-	projection: projection,
-	imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
-	// 'Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image.'
-	imageExtent: extent
-    });
+	    //imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+	    // 'Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image.'
+	    //imageExtent: extent
+	});
+    } else {
+	srcLayerMain = new ol.source.ImageStatic({
+	    attributions: [
+		new ol.Attribution({
+		    html: 'Created by <a href="https://github.com/Plethora777/mcpe_viz" target="_blank">mcpe_viz</a>'
+		})
+	    ],
+	    url: fn,
+	    //crossOrigin: 'anonymous',
+	    projection: projection,
+	    imageSize: [dimensionInfo[globalDimensionId].worldWidth, dimensionInfo[globalDimensionId].worldHeight],
+	    // 'Extent of the image in map coordinates. This is the [left, bottom, right, top] map coordinates of your image.'
+	    imageExtent: extent
+	});
+    }
 
     setLayerLoadListeners(srcLayerMain, fn);
     
     if (layerMain === null) {
-	layerMain = new ol.layer.Image({source: srcLayerMain});
+	if ( useTilesFlag ) {
+	    layerMain = new ol.layer.Tile({
+		preload: Infinity,
+		projection: projection,
+		extent: extent,
+		source: srcLayerMain
+	    });
+	} else { 
+	    layerMain = new ol.layer.Image({source: srcLayerMain});
+	}
 	map.addLayer(layerMain);
 
 	// get the pixel position with every move
@@ -1458,9 +1609,10 @@ function setLayer(fn, extraHelp) {
 	    } catch (e) {
 		pixelDataName = '<i>Browser will not let us access map pixels - See README</i>';
 		if ( ! globalCORSWarningFlag ) {
-		    alert('Error accessing map pixels.\n\n' +
-			  'Error: ' + e.toString() + '\n\n' +
-			  globalCORSWarning);
+		    doModal('CORS Error',
+			    'Error accessing map pixels.\n\n' +
+			    'Error: ' + e.toString() + '\n\n' +
+			    globalCORSWarning);
 		    globalCORSWarningFlag = true;
 		}
 	    }
@@ -1773,10 +1925,9 @@ function loadVectors() {
 	    else if (src.getState() == 'error') {
 		updateLoadEventCount(-1);
 		ol.Observable.unByKey(listenerKey);
-		alert('Image load error.\n' +
-		      '\n' +
-		      'Could not load file: ' + src.url + '\n' +
-		      globalCORSWarning);
+		doModal('Image Load Error',
+			'Could not load file: ' + src.url + '\n' +
+			globalCORSWarning);
 	    }
 	});
 	
@@ -1788,13 +1939,12 @@ function loadVectors() {
 	map.addLayer(vectorPoints);
     } catch (e) {
 	updateLoadEventCount(-1);
-	alert('Vector load error.\n' +
-	      '\n' +
-	      'Error: ' + e.toString() + '\n' +
-	      '\n' +
-	      globalCORSWarning);
+	doModal('Vector Load Error',
+		'Error: ' + e.toString() + '\n' +
+		'\n' +
+		globalCORSWarning);
     } 
-    // todobig todohere - how to catch CORS issue here?
+    // todobig - how to catch CORS issue here?
 }
 
 
@@ -2000,8 +2150,9 @@ function doTour() {
 		    '<br/><ul>' +
 		    '<li><b>Show Chunk Grid</b> overlays a grid showing the chunk boundaries in your world.</li>' +
 		    '<li><b>Show Slime Chunks</b> overlays green on slime chunks.  <i>Note: we\'re currently using the MCPC slime chunk calculation.  It is not known if this is accurate for MCPE.</i></li>' +
-		    '<li><b>Show Elevation Overlay</b> overlays a shaded relief elevation map.  You can alter the settings to change the display.</li>' +
-		    '<li><b>Check for update</b> checks MCPE Viz updates on GitHub.</li>' +
+		    '<li><b>Show Height Shading</b> overlays a shading based on height.  Higher blocks are brighter than lower blocks.</li>' +
+		    '<li><b>Show Shaded Relief</b> overlays a shaded relief elevation map.  <i>Pre-generated</i> is generated when mcpe_viz runs.  <i>Dynamic</i> is generated in the web app.  You can alter the settings to change the display.  Note that due to bugs in one of the support libraries, <i>Dynamic</i> is not available when in tiled image mode.</li>' +
+		    '<li><b>Check for update</b> checks for an <b>MCPE Viz</b> update on GitHub.</li>' +
 		    '</ul>'
 	    },
 	    {
@@ -2028,6 +2179,58 @@ function doTour() {
     tour.start();
 }
 
+function doModal(title, body) {
+    $('.modal-title').html(title);
+    $('.modal-body').html(body);
+    $('.modal').modal({});
+}
+
+function showUpdateInfo(newVersion, newVersionHighlight, changeLog) {
+    // todobig - make this a bootstrap dialog box that has a clickable link
+    doModal('New Update Available!',
+	    'You are running <b>v' + creationMcpeVizVersion + '</b> and <b>v' + newVersion + '</b> is available on GitHub.<br/><br/>' +
+	    'New Version Highlight:<br/><b>' + newVersionHighlight + '</b><br/><br/>' +
+
+	    // show changelog
+	    '<div class="panel panel-default">' +
+	    '<div class="panel-heading" role="tab" id="headingOne">' +
+	    '<h4 class="panel-title">' +
+	    '<a role="button" data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">' +
+	    'View Changelog' +
+	    '</a></h4></div>' +
+	    '<div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">' +
+	    '<div class="panel-body"><pre>' + changeLog + '</pre></div>' +
+	    '</div></div>' +
+
+	    '<a target="_blank" href="https://github.com/Plethora777/mcpe_viz">Click here to go to GitHub and grab the update</a>'
+	   );
+}
+
+function doCheckUpdate_getChangeLog(newVersion) {
+    // get data from github
+    var url = 'https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/ChangeLog';
+
+    $.ajax({
+	type: 'GET',
+	url: url,
+	dataType: 'text',
+	cache: false,
+	success: function(result, textStatus, jqxhr) {
+	    
+	    // parse this: mcpe_viz_version_short("X.Y.Z");
+	    var newVersionHighlight = '(See ChangeLog on GitHub)';
+	    var res = result.match(/^Highlight:\s*(.+?)\s*$/);
+	    if ( res ) {
+		newVersionHighlight = res[1];
+	    }
+
+	    showUpdateInfo(newVersion, newVersionHighlight, result);
+	},
+	error: function(jqXHR, textStatus, errorThrown, execptionObject) {
+	    showUpdateInfo(newVersion, '(Sorry, we had a problem checking the ChangeLog -- See ChangeLog on GitHub)', '(See ChangeLog on GitHub)');
+	}
+    });
+}
 
 function doCheckUpdate() {
     // get data from github
@@ -2044,19 +2247,18 @@ function doCheckUpdate() {
 	    var res = result.match(/mcpe_viz_version_short\("(.+?)"\)\;/);
 	    if ( res ) {
 		if ( res[1] === creationMcpeVizVersion ) {
-		    alert('No update available.\n\nYou are running the most current version.');
+		    doModal('No Update', 'No update available.<br/><br/>You are running the most current version.');
 		} else {
-		    alert('Update available!\n\n' +
-			  'You are running v' + creationMcpeVizVersion + ' and v' + res[1] + ' is available on GitHub.\n\n' +
-			  'Click the "MCPE Viz Viewer" link in the footer to go to GitHub and grab the update.');
+		    doCheckUpdate_getChangeLog(res[1]);
 		}
 	    } else {
-		alert('Sorry, failed to find version info on GitHub.');
+		doModal('Error', 'Sorry, failed to find version info on GitHub.');
 	    }
 
 	},
 	error: function(jqXHR, textStatus, errorThrown, execptionObject) {
-	    alert('Sorry, failed to check for update: Status [' + textStatus + '] error [' + errorThrown + ']');
+	    doModal('Error',
+		    'Sorry, failed to check for update: Status [' + textStatus + '] error [' + errorThrown + ']');
 	}
     });
 }
@@ -2198,8 +2400,8 @@ $(function() {
     
     $('#elevationToggle').click(function() {
 	if ( globalCORSWarningFlag ) {
-	    alert('Error accessing map pixels.  We cannot enable the elevation overlay.\n\n' +
-		  globalCORSWarning);
+	    doModal('CORS Error', 'Error accessing map pixels.  We cannot enable the elevation overlay.<br/><br/>' +
+		    globalCORSWarning);
 	    return;
 	}
 	if ($('#elevationToggle').parent().hasClass('active')) {
@@ -2219,13 +2421,54 @@ $(function() {
 	    rasterElevation.changed();
 	}
     });
-
     $('#shadeOpacity').change(function() {
 	if (layerElevation !== null) {
 	    layerElevation.setOpacity( $('#shadeOpacity').val() / 100.0 );
 	}
     });
 
+
+    $('#elevationAlphaToggle').click(function() {
+	if ($('#elevationAlphaToggle').parent().hasClass('active')) {
+	    $('#elevationAlphaToggle').parent().removeClass('active');
+	    doElevationAlpha(false);
+	} else {
+	    $('#elevationAlphaToggle').parent().addClass('active');
+	    doElevationAlpha(true);
+	}
+    });
+    var updateElevationAlphaOpacity = function() {
+	$('#elevationAlphaOpacityOut').html($('#elevationAlphaOpacity').val());
+	if (layerElevationAlpha !== null) {
+	    layerElevationAlpha.setOpacity( $('#elevationAlphaOpacity').val() / 100.0 );
+	}
+    };
+    $('#elevationAlphaOpacity').change(function() {
+	updateElevationAlphaOpacity();
+    });
+    updateElevationAlphaOpacity();
+    
+    $('#elevationStaticToggle').click(function() {
+	if ($('#elevationStaticToggle').parent().hasClass('active')) {
+	    $('#elevationStaticToggle').parent().removeClass('active');
+	    doElevationStatic(false);
+	} else {
+	    $('#elevationStaticToggle').parent().addClass('active');
+	    doElevationStatic(true);
+	}
+    });
+    var updateElevationStaticOpacity = function() {
+	$('#elevationStaticOpacityOut').html($('#elevationStaticOpacity').val());
+	if (layerShadedReliefStatic !== null) {
+	    layerShadedReliefStatic.setOpacity( $('#elevationStaticOpacity').val() / 100.0 );
+	}
+    };
+    $('#elevationStaticOpacity').change(function() {
+	updateElevationStaticOpacity();
+    });
+    updateElevationStaticOpacity();
+
+    
     $('#btnHelp').click(function() {
 	doTour();
     });
@@ -2253,6 +2496,11 @@ $(function() {
 	trigger: 'hover',
 	container: 'body'
     });
+
+    if ( useTilesFlag ) {
+	// remove dynamic shaded relief -- currently does not work in tile mode
+	$('.dynamicShadedRelief').hide();
+    }
     
     // setup hotkeys
     $(document).on('keydown', function(evt) {

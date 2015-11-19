@@ -874,7 +874,8 @@ namespace mcpe_viz {
 	// todo - option to put icon on map
 
 	worldPointToImagePoint(actualDimensionId, pos.x,pos.z, playerPositionImageX, playerPositionImageY, true);
-
+	playerPositionDimensionId = actualDimensionId;
+	
 	fprintf(stderr,"Player Position: Dimension=%d Pos=%s Rotation=(%f, %f)\n", actualDimensionId, pos.toStringWithImageCoords(actualDimensionId).c_str(), rotation.x,rotation.y);
       }
 

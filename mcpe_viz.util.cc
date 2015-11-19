@@ -11,6 +11,7 @@
 #include <libxml/xmlreader.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <unistd.h>
 #include "mcpe_viz.util.h"
 #include "mcpe_viz.h"
 #include "mcpe_viz.xml.h"
@@ -197,6 +198,9 @@ namespace mcpe_viz {
   }
 
   
+  int deleteFile ( const std::string fn ) {
+    return unlink(fn.c_str());
+  }
 
   // from: http://kickjava.com/src/org/eclipse/swt/graphics/RGB.java.htm
   int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness) {
@@ -352,6 +356,64 @@ namespace mcpe_viz {
   }
 
 
+  // todobig - move to util.cc
+  int oversampleImage(const std::string fnSrc, const std::string fnDest, int oversample) {
+    PngReader pngSrc;
+    if ( pngSrc.init(fnSrc) != 0 ) {
+      slogger.msg(kLogInfo1, "ERROR: Failed to open src png");
+      return -1;
+    }
+    pngSrc.read();
+
+    int32_t srcW = pngSrc.getWidth();
+    int32_t srcH = pngSrc.getHeight();
+    int colorType = pngSrc.getColorType();
+    int32_t bppSrc = 3;
+    if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
+      bppSrc = 4;
+    }
+      
+    int32_t bppDest = bppSrc;
+
+    int32_t destW = srcW * oversample;
+    int32_t destH = srcH * oversample;
+    uint8_t *buf = new uint8_t[ destW * destH * bppDest ];
+    memset(buf, 0, destW * destH * bppDest);
+
+    PngWriter pngOut;
+    pngOut.init(fnDest, "MCPE Viz Oversampled Image", destW, destH, destH, true);
+    for (int ty=0; ty < destH; ty++) {
+      pngOut.row_pointers[ty] = &buf[ty * destW * bppDest];
+    }
+
+    for (int sy=0; sy < srcH; sy++) {
+      uint8_t *srcbuf = pngSrc.row_pointers[sy];
+	
+      for (int sx=0; sx < srcW; sx++) {
+
+	for (int oy=0; oy < oversample; oy++) {
+	  int dy = sy * oversample + oy;
+	  for (int ox=0; ox < oversample; ox++) {
+	    int dx = sx * oversample + ox;
+	    // todo - optimize srcbuf val outside loops
+	    memcpy(&buf[ (dy * destW + dx) * bppDest ], &srcbuf[ sx * bppSrc ], bppDest);
+	  }
+	}
+	  
+      }
+    }
+
+    png_write_image(pngOut.png, pngOut.row_pointers);
+    pngOut.close();
+
+    delete [] buf;
+
+    pngSrc.close();
+
+    return 0;
+  }
+  
+
   bool vectorContains( const std::vector<int> &v, int i ) {
     for ( const auto& iter: v ) {
       if ( iter == i ) {
@@ -372,6 +434,7 @@ namespace mcpe_viz {
   }
 
   int local_mkdir(std::string path) {
+    // todobig - check if dir exists first?
 #ifdef WINVER
     return mkdir(path.c_str());
 #else

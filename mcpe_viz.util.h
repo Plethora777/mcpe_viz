@@ -19,6 +19,7 @@
 #include <png.h>
 #include <sys/stat.h>
 #include <libgen.h>
+#include <math.h>
 #include "mcpe_viz.version.h"
 
 namespace mcpe_viz {
@@ -52,6 +53,8 @@ namespace mcpe_viz {
   int copyFile ( const std::string fnSrc, const std::string fnDest );
 
   int copyDirToDir ( const std::string dirSrc, const std::string dirDest );
+
+  int deleteFile ( const std::string fn );
   
   bool vectorContains( const std::vector<int> &v, int i );
 
@@ -397,6 +400,122 @@ namespace mcpe_viz {
     }
   };
 
+
+
+  class PngTiler {
+  public:
+    std::string filename;
+    int tileWidth;
+    int tileHeight;
+    std::string dirOutput;
+	
+    PngTiler(const std::string fn, int tileW, int tileH, const std::string dirOut) {
+      filename = fn;
+      tileWidth = tileW;
+      tileHeight = tileH;
+      dirOutput = dirOut;
+    }
+
+    int doTile() {
+      // todobig - store tile filenames?
+
+      char tmpstring[256];
+
+      // open source file
+      PngReader pngSrc;
+      pngSrc.init(filename);
+      pngSrc.read();
+
+      int srcW = pngSrc.getWidth();
+      int srcH = pngSrc.getHeight();
+      int colorType = pngSrc.getColorType();
+      bool rgbaFlag = false;
+      int bpp = 3;
+      if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
+	bpp = 4;
+	rgbaFlag = true;
+      }
+      int numPngW = (int)ceil((double)srcW / (double)tileWidth);
+
+      PngWriter *pngOut = new PngWriter[numPngW];
+      uint8_t **buf;
+      buf = new uint8_t*[numPngW];
+      for (int i=0; i < numPngW; i++) {
+	buf[i] = new uint8_t[tileWidth * tileHeight * bpp];
+      }
+	
+      bool initPngFlag = false;
+      int tileCounterY=0;
+
+      for (int sy=0; sy < srcH; sy++) {
+
+	// initialize png helpers
+	if ( ! initPngFlag ) {
+	  initPngFlag = true;
+	  for (int i=0; i < numPngW; i++) {
+	    sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
+		    tileCounterY, i);
+	    std::string fname = tmpstring;
+	    pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag);
+
+	    // clear buffer
+	    memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
+	      
+	    // setup row_pointers
+	    for (int ty=0; ty < tileHeight; ty++) {
+	      pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * bpp];
+	    }
+	  }
+	  tileCounterY++;
+	}
+
+	uint8_t *srcbuf = pngSrc.row_pointers[sy];
+
+	int tileOffsetY = sy % tileHeight;
+	  
+	// todobig - step in tileWidth and memcpy as we go - need to check the last one for out of bounds
+	for (int sx=0; sx < srcW; sx++) {
+	  int tileCounterX = sx / tileWidth;
+	  int tileOffsetX = sx % tileWidth;
+	  memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &srcbuf[sx*bpp], bpp);
+	}
+	  
+	// write tile png files when they are ready
+	if ( ((sy+1) % tileHeight) == 0 ) {
+	  // write pngs
+	  for (int i=0; i < numPngW; i++) {
+	    png_write_image(pngOut[i].png, pngOut[i].row_pointers);
+	    pngOut[i].close();
+	  }
+	  initPngFlag = false;
+	}
+      }
+
+      // close final tiles
+      if ( initPngFlag ) {
+	// write pngs
+	for (int i=0; i < numPngW; i++) {
+	  png_write_image(pngOut[i].png, pngOut[i].row_pointers);
+	  pngOut[i].close();
+	}
+      }
+
+      delete [] pngOut;
+
+      for (int i=0; i < numPngW; i++) {
+	delete [] buf[i];
+      }
+      delete [] buf;
+
+      pngSrc.close();
+	
+      return 0;
+    }
+      
+  };
+
+
+  int oversampleImage(const std::string fnSrc, const std::string fnDest, int oversample);
   
   
   int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness);

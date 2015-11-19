@@ -1172,8 +1172,8 @@ function shade(inputs, data) {
 
 	// we are probably failing because of CORS
 	doModal('CORS Error',
-		'Error accessing map pixels.  Disabling elevation overlay.\n\n' +
-		'Error: ' + e.toString() + '\n\n' +
+		'Error accessing map pixels.  Disabling elevation overlay.<br/><br/>' +
+		'Error: ' + e.toString() + '<br/><br/>' +
 		globalCORSWarning);
 	map.removeLayer(layerElevation);
     }
@@ -1282,8 +1282,8 @@ function doShadedRelief(enableFlag) {
 	    var fn = dimensionInfo[globalDimensionId].fnLayerHeightGrayscale;
 	    if (fn === undefined || fn.length <= 1) {
 		doModal('CORS Error',
-			'Data for elevation image is not available -- see README and re-run mcpe_viz\n' +
-			'\n' +
+			'Data for elevation image is not available -- see README and re-run mcpe_viz<br/>' +
+			'<br/>' +
 			'Hint: You need to run mcpe_viz with --html-most (or --html-all)');
 		return -1;
 	    }
@@ -1345,8 +1345,8 @@ function doShadedRelief(enableFlag) {
 	}
     } catch (e) {
 	doModal('CORS Error',
-		'Error accessing map pixels.\n\n' +
-		'Error: ' + e.toString() + '\n\n' +
+		'Error accessing map pixels.<br/><br/>' +
+		'Error: ' + e.toString() + '<br/><br/>' +
 		globalCORSWarning);
     }
     // todobig - how to catch CORS issue here?
@@ -1504,7 +1504,7 @@ function setLayer(fn, extraHelp) {
 	if ( extraHelp === undefined ) {
 	    extraHelp = '';
 	} else {
-	    extraHelp = '\n\nHint: ' + extraHelp;
+	    extraHelp = '<br/><br/>Hint: ' + extraHelp;
 	}
 	doModal('Error', 'That image is not available -- see README and re-run mcpe_viz.' + extraHelp);
 	return -1;
@@ -1610,8 +1610,8 @@ function setLayer(fn, extraHelp) {
 		pixelDataName = '<i>Browser will not let us access map pixels - See README</i>';
 		if ( ! globalCORSWarningFlag ) {
 		    doModal('CORS Error',
-			    'Error accessing map pixels.\n\n' +
-			    'Error: ' + e.toString() + '\n\n' +
+			    'Error accessing map pixels.<br/><br/>' +
+			    'Error: ' + e.toString() + '<br/><br/>' +
 			    globalCORSWarning);
 		    globalCORSWarningFlag = true;
 		}
@@ -1926,7 +1926,7 @@ function loadVectors() {
 		updateLoadEventCount(-1);
 		ol.Observable.unByKey(listenerKey);
 		doModal('Image Load Error',
-			'Could not load file: ' + src.url + '\n' +
+			'Could not load file: ' + src.url + '<br/>' +
 			globalCORSWarning);
 	    }
 	});
@@ -1940,8 +1940,8 @@ function loadVectors() {
     } catch (e) {
 	updateLoadEventCount(-1);
 	doModal('Vector Load Error',
-		'Error: ' + e.toString() + '\n' +
-		'\n' +
+		'Error: ' + e.toString() + '<br/>' +
+		'<br/>' +
 		globalCORSWarning);
     } 
     // todobig - how to catch CORS issue here?

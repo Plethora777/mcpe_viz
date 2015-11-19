@@ -163,7 +163,7 @@ int MainWindow::getCommandLine(std::string &cmd) {
   }
 
   // execute mcpe_viz.exe w/ the proper params and put output in txtProgress
-  cmd = QApplication::applicationDirPath().toStdString() + "/mcpe_viz --flush";
+  cmd = "\"" + QApplication::applicationDirPath().toStdString() + "/mcpe_viz\" --flush";
 
   for (StringList ::iterator it=cmd_args.begin(); it != cmd_args.end(); ++it) {
     cmd += " " + (*it);

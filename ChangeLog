@@ -6,6 +6,11 @@ by Plethora777
 
 Highlight: Added web app support for tiled images, supports very large MCPE worlds
 
+v0.0.15 - 2015.11.19
+Web - Quick fixes for new modal dialogs;
+GUI - Quick fix for quoting executable in command-line;	
+Version bump
+
 v0.0.14 - 2015.11.19
 Web/GUI - Quick fixes for changelog parsing;
 Version bump

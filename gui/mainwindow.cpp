@@ -46,13 +46,20 @@ MainWindow::MainWindow(QWidget *parent) :
     
   loadSettings();
 
-  m_naManager = new QNetworkAccessManager(this);
+  m_naManager = NULL;
+  m_naManager2 = NULL;
 }
 
 MainWindow::~MainWindow()
 {
   saveSettings();
   delete ui;
+  if (m_naManager) {
+    delete m_naManager;
+  }
+  if (m_naManager2) {
+    delete m_naManager2;
+  }
 }
 
 void MainWindow::loadSettings() {
@@ -237,7 +244,11 @@ void MainWindow::on_btnWebApp_clicked()
 void MainWindow::on_btnCheckUpdate_clicked()
 {
   QUrl url("https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/mcpe_viz.version.h");
-  
+
+  if (m_naManager) {
+    delete m_naManager;
+  }
+  m_naManager = new QNetworkAccessManager(this);
   connect(m_naManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseCheckUpdate(QNetworkReply*)));
   m_naManager->get(QNetworkRequest(url));
 }
@@ -297,11 +308,15 @@ void MainWindow::parseCheckUpdate(QNetworkReply* pReply)
 	// update
 	newVersion = rx.cap(1).toStdString();
 
-
+	// we now get the changelog
 	QUrl url("https://raw.githubusercontent.com/Plethora777/mcpe_viz/master/ChangeLog");
-  
-	connect(m_naManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseChangeLog(QNetworkReply*)));
-	m_naManager->get(QNetworkRequest(url));
+
+	if (m_naManager2) {
+	  delete m_naManager2;
+	}
+	m_naManager2 = new QNetworkAccessManager(this);
+	connect(m_naManager2, SIGNAL(finished(QNetworkReply*)), this, SLOT(parseChangeLog(QNetworkReply*)));
+	m_naManager2->get(QNetworkRequest(url));
 	  
 	pReply->deleteLater();
 	return;
@@ -352,7 +367,7 @@ void MainWindow::parseChangeLog(QNetworkReply* pReply)
   
   std::string msg = "You are running <b>v" + mcpe_viz_version_short + "</b> and <b>v" + newVersion + "</b> is available on GitHub.<br/><br/>" +
     "New Version Highlight:<br/><b>" + newVersionHighlight + "</b><br/><br/>" +
-    "<a href=\"https://github.com/Plethora777/mcpe_viz\">Click Here</a> to go to GitHub and grab the update."
+    "<a href=\"https://github.com/Plethora777/mcpe_viz\">Click here to go to GitHub and grab the update</a>"
     ;
   QMessageBox::warning(this, "Update Available!", msg.c_str());
   

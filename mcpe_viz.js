@@ -2193,13 +2193,16 @@ function showUpdateInfo(newVersion, newVersionHighlight, changeLog) {
 
 	    // show changelog
 	    '<div class="panel panel-default">' +
+	    // todo - make this a clickable panel/button instead of a clickable label
 	    '<div class="panel-heading" role="tab" id="headingOne">' +
 	    '<h4 class="panel-title">' +
 	    '<a role="button" data-toggle="collapse" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">' +
 	    'View Changelog' +
 	    '</a></h4></div>' +
 	    '<div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">' +
-	    '<div class="panel-body"><pre>' + changeLog + '</pre></div>' +
+	    // todo - ugly hard coded height here!
+	    // todo - escape html in changeLog?
+	    '<div class="panel-body"><pre class="pre-scrollable">' + changeLog + '</pre></div>' +
 	    '</div></div>' +
 
 	    '<a target="_blank" href="https://github.com/Plethora777/mcpe_viz">Click here to go to GitHub and grab the update</a>'
@@ -2219,7 +2222,7 @@ function doCheckUpdate_getChangeLog(newVersion) {
 	    
 	    // parse this: mcpe_viz_version_short("X.Y.Z");
 	    var newVersionHighlight = '(See ChangeLog on GitHub)';
-	    var res = result.match(/^Highlight:\s*(.+?)\s*$/);
+	    var res = result.match(/\nHighlight:\s*(.+?)\s*\n/);
 	    if ( res ) {
 		newVersionHighlight = res[1];
 	    }

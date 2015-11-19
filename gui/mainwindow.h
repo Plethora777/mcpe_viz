@@ -46,6 +46,7 @@ class MainWindow : public QMainWindow
     std::string newVersion;
     
     QNetworkAccessManager* m_naManager;
+    QNetworkAccessManager* m_naManager2;
     
     int getCommandLine(std::string &cmd);
     int checkNetworkError(QNetworkReply* pReply);

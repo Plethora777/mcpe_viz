@@ -27,7 +27,7 @@ namespace mcpe_viz {
   typedef std::vector< MyNbtTag > MyNbtTagList;
 
 
-  std::string makeGeojsonHeader(int32_t ix, int32_t iy);
+  std::string makeGeojsonHeader(double ix, double iy);
   
   int parseNbt( const char* hdr, const char* buf, int bufLen, MyNbtTagList& tagList );
     

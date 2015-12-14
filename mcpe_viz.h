@@ -18,7 +18,8 @@ namespace mcpe_viz {
 
   // todo ugly globals
   extern Logger logger;
-  extern int32_t playerPositionImageX, playerPositionImageY, playerPositionDimensionId;
+  extern double playerPositionImageX, playerPositionImageY;
+  extern int32_t playerPositionDimensionId;
   extern std::vector<std::string> listGeoJSON;
 
   // dimensions
@@ -30,6 +31,7 @@ namespace mcpe_viz {
 
   
   void worldPointToImagePoint(int32_t dimId, float wx, float wz, int &ix, int &iy, bool geoJsonFlag);
+  void worldPointToGeoJSONPoint(int32_t dimId, float wx, float wz, double &ix, double &iy);
   
   class BlockInfo {
   public:
@@ -37,14 +39,20 @@ namespace mcpe_viz {
     int32_t color;
     bool colorSetFlag;
     bool solidFlag;
+    bool opaqueFlag;
+    bool liquidFlag;
+    bool spawnableFlag;
     int colorSetNeedCount;
     int32_t blockdata;
     std::vector< std::unique_ptr<BlockInfo> > variantList;
-    
+
     BlockInfo() {
       name = "(unknown)";
       setColor(kColorDefault); // purple
       solidFlag = true;
+      opaqueFlag = true;
+      liquidFlag = false;
+      spawnableFlag = true;
       colorSetFlag = false;
       colorSetNeedCount = 0;
       variantList.clear();
@@ -66,8 +74,35 @@ namespace mcpe_viz {
       solidFlag = f;
       return *this;
     }
-
     bool isSolid() { return solidFlag; }
+
+    BlockInfo& setOpaqueFlag(bool f) {
+      opaqueFlag = f;
+      return *this;
+    }
+    bool isOpaque() { return opaqueFlag; }
+
+    BlockInfo& setLiquidFlag(bool f) {
+      liquidFlag = f;
+      return *this;
+    }
+    bool isLiquid() { return liquidFlag; }
+
+    BlockInfo& setSpawnableFlag(bool f) {
+      spawnableFlag = f;
+      return *this;
+    }
+    bool isSpawnable(int32_t bd) {
+      if (hasVariants()) {
+	for (const auto& itbv : variantList) {
+	  if ( itbv->blockdata == bd ) {
+	    return itbv->spawnableFlag;
+	  }
+	}
+	fprintf(stderr, "WARNING: did not find bd=%d (0x%x) for block='%s'\n", bd, bd, name.c_str());
+      }
+      return spawnableFlag;
+    }
 
     bool hasVariants() {
       return (variantList.size() > 0);
@@ -83,6 +118,20 @@ namespace mcpe_viz {
       bv->setBlockData(bd);
       variantList.push_back( std::move(bv) );
       return *(variantList.back());
+    }
+
+    std::string toString() {
+      char tmpstring[1024];
+      sprintf(tmpstring,"Block: name=%s color=0x%06x solid=%d opaque=%d liquid=%d spawnable=%d"
+	      , name.c_str()
+	      , color
+	      , (int)solidFlag
+	      , (int)opaqueFlag
+	      , (int)liquidFlag
+	      , (int)spawnableFlag
+	      );
+      // todo variants?
+      return std::string(tmpstring);
     }
   };
   

@@ -15,9 +15,9 @@
 
 namespace mcpe_viz {
 
-  std::string makeGeojsonHeader(int32_t ix, int32_t iy) {
+  std::string makeGeojsonHeader(double ix, double iy) {
     char tmpstring[256];
-    sprintf(tmpstring,"%d, %d",ix,iy);
+    sprintf(tmpstring,"%.1lf, %.1lf",ix,iy);
     std::string s =
       "{ "
       "\"type\": \"Feature\", "
@@ -710,8 +710,8 @@ namespace mcpe_viz {
       std::string s = "";
       char tmpstring[1025];
 	
-      int ix, iy;
-      worldPointToImagePoint(forceDimensionId, pos.x,pos.z, ix,iy, true);
+      double ix, iy;
+      worldPointToGeoJSONPoint(forceDimensionId, pos.x,pos.z, ix,iy);
       s += makeGeojsonHeader(ix,iy);
 
       if ( has_key(entityInfoList, id) ) {
@@ -873,7 +873,7 @@ namespace mcpe_viz {
 	// output player position + rotation to user
 	// todo - option to put icon on map
 
-	worldPointToImagePoint(actualDimensionId, pos.x,pos.z, playerPositionImageX, playerPositionImageY, true);
+	worldPointToGeoJSONPoint(actualDimensionId, pos.x,pos.z, playerPositionImageX, playerPositionImageY);
 	playerPositionDimensionId = actualDimensionId;
 	
 	fprintf(stderr,"Player Position: Dimension=%d Pos=%s Rotation=(%f, %f)\n", actualDimensionId, pos.toStringWithImageCoords(actualDimensionId).c_str(), rotation.x,rotation.y);
@@ -1083,8 +1083,8 @@ namespace mcpe_viz {
 	sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
 	  
-	int ix, iy;
-	worldPointToImagePoint(forceDimensionId, pos.x,pos.z, ix,iy, true);
+	double ix, iy;
+	worldPointToGeoJSONPoint(forceDimensionId, pos.x,pos.z, ix,iy);
 	s += makeGeojsonHeader(ix,iy);
 	  
 	int i = list.size();
@@ -1490,8 +1490,8 @@ namespace mcpe_viz {
 	sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
 	  
-	int ix, iy;
-	worldPointToImagePoint(dimId, pos.x,pos.z, ix,iy, true);
+	double ix, iy;
+	worldPointToGeoJSONPoint(dimId, pos.x,pos.z, ix,iy);
 	s += makeGeojsonHeader(ix,iy);
 	  
 	int i = list.size();

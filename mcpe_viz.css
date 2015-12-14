@@ -143,3 +143,9 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
 .nobreak {
     white-space:nowrap;
 }
+
+
+.my-scrollable {
+    max-height: 300px;
+    overflow: auto;
+}

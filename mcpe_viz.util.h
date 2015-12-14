@@ -14,6 +14,8 @@
 #include <stdarg.h>
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
 #include <memory>
 #include <string.h>
 #include <png.h>
@@ -614,7 +616,65 @@ namespace mcpe_viz {
     }
   };
 
+
   
+  // todobig - template this for diff types?
+  typedef std::pair<int32_t, int32_t> HistogramItem;
+  typedef std::map<int32_t, int32_t> HistogramMap;
+  typedef std::vector< HistogramItem > HistogramVector;
+  class Histogram {
+  public:
+    HistogramMap map;
+    
+    bool has_key(int32_t k) {
+      return  map.find(k) != map.end();
+    }
+    
+    void add(int32_t k) {
+      if ( has_key(k) ) {
+	map[k]++;
+      } else {
+	map[k] = 1;
+      }
+    }
+
+    int32_t getTotal() {
+      int32_t total=0;
+      for (auto& it : map) {
+	total += it.second;
+      }
+      return total;
+    }
+    
+    HistogramVector sort(int32_t order) {
+      HistogramVector vector(map.begin(), map.end());
+      
+      if ( order <= 0 ) {
+	std::sort(vector.begin(), vector.end(), compare_less_());
+      } else {
+	std::sort(vector.begin(), vector.end(), compare_more_());
+      }
+
+      return vector;
+    }
+    
+  private:
+    struct compare_less_
+      : std::binary_function<HistogramItem,HistogramItem,bool>
+    {
+      inline bool operator()(const HistogramItem& lhs, const HistogramItem& rhs) {
+	return lhs.second < rhs.second;
+      }
+    };
+    struct compare_more_
+      : std::binary_function<HistogramItem,HistogramItem,bool>
+    {
+      inline bool operator()(const HistogramItem& lhs, const HistogramItem& rhs) {
+	return lhs.second > rhs.second;
+      }
+    };
+  };
+
 } // namespace mcpe_viz
 
 #endif // __MCPE_VIZ_UTIL_H__

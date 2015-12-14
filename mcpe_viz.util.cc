@@ -356,7 +356,6 @@ namespace mcpe_viz {
   }
 
 
-  // todobig - move to util.cc
   int oversampleImage(const std::string fnSrc, const std::string fnDest, int oversample) {
     PngReader pngSrc;
     if ( pngSrc.init(fnSrc) != 0 ) {

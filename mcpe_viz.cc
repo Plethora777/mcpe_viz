@@ -11,16 +11,28 @@
 
   todohere
 
+  * check spawnable code - it might be missing spots?
+
+  * minimize geojson output?
+  -- remove spaces
+  -- simplify the properties? e.g. GType=Foo where Foo is the type of this record
+
+  * auto-tile (and useTilesFlag) should be per-dimension
+  -- js should use per-dimension tile vars instead of global
+
   * js in tile mode, zoom to extent, does not show full extent (right side is chopped for 'another1')
 
-  * optimize tiler 
+  * optimize tiler (slow libpng is probably the limiting factor)
 
   * finalize new elevation stuff
   -- simplify it?  combine the shaded relief and the alpha into one web app ui control + opacity slider -- or into one layer
 
 
   todobig
-  
+
+  * have user provide APK and then use assets from the APK in web app?
+  -- e.g. - chest contents w/ icons for items
+
   * add "interesting" blocks to geojson (this is something like the "layers" idea)
   -- end portal frame
   -- diamonds
@@ -145,7 +157,8 @@ namespace mcpe_viz {
   Logger logger;
   Logger slogger;
 
-  int32_t playerPositionImageX=0, playerPositionImageY=0, playerPositionDimensionId=kDimIdOverworld;
+  double playerPositionImageX=0.0, playerPositionImageY=0.0;
+  int32_t playerPositionDimensionId=kDimIdOverworld;
   std::string globalLevelName = "(Unknown)";
 
   // list of geojson items
@@ -480,6 +493,31 @@ namespace mcpe_viz {
 
     
     
+
+  class CheckSpawn {
+  public:
+    int32_t x, z, distance;
+
+    CheckSpawn(int32_t nx, int32_t nz, int32_t ndist) {
+      x = nx;
+      z = nz;
+      distance = ndist;
+    }
+    bool contains(int32_t tx, int32_t tz) {
+      // todo - faster distance calc? do simple distance tests before sqrt part?
+      double dx = x - tx;
+      double dz = z - tz;
+      double d = sqrt( dx*dx + dz*dz );
+      if ( d <= distance ) {
+	return true;
+      }
+      return false;
+    }
+  };
+  typedef std::vector< std::unique_ptr<CheckSpawn> > CheckSpawnList;
+
+
+
   class ChunkData {
   public:
     int32_t chunkX, chunkZ;
@@ -492,9 +530,11 @@ namespace mcpe_viz {
 
     // we parse the block (et al) data in a chunk from leveldb
     ChunkData(int32_t tchunkX, int32_t tchunkZ, const char* value,
-	      int32_t dimensionId, const std::string dimName, int* histogramGlobalBiome,
+	      int32_t dimensionId, const std::string dimName,
+	      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
 	      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
-	      const bool* fastBlockToGeoJSON) {
+	      const bool* fastBlockToGeoJSON,
+	      const CheckSpawnList& listCheckSpawn) {
       chunkX = tchunkX;
       chunkZ = tchunkZ;
 
@@ -512,6 +552,26 @@ namespace mcpe_viz {
       memset(topBlockY,0, 16*16*sizeof(uint8_t));
       //memset(heightCol,0, 16*16*sizeof(uint8_t));
       memset(topLight,0, 16*16*sizeof(uint8_t));
+
+      // see if we need to check any columns in this chunk for spawnable
+      bool checkSpawnFlag = false;
+      int32_t wx = chunkX * 16;
+      int32_t wz = chunkZ * 16;
+      for ( const auto& it : listCheckSpawn ) {
+	if ( it->contains(wx, wz) ) {
+	  checkSpawnFlag = true;
+	  break;
+	} else if ( it->contains(wx, wz+15) ) {
+	  checkSpawnFlag = true;
+	  break;
+	} else if ( it->contains(wx+15, wz+15) ) {
+	  checkSpawnFlag = true;
+	  break;
+	} else if ( it->contains(wx+15, wz) ) {
+	  checkSpawnFlag = true;
+	  break;
+	}
+      }
       
       // iterate over chunk space
       uint8_t blockId, biomeId;
@@ -520,12 +580,13 @@ namespace mcpe_viz {
 	  for ( int cz=0; cz < 16; cz++ ) {
 	    blockId = getBlockId(value, cx,cz,cy);
 	    histogramBlock[blockId]++;
-
+	    histogramGlobalBlock.add(blockId);
+	    
 	    // todobig - handle block variant?
 	    if ( fastBlockToGeoJSON[blockId] ) {
-	      int ix, iy;
+	      double ix, iy;
 	      char tmpstring[512];
-	      worldPointToImagePoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy, true);
+	      worldPointToGeoJSONPoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
 	      sprintf(tmpstring, ""
 		      "\"Name\": \"%s\", "
 		      "\"Block\": true, "
@@ -543,6 +604,73 @@ namespace mcpe_viz {
 		+ tmpstring
 		;
 	      listGeoJSON.push_back( json );
+	    }
+
+	    // check spawnable -- cannot check spawn at 0 or 127 because we need above/below blocks
+	    if ( checkSpawnFlag && ( cy > 0 && cy < 127 ) ) {
+	      bool continueCheckSpawnFlag = false;
+	      for ( const auto& it : listCheckSpawn ) {
+		if ( it->contains(wx+cx, wz+cz) ) {
+		  continueCheckSpawnFlag = true;
+		  break;
+		}
+	      }
+	      if ( continueCheckSpawnFlag ) {
+
+		// note: rules adapted from: http://minecraft.gamepedia.com/Spawn
+
+		// todobig todohere - is this missing some spawnable blocks?
+		
+		  // "the spawning block itself must be non-opaque and non-liquid"
+		  // we add: non-solid
+		  if ( ! blockInfoList[blockId].isOpaque() &&
+		       ! blockInfoList[blockId].isLiquid() &&
+		       ! blockInfoList[blockId].isSolid() ) { 
+
+		    // "the block directly above it must be non-opaque"
+
+		    uint8_t aboveBlockId = getBlockId(value, cx,cz,cy+1);
+		    if ( ! blockInfoList[aboveBlockId].isOpaque() ) {
+
+		      // "the block directly below it must have a solid top surface (opaque, upside down slabs / stairs and others)"
+		      // "the block directly below it may not be bedrock or barrier" -- take care of with 'spawnable'
+
+		      uint8_t belowBlockId = getBlockId(value, cx,cz,cy-1);
+		      uint8_t belowBlockData = getBlockData(value, cx,cz,cy-1);
+		      
+		      //if ( blockInfoList[belowBlockId].isOpaque() && blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
+		      if ( blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
+
+			// check the light level
+			uint8_t bl = getBlockBlockLight(value, cx,cz,cy);
+			if ( bl <= 7 ) {
+			  // spwawnable! add it to the list
+			  double ix, iy;
+			  char tmpstring[512];
+			  worldPointToGeoJSONPoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
+			  sprintf(tmpstring, ""
+				  "\"Spawnable\": true, "
+				  "\"Name\": \"Spawnable\", "
+				  "\"LightLevel\": \"%d\", "
+				  "\"Dimension\": \"%d\", "
+				  "\"Pos\": [%d, %d, %d]"
+				  "} }"
+				  , (int)bl
+				  , dimensionId
+				  , chunkX*16 + cx
+				  , cy
+				  , chunkZ*16 + cz
+				  );
+			  std::string json = ""
+			    + makeGeojsonHeader(ix,iy)
+			    + tmpstring
+			    ;
+			  listGeoJSON.push_back( json );
+			}
+		      }
+		  }
+		}
+	      }
 	    }
 	    
 	    // todo - check for isSolid?
@@ -586,7 +714,7 @@ namespace mcpe_viz {
 	  
 	  biomeId = (uint8_t)(grassAndBiome[cx][cz] & 0xFF);
 	  histogramBiome[biomeId]++;
-	  histogramGlobalBiome[biomeId]++;
+	  histogramGlobalBiome.add(biomeId);
 	  
 #if 0
 	  // todo - testing idea about lighting - get lighting from top solid block - result is part good, part crazy
@@ -650,7 +778,8 @@ namespace mcpe_viz {
     bool chunkBoundsValid;
 
     int32_t histogramChunkType[256];
-    int32_t histogramGlobalBiome[256];
+    Histogram histogramGlobalBlock;
+    Histogram histogramGlobalBiome;
 
     bool fastBlockForceTopList[256];
     bool fastBlockHideList[256];
@@ -659,13 +788,14 @@ namespace mcpe_viz {
     std::vector<int> blockForceTopList;
     std::vector<int> blockHideList;
     std::vector<int> blockToGeoJSONList;
-      
+
+    CheckSpawnList listCheckSpawn;
+    
     ChunkDataList() {
       name = "(UNKNOWN)";
       dimId = -1;
       chunkBoundsValid = false;
       memset(histogramChunkType,0,256*sizeof(int32_t));
-      memset(histogramGlobalBiome,0,256*sizeof(int32_t));
     }
 
     void updateFastLists() {
@@ -700,7 +830,9 @@ namespace mcpe_viz {
       // todobig emplace_back? does this do a copy?
       list.push_back( std::unique_ptr<ChunkData>
 		      (new ChunkData(chunkX, chunkZ, value, dimId, name,
-				     histogramGlobalBiome, fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList)) );
+				     histogramGlobalBlock, histogramGlobalBiome,
+				     fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
+				     listCheckSpawn)) );
       return 0;
     }
       
@@ -714,7 +846,11 @@ namespace mcpe_viz {
       return false;
     }
       
-    
+    int addCheckSpawn(int32_t checkX, int32_t checkZ, int32_t distance) {
+      listCheckSpawn.push_back( std::unique_ptr<CheckSpawn>(new CheckSpawn(checkX,checkZ,distance)) );
+      return 0;
+    }
+
     void doOutputStats() {
       logger.msg(kLogInfo1,"\n%s Statistics:\n", name.c_str());
       logger.msg(kLogInfo1,"chunk-count: %d\n", (int)list.size());
@@ -732,11 +868,27 @@ namespace mcpe_viz {
 	}
       }
 
-      logger.msg(kLogInfo1,"\nGlobal Biome Histogram:\n");
-      for (int i=0; i < 256; i++) {
-	if ( histogramGlobalBiome[i] > 0 ) {
-	  logger.msg(kLogInfo1,"hg-globalbiome: %02x %6d\n", i, histogramGlobalBiome[i]);
-	}
+      double htotal;
+      HistogramVector hvector;
+      
+      logger.msg(kLogInfo1,"\nGlobal Block Histogram (block-id count pct name):\n");
+      htotal = histogramGlobalBlock.getTotal();
+      hvector = histogramGlobalBlock.sort(1);
+      for (auto& it : hvector ) {
+	int32_t k = it.first;
+	int32_t v = it.second;
+	double pct = ((double)v / htotal) * 100.0;
+	logger.msg(kLogInfo1,"hg-globalblock: 0x%02x %10d %7.3lf%% %s\n", k, v, pct, blockInfoList[k].name.c_str());
+      }
+
+      logger.msg(kLogInfo1,"\nGlobal Biome Histogram (biome-id count pct name):\n");
+      htotal = histogramGlobalBiome.getTotal();
+      hvector = histogramGlobalBiome.sort(1);
+      for (auto& it : hvector ) {
+	int32_t k = it.first;
+	int32_t v = it.second;
+	double pct = ((double)v / htotal) * 100.0;
+	logger.msg(kLogInfo1,"hg-globalbiome: 0x%02x %10d %7.3lf%% %s\n", k, v, pct, biomeInfoList[k]->name.c_str());
       }
     }
 
@@ -1318,7 +1470,7 @@ namespace mcpe_viz {
     // 2015.10.24:
     // 372.432u 13.435s 6:50.66 93.9%  0+0k 419456+1842944io 210pf+0w
     
-    int generateSlices(leveldb::DB* db) {
+    int generateSlices(leveldb::DB* db, const std::string fnBase) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 
@@ -1348,7 +1500,7 @@ namespace mcpe_viz {
       // create png helpers
       PngWriter png[128];
       for (int cy=0; cy<128; cy++) {
-	std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.full.";
+	std::string fnameTmp = fnBase + ".mcpe_viz_slice.full.";
 	fnameTmp += name;
 	fnameTmp += ".";
 	sprintf(keybuf,"%03d",cy);
@@ -1507,7 +1659,7 @@ namespace mcpe_viz {
     }
 
       
-    int generateMovie(leveldb::DB* db, const std::string fname, bool makeMovieFlag, bool useCropFlag ) {
+    int generateMovie(leveldb::DB* db, const std::string fnBase, const std::string fnOut, bool makeMovieFlag, bool useCropFlag ) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -1657,7 +1809,7 @@ namespace mcpe_viz {
 	}
 
 	// output the image
-	std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";
+	std::string fnameTmp = fnBase + ".mcpe_viz_slice.";
 	if ( !makeMovieFlag) {
 	  fnameTmp += "full.";
 	}
@@ -1677,14 +1829,14 @@ namespace mcpe_viz {
 
       if ( makeMovieFlag ) {
 	// "ffmpeg" method
-	std::string fnameTmp = control.fnOutputBase + ".mcpe_viz_slice.";	
+	std::string fnameTmp = fnBase + ".mcpe_viz_slice.";	
 	fnameTmp += name;
 	fnameTmp += ".%03d.png";
 	  
 	// todo - ffmpeg on win32? need bin path option?
 	// todo - provide other user options for ffmpeg cmd line params?
 	std::string cmdline = std::string("ffmpeg -y -framerate 1 -i " + fnameTmp + " -c:v libx264 -r 30 ");
-	cmdline += fname;
+	cmdline += fnOut;
 	int ret = system(cmdline.c_str());
 	if ( ret != 0 ) {
 	  slogger.msg(kLogInfo1,"Failed to create movie ret=(%d) cmd=(%s)\n",ret,cmdline.c_str());
@@ -1701,60 +1853,65 @@ namespace mcpe_viz {
       slogger.msg(kLogInfo1,"Do Output: %s\n",name.c_str());
 	
       doOutputStats();
-	
+
+      // we put images in subdir
+      std::string fnBase = mybasename(control.fnOutputBase);
+      std::string dirOut = mydirname(control.fnOutputBase) + "/images";
+      local_mkdir(dirOut.c_str());
+      
       slogger.msg(kLogInfo1,"  Generate Image\n");
-      control.fnLayerTop[dimId] = std::string(control.fnOutputBase + "." + name + ".map.png");
+      control.fnLayerTop[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".map.png");
       generateImage(control.fnLayerTop[dimId], kImageModeTerrain);
 	
       if ( checkDoForDim(control.doImageBiome) ) {
 	slogger.msg(kLogInfo1,"  Generate Biome Image\n");
-	control.fnLayerBiome[dimId] = std::string(control.fnOutputBase + "." + name + ".biome.png");
+	control.fnLayerBiome[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".biome.png");
 	generateImage(control.fnLayerBiome[dimId], kImageModeBiome);
       }
       if ( checkDoForDim(control.doImageGrass) ) {
 	slogger.msg(kLogInfo1,"  Generate Grass Image\n");
-	control.fnLayerGrass[dimId] = std::string(control.fnOutputBase + "." + name + ".grass.png");
+	control.fnLayerGrass[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".grass.png");
 	generateImage(control.fnLayerGrass[dimId], kImageModeGrass);
       }
       if ( checkDoForDim(control.doImageHeightCol) ) {
 	slogger.msg(kLogInfo1,"  Generate Height Column Image\n");
-	control.fnLayerHeight[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col.png");
+	control.fnLayerHeight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col.png");
 	generateImage(control.fnLayerHeight[dimId], kImageModeHeightCol);
       }
       if ( checkDoForDim(control.doImageHeightColGrayscale) ) {
 	slogger.msg(kLogInfo1,"  Generate Height Column (grayscale) Image\n");
-	control.fnLayerHeightGrayscale[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col_grayscale.png");
+	control.fnLayerHeightGrayscale[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col_grayscale.png");
 	generateImage(control.fnLayerHeightGrayscale[dimId], kImageModeHeightColGrayscale);
       }
       if ( checkDoForDim(control.doImageHeightColAlpha) ) {
 	slogger.msg(kLogInfo1,"  Generate Height Column (alpha) Image\n");
-	control.fnLayerHeightAlpha[dimId] = std::string(control.fnOutputBase + "." + name + ".height_col_alpha.png");
+	control.fnLayerHeightAlpha[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col_alpha.png");
 	generateImage(control.fnLayerHeightAlpha[dimId], kImageModeHeightColAlpha);
       }
       if ( checkDoForDim(control.doImageLightBlock) ) {
 	slogger.msg(kLogInfo1,"  Generate Block Light Image\n");
-	control.fnLayerBlockLight[dimId] = std::string(control.fnOutputBase + "." + name + ".light_block.png");
+	control.fnLayerBlockLight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".light_block.png");
 	generateImage(control.fnLayerBlockLight[dimId], kImageModeBlockLight);
       }
       if ( checkDoForDim(control.doImageLightSky) ) {
 	slogger.msg(kLogInfo1,"  Generate Sky Light Image\n");
-	control.fnLayerSkyLight[dimId] = std::string(control.fnOutputBase + "." + name + ".light_sky.png");
+	control.fnLayerSkyLight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".light_sky.png");
 	generateImage(control.fnLayerSkyLight[dimId], kImageModeSkyLight);
       }
       if ( checkDoForDim(control.doImageSlimeChunks) ) {
 	slogger.msg(kLogInfo1,"  Generate Slime Chunks Image\n");
-	control.fnLayerSlimeChunks[dimId] = std::string(control.fnOutputBase + "." + name + ".slime_chunks.png");
+	control.fnLayerSlimeChunks[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".slime_chunks.png");
 	generateImageSpecial(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
       }
 
       if ( checkDoForDim(control.doImageShadedRelief) ) {
 	slogger.msg(kLogInfo1,"  Generate Shaded Relief Image\n");
-	control.fnLayerShadedRelief[dimId] = std::string(control.fnOutputBase + "." + name + ".shaded_relief.png");
+	control.fnLayerShadedRelief[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".shaded_relief.png");
 
 	if ( false ) {
 	  // todobig - idea is to oversample the src image and then get higher resolution shaded relief - but, openlayers does not cooperate with this idea :) -- could fiddle with it later
 	  // todo - param for oversample
-	  std::string fnTemp = std::string(control.fnOutputBase + "." + name + ".shaded_relief.temp.png");
+	  std::string fnTemp = std::string(dirOut + "/" + fnBase + "." + name + ".shaded_relief.temp.png");
 	  if ( oversampleImage(control.fnLayerHeightGrayscale[dimId], fnTemp, 2) == 0 ) {
 	    generateShadedRelief(fnTemp, control.fnLayerShadedRelief[dimId]);
 	    // remove temporary file
@@ -1767,12 +1924,12 @@ namespace mcpe_viz {
 
       if ( checkDoForDim(control.doMovie) ) {
 	slogger.msg(kLogInfo1,"  Generate movie\n");
-	generateMovie(db, std::string(control.fnOutputBase + "." + name + ".mp4"), true, true);
+	generateMovie(db, dirOut + "/" + fnBase, std::string(control.fnOutputBase + "." + name + ".mp4"), true, true);
       }
 
       if ( checkDoForDim(control.doSlices) ) {
 	slogger.msg(kLogInfo1,"  Generate full-size slices\n");
-	generateSlices(db);
+	generateSlices(db, dirOut + "/" + fnBase);
       }
 	
       // reset
@@ -1812,7 +1969,6 @@ namespace mcpe_viz {
   }
     
 
-
   class McpeWorld {
   public:
     leveldb::DB* db;
@@ -1820,7 +1976,7 @@ namespace mcpe_viz {
     leveldb::ReadOptions dbReadOptions;
       
     ChunkDataList chunkList[kDimIdCount];
-      
+
     McpeWorld() {
       db = nullptr;
       dbOptions.compressors[0] = new leveldb::ZlibCompressor();
@@ -2130,7 +2286,7 @@ namespace mcpe_viz {
 	  if ( true ) {
 	    // show approximate image coordinates for chunk
 	    int imageX = (chunkX - chunkList[chunkDimId].minChunkX) * 16;
-	    int imageZ = (chunkZ - chunkList[chunkDimId].maxChunkZ) * 16;
+	    int imageZ = (chunkZ - chunkList[chunkDimId].minChunkZ) * 16;
 	    sprintf(tmpstring," (image %d %d)", imageX, imageZ);
 	    chunkstr+=tmpstring;
 	  }
@@ -2285,7 +2441,7 @@ namespace mcpe_viz {
     std::string makeTileURL(const std::string fn) {
       std::string ret = mybasename(fn);
       if ( ! control.doTiles ) {
-	return ret;
+	return "images/" + ret;
       }
       if ( ret.size() > 1 ) {
 	return "tiles/" + ret + ".{y}.{x}.png";
@@ -2373,8 +2529,8 @@ namespace mcpe_viz {
 	  fprintf(fp,"  minWorldY: %d,\n", chunkList[did].minChunkZ*16);
 	  fprintf(fp,"  maxWorldY: %d + 15,\n", chunkList[did].maxChunkZ*16);
 
-	  int32_t px = playerPositionImageX;
-	  int32_t py = playerPositionImageY;
+	  double px = playerPositionImageX;
+	  double py = playerPositionImageY;
 
 	  // auto-adjust player position based on where they actually are
 	  if ( did == kDimIdNether ) {
@@ -2388,8 +2544,8 @@ namespace mcpe_viz {
 	      py *= 8;
 	    }
 	  }
-	  fprintf(fp,"  playerPosX: %d,\n", px);
-	  fprintf(fp,"  playerPosY: %d,\n", py);
+	  fprintf(fp,"  playerPosX: %lf,\n", px);
+	  fprintf(fp,"  playerPosY: %lf,\n", py);
 
 	  // list of blocks that were added to geojson
 	  fprintf(fp,"  geojsonBlocks: [ ");
@@ -2401,6 +2557,8 @@ namespace mcpe_viz {
 	    }
 	  }
 	  fprintf(fp," ],\n");
+	  
+	  fprintf(fp, "  spawnableFlag: %s,\n", ( chunkList[did].listCheckSpawn.size() > 0 ) ? "true" : "false");
 	  
 	  fprintf(fp,"  fnLayerTop: '%s',\n", makeTileURL(control.fnLayerTop[did]).c_str());
 	  fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
@@ -2730,7 +2888,32 @@ namespace mcpe_viz {
       }
     */
   }
+
+  void worldPointToGeoJSONPoint(int32_t dimId, float wx, float wz, double &ix, double &iy) {
+    int32_t tix, tiy;
+
+    worldPointToImagePoint(dimId, wx, wz, tix, tiy, true);
+    ix = tix;
+    iy = tiy;
+
+    // we add 0.5 so that the vector point will be centered in the target pixel in the web app
+    // todobig - do we want this?
+    if ( false ) {
+      if ( ix >= 0.0 ) {
+	ix += 0.5;
+      } else {
+	ix -= 0.5;
+      }
+      
+      if ( iy >= 0.0 ) {
+	iy += 0.5;
+      } else {
+	iy -= 0.5;
+      }
+    }
+  }
     
+  
     
   int parseLevelFile(const std::string fname) {
     FILE *fp = fopen(fname.c_str(), "rb");
@@ -3021,6 +3204,8 @@ namespace mcpe_viz {
 		"  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
 		"  --geojson-block=did,bid  Add block to GeoJSON file for use in web app (did=dimension id, bid=block id)\n"
 		"\n"
+		"  --check-spawn did,x,z,dist  Add spawnable blocks to the geojson file (did=dimension id; checks a circle of radius 'dist' centered on x,z)\n"
+		"\n"
 		"  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
 		"  --grid[=did]             Display chunk grid on top of images\n"
 		"\n"
@@ -3082,6 +3267,9 @@ namespace mcpe_viz {
       {"hide-top", required_argument, NULL, 'H'},
       {"force-top", required_argument, NULL, 'F'},
       {"geojson-block", required_argument, NULL, '+'},
+
+      {"check-spawn", required_argument, NULL, 'C'},
+      {"check-spawnable", required_argument, NULL, 'C'},
 	
       {"all-image", optional_argument, NULL, 'A'},
       {"biome", optional_argument, NULL, 'B'},
@@ -3230,7 +3418,35 @@ namespace mcpe_viz {
 	  }
 	}
 	break;
+
+      case 'C':
+	{
+	  bool pass = false;
+	  int32_t dimId, checkX, checkZ, checkDistance;
+	  if ( sscanf(optarg,"%d,%d,%d,%d", &dimId, &checkX, &checkZ, &checkDistance) == 4 ) {
+	    pass = true;
+	  }
+
+	  if ( pass ) {
+	    // todo - check params
+
+	    if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	      pass = false;
+	    }
+
+	    if ( pass ) {
+	      world.chunkList[dimId].addCheckSpawn(checkX,checkZ,checkDistance);
+	    }
+	  }
+
+	  if ( ! pass ) {
+	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --check-spawn %s\n",optarg);
+	    errct++;
+	  }
+	}
+	break;
 	  
+	
       case 'G':
 	control.doGrid = parseDimIdOptArg(optarg);
 	break;

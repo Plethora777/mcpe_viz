@@ -44,22 +44,22 @@ namespace mcpe_viz {
     valid = false;
     xmlChar* prop = xmlGetProp(cur,p);
     if ( prop ) {
-      if ( strcasecmp((char*)prop,"true") ) {
+      if ( strcasecmp((char*)prop,"true") == 0 ) {
 	valid = true;
 	xmlFree(prop);
 	return true;
       }
-      if ( strcasecmp((char*)prop,"1") ) {
+      if ( strcasecmp((char*)prop,"1") == 0 ) {
 	valid = true;
 	xmlFree(prop);
 	return true;
       }
-      if ( strcasecmp((char*)prop,"false") ) {
+      if ( strcasecmp((char*)prop,"false") == 0 ) {
 	valid = true;
 	xmlFree(prop);
 	return false;
       }
-      if ( strcasecmp((char*)prop,"0") ) {
+      if ( strcasecmp((char*)prop,"0") == 0 ) {
 	valid = true;
 	xmlFree(prop);
 	return false;
@@ -108,13 +108,14 @@ namespace mcpe_viz {
 	// example:
 	//   <blockvariant blockdata="0x0" name="Oak Leaves" />
 
-	bool blockDataValid, nameValid, colorValid, dcolorValid;
+	bool blockDataValid, nameValid, colorValid, dcolorValid, spawnableFlagValid;
 	  
 	int blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 	int dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
-
+	bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
+	
 	// create data
 	if ( blockDataValid && nameValid ) {
 	  BlockInfo& bv = block.addVariant(blockdata,name);
@@ -128,6 +129,12 @@ namespace mcpe_viz {
 	    color = be32toh(block.color);
 	    color += blockdata;
 	    bv.setColor(color);
+	  }
+
+	  if ( spawnableFlagValid ) {
+	    bv.setSpawnableFlag(spawnableFlag);
+	  } else {
+	    bv.setSpawnableFlag(block.spawnableFlag);
 	  }
 	} else {
 	  // todo error
@@ -150,12 +157,15 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
 	  
-	bool idValid, nameValid, colorValid, solidFlagValid;
+	bool idValid, nameValid, colorValid, solidFlagValid, opaqueFlagValid, liquidFlagValid, spawnableFlagValid;
 	  
 	int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 	bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
+	bool opaqueFlag = xmlGetBool(cur, (const xmlChar*)"opaque", true, opaqueFlagValid);
+	bool liquidFlag = xmlGetBool(cur, (const xmlChar*)"liquid", false, liquidFlagValid);
+	bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
 
 	// create data
 	if ( idValid && nameValid ) {
@@ -163,9 +173,15 @@ namespace mcpe_viz {
 	  if ( colorValid ) {
 	    b.setColor(color);
 	  }
-
+	  
 	  b.setSolidFlag(solidFlag);
+	  b.setOpaqueFlag(opaqueFlag);
+	  b.setLiquidFlag(liquidFlag);
+	  b.setSpawnableFlag(spawnableFlag);
 
+	  // debug
+	  //fprintf(stderr, "DEBUG: block: %s\n", b.toString().c_str());
+	  
 	  doParseXML_blocklist_blockvariant(cur, b);
 	} else {
 	  // todo error

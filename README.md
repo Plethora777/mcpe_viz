@@ -10,6 +10,7 @@ Additional Features:
 * Create a powerful Google Maps-like web app viewer for your world.
   * Browse through all 128 layers of your world (Overworld and Nether) from bedrock to build limit.
   * Examine the location and details of mobs and items in your world.
+  * Show blocks where mobs can spawn.
   * Visualize chunk boundaries -- consider it an extremely cumbersome F3/debug mode!
   * Find slime chunks -- well, maybe... slime chunk finding code not confirmed to work on MCPE yet :)
   * Explore the biomes of your world.
@@ -110,6 +111,8 @@ Web App Usage Notes:
   * Show Mobs and Objects -- click on an entry and the map will be updated with labeled points.  You can toggle on as many different types as you like.  Click on the points or labels to get more info on the item.  Note that labels are not drawn when you are zoomed out.
   * Enable elevation overlay (shaded relief)
   * Enable chunk grid overlay
+
+You can visualize areas that are mob spawnable using the mcpe_viz command-line switch '--check-spawn'.  For example, '--check-spawn=0,-1,-152,180' will find all spawnable blocks in the overworld centered at -1,-152 with a radius of 180.  In the web app, you can toggle the "Spawnable" blocks on using the option on the "Blocks" menu.  The icons for the spawnable area are purple dots by default.  You can click on these dots to see the details.  You can then click on the "Pos" element to go to that layer (if you ran mcpe_viz with --html-all).  When you are viewing a raw layer (e.g. layer 12) as opposed to "Overview", the icons will change into green up arrows (indicating the spwanable block is above this layer), red down arrows (indicating the spawnable block is below this layer), or white squares (indicating the spawnable block is on this layer).  Keep in mind that the spawnable block is *above* the solid block the mob could spawn on.
 
 
 ## Web App Notes

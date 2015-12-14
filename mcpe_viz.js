@@ -4,6 +4,16 @@
 
   todobig
 
+  000 map.addLayer(layerMain);
+  100 map.addLayer(layerShadedReliefStatic);
+  110 map.addLayer(layerElevation);
+  120 map.addLayer(layerElevationAlpha);
+  200 map.addLayer(layerChunkGrid);
+  210 map.addLayer(layerSlimeChunks);
+  300 map.addLayer(vectorPoints);
+  400 map.addLayer(layerDraw);
+
+
   * tiling - see test-xyz* dirs for code; BUT tiling breaks the elevation overlay
   -- it appears that since we fake the Z in tiles that we always get resolution=1 data in the shade() function.  Sigh.
 
@@ -102,11 +112,12 @@ var mousePositionControl = null;
 
 var globalDimensionId = -1;
 var globalLayerMode = 0, globalLayerId = 0;
-var globalStyleBlock = null;
+var globalStyleBlock = null, globalStyleBlockUp = null, globalStyleBlockDown = null, globalStyleBlockSame = null;
 
 var listEntityToggle = [];
 var listTileEntityToggle = [];
 var listBlockToggle = [];
+var spawnableEnableFlag = false;
 
 var globalCORSWarning = 'MCPE Viz Hint: If you are loading files from the local filesystem, your browser might not be allowing us to load additional files or examine pixels in maps.  Firefox does not have this limitation.  See README for more info...';
 var globalCORSWarningFlag = false;
@@ -128,6 +139,36 @@ var disableLayerSmoothing = function(layer) {
     layer.on('precompose', setCanvasSmoothingMode);
     layer.on('postcompose', resetCanvasSmoothingMode);
 };
+
+
+
+function map_addLayer(layer) {
+    var a = map.getLayers();
+    var insertIndex = -1;
+
+    // todo - check for not defined myStackOrder
+
+    var layerStackOrder = +layer.get('myStackOrder');
+    a.forEach( function (el, index, arr) {
+	var elStackOrder = +el.get('myStackOrder');
+	if ( (elStackOrder > layerStackOrder) && (insertIndex < 0) ) {
+	    insertIndex = index;
+	}
+    });
+
+    if ( insertIndex < 0 ) {
+	insertIndex = a.getLength();
+    }
+    map.getLayers().insertAt(insertIndex, layer);
+
+    // debug
+    if ( false ) {
+	a = map.getLayers();
+	a.forEach( function (el, index, arr) {
+	    console.log('layer: index=' + index + ' myStackOrder=' + el.get('myStackOrder') + ' obj=' + el);
+	});
+    }
+}
 
 
 
@@ -411,6 +452,7 @@ var MeasureTool = function(xmap) {
 	    var width = 3;
 	    var color = '#f22929';
 	    layerDraw = new ol.layer.Vector({
+		myStackOrder: 400,
 		source: sourceDraw,
 		style: [ 
 		    new ol.style.Style({
@@ -430,7 +472,7 @@ var MeasureTool = function(xmap) {
 		    })
 		]
 	    });
-	    map.addLayer(layerDraw);
+	    map_addLayer(layerDraw);
 	    map.on('pointermove', pointerMoveHandler);
 	    $(map.getViewport()).on('mouseout', hideHelpTooltip);
 	    createInteraction();
@@ -792,6 +834,10 @@ function doFeaturePopover(feature, coordinate) {
 			'Name: <b>' + props[i].Name + '</b><br/>' +
 			'entityId: <b>' + props[i].entityId + '</b><br/>';
 		}
+		else if (i === 'Pos') {
+		    // make "Pos" clickable if we have raw layers
+		    s += '' + i + ': <a href="#" class="layerGoto_dyn mytooltip_dyn" data-id="' + props[i][1] + '" title="Click to go to layer">' + JSON.stringify(props[i], null, 2) + '</a><br/>';
+		}
 		else {
 		    s += '' + i + ': ' + JSON.stringify(props[i], null, 2) + '<br/>';
 		}
@@ -812,6 +858,18 @@ function doFeaturePopover(feature, coordinate) {
 	'content': s
     });
     $(element).popover('show');
+
+    // activate links
+    // todo - seems silly that we have to do this - can't use regular ones init'ed in main func?
+    $('.layerGoto_dyn').click(function() {
+	var id = +$(this).attr('data-id');
+	layerGoto(id);
+    });
+    $('.mytooltip_dyn').tooltip({
+	// this helps w/ btn groups
+	trigger: 'hover',
+	container: 'body'
+    });
     
     // todo - disabled because this does not appear to work
     if (false) {
@@ -842,7 +900,7 @@ function doFeatureSelect(features, coordinate) {
 	return astr.localeCompare(bstr);
     });
     
-    var s = 'Select item:<div class="list-group">';
+    var s = 'Select item:<div class="list-group my-scrollable">';
     for (var i in features) {
 	var feature = features[i];
 	var props = feature.getProperties();
@@ -1196,6 +1254,7 @@ function doElevationAlpha(enableFlag) {
 		tileGrid: srcLayerMain.getTileGrid()
 	    });
 	    layerElevationAlpha = new ol.layer.Tile({
+		myStackOrder: 120,
 		preload: Infinity,
 		projection: projection,
 		extent: extent,
@@ -1211,12 +1270,13 @@ function doElevationAlpha(enableFlag) {
 		imageExtent: extent
 	    });
 	    layerElevationAlpha = new ol.layer.Image({
+		myStackOrder: 120,
 		opacity: $('#elevationAlphaOpacity').val() / 100.0,
 		source: srcLayerElevationAlpha
 	    });
 	}
 	setLayerLoadListeners(srcLayerElevationAlpha, fn);
-	map.addLayer(layerElevationAlpha);
+	map_addLayer(layerElevationAlpha);
 	disableLayerSmoothing(layerElevationAlpha);
     } else {
 	if (layerElevationAlpha !== null ) {
@@ -1243,6 +1303,7 @@ function doElevationStatic(enableFlag) {
 		tileGrid: srcLayerMain.getTileGrid()
 	    });
 	    layerShadedReliefStatic = new ol.layer.Tile({
+		myStackOrder: 100,
 		preload: Infinity,
 		projection: projection,
 		extent: extent,
@@ -1258,12 +1319,13 @@ function doElevationStatic(enableFlag) {
 		imageExtent: extent
 	    });
 	    layerShadedReliefStatic = new ol.layer.Image({
+		myStackOrder: 100,
 		opacity: $('#elevationStaticOpacity').val() / 100.0,
 		source: srcLayerShadedReliefStatic
 	    });
 	}
 	setLayerLoadListeners(srcLayerShadedReliefStatic, fn);
-	map.addLayer(layerShadedReliefStatic);
+	map_addLayer(layerShadedReliefStatic);
 	disableLayerSmoothing(layerShadedReliefStatic);
     } else {
 	if (layerShadedReliefStatic !== null ) {
@@ -1308,12 +1370,13 @@ function doShadedRelief(enableFlag) {
 		});
 
 		layerElevation = new ol.layer.Image({
+		    myStackOrder: 110,
 		    opacity: $('#shadeOpacity').val() / 100.0,
 		    source: rasterElevation
 		});
 	    }
 
-	    map.addLayer(layerElevation);
+	    map_addLayer(layerElevation);
 
 	    if (doInitFlag) {
 		var controlIds = ['vert', 'sunEl', 'sunAz', 'shadeOpacity'];
@@ -1426,12 +1489,13 @@ function doChunkGrid(enableFlag) {
 	    });
 
 	    layerChunkGrid = new ol.layer.Image({
+		myStackOrder: 200,
 		opacity: 0.4,
 		source: rasterChunkGrid
 	    });
 	}
 
-	map.addLayer(layerChunkGrid);
+	map_addLayer(layerChunkGrid);
 
 	if (doInitFlag) {
 	    rasterChunkGrid.on('beforeoperations', function(event) {
@@ -1468,6 +1532,7 @@ function doSlimeChunks(enabled) {
 		tileGrid: srcLayerMain.getTileGrid()
 	    });
 	    layerSlimeChunks = new ol.layer.Tile({
+		myStackOrder: 210,
 		preload: Infinity,
 		projection: projection,
 		extent: extent,
@@ -1483,12 +1548,13 @@ function doSlimeChunks(enabled) {
 		imageExtent: extent
 	    });
 	    layerSlimeChunks = new ol.layer.Image({
+		myStackOrder: 210,
 		opacity: 0.65,
 		source: srcLayerSlimeChunks
 	    });
 	}
 	setLayerLoadListeners(srcLayerSlimeChunks, fn);
-	map.addLayer(layerSlimeChunks);
+	map_addLayer(layerSlimeChunks);
 	disableLayerSmoothing(layerSlimeChunks);
     } else {
 	if ( layerSlimeChunks ) {
@@ -1556,15 +1622,19 @@ function setLayer(fn, extraHelp) {
     if (layerMain === null) {
 	if ( useTilesFlag ) {
 	    layerMain = new ol.layer.Tile({
+		myStackOrder: 0,
 		preload: Infinity,
 		projection: projection,
 		extent: extent,
 		source: srcLayerMain
 	    });
 	} else { 
-	    layerMain = new ol.layer.Image({source: srcLayerMain});
+	    layerMain = new ol.layer.Image({
+		myStackOrder: 0,
+		source: srcLayerMain
+	    });
 	}
-	map.addLayer(layerMain);
+	map_addLayer(layerMain);
 
 	// get the pixel position with every move
 	$(map.getViewport()).on('mousemove', function(evt) {
@@ -1622,6 +1692,12 @@ function setLayer(fn, extraHelp) {
     } else {
 	layerMain.setSource(srcLayerMain);
     }
+
+    if ( vectorPoints ) {
+	// update vector points (e.g. up/down/same markers if we are in raw layer mode and blocks are shown)
+	vectorPoints.changed();
+    }
+    
     return 0;
 }
 
@@ -1761,6 +1837,9 @@ function initDimension() {
 	var block = dimensionInfo[globalDimensionId].geojsonBlocks[b];
 	newItems += '<li><a href="#" class="blockToggle" data-id="' + block + '">' + block + '</a></li>';
     }
+    if ( dimensionInfo[globalDimensionId].spawnableFlag) {
+	newItems += '<li><a href="#" class="spawnableToggle" data-id="spawnable">Spawnable Blocks</a></li>';
+    }
     if ( newItems.length > 0 ) {
 	$(newItems).prependTo('#blockSelectList');
     }
@@ -1774,14 +1853,20 @@ function initDimension() {
 	    listBlockToggle[$(this).attr('data-id')] = true;
 	    $(this).parent().addClass('active');
 	});
+	$('.spawnableToggle').each(function(index) {
+	    spawnableEnableFlag = true;
+	    $(this).parent().addClass('active');
+	});
 	vectorPoints.changed();
     });
     $('.blockToggleRemoveAll').click(function() {
 	listBlockToggle = [];
+	spawnableEnableFlag = false;
 	if (vectorPoints !== null) { 
 	    vectorPoints.changed();
 	}
 	$('.blockToggle').parent().removeClass('active');
+	$('.spawnableToggle').parent().removeClass('active');
     });
     $('.blockToggle').click(function() {
 	var id = $(this).attr('data-id');
@@ -1790,6 +1875,16 @@ function initDimension() {
 	    $('.blockToggle[data-id="' + id + '"]').parent().addClass('active');
 	} else {
 	    $('.blockToggle[data-id="' + id + '"]').parent().removeClass('active');
+	}
+    });
+    $('.spawnableToggle').click(function() {
+	var id = $(this).attr('data-id');
+	spawnableEnableFlag = ! spawnableEnableFlag;
+	spawnableToggle();
+	if ( spawnableEnableFlag ) {
+	    $('.spawnableToggle[data-id="' + id + '"]').parent().addClass('active');
+	} else {
+	    $('.spawnableToggle[data-id="' + id + '"]').parent().removeClass('active');
 	}
     });
 
@@ -1828,6 +1923,7 @@ var createPointStyleFunction = function() {
 	var entity = feature.get('Entity');
 	var tileEntity = feature.get('TileEntity');
 	var block = feature.get('Block');
+	var spawnable = feature.get('Spawnable');
 	var did = feature.get('Dimension');
 
 	// hack for pre-0.12 worlds
@@ -1879,6 +1975,38 @@ var createPointStyleFunction = function() {
 		if (listBlockToggle[Name] !== undefined) {
 		    if (listBlockToggle[Name]) {
 			// we return a single style to reduce memory consumption
+			if ( globalLayerMode === 1 ) {
+			    // we are in raw layer mode, let's see where this block is
+			    var Pos = feature.get('Pos');
+			    if ( Pos[1] > layerRawIndex ) {
+				return [globalStyleBlockUp];
+			    }
+			    if ( Pos[1] < layerRawIndex ) {
+				return [globalStyleBlockDown];
+			    }
+			    return [globalStyleBlockSame];
+			} else {
+			    return [globalStyleBlock];
+			}
+		    }
+		}
+	    }
+	}
+	else if (spawnable !== undefined) {
+	    if (did === globalDimensionId) {
+		if ( spawnableEnableFlag ) { 
+		    // we return a single style to reduce memory consumption
+		    if ( globalLayerMode === 1 ) {
+			// we are in raw layer mode, let's see where this block is
+			var Pos = feature.get('Pos');
+			if ( Pos[1] > layerRawIndex ) {
+			    return [globalStyleBlockUp];
+			}
+			if ( Pos[1] < layerRawIndex ) {
+			    return [globalStyleBlockDown];
+			}
+			return [globalStyleBlockSame];
+		    } else {
 			return [globalStyleBlock];
 		    }
 		}
@@ -1932,11 +2060,12 @@ function loadVectors() {
 	});
 	
 	vectorPoints = new ol.layer.Vector({
+	    myStackOrder: 300,
 	    source: src,
 	    style: createPointStyleFunction()
 	});
 	
-	map.addLayer(vectorPoints);
+	map_addLayer(vectorPoints);
     } catch (e) {
 	updateLoadEventCount(-1);
 	doModal('Vector Load Error',
@@ -1981,6 +2110,13 @@ function blockToggle(name) {
 	listBlockToggle[name] = true;
     } else {
 	listBlockToggle[name] = !listBlockToggle[name];
+    }
+    vectorPoints.changed();
+}
+
+function spawnableToggle() {
+    if (vectorPoints === null) {
+	loadVectors();
     }
     vectorPoints.changed();
 }
@@ -2274,13 +2410,52 @@ $(function() {
 
     // create default style for blocks
     // we do this to reduce memory consumption for blocks
-    globalStyleBlock = new ol.style.Style({
-	image: new ol.style.Circle({
-	    radius: 4,
-	    fill: new ol.style.Fill({color: 'rgba(255, 255, 128, 0.8)'}),
-	    stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.8)', width: 1})
-	})
-    });
+    if ( true ) {
+	var fill = new ol.style.Fill({color: 'rgba(255, 128, 255, 0.8)'});
+	var stroke = new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.8)', width: 1});
+
+	globalStyleBlock = new ol.style.Style({
+	    image: new ol.style.Circle({
+		radius: 4,
+		fill: fill,
+		stroke: stroke
+	    })
+	});
+
+	var radius = 8;
+	
+	globalStyleBlockUp = new ol.style.Style({
+	    image:  new ol.style.RegularShape({
+		fill: new ol.style.Fill({color: 'rgba(128, 255, 128, 0.8)'}),
+		stroke: stroke,
+		points: 3,
+		radius: radius,
+		rotation: 0,
+		angle: 0
+	    })
+	});
+
+	globalStyleBlockDown = new ol.style.Style({
+	    image:  new ol.style.RegularShape({
+		fill: new ol.style.Fill({color: 'rgba(255, 128, 128, 0.8)'}),
+		stroke: stroke,
+		points: 3,
+		radius: radius,
+		rotation: Math.PI,
+		angle: 0
+	    })
+	});
+
+	globalStyleBlockSame = new ol.style.Style({
+	    image:  new ol.style.RegularShape({
+		fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 0.8)'}),
+		stroke: stroke,
+		points: 4,
+		radius: radius,
+		angle: Math.PI / 4
+	    })
+	});
+    }
     
     popover = new ol.Overlay({
 	element: document.getElementById('popover'),
@@ -2479,7 +2654,8 @@ $(function() {
     $('#btnCheckUpdate').click(function() {
 	doCheckUpdate();
     });
-    
+
+
     // don't close dropdowns when an item in them is clicked
     $('.menu-stay .dropdown-menu').on({
 	'click': function(e) {

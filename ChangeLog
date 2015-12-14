@@ -4,11 +4,22 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added web app support for tiled images, supports very large MCPE worlds
+Highlight: Added support for finding mob spawnable blocks.  See the '--check-spawn' option and README.md
+
+v0.0.16 - 2015.12.14
+Web - Added support for finding mob spawnable blocks.  See the '--check-spawn' option;
+Web - For features, "Pos" element is now clickable to go to the indicated layer;
+Web - Moved output images to subdirectory 'images/';
+Web - Enforce layer z-index ordering to improve interaction of the many layers we now have;
+XML - Added flags for blocks: opaque, liquid, spawnable;
+XML - Added stair blockvariants;
+XML - Fixed parsing of boolean values;
+Added global histograms for biomes and blocks to the log file-- histograms are sorted and show percentages;
+Web - Updated OpenLayers from v3.11.1 to v3.11.2;
 
 v0.0.15 - 2015.11.19
 Web - Quick fixes for new modal dialogs;
-GUI - Quick fix for quoting executable in command-line;	
+GUI - Quick fix for quoting executable in command-line;
 Version bump
 
 v0.0.14 - 2015.11.19

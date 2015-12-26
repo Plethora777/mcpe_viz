@@ -358,7 +358,7 @@ namespace mcpe_viz {
     return 0;
   }
     
-  int doParseXml( const std::string fn ) {
+  int doParseXml( const std::string& fn ) {
     xmlDocPtr doc;
     xmlNodePtr cur;
 

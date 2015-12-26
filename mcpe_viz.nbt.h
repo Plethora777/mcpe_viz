@@ -31,10 +31,10 @@ namespace mcpe_viz {
   
   int parseNbt( const char* hdr, const char* buf, int bufLen, MyNbtTagList& tagList );
     
-  int parseNbt_entity(int32_t dimensionId, std::string dimName, MyNbtTagList &tagList,
-		      bool playerLocalFlag, bool playerRemoteFlag);
+  int parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
+		      bool playerLocalFlag, bool playerRemoteFlag, const std::string& playerType, const std::string& playerId);
     
-  int parseNbt_tileEntity(int32_t dimensionId, std::string dimName, MyNbtTagList &tagList);
+  int parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList);
     
   int parseNbt_portals(MyNbtTagList &tagList);
     

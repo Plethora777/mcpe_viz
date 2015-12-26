@@ -769,6 +769,18 @@ function correctGeoJSONName(feature) {
 	    name = 'Sign';
 	}
     }
+    else if (name == 'The Player') {
+	var props = feature.getProperties();
+	if ( props.playerType === 'Local Player' ) {
+	    name = 'Local Player';
+	} else {
+	    if ( props.playerName !== undefined ) {
+		name = props.playerType + ': ' + props.playerName;
+	    } else {
+		name = props.playerType + ': ' + props.playerId;
+	    }
+	}
+    }
     return name;
 }
 
@@ -1593,6 +1605,7 @@ function setLayer(fn, extraHelp) {
 		//extent: [ 0, 0, 39, 25 ],
 		extent: extent,
 		minZoom: 0,
+		// todobig - should this be 0?
 		maxZoom: 1,
 		tileSize: [ tileW, tileH ],
 		resolutions: [ 1 ]
@@ -1636,6 +1649,16 @@ function setLayer(fn, extraHelp) {
 	}
 	map_addLayer(layerMain);
 
+	if ( false ) {
+	    // for tile debugging...
+	    map.addLayer( new ol.layer.Tile({
+		source: new ol.source.TileDebug({
+		    projection: projection,
+		    tileGrid: srcLayerMain.getTileGrid()
+		})
+	    }) );
+	}
+	
 	// get the pixel position with every move
 	$(map.getViewport()).on('mousemove', function(evt) {
 	    globalMousePosition = map.getEventPixel(evt.originalEvent);
@@ -1756,6 +1779,19 @@ function initDimension() {
     dimensionInfo[globalDimensionId].globalOffsetX = dimensionInfo[globalDimensionId].minWorldX;
     dimensionInfo[globalDimensionId].globalOffsetY = dimensionInfo[globalDimensionId].minWorldY;
 
+    
+    // todobig - adjust maxworldX & Y if in tile mode so that we include the right edge and bottom edge tiles?
+    if ( false ) {
+	extent = [ dimensionInfo[globalLayerId].minWorldX,
+		   dimensionInfo[globalLayerId].minWorldY,
+		   dimensionInfo[globalLayerId].maxWorldX,
+		   dimensionInfo[globalLayerId].maxWorldY ];
+	
+	dimensionInfo[globalDimensionId].globalOffsetX = 0;
+	dimensionInfo[globalDimensionId].globalOffsetY = 0;
+    }
+
+    
     console.log('World bounds: dimId=' + globalDimensionId +
 		' w=' + dimensionInfo[globalDimensionId].worldWidth +
 		' h=' + dimensionInfo[globalDimensionId].worldHeight +
@@ -1767,7 +1803,11 @@ function initDimension() {
 	code: 'mcpe_viz-image',
 	// todobig - this appears to break loading geojson
 	// code: 'EPSG:3857',
-	units: 'm',
+
+	// todobig - 'm' or 'pixels'?
+	//units: 'm',
+	units: 'pixels',
+
 	extent: extent,
 	getPointResolution: function(resolution, coordinate) {
 	    return resolution;
@@ -2144,8 +2184,22 @@ function layerGoto(layer) {
 var coordinateFormatFunction = function(coordinate) {
     var cx = coordinate[0] + dimensionInfo[globalDimensionId].globalOffsetX;
     var cy = ((dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1]) + dimensionInfo[globalDimensionId].globalOffsetY;
+
+    // todobig - new coordinate handling
+    if ( false ) {
+	cx = coordinate[0];
+	cy = -coordinate[1];
+    }
+    
     var ix = coordinate[0];
     var iy = (dimensionInfo[globalDimensionId].worldHeight - 1) - coordinate[1];
+
+    // todobig - how to adjust image coord?
+    if ( false ) {
+	ix = cx - dimensionInfo[globalDimensionId].minWorldX;
+	iy = cy - dimensionInfo[globalDimensionId].minWorldY;
+    }
+    
     var prec = 1;
     var s = '<span class="lgray">World</span> ' + cx.toFixed(prec) + ' ' + cy.toFixed(prec) + ' <span class="lgray">Image</span> ' + ix.toFixed(prec) + ' ' + iy.toFixed(prec);
     if (pixelDataName.length > 0) {

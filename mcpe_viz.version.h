@@ -8,7 +8,7 @@
 #ifndef __MCPE_VIZ_VERSION_H__
 #define __MCPE_VIZ_VERSION_H__
 
-const std::string mcpe_viz_version_short("0.0.16");
+const std::string mcpe_viz_version_short("0.0.17");
 const std::string mcpe_viz_version("mcpe_viz v" + mcpe_viz_version_short + " by Plethora777");
 
 #endif

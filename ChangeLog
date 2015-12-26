@@ -4,7 +4,14 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added support for finding mob spawnable blocks.  See the '--check-spawn' option and README.md
+Highlight: Added better display of remote users and the ability to map remote player id's to player names
+
+v0.0.17 - 2015.12.26
+Web - added better display of remote players;
+CFG - added config file option 'player-id' (see mcpe_viz.cfg for details);
+CFG - added special mcpe_viz.local.cfg file option - you can use this for player-id mappings;
+Parser - added leveldb record type 'idcounts' content still unknown;
+Code cleanup of std::string passing
 
 v0.0.16 - 2015.12.14
 Web - Added support for finding mob spawnable blocks.  See the '--check-spawn' option;

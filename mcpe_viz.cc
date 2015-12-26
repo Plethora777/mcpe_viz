@@ -11,7 +11,21 @@
 
   todohere
 
+  * new ol bug in v3.12.x? weird "shadow" pixel to the right of regular pixels!
+
+  * NO -- rethink coordinates used in js -- just negate the y-coord? could then adjust mouse pos output accordingly
+
+  * js in tile mode, zoom to extent, does not show full extent (right side is chopped for 'another1')
+  -- also see reddit bartszelag world for extreme example (very wide, not so high world)
+
+  * add options or separate tool to do world modification
+  -- remove chunks (to allow them to regenerate w/ new features from an updated mcpe)
+
   * check spawnable code - it might be missing spots?
+
+  * gui: allow users to easily add cmd-line params
+  -- a btn for mcpe_viz --help output (to see usage)
+  -- a text field for "Add Params"
 
   * minimize geojson output?
   -- remove spaces
@@ -19,8 +33,6 @@
 
   * auto-tile (and useTilesFlag) should be per-dimension
   -- js should use per-dimension tile vars instead of global
-
-  * js in tile mode, zoom to extent, does not show full extent (right side is chopped for 'another1')
 
   * optimize tiler (slow libpng is probably the limiting factor)
 
@@ -530,7 +542,7 @@ namespace mcpe_viz {
 
     // we parse the block (et al) data in a chunk from leveldb
     ChunkData(int32_t tchunkX, int32_t tchunkZ, const char* value,
-	      int32_t dimensionId, const std::string dimName,
+	      int32_t dimensionId, const std::string& dimName,
 	      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
 	      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
 	      const bool* fastBlockToGeoJSON,
@@ -806,7 +818,7 @@ namespace mcpe_viz {
       }
     }
 
-    void setName(std::string s) {
+    void setName(const std::string& s) {
       name = s;
     }
       
@@ -947,7 +959,7 @@ namespace mcpe_viz {
       return ret;
     }
 
-    int outputPNG(const std::string fname, const std::string imageDescription, uint8_t* buf, int width, int height, bool rgbaFlag) {
+    int outputPNG(const std::string& fname, const std::string& imageDescription, uint8_t* buf, int width, int height, bool rgbaFlag) {
       PngWriter png;
       if ( png.init(fname, imageDescription, width, height, height, rgbaFlag) != 0 ) {
 	return -1;
@@ -964,7 +976,7 @@ namespace mcpe_viz {
       return 0;
     }
     
-    void generateImage(const std::string fname, const ImageModeType imageMode) {
+    void generateImage(const std::string& fname, const ImageModeType imageMode) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -1160,7 +1172,7 @@ namespace mcpe_viz {
     }
 
 
-    void generateImageSpecial(const std::string fname, const ImageModeType imageMode) {
+    void generateImageSpecial(const std::string& fname, const ImageModeType imageMode) {
       const int32_t chunkW = (maxChunkX-minChunkX+1);
       const int32_t chunkH = (maxChunkZ-minChunkZ+1);
       const int32_t imageW = chunkW * 16;
@@ -1236,7 +1248,7 @@ namespace mcpe_viz {
     // but that code is actually *quite* insane
     // rewritten based on:
     //   http://edndoc.esri.com/arcobjects/9.2/net/shared/geoprocessing/spatial_analyst_tools/how_hillshade_works.htm
-    int generateShadedRelief(const std::string fnSrc, const std::string fnDest) {
+    int generateShadedRelief(const std::string& fnSrc, const std::string& fnDest) {
 
       //todobig - make these params
       double data_vert = 5;
@@ -1470,7 +1482,7 @@ namespace mcpe_viz {
     // 2015.10.24:
     // 372.432u 13.435s 6:50.66 93.9%  0+0k 419456+1842944io 210pf+0w
     
-    int generateSlices(leveldb::DB* db, const std::string fnBase) {
+    int generateSlices(leveldb::DB* db, const std::string& fnBase) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 
@@ -1659,7 +1671,7 @@ namespace mcpe_viz {
     }
 
       
-    int generateMovie(leveldb::DB* db, const std::string fnBase, const std::string fnOut, bool makeMovieFlag, bool useCropFlag ) {
+    int generateMovie(leveldb::DB* db, const std::string& fnBase, const std::string& fnOut, bool makeMovieFlag, bool useCropFlag ) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -1944,7 +1956,7 @@ namespace mcpe_viz {
   
     
   int printKeyValue(const char* key, int key_size, const char* value, int value_size, bool printKeyAsStringFlag) {
-    logger.msg(kLogInfo1,"WARNING: Unknown Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
+    logger.msg(kLogInfo1,"WARNING: Unparsed Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
 	       (printKeyAsStringFlag ? key : "(SKIPPED)"));
     for (int i=0; i < key_size; i++) {
       if ( i > 0 ) { logger.msg(kLogInfo1," "); }
@@ -1994,7 +2006,7 @@ namespace mcpe_viz {
       delete dbOptions.compressors[0];
     }
       
-    int dbOpen(std::string dirDb) {
+    int dbOpen(const std::string& dirDb) {
       // todobig - leveldb read-only? snapshot?
       slogger.msg(kLogInfo1,"DB Open: dir=%s\n",dirDb.c_str());
       leveldb::Status dstatus = leveldb::DB::Open(dbOptions, std::string(dirDb+"/db"), &db);
@@ -2203,17 +2215,19 @@ namespace mcpe_viz {
 	  logger.msg(kLogInfo1,"Local Player value:\n");
 	  ret = parseNbt("Local Player: ", value, value_size, tagList);
 	  if ( ret == 0 ) { 
-	    parseNbt_entity(-1, "",tagList, true, false);
+	    parseNbt_entity(-1, "",tagList, true, false, "Local Player", "");
 	  }
 	}
 
 	else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
 	  // note: key contains player id (e.g. "player_-1234")
-	  std::string playerRemoteId = &key[strlen("player_")];
+	  std::string playerRemoteId = std::string(&key[strlen("player_")], key_size - strlen("player_"));
+	  
 	  logger.msg(kLogInfo1,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
+
 	  ret = parseNbt("Remote Player: ", value, value_size, tagList);
 	  if ( ret == 0 ) {
-	    parseNbt_entity(-1, "",tagList, false, true);
+	    parseNbt_entity(-1, "",tagList, false, true, "Remote Player", playerRemoteId);
 	  }
 	}
 
@@ -2228,6 +2242,12 @@ namespace mcpe_viz {
 	  logger.msg(kLogInfo1,"mVillages value:\n");
 	  parseNbt("mVillages: ", value, value_size, tagList);
 	  // todo - parse tagList?
+	}
+
+	else if ( strncmp(key,"idcounts",key_size) == 0 ) {
+	  // todobig -- new for 0.13? what is it? is it a 4-byte int?
+	  logger.msg(kLogInfo1,"idcounts value:\n");
+	  parseNbt("idcounts: ", value, value_size, tagList);
 	}
 
 	else if ( strncmp(key,"Nether",key_size) == 0 ) {
@@ -2315,7 +2335,7 @@ namespace mcpe_viz {
 	    logger.msg(kLogInfo1,"%s 0x32 chunk (entity data):\n", dimName.c_str());
 	    ret = parseNbt("0x32-e: ", value, value_size, tagList);
 	    if ( ret == 0 ) {
-	      parseNbt_entity(chunkDimId, dimName+"-", tagList, false, false);
+	      parseNbt_entity(chunkDimId, dimName+"-", tagList, false, false, "", "");
 	    }
 	    break;
 
@@ -2328,7 +2348,7 @@ namespace mcpe_viz {
 	    break;
 
 	  case 0x34:
-	    logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
+	    logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
 	    printKeyValue(key,key_size,value,value_size,false);
 	    /* 
 	       0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
@@ -2340,7 +2360,7 @@ namespace mcpe_viz {
 	    break;
 
 	  case 0x35:
-	    logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - UNKNOWN RECORD)\n", dimName.c_str());
+	    logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
 	    printKeyValue(key,key_size,value,value_size,false);
 	    /*
 	      0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
@@ -2438,7 +2458,7 @@ namespace mcpe_viz {
     }
 
     
-    std::string makeTileURL(const std::string fn) {
+    std::string makeTileURL(const std::string& fn) {
       std::string ret = mybasename(fn);
       if ( ! control.doTiles ) {
 	return "images/" + ret;
@@ -2875,6 +2895,14 @@ namespace mcpe_viz {
       ix = wx + (chunkOffsetX * 16);
       // todobig - correct calc here?
       iy = (imageH-1) - (wz + (chunkOffsetZ * 16));
+
+
+      // todobig -- for geojson, image == world (with y coordinate negated)
+      if ( false ) {
+	ix = wx;
+	iy = -wz;
+      }
+      
     } else {
       ix = wx + (chunkOffsetX * 16);
       iy = wz + (chunkOffsetZ * 16);
@@ -2915,7 +2943,7 @@ namespace mcpe_viz {
     
   
     
-  int parseLevelFile(const std::string fname) {
+  int parseLevelFile(const std::string& fname) {
     FILE *fp = fopen(fname.c_str(), "rb");
     if(!fp) {
       return -1;
@@ -2958,7 +2986,7 @@ namespace mcpe_viz {
   }
 
     
-  int parseLevelName(const std::string fname) {
+  int parseLevelName(const std::string& fname) {
     FILE *fp = fopen(fname.c_str(), "r");
     if(!fp) {
       return -1;
@@ -2977,8 +3005,7 @@ namespace mcpe_viz {
     return 0;
   }
 
-    
-  int doParseConfigFile ( const std::string fn ) {
+  int doParseConfigFile ( const std::string& fn ) {
     if ( ! file_exists(fn.c_str()) ) {
       return -1;
     }
@@ -3078,8 +3105,10 @@ namespace mcpe_viz {
 	}
       }
 
-      else {
-	if ( strlen(buf) > 0 ) {
+      else if ( (p=strstr(buf,"player-id:")) ) {
+	if ( parsePlayerIdToName(&p[strlen("player-id:")]) == 0 ) {
+	  // all good
+	} else {
 	  slogger.msg(kLogInfo1,"%sWARNING: Unparsed config line: [%s]\n", makeIndent(indent,hdr).c_str(),buf);
 	}
       }
@@ -3098,6 +3127,13 @@ namespace mcpe_viz {
     // -- exec dir
     // -- local dir
     std::string fn;
+
+    // same dir as exec - special filename
+    fn = dirExec;
+    fn += "/mcpe_viz.local.cfg";
+    if ( doParseConfigFile( fn ) == 0 ) {
+      // we keep reading other config files
+    }
 
     // as specified on cmdline
     if ( control.fnCfg.size() > 0 ) {
@@ -3614,7 +3650,7 @@ namespace mcpe_viz {
     
     ret = parse_args(argc, argv);
     if (ret != 0) {
-      print_usage(basename(argv[0]));
+      print_usage(argv[0]);
       return ret;
     }
     
@@ -3653,7 +3689,7 @@ int main ( int argc, char **argv ) {
 
   fprintf(stderr,"%s\n", mcpe_viz_version.c_str());
 
-  mcpe_viz::dirExec = dirname(argv[0]);
+  mcpe_viz::dirExec = mcpe_viz::mydirname(argv[0]);
 
   int ret = mcpe_viz::init(argc,argv);
   if ( ret != 0 ) {

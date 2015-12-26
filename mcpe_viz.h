@@ -58,7 +58,7 @@ namespace mcpe_viz {
       variantList.clear();
     }
 
-    BlockInfo& setName(const std::string s) {
+    BlockInfo& setName(const std::string& s) {
       name = std::string(s);
       return *this;
     }
@@ -112,7 +112,7 @@ namespace mcpe_viz {
       blockdata = bd;
     }
 
-    BlockInfo& addVariant(int32_t bd, std::string n) {
+    BlockInfo& addVariant(int32_t bd, const std::string& n) {
       std::unique_ptr<BlockInfo> bv(new BlockInfo());
       bv->setName(n);
       bv->setBlockData(bd);
@@ -147,7 +147,7 @@ namespace mcpe_viz {
       setName(n);
     }
 
-    ItemInfo& setName (const std::string s) {
+    ItemInfo& setName (const std::string& s) {
       name = std::string(s);
       return *this;
     }
@@ -167,7 +167,7 @@ namespace mcpe_viz {
       setName(n);
     }
 
-    EntityInfo& setName (const std::string s) {
+    EntityInfo& setName (const std::string& s) {
       name = std::string(s);
       return *this;
     }
@@ -196,7 +196,7 @@ namespace mcpe_viz {
       setColor(rgb);
     }
 
-    BiomeInfo& setName (const std::string s) {
+    BiomeInfo& setName (const std::string& s) {
       name = std::string(s);
       return *this;
     }
@@ -225,12 +225,12 @@ namespace mcpe_viz {
       officialName="";
     }
 
-    EnchantmentInfo& setName (const std::string s) {
+    EnchantmentInfo& setName (const std::string& s) {
       name = std::string(s);
       return *this;
     }
 
-    EnchantmentInfo& setOfficialName (const std::string s) {
+    EnchantmentInfo& setOfficialName (const std::string& s) {
       officialName = std::string(s);
       return *this;
     }

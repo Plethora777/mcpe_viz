@@ -579,6 +579,8 @@ namespace mcpe_viz {
     int32_t dimensionId;
     bool playerLocalFlag;
     bool playerRemoteFlag;
+    std::string playerType;
+    std::string playerId;
     std::vector< std::unique_ptr<ParsedItem> > inventory;
     std::vector< std::unique_ptr<ParsedItem> > armorList;
     ParsedItem itemInHand;
@@ -600,6 +602,8 @@ namespace mcpe_viz {
       dimensionId = -1;
       playerLocalFlag = false;
       playerRemoteFlag = false;
+      playerType = "";
+      playerId = "";
       inventory.clear();
       armorList.clear();
       itemInHand.clear();
@@ -635,12 +639,12 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int addOtherProp(std::string key, std::string value) {
+    int addOtherProp(const std::string& key, const std::string& value) {
       otherProps.push_back( std::make_pair(key,value) );
       return 0;
     }
       
-    int checkOtherProp(nbt::tag_compound& tc, std::string key) {
+    int checkOtherProp(nbt::tag_compound& tc, const std::string& key) {
       char tmpstring[1025];
       if ( tc.has_key(key)) {
 	// seems silly that we have to do this:
@@ -728,6 +732,20 @@ namespace mcpe_viz {
       // todo - needed?
       if ( playerLocalFlag || playerRemoteFlag ) {
 	list.push_back(std::string("\"player\": \"true\""));
+
+	sprintf(tmpstring,"\"playerType\": \"%s\"", playerType.c_str());
+	list.push_back(std::string(tmpstring));
+
+	sprintf(tmpstring,"\"playerId\": \"%s\"", playerId.c_str());
+	list.push_back(std::string(tmpstring));
+
+	if ( has_key(playerIdToName, playerId) ) {
+	  sprintf(tmpstring,"\"playerName\": \"%s\"", playerIdToName[playerId].c_str());
+	  list.push_back(std::string(tmpstring));
+	} else {
+	  sprintf(tmpstring,"\"playerName\": \"*UNKNOWN*\"");
+	  list.push_back(std::string(tmpstring));
+	}
       } else {
 	// list.push_back(std::string("\"player\": \"false\""));
       }
@@ -1162,7 +1180,9 @@ namespace mcpe_viz {
   typedef std::vector< std::unique_ptr<ParsedTileEntity> > ParsedTileEntityList;
 
     
-  int parseNbt_entity(int32_t dimensionId, std::string dimName, MyNbtTagList &tagList, bool playerLocalFlag, bool playerRemoteFlag) {
+  int parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
+		      bool playerLocalFlag, bool playerRemoteFlag,
+		      const std::string &playerType, const std::string &playerId) {
     ParsedEntityList entityList;
     entityList.clear();
 
@@ -1186,6 +1206,8 @@ namespace mcpe_viz {
 	
       entity->playerLocalFlag = playerLocalFlag;
       entity->playerRemoteFlag = playerRemoteFlag;
+      entity->playerType = playerType;
+      entity->playerId = playerId;
 	
       if ( tc.has_key("Armor", nbt::tag_type::List) ) {
 	nbt::tag_list armorList = tc["Armor"].as<nbt::tag_list>();
@@ -1337,7 +1359,7 @@ namespace mcpe_viz {
   }
 
     
-  int parseNbt_tileEntity(int32_t dimensionId, std::string dimName, MyNbtTagList &tagList) {
+  int parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList) {
     ParsedTileEntityList tileEntityList;
     tileEntityList.clear();
       

@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <sstream>
 #include "mcpe_viz.util.h"
 #include "mcpe_viz.h"
 #include "mcpe_viz.xml.h"
@@ -46,7 +47,7 @@ namespace mcpe_viz {
 
   
   // these hacks work around "const char*" problems
-  std::string mybasename( const std::string fn ) {
+  std::string mybasename( const std::string& fn ) {
     char tmpstring[1025];
     memset(tmpstring,0,1025);
     strncpy(tmpstring,fn.c_str(),1024);
@@ -54,7 +55,7 @@ namespace mcpe_viz {
     return ret;
   }
 
-  std::string mydirname( const std::string fn ) {
+  std::string mydirname( const std::string& fn ) {
     char tmpstring[1025];
     memset(tmpstring,0,1025);
     strncpy(tmpstring,fn.c_str(),1024);
@@ -95,7 +96,7 @@ namespace mcpe_viz {
  
   // hacky file copying funcs
   typedef std::vector< std::pair<std::string, std::string> > StringReplacementList;
-  int copyFileWithStringReplacement ( const std::string fnSrc, const std::string fnDest,
+  int copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
 				      const StringReplacementList& replaceStrings ) {
     char buf[1025];
 
@@ -147,7 +148,7 @@ namespace mcpe_viz {
 
   
   // hacky but expedient text file copy
-  int copyFile ( const std::string fnSrc, const std::string fnDest ) {
+  int copyFile ( const std::string& fnSrc, const std::string& fnDest ) {
     char buf[1025];
     memset(buf,0,1025);
 
@@ -177,7 +178,7 @@ namespace mcpe_viz {
 
 
 
-  int copyDirToDir ( const std::string dirSrc, const std::string dirDest ) {
+  int copyDirToDir ( const std::string& dirSrc, const std::string& dirDest ) {
     struct dirent *dp;
     DIR *dfd = opendir(dirSrc.c_str());
     if (dfd != NULL) {
@@ -198,7 +199,7 @@ namespace mcpe_viz {
   }
 
   
-  int deleteFile ( const std::string fn ) {
+  int deleteFile ( const std::string& fn ) {
     return unlink(fn.c_str());
   }
 
@@ -356,7 +357,7 @@ namespace mcpe_viz {
   }
 
 
-  int oversampleImage(const std::string fnSrc, const std::string fnDest, int oversample) {
+  int oversampleImage(const std::string& fnSrc, const std::string& fnDest, int oversample) {
     PngReader pngSrc;
     if ( pngSrc.init(fnSrc) != 0 ) {
       slogger.msg(kLogInfo1, "ERROR: Failed to open src png");
@@ -432,13 +433,54 @@ namespace mcpe_viz {
     return s;
   }
 
-  int local_mkdir(std::string path) {
+  int local_mkdir(const std::string& path) {
     // todobig - check if dir exists first?
 #ifdef WINVER
     return mkdir(path.c_str());
 #else
     return mkdir(path.c_str(),0755);
 #endif
+  }
+
+
+  PlayerIdToName playerIdToName;
+
+  bool has_key(const PlayerIdToName &m, const std::string &k) {
+    return  m.find(k) != m.end();
+  }
+  
+  int addPlayerIdToName(const std::string &playerId, const std::string &playerName) {
+    playerIdToName[playerId] = playerName;
+    return 0;
+  }
+  
+  int parsePlayerIdToName(const char* s) {
+    std::string playerId;
+    std::string playerName;
+    
+    // the format is: playerId playerName
+    // parsing adapted from: http://stackoverflow.com/a/5208977
+    std::string src(s);
+    std::string buf;
+    std::stringstream ss(src); // Insert the string into a stream
+
+    if ( ss >> playerId ) {
+      int i=0;
+      while ( ss >> buf ) {
+	if (i++ > 0) { playerName += " "; }
+	playerName += buf;
+      }
+
+      if (playerId.size() > 0 && playerName.size() > 0 ) {
+	// slogger.msg(kLogInfo1, "INFO: parsePlayerIdToName -- found valid playerId (%s) and playerName (%s) in passed string (%s)\n", playerId.c_str(), playerName.c_str(), s);
+	return addPlayerIdToName(playerId, playerName);
+      }
+      slogger.msg(kLogInfo1, "ERROR: Failed parsePlayerIdToName -- did not find valid playerId (%s) and playerName (%s) in passed string (%s)\n", playerId.c_str(), playerName.c_str(), s);
+      return -1;
+    }
+
+    slogger.msg(kLogInfo1, "ERROR: Failed parsePlayerIdToName -- did not find valid playerId and playerName in passed string (%s)\n", s);
+    return -2;
   }
   
 } // namespace mcpe_viz

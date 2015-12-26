@@ -36,11 +36,11 @@ namespace mcpe_viz {
 #define be32toh local_be32toh
 #endif
 
-  int local_mkdir(std::string path);
+  int local_mkdir(const std::string& path);
   
   // these hacks work around "const char*" problems
-  std::string mybasename( const std::string fn );
-  std::string mydirname( const std::string fn );
+  std::string mybasename( const std::string& fn );
+  std::string mydirname( const std::string& fn );
   
   int file_exists(const char* fn);
   
@@ -49,14 +49,14 @@ namespace mcpe_viz {
   std::string makeIndent(int indent, const char* hdr);
   
   typedef std::vector< std::pair<std::string, std::string> > StringReplacementList;
-  int copyFileWithStringReplacement ( const std::string fnSrc, const std::string fnDest,
+  int copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
 				      const StringReplacementList& replaceStrings );
   
-  int copyFile ( const std::string fnSrc, const std::string fnDest );
+  int copyFile ( const std::string& fnSrc, const std::string& fnDest );
 
-  int copyDirToDir ( const std::string dirSrc, const std::string dirDest );
+  int copyDirToDir ( const std::string& dirSrc, const std::string& dirDest );
 
-  int deleteFile ( const std::string fn );
+  int deleteFile ( const std::string& fn );
   
   bool vectorContains( const std::vector<int> &v, int i );
 
@@ -188,12 +188,12 @@ namespace mcpe_viz {
       close();
     }
 
-    int init(const std::string xfn, const std::string imageDescription, int w, int h, int numRowPointers, bool rgbaFlag) {
+    int init(const std::string& xfn, const std::string& imageDescription, int w, int h, int numRowPointers, bool rgbaFlag) {
       fn = std::string(xfn);
       return open(imageDescription,w,h,numRowPointers,rgbaFlag);
     }
 
-    int open(const std::string imageDescription, int width, int height, int numRowPointers, bool rgbaFlag) {
+    int open(const std::string& imageDescription, int width, int height, int numRowPointers, bool rgbaFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
 	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
@@ -273,7 +273,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int addText(const std::string key, const std::string val) {
+    int addText(const std::string& key, const std::string& val) {
       png_text text[1];
       char* skey = new char[key.size()+1];
       strcpy(skey, key.c_str());
@@ -316,7 +316,7 @@ namespace mcpe_viz {
       close();
     }
 
-    int init(const std::string xfn) {
+    int init(const std::string& xfn) {
       fn = std::string(xfn);
       return open();
     }
@@ -411,7 +411,7 @@ namespace mcpe_viz {
     int tileHeight;
     std::string dirOutput;
 	
-    PngTiler(const std::string fn, int tileW, int tileH, const std::string dirOut) {
+    PngTiler(const std::string& fn, int tileW, int tileH, const std::string& dirOut) {
       filename = fn;
       tileWidth = tileW;
       tileHeight = tileH;
@@ -517,7 +517,7 @@ namespace mcpe_viz {
   };
 
 
-  int oversampleImage(const std::string fnSrc, const std::string fnDest, int oversample);
+  int oversampleImage(const std::string& fnSrc, const std::string& fnDest, int oversample);
   
   
   int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness);
@@ -535,7 +535,7 @@ namespace mcpe_viz {
     int r,g,b;
     double h, s, l;
       
-    ColorInfo(std::string n, int32_t c) {
+    ColorInfo(const std::string& n, int32_t c) {
       name = std::string(n);
       color = c;
       calcHSL();
@@ -675,6 +675,14 @@ namespace mcpe_viz {
     };
   };
 
+
+  typedef std::map<std::string, std::string> PlayerIdToName;
+  bool has_key(const PlayerIdToName &m, const std::string& k);
+
+  extern PlayerIdToName playerIdToName;
+  
+  int parsePlayerIdToName(const char* s);
+  
 } // namespace mcpe_viz
 
 #endif // __MCPE_VIZ_UTIL_H__

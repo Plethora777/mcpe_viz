@@ -30,7 +30,7 @@ namespace mcpe_viz {
       };
 
   
-  void worldPointToImagePoint(int32_t dimId, float wx, float wz, int &ix, int &iy, bool geoJsonFlag);
+  void worldPointToImagePoint(int32_t dimId, float wx, float wz, int32_t &ix, int32_t &iy, bool geoJsonFlag);
   void worldPointToGeoJSONPoint(int32_t dimId, float wx, float wz, double &ix, double &iy);
   
   class BlockInfo {
@@ -42,7 +42,7 @@ namespace mcpe_viz {
     bool opaqueFlag;
     bool liquidFlag;
     bool spawnableFlag;
-    int colorSetNeedCount;
+    int32_t colorSetNeedCount;
     int32_t blockdata;
     std::vector< std::unique_ptr<BlockInfo> > variantList;
 
@@ -155,7 +155,7 @@ namespace mcpe_viz {
 
   typedef std::map<int, std::unique_ptr<ItemInfo> > ItemInfoList;
   extern ItemInfoList itemInfoList;
-  bool has_key(const ItemInfoList &m, int k);
+  bool has_key(const ItemInfoList &m, int32_t k);
 
 
 
@@ -175,7 +175,7 @@ namespace mcpe_viz {
 
   typedef std::map<int, std::unique_ptr<EntityInfo> > EntityInfoList;
   extern EntityInfoList entityInfoList;
-  bool has_key(const EntityInfoList &m, int k);
+  bool has_key(const EntityInfoList &m, int32_t k);
 
 
 
@@ -211,7 +211,7 @@ namespace mcpe_viz {
 
   typedef std::map<int, std::unique_ptr<BiomeInfo> > BiomeInfoList;
   extern BiomeInfoList biomeInfoList;
-  bool has_key(const BiomeInfoList &m, int k);
+  bool has_key(const BiomeInfoList &m, int32_t k);
 
 
 
@@ -238,7 +238,7 @@ namespace mcpe_viz {
 
   typedef std::map<int, std::unique_ptr<EnchantmentInfo> > EnchantmentInfoList;
   extern EnchantmentInfoList enchantmentInfoList;
-  bool has_key(const EnchantmentInfoList &m, int k);
+  bool has_key(const EnchantmentInfoList &m, int32_t k);
     
 } // namespace mcpe_viz
 

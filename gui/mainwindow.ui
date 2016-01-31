@@ -160,7 +160,7 @@
 		</widget>
 	      </item>
 	      <item row="4" column="0">
-		<widget class="QLabel" name="label_4">
+		<widget class="QLabel" name="label_5">
 		  <property name="text">
 		    <string>Command Line</string>
 		  </property>

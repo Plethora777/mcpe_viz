@@ -17,25 +17,33 @@ namespace mcpe_viz {
 
   std::string makeGeojsonHeader(double ix, double iy) {
     char tmpstring[256];
-    sprintf(tmpstring,"%.1lf, %.1lf",ix,iy);
+
+    // adjust position so that items are in the center of pixels
+    // todobig - play with this to see if we can make it better
+    if ( false ) {
+      ix += 0.5;
+      iy -= 0.5;
+    }
+    
+    sprintf(tmpstring,"%.1lf,%.1lf",ix,iy);
     std::string s =
-      "{ "
-      "\"type\": \"Feature\", "
-      "\"geometry\": { \"type\": \"Point\", \"coordinates\": ["
+      "{"
+      "\"type\":\"Feature\","
+      "\"geometry\":{\"type\":\"Point\",\"coordinates\":["
       ;
     s += tmpstring;
     s +=
-      "] }, "
-      "\"properties\": { "
+      "]},"
+      "\"properties\":{"
       ;
     return s;
   }
   
   // nbt parsing helpers
-  int globalNbtListNumber=0;
-  int globalNbtCompoundNumber=0;
+  int32_t globalNbtListNumber=0;
+  int32_t globalNbtCompoundNumber=0;
 
-  int parseNbtTag( const char* hdr, int& indent, const MyNbtTag& t ) {
+  int32_t parseNbtTag( const char* hdr, int& indent, const MyNbtTag& t ) {
 
     logger.msg(kLogInfo1,"%s[%s] ", makeIndent(indent,hdr).c_str(), t.first.c_str());
 
@@ -86,7 +94,7 @@ namespace mcpe_viz {
       {
 	nbt::tag_byte_array v = t.second->as<nbt::tag_byte_array>();
 	logger.msg(kLogInfo1,"[");
-	int i=0;
+	int32_t i=0;
 	for (const auto& itt: v ) {
 	  if ( i++ > 0 ) { logger.msg(kLogInfo1," "); }
 	  logger.msg(kLogInfo1,"%02x", (int)itt);
@@ -103,7 +111,7 @@ namespace mcpe_viz {
     case nbt::tag_type::List:
       {
 	nbt::tag_list v = t.second->as<nbt::tag_list>();
-	int lnum = ++globalNbtListNumber;
+	int32_t lnum = ++globalNbtListNumber;
 	logger.msg(kLogInfo1,"LIST-%d {\n",lnum);
 	indent++;
 	for ( const auto& it: v ) {
@@ -116,7 +124,7 @@ namespace mcpe_viz {
     case nbt::tag_type::Compound:
       {
 	nbt::tag_compound v = t.second->as<nbt::tag_compound>();
-	int cnum = ++globalNbtCompoundNumber;
+	int32_t cnum = ++globalNbtCompoundNumber;
 	logger.msg(kLogInfo1,"COMPOUND-%d {\n",cnum);
 	indent++;
 	for ( const auto& it: v ) {
@@ -130,7 +138,7 @@ namespace mcpe_viz {
       {
 	nbt::tag_int_array v = t.second->as<nbt::tag_int_array>();
 	logger.msg(kLogInfo1,"[");
-	int i=0;
+	int32_t i=0;
 	for ( const auto& itt: v ) {
 	  if ( i++ > 0 ) { logger.msg(kLogInfo1," "); }
 	  logger.msg(kLogInfo1,"%x", itt);
@@ -147,8 +155,8 @@ namespace mcpe_viz {
   }
 
     
-  int parseNbt( const char* hdr, const char* buf, int bufLen, MyNbtTagList& tagList ) {
-    int indent=0;
+  int32_t parseNbt( const char* hdr, const char* buf, int32_t bufLen, MyNbtTagList& tagList ) {
+    int32_t indent=0;
     logger.msg(kLogInfo1,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
 
     // these help us look at dumped nbt data and match up LIST's and COMPOUND's
@@ -245,13 +253,13 @@ namespace mcpe_viz {
       // todo - how to report invalid in geojson?
       // if ( valid ) {
       std::ostringstream str;
-      str << x << ", " << y;
+      str << x << "," << y;
       return str.str();
     }
     std::string toString() {
       if ( valid ) {
 	std::ostringstream str;
-	str << x << ", " << y;
+	str << x << "," << y;
 	return str.str();
       } else {
 	return std::string("*Invalid-Point2d*");
@@ -285,7 +293,7 @@ namespace mcpe_viz {
       // todo - how to report invalid in geojson?
       // if ( valid ) {
       std::ostringstream str;
-      str << x << ", " << y << ", " << z;
+      str << x << "," << y << "," << z;
       return str.str();
     }
     std::string toString() {
@@ -299,7 +307,7 @@ namespace mcpe_viz {
     }
     std::string toStringImageCoords(int32_t dimId) {
       if ( valid ) {
-	int ix, iy;
+	int32_t ix, iy;
 	worldPointToImagePoint(dimId, x,z, ix,iy, false);
 	std::ostringstream str;
 	str << ix << ", " << iy;
@@ -327,7 +335,7 @@ namespace mcpe_viz {
       id.clear();
       level.clear();
     }
-    int parse(nbt::tag_compound& iench) {
+    int32_t parse(nbt::tag_compound& iench) {
       if ( iench.has_key("id", nbt::tag_type::Short) ) {
 	id.set( iench["id"].as<nbt::tag_short>().get() );
       }
@@ -340,18 +348,18 @@ namespace mcpe_viz {
       char tmpstring[1025];
       std::string s = "";
       if ( id.valid ) {
-	s += "\"Name\": \"";
+	s += "\"Name\":\"";
 	if ( has_key(enchantmentInfoList, id.value) ) {
 	  s += enchantmentInfoList[id.value]->name;
 	} else {
 	  sprintf(tmpstring,"(UNKNOWN: id=%d 0x%x)",id.value,id.value);
 	  s += tmpstring;
 	}
-	//s += "\"Level\": \"";
+	//s += "\"Level\":\"";
 	sprintf(tmpstring," (%d)\"", level.value);
 	s += tmpstring;
       } else {
-	s += "\"valid\": \"false\"";
+	s += "\"valid\":\"false\"";
       }
       return s;
     }
@@ -399,7 +407,7 @@ namespace mcpe_viz {
       repairCost = -1;
       enchantmentList.clear();
     }
-    int parse(nbt::tag_compound& iitem) {
+    int32_t parse(nbt::tag_compound& iitem) {
       if ( iitem.has_key("Count", nbt::tag_type::Byte) ) {
 	count = iitem["Count"].as<nbt::tag_byte>().get();
       }
@@ -429,7 +437,7 @@ namespace mcpe_viz {
 	  for ( const auto& it: elist ) {
 	    nbt::tag_compound ench = it.as<nbt::tag_compound>();
 	    std::unique_ptr<ParsedEnchantment> e(new ParsedEnchantment());
-	    int ret = e->parse(ench);
+	    int32_t ret = e->parse(ench);
 	    if ( ret == 0 ) {
 	      enchantmentList.push_back( std::move(e) );
 	    } else {
@@ -442,12 +450,12 @@ namespace mcpe_viz {
       return 0;
     }
     
-    int parseArmor(nbt::tag_compound& iarmor) {
+    int32_t parseArmor(nbt::tag_compound& iarmor) {
       armorFlag = true;
       return parse(iarmor);
     }
 
-    std::string toGeoJSON(bool swallowFlag=false, int swallowValue=0, bool showCountFlag=false) {
+    std::string toGeoJSON(bool swallowFlag=false, int32_t swallowValue=0, bool showCountFlag=false) {
       std::vector<std::string> list;
       std::string s;
       char tmpstring[1025];
@@ -460,7 +468,7 @@ namespace mcpe_viz {
 	}
       }
 	
-      s = "\"Name\": ";
+      s = "\"Name\":";
       if ( id >= 0 && id <= 255 ) {
 	s += "\"" + blockInfoList[id].name + "\"";
       } else if ( has_key(itemInfoList, id) ) {
@@ -474,25 +482,25 @@ namespace mcpe_viz {
       // todo - not useful?
       if ( false ) {
 	if ( damage >= 0 ) {
-	  sprintf(tmpstring,"\"Damage\": \"%d\"", damage);
+	  sprintf(tmpstring,"\"Damage\":\"%d\"", damage);
 	  list.push_back(std::string(tmpstring));
 	}
 	if ( slot >= 0 ) {
-	  sprintf(tmpstring,"\"Slot\": \"%d\"", slot);
+	  sprintf(tmpstring,"\"Slot\":\"%d\"", slot);
 	  list.push_back(std::string(tmpstring));
 	}
       }
 
       if ( showCountFlag && count >= 0 ) {
-	sprintf(tmpstring,"\"Count\": \"%d\"", count);
+	sprintf(tmpstring,"\"Count\":\"%d\"", count);
 	list.push_back(std::string(tmpstring));
       }
 	
       if ( enchantmentList.size() > 0 ) {
-	s = "\"Enchantments\": [ ";
-	int i = enchantmentList.size();
+	s = "\"Enchantments\":[";
+	int32_t i = enchantmentList.size();
 	for ( const auto& it: enchantmentList ) {
-	  s+="{ " + it->toGeoJSON() + " }";
+	  s+="{" + it->toGeoJSON() + "}";
 	  if ( --i > 0 ) {
 	    s += ",";
 	  }
@@ -503,7 +511,7 @@ namespace mcpe_viz {
 
       // combine the list and put the commas in the right spots (stupid json)
       s = "";
-      int i=list.size();
+      int32_t i=list.size();
       for ( const auto& iter: list ) {
 	s += iter;
 	if ( --i > 0 ) {
@@ -514,7 +522,7 @@ namespace mcpe_viz {
       return s;
     }
       
-    std::string toString(bool swallowFlag=false, int swallowValue=0) {
+    std::string toString(bool swallowFlag=false, int32_t swallowValue=0) {
       char tmpstring[1025];
 
       if ( ! valid ) { return std::string("*Invalid Item*"); }
@@ -551,7 +559,7 @@ namespace mcpe_viz {
 
       if ( enchantmentList.size() > 0 ) {
 	s += " Enchantments=[";
-	int i=enchantmentList.size();
+	int32_t i=enchantmentList.size();
 	for ( const auto& it: enchantmentList ) {
 	  s += it->toString();
 	  if ( --i > 0 ) {
@@ -611,40 +619,40 @@ namespace mcpe_viz {
       otherProps.clear();
       otherPropsSortedFlag = false;
     }
-    int addInventoryItem ( nbt::tag_compound &iitem ) {
+    int32_t addInventoryItem ( nbt::tag_compound &iitem ) {
       std::unique_ptr<ParsedItem> it(new ParsedItem());
-      int ret = it->parse(iitem);
+      int32_t ret = it->parse(iitem);
       inventory.push_back( std::move(it) );
       return ret;
     }
-    int doItemInHand ( nbt::tag_compound &iitem ) {
+    int32_t doItemInHand ( nbt::tag_compound &iitem ) {
       itemInHand.clear();
       return itemInHand.parse(iitem);
     }
-    int doItem ( nbt::tag_compound &iitem ) {
+    int32_t doItem ( nbt::tag_compound &iitem ) {
       item.clear();
       return item.parse(iitem);
     }
-    int doTile ( int ntileId ) {
+    int32_t doTile ( int32_t ntileId ) {
       tileId = ntileId;
       return 0;
     }
 
-    int addArmor ( nbt::tag_compound &iarmor ) {
+    int32_t addArmor ( nbt::tag_compound &iarmor ) {
       std::unique_ptr<ParsedItem> armor(new ParsedItem());
-      int ret = armor->parseArmor(iarmor);
+      int32_t ret = armor->parseArmor(iarmor);
       if ( ret == 0 ) {
 	armorList.push_back( std::move(armor) );
       }
       return 0;
     }
 
-    int addOtherProp(const std::string& key, const std::string& value) {
+    int32_t addOtherProp(const std::string& key, const std::string& value) {
       otherProps.push_back( std::make_pair(key,value) );
       return 0;
     }
       
-    int checkOtherProp(nbt::tag_compound& tc, const std::string& key) {
+    int32_t checkOtherProp(nbt::tag_compound& tc, const std::string& key) {
       char tmpstring[1025];
       if ( tc.has_key(key)) {
 	// seems silly that we have to do this:
@@ -719,53 +727,53 @@ namespace mcpe_viz {
       s += makeGeojsonHeader(ix,iy);
 
       if ( has_key(entityInfoList, id) ) {
-	sprintf(tmpstring,"\"Name\": \"%s\"", entityInfoList[id]->name.c_str());
+	sprintf(tmpstring,"\"Name\":\"%s\"", entityInfoList[id]->name.c_str());
 	list.push_back(std::string(tmpstring));
       } else {
-	sprintf(tmpstring,"\"Name\": \"*UNKNOWN: id=%d 0x%x\"", id,id);
+	sprintf(tmpstring,"\"Name\":\"*UNKNOWN: id=%d 0x%x\"", id,id);
 	list.push_back(std::string(tmpstring));
       }
 
-      sprintf(tmpstring," \"id\": \"%d\"", id);
+      sprintf(tmpstring,"\"id\":\"%d\"", id);
       list.push_back(std::string(tmpstring));
 	
       // todo - needed?
       if ( playerLocalFlag || playerRemoteFlag ) {
-	list.push_back(std::string("\"player\": \"true\""));
+	list.push_back(std::string("\"player\":\"true\""));
 
-	sprintf(tmpstring,"\"playerType\": \"%s\"", playerType.c_str());
+	sprintf(tmpstring,"\"playerType\":\"%s\"", playerType.c_str());
 	list.push_back(std::string(tmpstring));
 
-	sprintf(tmpstring,"\"playerId\": \"%s\"", playerId.c_str());
+	sprintf(tmpstring,"\"playerId\":\"%s\"", playerId.c_str());
 	list.push_back(std::string(tmpstring));
 
 	if ( has_key(playerIdToName, playerId) ) {
-	  sprintf(tmpstring,"\"playerName\": \"%s\"", playerIdToName[playerId].c_str());
+	  sprintf(tmpstring,"\"playerName\":\"%s\"", playerIdToName[playerId].c_str());
 	  list.push_back(std::string(tmpstring));
 	} else {
-	  sprintf(tmpstring,"\"playerName\": \"*UNKNOWN*\"");
+	  sprintf(tmpstring,"\"playerName\":\"*UNKNOWN*\"");
 	  list.push_back(std::string(tmpstring));
 	}
       } else {
-	// list.push_back(std::string("\"player\": \"false\""));
+	// list.push_back(std::string("\"player\":\"false\""));
       }
 
       if ( forceDimensionId >= 0 ) {
 	// getting dimension name from myWorld is more trouble than it's worth here :)
-	sprintf(tmpstring,"\"Dimension\": \"%d\"", forceDimensionId);
+	sprintf(tmpstring,"\"Dimension\":\"%d\"", forceDimensionId);
 	list.push_back(std::string(tmpstring));
       }
 
-      sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
+      sprintf(tmpstring, "\"Pos\":[%s]", pos.toGeoJSON().c_str());
       list.push_back(std::string(tmpstring));
 
-      sprintf(tmpstring, "\"Rotation\": [%s]", rotation.toGeoJSON().c_str());
+      sprintf(tmpstring, "\"Rotation\":[%s]", rotation.toGeoJSON().c_str());
       list.push_back(std::string(tmpstring));
 	
       if ( playerLocalFlag || playerRemoteFlag ) {
-	sprintf(tmpstring,"\"BedPos\": [%s]", bedPosition.toGeoJSON().c_str());
+	sprintf(tmpstring,"\"BedPos\":[%s]", bedPosition.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
-	sprintf(tmpstring,"\"Spawn\": [%s]", spawn.toGeoJSON().c_str());
+	sprintf(tmpstring,"\"Spawn\":[%s]", spawn.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
       }
 
@@ -774,12 +782,12 @@ namespace mcpe_viz {
 	for ( const auto& it: armorList ) {
 	  std::string sarmor = it->toGeoJSON(true,0,false);
 	  if ( sarmor.size() > 0 ) {
-	    tlist.push_back(std::string("{ " + sarmor + " }"));
+	    tlist.push_back(std::string("{" + sarmor + "}"));
 	  }
 	}
 	if ( tlist.size() > 0 ) {
-	  std::string ts = "\"Armor\": [ ";
-	  int i = tlist.size();
+	  std::string ts = "\"Armor\":[";
+	  int32_t i = tlist.size();
 	  for (const auto& iter : tlist ) {
 	    ts += iter;
 	    if ( --i > 0 ) {
@@ -796,12 +804,12 @@ namespace mcpe_viz {
 	for ( const auto& it: inventory ) {
 	  std::string sitem = it->toGeoJSON(true,0,true);
 	  if ( sitem.size() > 0 ) {
-	    tlist.push_back(std::string("{ " + sitem + " }"));
+	    tlist.push_back(std::string("{" + sitem + "}"));
 	  }
 	}
 	if ( tlist.size() > 0 ) {
-	  std::string ts = "\"Inventory\": [ ";
-	  int i = tlist.size();
+	  std::string ts = "\"Inventory\":[";
+	  int32_t i = tlist.size();
 	  for (const auto& iter : tlist ) {
 	    ts += iter;
 	    if ( --i > 0 ) {
@@ -814,11 +822,11 @@ namespace mcpe_viz {
       }
 
       if ( itemInHand.valid ) {
-	list.push_back(std::string("\"ItemInHand\": { " + itemInHand.toGeoJSON() + " }"));
+	list.push_back(std::string("\"ItemInHand\":{" + itemInHand.toGeoJSON() + "}"));
       }
 	
       if ( item.valid ) {
-	list.push_back(std::string("\"Item\": { " + item.toGeoJSON() + " }"));
+	list.push_back(std::string("\"Item\":{" + item.toGeoJSON() + "}"));
       }
 
       if ( ! otherPropsSortedFlag ) {
@@ -826,7 +834,7 @@ namespace mcpe_viz {
 	otherPropsSortedFlag = true;
       }
       for ( const auto& it : otherProps ) {
-	list.push_back(std::string("\"" + it.first + "\": \"" + it.second + "\""));
+	list.push_back(std::string("\"" + it.first + "\":\"" + it.second + "\""));
       }
 	
       // todo?
@@ -838,8 +846,8 @@ namespace mcpe_viz {
       */
 
       if ( list.size() > 0 ) {
-	list.push_back(std::string("\"Entity\": \"true\""));
-	int i = list.size();
+	list.push_back(std::string("\"Entity\":\"true\""));
+	int32_t i = list.size();
 	for (const auto& iter : list ) {
 	  s += iter;
 	  if ( --i > 0 ) {
@@ -847,7 +855,7 @@ namespace mcpe_viz {
 	  }
 	}
       }
-      s += "} }";
+      s += "}}";
 	
       return s;
     }
@@ -980,13 +988,13 @@ namespace mcpe_viz {
       text.clear();
       signTotalStringLength = 0;
     }
-    int addItem ( nbt::tag_compound &iitem ) {
+    int32_t addItem ( nbt::tag_compound &iitem ) {
       std::unique_ptr<ParsedItem> it(new ParsedItem());
-      int ret = it->parse(iitem);
+      int32_t ret = it->parse(iitem);
       items.push_back( std::move(it) );
       return ret;
     }
-    int addSign ( nbt::tag_compound &tc ) {
+    int32_t addSign ( nbt::tag_compound &tc ) {
       text.push_back( tc["Text1"].as<nbt::tag_string>().get() );
       text.push_back( tc["Text2"].as<nbt::tag_string>().get() );
       text.push_back( tc["Text3"].as<nbt::tag_string>().get() );
@@ -998,7 +1006,7 @@ namespace mcpe_viz {
       }
       return 0;
     }
-    int addMobSpawner ( nbt::tag_compound &tc ) {
+    int32_t addMobSpawner ( nbt::tag_compound &tc ) {
       entityId = tc["EntityId"].as<nbt::tag_int>().get();
       // todo - how to interpret entityId? (e.g. 0xb22 -- 0x22 is skeleton, what is 0xb?)
       // todo - any of these interesting?
@@ -1020,11 +1028,11 @@ namespace mcpe_viz {
       char tmpstring[1025];
 
       if ( items.size() > 0 ) {
-	list.push_back("\"Name\": \"Chest\"");
+	list.push_back("\"Name\":\"Chest\"");
 	  
 	if ( pairChest.valid ) {
 	  // todobig - should we keep lists and combine chests so that we can show full content of double chests?
-	  list.push_back("\"pairchest\": [" + pairChest.toGeoJSON() + "]");
+	  list.push_back("\"pairchest\":[" + pairChest.toGeoJSON() + "]");
 	}
 	  
 	std::vector<std::string> tlist;
@@ -1035,10 +1043,10 @@ namespace mcpe_viz {
 	  }
 	}
 	if ( tlist.size() > 0 ) {
-	  std::string ts = "\"Items\": [ ";
-	  int i = tlist.size();
+	  std::string ts = "\"Items\":[";
+	  int32_t i = tlist.size();
 	  for (const auto& iter : tlist ) {
-	    ts += "{ " + iter + " }";
+	    ts += "{" + iter + "}";
 	    if ( --i > 0 ) {
 	      ts += ",";
 	    }
@@ -1056,17 +1064,17 @@ namespace mcpe_viz {
 	  xname = "SignNonBlank";
 	}
 
-	list.push_back("\"Name\": \"" + xname + "\"");
-	std::string ts = "\"" + xname + "\": {";
+	list.push_back("\"Name\":\"" + xname + "\"");
+	std::string ts = "\"" + xname + "\":{";
 
-	int i = text.size();
-	int t=1;
+	int32_t i = text.size();
+	int32_t t=1;
 	for ( const auto& it: text ) {
 	  // todo - think about how to handle weird chars people put in signs
-	  sprintf(tmpstring,"\"Text%d\": \"%s\"", t++, escapeString(it,"\"").c_str());
+	  sprintf(tmpstring,"\"Text%d\":\"%s\"", t++, escapeString(it,"\"").c_str());
 	  ts += tmpstring;
 	  if ( --i > 0 ) {
-	    ts += ", ";
+	    ts += ",";
 	  }
 	}
 	ts += "}";
@@ -1074,17 +1082,17 @@ namespace mcpe_viz {
       }
 
       if ( entityId > 0 ) {
-	list.push_back("\"Name\": \"MobSpawner\"");
-	std::string ts = "\"MobSpawner\": {";
-	sprintf(tmpstring, "\"entityId\": \"%d (0x%x)\",", entityId, entityId);
+	list.push_back("\"Name\":\"MobSpawner\"");
+	std::string ts = "\"MobSpawner\":{";
+	sprintf(tmpstring, "\"entityId\":\"%d (0x%x)\",", entityId, entityId);
 	ts += tmpstring;
 	  
 	// todo - the entityid is weird.  lsb appears to be entity type; high bytes are ??
-	int eid = entityId & 0xff;
+	int32_t eid = entityId & 0xff;
 	if ( has_key(entityInfoList, eid) ) {
-	  ts += "\"Name\": \"" + entityInfoList[eid]->name + "\"";
+	  ts += "\"Name\":\"" + entityInfoList[eid]->name + "\"";
 	} else {
-	  sprintf(tmpstring,"\"Name\": \"(UNKNOWN: id=%d 0x%x)\"",eid,eid);
+	  sprintf(tmpstring,"\"Name\":\"(UNKNOWN: id=%d 0x%x)\"",eid,eid);
 	  ts += tmpstring;
 	}
 	ts += "}";
@@ -1094,25 +1102,25 @@ namespace mcpe_viz {
       if ( list.size() > 0 ) {
 	std::string s="";
 
-	list.push_back(std::string("\"TileEntity\": \"true\""));
-	sprintf(tmpstring,"\"Dimension\": \"%d\"", forceDimensionId);
+	list.push_back(std::string("\"TileEntity\":\"true\""));
+	sprintf(tmpstring,"\"Dimension\":\"%d\"", forceDimensionId);
 	list.push_back(std::string(tmpstring));
 
-	sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
+	sprintf(tmpstring, "\"Pos\":[%s]", pos.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
 	  
 	double ix, iy;
 	worldPointToGeoJSONPoint(forceDimensionId, pos.x,pos.z, ix,iy);
 	s += makeGeojsonHeader(ix,iy);
 	  
-	int i = list.size();
+	int32_t i = list.size();
 	for (const auto& iter : list ) {
 	  s += iter;
 	  if ( --i > 0 ) {
 	    s += ",";
 	  }
 	}
-	s += "} }";
+	s += "}}";
 	return s;
       }
 
@@ -1134,7 +1142,7 @@ namespace mcpe_viz {
 	}
 	  
 	s+=" Chest=[";
-	int i = items.size();
+	int32_t i = items.size();
 	for ( const auto& it: items ) {
 	  std::string sitem = it->toString(true,0);
 	  --i;
@@ -1150,7 +1158,7 @@ namespace mcpe_viz {
 
       if ( text.size() > 0 ) {
 	s+=" Sign=[";
-	int i = text.size();
+	int32_t i = text.size();
 	for ( const auto& it: text ) {
 	  s += it;
 	  if ( --i > 0 ) {
@@ -1163,7 +1171,7 @@ namespace mcpe_viz {
       if ( entityId > 0 ) {
 	s+= " MobSpawner=[";
 	// todo - the entityid is weird.  lsb appears to be entity type; high bytes are ??
-	int eid = entityId & 0xff;
+	int32_t eid = entityId & 0xff;
 	if ( has_key(entityInfoList, eid) ) {
 	  s += "Name=" + entityInfoList[eid]->name;
 	} else {
@@ -1180,7 +1188,7 @@ namespace mcpe_viz {
   typedef std::vector< std::unique_ptr<ParsedTileEntity> > ParsedTileEntityList;
 
     
-  int parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
+  int32_t parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
 		      bool playerLocalFlag, bool playerRemoteFlag,
 		      const std::string &playerType, const std::string &playerId) {
     ParsedEntityList entityList;
@@ -1359,7 +1367,7 @@ namespace mcpe_viz {
   }
 
     
-  int parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList) {
+  int32_t parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList) {
     ParsedTileEntityList tileEntityList;
     tileEntityList.clear();
       
@@ -1434,6 +1442,42 @@ namespace mcpe_viz {
 	  // todo - new for 0.13
 	  // todo - anything interesting?
 	}
+	else if ( id == "FlowerPot" ) {
+	  // todo - new for 0.13
+	  // todo - anything interesting?
+	  // todo - 'item' (short) is the blockid in the flower pot
+	  // todo - 'mData' (int) is the blockdata of the block in the pot? (e.g. flower / blue orchid)
+	}
+	else if ( id == "Hopper" ) {
+	  // todo - new for 0.14
+	  // todo - anything interesting?
+	  // todo - has a LIST of items in the hopper; 'TransferCooldown'
+	}
+	else if ( id == "Dropper" ) {
+	  // todo - new for 0.14
+	  // todo - anything interesting?
+	  // todo - has a LIST of items in the dropper
+	}
+	else if ( id == "Dispenser" ) {
+	  // todo - new for 0.14
+	  // todo - anything interesting?
+	  // todo - has a LIST of items in the dispenser
+	}
+	else if ( id == "Cauldron" ) {
+	  // todo - new for 0.14
+	  // todo - anything interesting?
+	  // todo - has a LIST of items in the cauldron?; PotionId; SplashPotion
+	}
+	else if ( id == "ItemFrame" ) {
+	  // todo - new for 0.14
+	  // todo - anything interesting?
+	  // todo - Item; ItemDropChance; ItemRotation
+	}
+	else if ( id == "Comparator" ) {
+	  // todo - new for 0.14
+	  // todo - anything interesting?
+	  // todo - 'OutputSignal'
+	}
 	else {
 	  logger.msg(kLogInfo1,"WARNING: Unknown tileEntity id=(%s)\n", id.c_str());
 	}
@@ -1471,12 +1515,12 @@ namespace mcpe_viz {
       dimId = -1;
       span = xa = za = 0;
     }
-    int add ( nbt::tag_compound &tc ) {
+    int32_t add ( nbt::tag_compound &tc ) {
       dimId = tc["DimId"].as<nbt::tag_int>().get();
       span = tc["Span"].as<nbt::tag_byte>().get();
-      int tpx = tc["TpX"].as<nbt::tag_int>().get();
-      int tpy = tc["TpY"].as<nbt::tag_int>().get();
-      int tpz = tc["TpZ"].as<nbt::tag_int>().get();
+      int32_t tpx = tc["TpX"].as<nbt::tag_int>().get();
+      int32_t tpy = tc["TpY"].as<nbt::tag_int>().get();
+      int32_t tpz = tc["TpZ"].as<nbt::tag_int>().get();
       pos.set(tpx,tpy,tpz);
       xa = tc["Xa"].as<nbt::tag_byte>().get();
       za = tc["Za"].as<nbt::tag_byte>().get();
@@ -1487,43 +1531,43 @@ namespace mcpe_viz {
       char tmpstring[1025];
 
       // note: we fake this as a tile entity so that it is easy to deal with in js
-      list.push_back(std::string("\"TileEntity\": \"true\""));
+      list.push_back(std::string("\"TileEntity\":\"true\""));
 
-      list.push_back("\"Name\": \"NetherPortal\"");
+      list.push_back("\"Name\":\"NetherPortal\"");
 
-      sprintf(tmpstring,"\"DimId\": \"%d\"", dimId);
+      sprintf(tmpstring,"\"DimId\":\"%d\"", dimId);
       list.push_back(tmpstring);
 
-      sprintf(tmpstring,"\"Span\": \"%d\"", span);
+      sprintf(tmpstring,"\"Span\":\"%d\"", span);
       list.push_back(tmpstring);
 
-      sprintf(tmpstring,"\"Xa\": \"%d\"", xa);
+      sprintf(tmpstring,"\"Xa\":\"%d\"", xa);
       list.push_back(tmpstring);
 
-      sprintf(tmpstring,"\"Za\": \"%d\"", za);
+      sprintf(tmpstring,"\"Za\":\"%d\"", za);
       list.push_back(tmpstring);
 	
       if ( list.size() > 0 ) {
 	std::string s="";
 
-	sprintf(tmpstring,"\"Dimension\": \"%d\"", dimId);
+	sprintf(tmpstring,"\"Dimension\":\"%d\"", dimId);
 	list.push_back(std::string(tmpstring));
 
-	sprintf(tmpstring, "\"Pos\": [%s]", pos.toGeoJSON().c_str());
+	sprintf(tmpstring, "\"Pos\":[%s]", pos.toGeoJSON().c_str());
 	list.push_back(std::string(tmpstring));
 	  
 	double ix, iy;
 	worldPointToGeoJSONPoint(dimId, pos.x,pos.z, ix,iy);
 	s += makeGeojsonHeader(ix,iy);
 	  
-	int i = list.size();
+	int32_t i = list.size();
 	for (const auto& iter : list ) {
 	  s += iter;
 	  if ( --i > 0 ) {
 	    s += ",";
 	  }
 	}
-	s += "} }";
+	s += "}}";
 	return s;
       }
 
@@ -1559,7 +1603,7 @@ namespace mcpe_viz {
   typedef std::vector< std::unique_ptr<ParsedPortal> > ParsedPortalList;
 
     
-  int parseNbt_portals(MyNbtTagList &tagList) {
+  int32_t parseNbt_portals(MyNbtTagList &tagList) {
     ParsedPortalList portalList;
     portalList.clear();
       

@@ -4,7 +4,20 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added better display of remote users and the ability to map remote player id's to player names
+Highlight: Added support for new 0.14 blocks, items and mobs
+
+v0.0.18 - 2016.01.31
+Added support for new 0.14 blocks, items and mobs;
+Web - Removed unneeded spaces from GeoJSON files to reduce file size;
+Readme - Added links for info on how to do world backups and info on using dropsync;
+Code cleanup heading towards making a mcpe-leveldb library;
+Changed many 'int' to 'int32_t';
+Simplified win32 and win64 build (CMake and build script) - results in smaller .exe files;
+Re-enabled optimization on win32 and win64 builds (leveldb still can't have anything but -O0);
+Simplified win32/win64 builds for libnbt++ and leveldb;
+Added leveldb bloom filter with default of 10 bits (appears to be a bit faster when doing --html-all);
+Added (hidden) command-line options for leveldb block_size and bloom filter bits;
+Found and fixed super obscure issue in leveldb code (added lpContext=NULL) to fix crashes in win32 and win64
 
 v0.0.17 - 2015.12.26
 Web - added better display of remote players;

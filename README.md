@@ -33,19 +33,20 @@ Additional Features:
     * Histogram of all blocks in the chunk
     * And more...
   * For each world type (e.g. overworld, nether):
+    * Histogram of blocks
     * Histogram of biomes (per-block column)
 
 
 ## Example Output
 
-Here are example images: http://imgur.com/a/YiIWe
+[Here are example images](http://imgur.com/a/YiIWe)
 
-Here's an example of movie output: https://www.youtube.com/watch?v=kBCOrctFIGM
+[Here's an example of movie output](https://www.youtube.com/watch?v=kBCOrctFIGM)
 
 
 ## Quick Start -- How to run it on Windows with a GUI
 
-* Download the zip file: https://github.com/Plethora777/mcpe_viz/archive/master.zip
+* [Download the zip file](https://github.com/Plethora777/mcpe_viz/archive/master.zip)
 
 * Unzip that file.
 
@@ -141,6 +142,19 @@ Here's an example invocation:
 This will read the leveldb from "./mcpe/another1" and name output files starting with "./mcpe/output/out1", and it will draw chunk boundaries on your output image.  This also dumps the *voluminous* output to "out1.log".  The log file has a *ton* of interesting information about your world.  "grep" is your friend.
 
 Please note that --db expects the directory which contains "level.dat".
+
+
+## How to backup your MCPE world files
+
+On Android, [see this link](http://pocketbeta.minecraft.net/p/how-to-make-backup.html).
+
+On iOS or Windows 10, [see this link](https://www.reddit.com/r/MCPE/comments/3h28ku/how_to_backuptransfer_worlds/)
+
+Note that MCPE is sometimes weird about actually closing world files -- that is, you think that MCPE is closed and should be done with the world file, but a backup of it may not work correctly.  To be certain that you get a good backup, you should reboot and then do the backup *before* starting MCPE again.
+
+### Automated backup to Dropbox using DropSync (Android)
+
+On Android, you can use [DropSync](https://play.google.com/store/apps/details?id=com.ttxapps.dropsync) to automatically backup your MCPE world to your dropbox account.  You configure this tool to backup any of your world files to dropbox.  As you play on your device, DropSync will copy the updated world files to Dropbox.  Very cool!  Install Dropbox's client (there's even one for [Linux](https://www.dropbox.com/install?os=lnx)) on the machine you use for MCPE Viz.  It is recommended to copy the data from your local Dropbox folder to another folder to prevent Dropbox from syncing *from* your MCPE Viz machine.  Running MCPE Viz on the world files *does* change the world files.  This method has only been *lightly* tested, so be careful.
 
 
 ## Customization

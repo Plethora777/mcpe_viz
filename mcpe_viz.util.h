@@ -36,29 +36,29 @@ namespace mcpe_viz {
 #define be32toh local_be32toh
 #endif
 
-  int local_mkdir(const std::string& path);
+  int32_t local_mkdir(const std::string& path);
   
   // these hacks work around "const char*" problems
   std::string mybasename( const std::string& fn );
   std::string mydirname( const std::string& fn );
   
-  int file_exists(const char* fn);
+  int32_t file_exists(const char* fn);
   
   std::string escapeString(const std::string& s, const std::string& escapeChars);
 
-  std::string makeIndent(int indent, const char* hdr);
+  std::string makeIndent(int32_t indent, const char* hdr);
   
   typedef std::vector< std::pair<std::string, std::string> > StringReplacementList;
-  int copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
+  int32_t copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
 				      const StringReplacementList& replaceStrings );
   
-  int copyFile ( const std::string& fnSrc, const std::string& fnDest );
+  int32_t copyFile ( const std::string& fnSrc, const std::string& fnDest );
 
-  int copyDirToDir ( const std::string& dirSrc, const std::string& dirDest );
+  int32_t copyDirToDir ( const std::string& dirSrc, const std::string& dirDest );
 
-  int deleteFile ( const std::string& fn );
+  int32_t deleteFile ( const std::string& fn );
   
-  bool vectorContains( const std::vector<int> &v, int i );
+  bool vectorContains( const std::vector<int> &v, int32_t i );
 
   
 
@@ -82,7 +82,7 @@ namespace mcpe_viz {
   const int32_t kLogQuiet = ( kLogWarning | kLogError | kLogFatalError );
 
   
-  
+  // todolib - separate .cc/.h for each class... sigh
   class Logger {
   public:
     int32_t logLevelMask;
@@ -119,7 +119,7 @@ namespace mcpe_viz {
     // from: http://stackoverflow.com/questions/12573968/how-to-use-gccs-printf-format-attribute-with-c11-variadic-templates
     // make gcc check calls to this function like it checks printf et al
     __attribute__((format(printf, 3, 4)))
-      int msg (int levelMask, const char *fmt, ...) {
+      int32_t msg (int32_t levelMask, const char *fmt, ...) {
       // check if we care about this message
       if ( (levelMask & logLevelMask) || (levelMask & kLogFatalError) ) {
 	// we care
@@ -188,12 +188,12 @@ namespace mcpe_viz {
       close();
     }
 
-    int init(const std::string& xfn, const std::string& imageDescription, int w, int h, int numRowPointers, bool rgbaFlag) {
+    int32_t init(const std::string& xfn, const std::string& imageDescription, int32_t w, int32_t h, int32_t numRowPointers, bool rgbaFlag) {
       fn = std::string(xfn);
       return open(imageDescription,w,h,numRowPointers,rgbaFlag);
     }
 
-    int open(const std::string& imageDescription, int width, int height, int numRowPointers, bool rgbaFlag) {
+    int32_t open(const std::string& imageDescription, int32_t width, int32_t height, int32_t numRowPointers, bool rgbaFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
 	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
@@ -228,7 +228,7 @@ namespace mcpe_viz {
       png_init_io(png, fp);
 	
       // Output is 8bit depth, RGB format.
-      int color_type = PNG_COLOR_TYPE_RGB;
+      int32_t color_type = PNG_COLOR_TYPE_RGB;
       if ( rgbaFlag ) {
 	color_type = PNG_COLOR_TYPE_RGB_ALPHA;
       }
@@ -261,7 +261,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int close() {
+    int32_t close() {
       if ( fp != nullptr && openFlag ) {
 	png_write_end(png, info);
 	png_destroy_write_struct(&png, &info);
@@ -273,7 +273,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int addText(const std::string& key, const std::string& val) {
+    int32_t addText(const std::string& key, const std::string& val) {
       png_text text[1];
       char* skey = new char[key.size()+1];
       strcpy(skey, key.c_str());
@@ -316,12 +316,12 @@ namespace mcpe_viz {
       close();
     }
 
-    int init(const std::string& xfn) {
+    int32_t init(const std::string& xfn) {
       fn = std::string(xfn);
       return open();
     }
 
-    int open() {
+    int32_t open() {
       fp = fopen(fn.c_str(), "rb");
       if(!fp) {
 	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
@@ -374,23 +374,23 @@ namespace mcpe_viz {
       return 0;
     }
 
-    int getWidth() {
+    int32_t getWidth() {
       return png_get_image_width(png,info);
     }
-    int getHeight() {
+    int32_t getHeight() {
       return png_get_image_height(png,info);
     }
-    int getColorType() {
+    int32_t getColorType() {
       return png_get_color_type(png,info);
     }
     
-    int read() {
+    int32_t read() {
       png_read_png(png, info, PNG_TRANSFORM_IDENTITY, NULL);
       row_pointers = png_get_rows(png, info);
       return 0;
     }
 
-    int close() {
+    int32_t close() {
       if ( fp != nullptr && openFlag ) {
 	// png_read_end(png, end_info);
 	png_destroy_read_struct(&png, &info, &end_info);
@@ -407,18 +407,18 @@ namespace mcpe_viz {
   class PngTiler {
   public:
     std::string filename;
-    int tileWidth;
-    int tileHeight;
+    int32_t tileWidth;
+    int32_t tileHeight;
     std::string dirOutput;
 	
-    PngTiler(const std::string& fn, int tileW, int tileH, const std::string& dirOut) {
+    PngTiler(const std::string& fn, int32_t tileW, int32_t tileH, const std::string& dirOut) {
       filename = fn;
       tileWidth = tileW;
       tileHeight = tileH;
       dirOutput = dirOut;
     }
 
-    int doTile() {
+    int32_t doTile() {
       // todobig - store tile filenames?
 
       char tmpstring[256];
@@ -428,33 +428,33 @@ namespace mcpe_viz {
       pngSrc.init(filename);
       pngSrc.read();
 
-      int srcW = pngSrc.getWidth();
-      int srcH = pngSrc.getHeight();
-      int colorType = pngSrc.getColorType();
+      int32_t srcW = pngSrc.getWidth();
+      int32_t srcH = pngSrc.getHeight();
+      int32_t colorType = pngSrc.getColorType();
       bool rgbaFlag = false;
-      int bpp = 3;
+      int32_t bpp = 3;
       if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
 	bpp = 4;
 	rgbaFlag = true;
       }
-      int numPngW = (int)ceil((double)srcW / (double)tileWidth);
+      int32_t numPngW = (int)ceil((double)srcW / (double)tileWidth);
 
       PngWriter *pngOut = new PngWriter[numPngW];
       uint8_t **buf;
       buf = new uint8_t*[numPngW];
-      for (int i=0; i < numPngW; i++) {
+      for (int32_t i=0; i < numPngW; i++) {
 	buf[i] = new uint8_t[tileWidth * tileHeight * bpp];
       }
 	
       bool initPngFlag = false;
-      int tileCounterY=0;
+      int32_t tileCounterY=0;
 
-      for (int sy=0; sy < srcH; sy++) {
+      for (int32_t sy=0; sy < srcH; sy++) {
 
 	// initialize png helpers
 	if ( ! initPngFlag ) {
 	  initPngFlag = true;
-	  for (int i=0; i < numPngW; i++) {
+	  for (int32_t i=0; i < numPngW; i++) {
 	    sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
 		    tileCounterY, i);
 	    std::string fname = tmpstring;
@@ -464,7 +464,7 @@ namespace mcpe_viz {
 	    memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
 	      
 	    // setup row_pointers
-	    for (int ty=0; ty < tileHeight; ty++) {
+	    for (int32_t ty=0; ty < tileHeight; ty++) {
 	      pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * bpp];
 	    }
 	  }
@@ -473,19 +473,19 @@ namespace mcpe_viz {
 
 	uint8_t *srcbuf = pngSrc.row_pointers[sy];
 
-	int tileOffsetY = sy % tileHeight;
+	int32_t tileOffsetY = sy % tileHeight;
 	  
 	// todobig - step in tileWidth and memcpy as we go - need to check the last one for out of bounds
-	for (int sx=0; sx < srcW; sx++) {
-	  int tileCounterX = sx / tileWidth;
-	  int tileOffsetX = sx % tileWidth;
+	for (int32_t sx=0; sx < srcW; sx++) {
+	  int32_t tileCounterX = sx / tileWidth;
+	  int32_t tileOffsetX = sx % tileWidth;
 	  memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &srcbuf[sx*bpp], bpp);
 	}
 	  
 	// write tile png files when they are ready
 	if ( ((sy+1) % tileHeight) == 0 ) {
 	  // write pngs
-	  for (int i=0; i < numPngW; i++) {
+	  for (int32_t i=0; i < numPngW; i++) {
 	    png_write_image(pngOut[i].png, pngOut[i].row_pointers);
 	    pngOut[i].close();
 	  }
@@ -496,7 +496,7 @@ namespace mcpe_viz {
       // close final tiles
       if ( initPngFlag ) {
 	// write pngs
-	for (int i=0; i < numPngW; i++) {
+	for (int32_t i=0; i < numPngW; i++) {
 	  png_write_image(pngOut[i].png, pngOut[i].row_pointers);
 	  pngOut[i].close();
 	}
@@ -504,7 +504,7 @@ namespace mcpe_viz {
 
       delete [] pngOut;
 
-      for (int i=0; i < numPngW; i++) {
+      for (int32_t i=0; i < numPngW; i++) {
 	delete [] buf[i];
       }
       delete [] buf;
@@ -517,14 +517,14 @@ namespace mcpe_viz {
   };
 
 
-  int oversampleImage(const std::string& fnSrc, const std::string& fnDest, int oversample);
+  int32_t oversampleImage(const std::string& fnSrc, const std::string& fnDest, int32_t oversample);
   
   
-  int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness);
+  int32_t rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness);
     
-  int hsl2rgb ( double h, double s, double l, int32_t &r, int32_t &g, int32_t &b );
+  int32_t hsl2rgb ( double h, double s, double l, int32_t &r, int32_t &g, int32_t &b );
   
-  int makeHslRamp ( int32_t *pal, int32_t start, int32_t stop, double h1, double h2, double s1, double s2, double l1, double l2 );
+  int32_t makeHslRamp ( int32_t *pal, int32_t start, int32_t stop, double h1, double h2, double s1, double s2, double l1, double l2 );
 
 
 
@@ -532,7 +532,7 @@ namespace mcpe_viz {
   public:
     std::string name;
     int32_t color;
-    int r,g,b;
+    int32_t r,g,b;
     double h, s, l;
       
     ColorInfo(const std::string& n, int32_t c) {
@@ -543,7 +543,7 @@ namespace mcpe_viz {
 
     ColorInfo& operator=(const ColorInfo& other) = default;
 
-    int calcHSL() {
+    int32_t calcHSL() {
       r = (color & 0xFF0000) >> 16;
       g = (color & 0xFF00) >> 8;
       b = color & 0xFF;
@@ -627,7 +627,7 @@ namespace mcpe_viz {
     HistogramMap map;
     
     bool has_key(int32_t k) {
-      return  map.find(k) != map.end();
+      return map.find(k) != map.end();
     }
     
     void add(int32_t k) {
@@ -663,6 +663,10 @@ namespace mcpe_viz {
       : std::binary_function<HistogramItem,HistogramItem,bool>
     {
       inline bool operator()(const HistogramItem& lhs, const HistogramItem& rhs) {
+	if ( lhs.second == rhs.second ) {
+	  // if counts are equal, compare the id
+	  return lhs.first < rhs.first;
+	}
 	return lhs.second < rhs.second;
       }
     };
@@ -670,6 +674,10 @@ namespace mcpe_viz {
       : std::binary_function<HistogramItem,HistogramItem,bool>
     {
       inline bool operator()(const HistogramItem& lhs, const HistogramItem& rhs) {
+	if ( lhs.second == rhs.second ) {
+	  // if counts are equal, compare the id
+	  return lhs.first > rhs.first;
+	}
 	return lhs.second > rhs.second;
       }
     };
@@ -681,7 +689,7 @@ namespace mcpe_viz {
 
   extern PlayerIdToName playerIdToName;
   
-  int parsePlayerIdToName(const char* s);
+  int32_t parsePlayerIdToName(const char* s);
   
 } // namespace mcpe_viz
 

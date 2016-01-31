@@ -10,15 +10,18 @@
 #ifndef __MCPE_VIZ_NBT_H__
 #define __MCPE_VIZ_NBT_H__
 
-// nbt lib stuff
-#include "io/stream_reader.h"
+// todobig - del
+//#include "io/stream_reader.h"
+
 // hide innocuous warnings here
 #pragma GCC diagnostic ignored "-Wshadow"
 #include "nbt_tags.h"
 #pragma GCC diagnostic pop
-#include <iostream>
-#include <fstream>
-#include <sstream>
+
+//todobig - del
+//#include <iostream>
+//#include <fstream>
+//#include <sstream>
 
 namespace mcpe_viz {
 
@@ -29,14 +32,14 @@ namespace mcpe_viz {
 
   std::string makeGeojsonHeader(double ix, double iy);
   
-  int parseNbt( const char* hdr, const char* buf, int bufLen, MyNbtTagList& tagList );
+  int32_t parseNbt( const char* hdr, const char* buf, int32_t bufLen, MyNbtTagList& tagList );
     
-  int parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
+  int32_t parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
 		      bool playerLocalFlag, bool playerRemoteFlag, const std::string& playerType, const std::string& playerId);
     
-  int parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList);
+  int32_t parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList);
     
-  int parseNbt_portals(MyNbtTagList &tagList);
+  int32_t parseNbt_portals(MyNbtTagList &tagList);
     
 } // namespace mcpe_viz
 

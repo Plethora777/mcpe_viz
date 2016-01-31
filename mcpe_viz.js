@@ -4,16 +4,6 @@
 
   todobig
 
-  000 map.addLayer(layerMain);
-  100 map.addLayer(layerShadedReliefStatic);
-  110 map.addLayer(layerElevation);
-  120 map.addLayer(layerElevationAlpha);
-  200 map.addLayer(layerChunkGrid);
-  210 map.addLayer(layerSlimeChunks);
-  300 map.addLayer(vectorPoints);
-  400 map.addLayer(layerDraw);
-
-
   * tiling - see test-xyz* dirs for code; BUT tiling breaks the elevation overlay
   -- it appears that since we fake the Z in tiles that we always get resolution=1 data in the shade() function.  Sigh.
 
@@ -148,6 +138,16 @@ function map_addLayer(layer) {
 
     // todo - check for not defined myStackOrder
 
+    // current myStackOrder values:
+    // 000 map.addLayer(layerMain);
+    // 100 map.addLayer(layerShadedReliefStatic);
+    // 110 map.addLayer(layerElevation);
+    // 120 map.addLayer(layerElevationAlpha);
+    // 200 map.addLayer(layerChunkGrid);
+    // 210 map.addLayer(layerSlimeChunks);
+    // 300 map.addLayer(vectorPoints);
+    // 400 map.addLayer(layerDraw);
+    
     var layerStackOrder = +layer.get('myStackOrder');
     a.forEach( function (el, index, arr) {
 	var elStackOrder = +el.get('myStackOrder');

@@ -12,7 +12,7 @@
 
 namespace mcpe_viz {
     
-  int doParseXml (const std::string& fn);
+  int32_t doParseXml (const std::string& fn);
 
 } // namespace mcpe_viz
 

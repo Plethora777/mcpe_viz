@@ -15,9 +15,9 @@
 
 namespace mcpe_viz {
     
-  int xmlGetInt(xmlNodePtr cur, const xmlChar* p, bool &valid) {
+  int32_t xmlGetInt(xmlNodePtr cur, const xmlChar* p, bool &valid) {
     valid=false;
-    int ret;
+    int32_t ret;
     xmlChar* prop = xmlGetProp(cur,p);
     if ( prop ) {
       // see if it is hexadecimal
@@ -81,7 +81,7 @@ namespace mcpe_viz {
     return s;
   }
 
-  int doParseXml_Unknown(xmlNodePtr cur) {
+  int32_t doParseXml_Unknown(xmlNodePtr cur) {
     // some unknowns are fine (e.g. text and comment)
     if ( cur->type == XML_TEXT_NODE ) {
       // fine
@@ -100,7 +100,7 @@ namespace mcpe_viz {
     return 0;
   }
     
-  int doParseXML_blocklist_blockvariant(xmlNodePtr cur, BlockInfo& block) {
+  int32_t doParseXML_blocklist_blockvariant(xmlNodePtr cur, BlockInfo& block) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"blockvariant") == 0 ) {
@@ -110,10 +110,10 @@ namespace mcpe_viz {
 
 	bool blockDataValid, nameValid, colorValid, dcolorValid, spawnableFlagValid;
 	  
-	int blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
+	int32_t blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
-	int dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
+	int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+	int32_t dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
 	bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
 	
 	// create data
@@ -152,16 +152,16 @@ namespace mcpe_viz {
     return 0;
   }
     
-  int doParseXML_blocklist(xmlNodePtr cur) {
+  int32_t doParseXML_blocklist(xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
 	  
 	bool idValid, nameValid, colorValid, solidFlagValid, opaqueFlagValid, liquidFlagValid, spawnableFlagValid;
 	  
-	int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+	int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 	bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
 	bool opaqueFlag = xmlGetBool(cur, (const xmlChar*)"opaque", true, opaqueFlagValid);
 	bool liquidFlag = xmlGetBool(cur, (const xmlChar*)"liquid", false, liquidFlagValid);
@@ -200,14 +200,14 @@ namespace mcpe_viz {
     return 0;
   }
 
-  int doParseXML_itemlist(xmlNodePtr cur) {
+  int32_t doParseXML_itemlist(xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"item") == 0 ) {
 
 	bool idValid, nameValid;
 	  
-	int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 
 	// create data
@@ -229,14 +229,14 @@ namespace mcpe_viz {
     return 0;
   }
 
-  int doParseXML_entitylist(xmlNodePtr cur) {
+  int32_t doParseXML_entitylist(xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"entity") == 0 ) {
 
 	bool idValid, nameValid;
 	  
-	int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 
 	// create data
@@ -258,14 +258,14 @@ namespace mcpe_viz {
     return 0;
   }
 
-  int doParseXML_enchantmentlist(xmlNodePtr cur) {
+  int32_t doParseXML_enchantmentlist(xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantment") == 0 ) {
 
 	bool idValid, nameValid, officialNameValid;
 	  
-	int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 	std::string officialName = xmlGetString(cur, (const xmlChar*)"officialName", officialNameValid);
 	  
@@ -292,16 +292,16 @@ namespace mcpe_viz {
     return 0;
   }
 
-  int doParseXML_biomelist(xmlNodePtr cur) {
+  int32_t doParseXML_biomelist(xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"biome") == 0 ) {
 
 	bool idValid, nameValid, colorValid;
 	  
-	int id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
 	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	int color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+	int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 
 	// create data
 	if ( idValid && nameValid ) {
@@ -326,7 +326,7 @@ namespace mcpe_viz {
     return 0;
   }
     
-  int doParseXML_xml(xmlNodePtr cur) {
+  int32_t doParseXML_xml(xmlNodePtr cur) {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
 
@@ -358,7 +358,7 @@ namespace mcpe_viz {
     return 0;
   }
     
-  int doParseXml( const std::string& fn ) {
+  int32_t doParseXml( const std::string& fn ) {
     xmlDocPtr doc;
     xmlNodePtr cur;
 
@@ -375,7 +375,7 @@ namespace mcpe_viz {
     // todo - use verboseflag to show all items as they are processed
     fprintf(stderr,"Reading XML from %s\n", fn.c_str());
       
-    int ret = 2;
+    int32_t ret = 2;
     cur = xmlDocGetRootElement(doc);
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"xml") == 0 ) {

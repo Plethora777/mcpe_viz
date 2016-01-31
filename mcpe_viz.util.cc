@@ -64,9 +64,9 @@ namespace mcpe_viz {
   }
 
   
-  int file_exists(const char* fn) {
+  int32_t file_exists(const char* fn) {
     struct stat buf;
-    int ret = stat(fn, &buf);
+    int32_t ret = stat(fn, &buf);
     return (ret == 0);
   }
     
@@ -96,7 +96,7 @@ namespace mcpe_viz {
  
   // hacky file copying funcs
   typedef std::vector< std::pair<std::string, std::string> > StringReplacementList;
-  int copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
+  int32_t copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
 				      const StringReplacementList& replaceStrings ) {
     char buf[1025];
 
@@ -148,7 +148,7 @@ namespace mcpe_viz {
 
   
   // hacky but expedient text file copy
-  int copyFile ( const std::string& fnSrc, const std::string& fnDest ) {
+  int32_t copyFile ( const std::string& fnSrc, const std::string& fnDest ) {
     char buf[1025];
     memset(buf,0,1025);
 
@@ -178,7 +178,7 @@ namespace mcpe_viz {
 
 
 
-  int copyDirToDir ( const std::string& dirSrc, const std::string& dirDest ) {
+  int32_t copyDirToDir ( const std::string& dirSrc, const std::string& dirDest ) {
     struct dirent *dp;
     DIR *dfd = opendir(dirSrc.c_str());
     if (dfd != NULL) {
@@ -199,12 +199,12 @@ namespace mcpe_viz {
   }
 
   
-  int deleteFile ( const std::string& fn ) {
+  int32_t deleteFile ( const std::string& fn ) {
     return unlink(fn.c_str());
   }
 
   // from: http://kickjava.com/src/org/eclipse/swt/graphics/RGB.java.htm
-  int rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness) {
+  int32_t rgb2hsb(int32_t red, int32_t green, int32_t blue, double& hue, double& saturation, double &brightness) {
     double r = (double)red / 255.0;
     double g = (double)green / 255.0;
     double b = (double)blue / 255.0;
@@ -233,7 +233,7 @@ namespace mcpe_viz {
 
 #if 0    
   // from: http://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
-  int rgb2hsv(int32_t in_r, int32_t in_g, int32_t in_b, double& out_h, double& out_s, double& out_v) {
+  int32_t rgb2hsv(int32_t in_r, int32_t in_g, int32_t in_b, double& out_h, double& out_s, double& out_v) {
     double min, max, delta;
 
     min = in_r < in_g ? in_r : in_g;
@@ -306,7 +306,7 @@ namespace mcpe_viz {
   }
     
 
-  int hsl2rgb ( double h, double s, double l, int32_t &r, int32_t &g, int32_t &b ) {
+  int32_t hsl2rgb ( double h, double s, double l, int32_t &r, int32_t &g, int32_t &b ) {
     double m2;
     if (l <= 0.5) {
       m2 = l * (s+1.0);
@@ -324,14 +324,14 @@ namespace mcpe_viz {
   }
 
   
-  int makeHslRamp ( int32_t *pal, int32_t start, int32_t stop, double h1, double h2, double s1, double s2, double l1, double l2 ) {
+  int32_t makeHslRamp ( int32_t *pal, int32_t start, int32_t stop, double h1, double h2, double s1, double s2, double l1, double l2 ) {
     double steps = stop-start+1;
     double dh = (h2 - h1) / steps;
     double ds = (s2 - s1) / steps;
     double dl = (l2 - l1) / steps;
     double h=h1,s=s1,l=l1;
     int32_t r,g,b;
-    for ( int i=start; i<=stop; i++ ) {
+    for ( int32_t i=start; i<=stop; i++ ) {
       hsl2rgb(h,s,l, r,g,b);
       int32_t c = ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
       pal[i] = c;
@@ -357,7 +357,7 @@ namespace mcpe_viz {
   }
 
 
-  int oversampleImage(const std::string& fnSrc, const std::string& fnDest, int oversample) {
+  int32_t oversampleImage(const std::string& fnSrc, const std::string& fnDest, int32_t oversample) {
     PngReader pngSrc;
     if ( pngSrc.init(fnSrc) != 0 ) {
       slogger.msg(kLogInfo1, "ERROR: Failed to open src png");
@@ -367,7 +367,7 @@ namespace mcpe_viz {
 
     int32_t srcW = pngSrc.getWidth();
     int32_t srcH = pngSrc.getHeight();
-    int colorType = pngSrc.getColorType();
+    int32_t colorType = pngSrc.getColorType();
     int32_t bppSrc = 3;
     if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
       bppSrc = 4;
@@ -382,19 +382,19 @@ namespace mcpe_viz {
 
     PngWriter pngOut;
     pngOut.init(fnDest, "MCPE Viz Oversampled Image", destW, destH, destH, true);
-    for (int ty=0; ty < destH; ty++) {
+    for (int32_t ty=0; ty < destH; ty++) {
       pngOut.row_pointers[ty] = &buf[ty * destW * bppDest];
     }
 
-    for (int sy=0; sy < srcH; sy++) {
+    for (int32_t sy=0; sy < srcH; sy++) {
       uint8_t *srcbuf = pngSrc.row_pointers[sy];
 	
-      for (int sx=0; sx < srcW; sx++) {
+      for (int32_t sx=0; sx < srcW; sx++) {
 
-	for (int oy=0; oy < oversample; oy++) {
-	  int dy = sy * oversample + oy;
-	  for (int ox=0; ox < oversample; ox++) {
-	    int dx = sx * oversample + ox;
+	for (int32_t oy=0; oy < oversample; oy++) {
+	  int32_t dy = sy * oversample + oy;
+	  for (int32_t ox=0; ox < oversample; ox++) {
+	    int32_t dx = sx * oversample + ox;
 	    // todo - optimize srcbuf val outside loops
 	    memcpy(&buf[ (dy * destW + dx) * bppDest ], &srcbuf[ sx * bppSrc ], bppDest);
 	  }
@@ -414,7 +414,7 @@ namespace mcpe_viz {
   }
   
 
-  bool vectorContains( const std::vector<int> &v, int i ) {
+  bool vectorContains( const std::vector<int> &v, int32_t i ) {
     for ( const auto& iter: v ) {
       if ( iter == i ) {
 	return true;
@@ -424,18 +424,18 @@ namespace mcpe_viz {
   }
 
     
-  std::string makeIndent(int indent, const char* hdr) {
+  std::string makeIndent(int32_t indent, const char* hdr) {
     std::string s;
     s.append(hdr);
-    for (int i=0; i < indent; i++) {
+    for (int32_t i=0; i < indent; i++) {
       s.append("  ");
     }
     return s;
   }
 
-  int local_mkdir(const std::string& path) {
+  int32_t local_mkdir(const std::string& path) {
     // todobig - check if dir exists first?
-#ifdef WINVER
+#if defined(WIN32) || defined(WIN64)
     return mkdir(path.c_str());
 #else
     return mkdir(path.c_str(),0755);
@@ -443,18 +443,16 @@ namespace mcpe_viz {
   }
 
 
-  PlayerIdToName playerIdToName;
-
   bool has_key(const PlayerIdToName &m, const std::string &k) {
     return  m.find(k) != m.end();
   }
   
-  int addPlayerIdToName(const std::string &playerId, const std::string &playerName) {
+  int32_t addPlayerIdToName(const std::string &playerId, const std::string &playerName) {
     playerIdToName[playerId] = playerName;
     return 0;
   }
   
-  int parsePlayerIdToName(const char* s) {
+  int32_t parsePlayerIdToName(const char* s) {
     std::string playerId;
     std::string playerName;
     
@@ -465,7 +463,7 @@ namespace mcpe_viz {
     std::stringstream ss(src); // Insert the string into a stream
 
     if ( ss >> playerId ) {
-      int i=0;
+      int32_t i=0;
       while ( ss >> buf ) {
 	if (i++ > 0) { playerName += " "; }
 	playerName += buf;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
-  VERSION 0.0.17)
+  VERSION 0.0.18)
 
 option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
 option(MCPE_VIZ_WIN64 "Build win64 using mingw" OFF)
@@ -17,7 +17,8 @@ if(MCPE_VIZ_WIN32)
 
   # win32 build
 
-  add_definitions(-DWIN32 -DWIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+  #add_definitions(-DWIN32 -D_WIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+  add_definitions(-DWIN32)
   
   if(MCPE_VIZ_DEBUG)
     message("Build: WIN32 DEBUG")
@@ -27,14 +28,15 @@ if(MCPE_VIZ_WIN32)
     message("Build: WIN32")
     # todo - can -O2 work?
     # todo - after code split (2015.10.24) -O1 and -O also do not work (i.e. immediate crash)
-    add_definitions(-O0 -DNDEBUG)
+    add_definitions(-O2 -DNDEBUG)
   endif()
   
 elseif(MCPE_VIZ_WIN64)
 
   # win64 build
 
-  add_definitions(-DWIN64 -DWIN64_WINNT=0x0600 -D_WIN64_WINDOWS=0x0600 -DWINVER=0x0600)
+  #add_definitions(-DWIN64 -D_WIN32_WINNT=0x0600 -D_WIN32_WINDOWS=0x0600 -DWINVER=0x0600)
+  add_definitions(-DWIN32 -DWIN64)
 
   if(MCPE_VIZ_DEBUG)
     message("Build: WIN64 DEBUG")
@@ -44,7 +46,7 @@ elseif(MCPE_VIZ_WIN64)
     message("Build: WIN64")
     # todo - can -O2 work?
     # todo - after code split (2015.10.24) -O1 and -O also do not work (i.e. immediate crash)
-    add_definitions(-O0 -DNDEBUG)
+    add_definitions(-O2 -DNDEBUG)
   endif()
   
 else()
@@ -94,18 +96,20 @@ if(MCPE_VIZ_WIN32)
     ${PROJECT_SOURCE_DIR}/leveldb-mcpe/wbuild/libleveldb.a
     ${PROJECT_SOURCE_DIR}/libnbtplusplus/wbuild/libnbt++.a
     ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
-  set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)
-  set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_END_STATIC 1)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  # 2016.01.30 - disabled
+  #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)
+  #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_END_STATIC 1)
+  #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 elseif(MCPE_VIZ_WIN64)
   include_directories(libnbtplusplus/wbuild64 .)
   target_link_libraries(mcpe_viz
     ${PROJECT_SOURCE_DIR}/leveldb-mcpe/wbuild64/libleveldb.a
     ${PROJECT_SOURCE_DIR}/libnbtplusplus/wbuild64/libnbt++.a
     ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
-  set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)
-  set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_END_STATIC 1)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  # 2016.01.30 - disabled
+  #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)
+  #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_END_STATIC 1)
+  #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 else()
   include_directories(libnbtplusplus/build .)
   target_link_libraries(mcpe_viz
@@ -150,7 +154,8 @@ if(MCPE_VIZ_WIN32)
   #  )
   configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
   configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
-  add_custom_target(create_zip ALL COMMAND
+  add_custom_target(create_zip
+    COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win32.zip" --format=zip
     "mcpe_viz.*"
     "mcpe_viz_helper.exe"
@@ -172,7 +177,8 @@ elseif(MCPE_VIZ_WIN64)
   # package win64 w/ required dll's
   configure_file(${PROJECT_SOURCE_DIR}/README.md README.txt NEWLINE_STYLE WIN32)
   configure_file(${PROJECT_SOURCE_DIR}/LICENSE LICENSE.txt NEWLINE_STYLE WIN32)
-  add_custom_target(create_zip ALL COMMAND
+  add_custom_target(create_zip
+    COMMAND
     ${CMAKE_COMMAND} -E tar "cfv" "../mcpe_viz.win64.zip" --format=zip
     "mcpe_viz.*"
     "mcpe_viz_helper.exe"

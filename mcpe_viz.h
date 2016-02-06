@@ -17,11 +17,14 @@ namespace mcpe_viz {
   const int32_t kColorDefault = 0xff00ff;  
 
   // todo ugly globals
+  extern std::string dirExec;
   extern Logger logger;
   extern double playerPositionImageX, playerPositionImageY;
   extern int32_t playerPositionDimensionId;
   extern std::vector<std::string> listGeoJSON;
 
+  extern int32_t globalIconImageId;
+  
   // dimensions
   enum DimensionType : int32_t {
     kDimIdOverworld = 0,
@@ -30,8 +33,8 @@ namespace mcpe_viz {
       };
 
   
-  void worldPointToImagePoint(int32_t dimId, float wx, float wz, int32_t &ix, int32_t &iy, bool geoJsonFlag);
-  void worldPointToGeoJSONPoint(int32_t dimId, float wx, float wz, double &ix, double &iy);
+  void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag);
+  void worldPointToGeoJSONPoint(int32_t dimId, double wx, double wz, double &ix, double &iy);
   
   class BlockInfo {
   public:
@@ -45,7 +48,11 @@ namespace mcpe_viz {
     int32_t colorSetNeedCount;
     int32_t blockdata;
     std::vector< std::unique_ptr<BlockInfo> > variantList;
+    bool valid;
 
+    int32_t userVar1;
+    std::string userString1;
+    
     BlockInfo() {
       name = "(unknown)";
       setColor(kColorDefault); // purple
@@ -56,13 +63,26 @@ namespace mcpe_viz {
       colorSetFlag = false;
       colorSetNeedCount = 0;
       variantList.clear();
+      valid = false;
+      userVar1 = 0;
+      userString1 = "";
     }
 
     BlockInfo& setName(const std::string& s) {
       name = std::string(s);
+      valid = true;
       return *this;
     }
 
+    bool isValid() { return valid; }
+
+    void setUserVar1(int32_t v) { userVar1 = v; }
+    void deltaUserVar1(int32_t d) { userVar1 += d; }
+    int32_t getUserVar1() { return userVar1; }
+
+    void setUserString1(const std::string& s) { userString1 = s; }
+    std::string& getUserString1() { return userString1; }
+    
     BlockInfo& setColor(int32_t rgb) {
       // note: we convert color storage to big endian so that we can memcpy when creating images
       color = htobe32(rgb);
@@ -137,19 +157,51 @@ namespace mcpe_viz {
   
   extern BlockInfo blockInfoList[256];
 
+  //BlockInfo* getBlockInfo(int32_t id, int32_t blockData);
+  std::string getBlockName(int32_t id, int32_t blockdata);
 
 
   class ItemInfo {
   public:
     std::string name;
-
+    int32_t extraData;
+    std::vector< std::unique_ptr<ItemInfo> > variantList;
+    int32_t userVar1;
+    std::string userString1;
+    
     ItemInfo(const char* n) {
       setName(n);
+      extraData = 0;
+      variantList.clear();
+      userVar1 = 0;
+      userString1 = "";
     }
 
     ItemInfo& setName (const std::string& s) {
       name = std::string(s);
       return *this;
+    }
+
+    void setUserVar1(int32_t v) { userVar1 = v; }
+    void deltaUserVar1(int32_t d) { userVar1 += d; }
+    int32_t getUserVar1() { return userVar1; }
+    
+    void setUserString1(const std::string& s) { userString1 = s; }
+    std::string& getUserString1() { return userString1; }
+
+    bool hasVariants() {
+      return (variantList.size() > 0);
+    }
+
+    void setExtraData(int32_t ed) {
+      extraData = ed;
+    }
+    
+    ItemInfo& addVariant(int32_t ed, const std::string& n) {
+      std::unique_ptr<ItemInfo> iv(new ItemInfo(n.c_str()));
+      iv->setExtraData(ed);
+      variantList.push_back( std::move(iv) );
+      return *(variantList.back());
     }
   };
 
@@ -157,8 +209,9 @@ namespace mcpe_viz {
   extern ItemInfoList itemInfoList;
   bool has_key(const ItemInfoList &m, int32_t k);
 
-
-
+  std::string getItemName(int32_t id, int32_t extraData);
+  
+  
   class EntityInfo {
   public:
     std::string name;
@@ -239,7 +292,26 @@ namespace mcpe_viz {
   typedef std::map<int, std::unique_ptr<EnchantmentInfo> > EnchantmentInfoList;
   extern EnchantmentInfoList enchantmentInfoList;
   bool has_key(const EnchantmentInfoList &m, int32_t k);
-    
+
+
+
+  typedef std::map<int32_t, int32_t> IntIntMap;
+
+  extern IntIntMap mcpcToMcpeBlock;
+  extern IntIntMap mcpeToMcpcBlock;
+  extern IntIntMap mcpcToMcpeItem;
+  extern IntIntMap mcpeToMcpcItem;
+
+  bool has_key(const IntIntMap &m, int32_t k);
+
+
+
+  typedef std::map<std::string, int32_t> StringIntMap;
+
+  extern StringIntMap imageFileMap;
+
+  bool has_key(const StringIntMap &m, const std::string& k);
+  
 } // namespace mcpe_viz
 
 #endif // __MCPE_VIZ_H__

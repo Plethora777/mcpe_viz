@@ -112,6 +112,11 @@ var spawnableEnableFlag = false;
 var globalCORSWarning = 'MCPE Viz Hint: If you are loading files from the local filesystem, your browser might not be allowing us to load additional files or examine pixels in maps.  Firefox does not have this limitation.  See README for more info...';
 var globalCORSWarningFlag = false;
 
+var globalItemStyleSelector = null;
+var globalItemStyleCount = 0;
+
+var globalWarnSlimeChunks = false;
+
 // this removes the hideous blurriness when zoomed in
 var setCanvasSmoothingMode = function(evt) {
     evt.context.mozImageSmoothingEnabled = false;
@@ -638,6 +643,10 @@ function doGlobalQuit() {
     // make popover disappear
     var element = popover.getElement();
     $(element).popover('destroy');
+
+    // todo - is this too broad?
+    $('.mytooltip_dyn').tooltip('hide');
+    $('.mytooltip').tooltip('hide');
     
     // todo - others?
 }
@@ -667,11 +676,51 @@ function updateLoadEventCount(delta) {
 
 function doParsedItem(obj, sortFlag) {
     var v = [];
+    var vold = [];
     for (var j in obj) {
 	if (obj[j].Name === 'info_reserved6') {
 	    // swallow this - it is the player's hot slots
 	} else {
-	    var s = '<li>' + obj[j].Name;
+	    var s = '';
+	    var fnimg = 'images/unknown.png';
+	    
+	    if ( obj[j].imgid !== undefined ) {
+		fnimg = imageIconLUT['' + obj[j].imgid];
+	    }
+	    
+	    var title = obj[j].Name;
+	    if (obj[j].Enchantments !== undefined) {
+		var ench = obj[j].Enchantments;
+		title += ' (';
+		var i = ench.length;
+		for (var k in ench) {
+		    title += ench[k].Name;
+		    if (--i > 0) {
+			title += '; ';
+		    }
+		}
+		title += ')';
+	    }
+	    if (obj[j].Count !== undefined) {
+		if ( obj[j].Count > 1 ) {
+		    title += ' (Qty: ' + obj[j].Count + ')';
+		}
+	    }
+	    // debug
+	    //title += ' (' + fnimg + ') (' + obj[j].imgid + ')' + ' (' + j + ')';
+	    
+	    s += '<div class="col-xs-1 mytooltip_dyn inventory-grid" title="' + title + '">';
+	    s += '<img class="pull-left inventory-item-image" height="32" width="32" src="' + fnimg + '" />';
+	    if (obj[j].Count !== undefined) {
+		s += '<span class="inventory-item-count">' + obj[j].Count + '</span>';
+		// s += obj[j].Count;
+	    }
+	    s += '</div>';
+
+	    v.push(s);
+
+	    // old version:
+	    s = '<li>' + obj[j].Name;
 	    if (obj[j].Count !== undefined) {
 		s += ' (' + obj[j].Count + ')';
 	    }
@@ -688,14 +737,46 @@ function doParsedItem(obj, sortFlag) {
 		s += ')';
 	    }
 	    s += '</li>';
-	    v.push(s);
+	    vold.push(s);
 	}
     }
+
     // we sort the items, yay
     if (sortFlag) {
 	v.sort();
+	vold.sort();
     }
-    return v.join('\n');
+
+    var ct = globalItemStyleCount++;
+    var ret = '<div class="myTabsContainer">' +
+	'<div role="group">' +
+	'<ul class="nav nav-pills btn-group myTabs" role="tablist">' +
+	'<li role="presentation"><a href="#itemsIcon' + ct + '" data-id="itemsIcon" class="itemsViewToggle itemsIcon" aria-controls="itemsIcon' + ct + '" role="tab" data-toggle="tab">Icons</a></li>' +
+	'<li role="presentation"><a href="#itemsText' + ct + '" data-id="itemsText" class="itemsViewToggle itemsText" aria-controls="itemsText' + ct + '" role="tab" data-toggle="tab">Text</a></li>' +
+	'</ul>' +
+	'</div>' +
+	'<div class="tab-content">';
+
+    // icon version
+    ret += '<div role="tabpanel" class="tab-pane" id="itemsIcon' + ct + '">';
+    ret += '<div class="container-fluid"><div class="row-fluid">';
+    for (var i = 0; i < v.length; i++) {
+	ret += v[i];
+	if ( ((i + 1) % 8) == 0 ) {
+	    ret += '</div><div class="row-fluid">';
+	}
+    }
+    ret += '</div></div></div>';
+
+    // text list version
+    ret += '<div role="tabpanel" class="tab-pane" id="itemsText' + ct + '">';
+    ret += '<div class="container-fluid"><ul>';
+    ret += vold.join('\n');
+    ret += '</ul></div></div>';
+
+    ret += '</div></div>';
+    
+    return ret;
 }
 
 
@@ -784,21 +865,43 @@ function correctGeoJSONName(feature) {
     return name;
 }
 
-function doFeaturePopover(feature, coordinate) {
+function doFeaturePopover(features, id, coordinate) {
+    var feature = features[id];
+    
     var element = popover.getElement();
+    // todo - is this too broad?
+    $('.mytooltip_dyn').tooltip('hide');
+    $(element).popover('destroy');
+
     var props = feature.getProperties();
 
     var name = correctGeoJSONName(feature);
 
-    var stitle;
-    if (props.Entity !== undefined) {
-	stitle = '<div class="mob"><span class="mob_name">' + name + '</span> <span class="mob_id">(id=' + props.id + ')</span></div>\n';
-    } else {
-	stitle = '<div class="mob"><span class="mob_name">' + name + '</span></div>\n';
+    var stitle = '<div class="mob">';
+    // prev/next buttons
+    if ( features.length > 1 ) {
+	var enabled;
+
+	stitle += '<div class="btn-group btn-group-xs">';
+
+	enabled = (id > 0) ? '' : ' disabled';
+	stitle += '<a href="#" class="btn btn-primary btn-xs mytooltip_dyn featurePrev' + enabled + '" title="Previous"><strong>&lt;</strong></a>';
+
+	enabled = (id < (features.length - 1)) ? '' : ' disabled';
+	stitle += '<a href="#" class="btn btn-primary btn-xs mytooltip_dyn featureNext' + enabled + '" title="Next"><strong>&gt;</strong></a>';
+	
+	stitle += '</div>&nbsp;';
     }
+    // mob/item title
+    if (props.Entity !== undefined) {
+	stitle += '<span class="mob_name">' + name + '</span> <span class="mob_id">(id=' + props.id + ')</span>';
+    } else {
+	stitle += '<span class="mob_name">' + name + '</span>';
+    }
+    stitle += '</div>';
     
-    var s = '<div>';
-    
+    var s = '<div class="container-fluid my-scrollable">';
+
     for (var i in props) {
 	// skip geometry property because it contains circular refs; skip others that are uninteresting
 	if (i !== 'geometry' &&
@@ -814,24 +917,24 @@ function doFeaturePopover(feature, coordinate) {
 	    if (typeof(props[i]) === 'object') {
 		if (i === 'Armor') {
 		    var armor = props[i];
-		    s += 'Armor:<ul>' + doParsedItem(armor, false) + '</ul>';
+		    s += 'Armor:' + doParsedItem(armor, false);
 		}
 		else if (i === 'Items') {
 		    // items in a chest
 		    var items = props[i];
-		    s += 'Items:<ul>' + doParsedItem(items, true) + '</ul>';
+		    s += 'Items:' + doParsedItem(items, true);
 		}
 		else if (i === 'Inventory') {
 		    var inventory = props[i];
-		    s += 'Inventory:<ul>' + doParsedItem(inventory, true) + '</ul>';
+		    s += 'Inventory:' + doParsedItem(inventory, true);
 		}
 		else if (i === 'ItemInHand') {
 		    var itemInHand = props[i];
-		    s += 'In Hand:<ul>' + doParsedItem([itemInHand], false) + '</ul>';
+		    s += 'In Hand:' + doParsedItem([itemInHand], false);
 		}
 		else if (i === 'Item') {
 		    var item = props[i];
-		    s += 'Item:<ul>' + doParsedItem([item], false) + '</ul>';
+		    s += 'Item:' + doParsedItem([item], false);
 		}
 		else if (i === 'Sign') {
 		    s += '<div class="mycenter">' +
@@ -870,7 +973,38 @@ function doFeaturePopover(feature, coordinate) {
 	'content': s
     });
     $(element).popover('show');
+    $('.mytooltip_dyn').tooltip({
+	// this helps w/ btn groups
+	trigger: 'hover',
+	container: 'body'
+    });
 
+    $('.myTabs').tab();
+    if ( globalItemStyleSelector !== null ) {
+	// todo - HACKY HACK TOWN
+	$('a.' + globalItemStyleSelector ).tab('show');
+    } else {
+	$('a.itemsIcon').tab('show');
+    }
+    
+    $('.myTabs a').click(function (e) {
+	e.preventDefault();
+	globalItemStyleSelector = $(this).attr('data-id');
+	// $(this).tab('show');
+	$('a.' + globalItemStyleSelector ).tab('show');
+	// todo - is this the correct way to do this?
+	//console.log("tab click: e=" + e.toString() + " h=" + globalItemStyleSelector);
+    });
+
+    $('.featurePrev').click(function (e) {
+	doFeaturePopover(features, id - 1, coordinate);
+    });
+    $('.featureNext').click(function (e) {
+	doFeaturePopover(features, id + 1, coordinate);
+    });
+
+    //todobig - would be cool to support up/down left/right as kbd accel for prev/next
+    
     // activate links
     // todo - seems silly that we have to do this - can't use regular ones init'ed in main func?
     $('.layerGoto_dyn').click(function() {
@@ -901,6 +1035,9 @@ function doFeaturePopover(feature, coordinate) {
 
 function doFeatureSelect(features, coordinate) {
     var element = popover.getElement();
+    // todo - is this too broad?
+    $('.mytooltip_dyn').tooltip('hide');
+    $(element).popover('destroy');
 
     var stitle = '<div class="mob"><span class="mob_name">Multiple Items</span></div>\n';
 
@@ -938,8 +1075,7 @@ function doFeatureSelect(features, coordinate) {
     // setup click helper for the list of items
     $('.doFeatureHelper').click(function() {
 	var id = +$(this).attr('data-id');
-	$(element).popover('destroy');
-	doFeaturePopover(features[id], coordinate);
+	doFeaturePopover(features, id, coordinate);
     });
 }
 
@@ -955,9 +1091,6 @@ var displayFeatureInfo = function(evt) {
 
     var pixel = evt.pixel;
     var coordinate = evt.coordinate;
-    var element = popover.getElement();
-
-    $(element).popover('destroy');
 
     // we get a list in case there are multiple items (e.g. stacked chests)
     var features = [];
@@ -968,7 +1101,7 @@ var displayFeatureInfo = function(evt) {
     if (features.length > 0) {
 
 	if (features.length === 1) {
-	    doFeaturePopover(features[0], coordinate);
+	    doFeaturePopover(features, 0, coordinate);
 	} else {
 	    // we need to show a feature select list
 	    doFeatureSelect(features, coordinate);
@@ -1532,6 +1665,11 @@ function doChunkGrid(enableFlag) {
 
 function doSlimeChunks(enabled) {
     if ( enabled ) {
+	if ( !globalWarnSlimeChunks ) {
+	    doModal('Slime Chunks',
+		    '<i>Warning:</i> MCPE Viz uses the Minecraft PC (MCPC) slime chunk calculation.  It is not clear if MCPE uses the same calculation method...');
+	    globalWarnSlimeChunks = true;
+	}
 	var fn = dimensionInfo[globalDimensionId].fnLayerSlimeChunks;
 	if ( useTilesFlag ) {
 	    srcLayerSlimeChunks = new ol.source.XYZ({
@@ -2219,7 +2357,7 @@ var fixContentHeight = function() {
     map.setSize(curMapSize);
 };
 
-function doTour() {
+function doTour(aboutFlag) {
     var featureExtra = '<br/><br/>' +
 	'You can click on mobs/objects on the map to get information about them.<br/>';
 
@@ -2355,6 +2493,7 @@ function doTour() {
 		title: 'About MCPE Viz',
 		content: '' +
 		    '<a href="https://github.com/Plethora777/mcpe_viz" target="_blank">MCPE Viz by Plethora777<br/>' +
+		    'Version ' + creationMcpeVizVersion + '<br/>' +
 		    'Please be sure to check back often for updates!</a><br/>' +
 		    '<br/>' +
 		    '<b>MCPE Viz Viewer</b> is built using these fine javascript libraries:<br/><ul>' +
@@ -2362,10 +2501,21 @@ function doTour() {
 		    '<li><a href="http://getbootstrap.com/" target="_blank">Bootstrap</a></li>' +
 		    '<li><a href="http://bootstraptour.com/" target="_blank">Bootstrap Tour</a></li>' +
 		    '<li><a href="http://jquery.com/" target="_blank">jQuery</a></li>' +
-		    '</ul>'
+		    '</ul>' +
+		    'Block and Item images are borrowed from the <a href="http://minecraft.gamepedia.com/" target="_blank">Minecraft Wiki</a>.  The textures themselves are copyright Mojang.'
 	    }
 	]});
     tour.init();
+    if ( aboutFlag ) {
+	tour._options.template = '<div class="popover tour">' + 
+	    '<div class="arrow"></div>' + 
+	    '<h3 class="popover-title"></h3>' +
+	    '<div class="popover-content"></div>' +
+	    '<div class="popover-navigation">' +
+	    '<button class="btn btn-default" data-role="end">Close</button>' +
+	    '</div></div>';
+	tour.goTo( tour._options.steps.length - 1);
+    }
     tour.start();
 }
 
@@ -2456,6 +2606,9 @@ function doCheckUpdate() {
     });
 }
 
+function doAbout() {
+    doTour(true);
+}
 
 $(function() {
 
@@ -2551,8 +2704,9 @@ $(function() {
 	var id = +$(this).attr('data-id');
 	setLayerById(id);
     });
-    
-    $('.entityToggleAddAll').click(function() {
+
+
+    $('.featureToggleAddAll').click(function() {
 	var dtype = $(this).attr('data-type');
 	if ( vectorPoints === null ) {
 	    loadVectors();
@@ -2564,15 +2718,37 @@ $(function() {
 		$(this).parent().addClass('active');
 	    }
 	});
+	$('.tileEntityToggle').each(function(index) {
+	    if ($(this).attr('data-type') === dtype) {
+		var id = +$(this).attr('data-id');
+		listTileEntityToggle[id] = true;
+		$(this).parent().addClass('active');
+	    }
+	});
 	vectorPoints.changed();
     });
-    $('.entityToggleRemoveAll').click(function() {
-	listEntityToggle = [];
+
+    $('.featureToggleRemoveAll').click(function() {
+	var dtype = $(this).attr('data-type');
+	$('.entityToggle').each(function(index) {
+	    if ($(this).attr('data-type') === dtype) {
+		var id = +$(this).attr('data-id');
+		listEntityToggle[id] = false;
+		$(this).parent().removeClass('active');
+	    }
+	});
+	$('.tileEntityToggle').each(function(index) {
+	    if ($(this).attr('data-type') === dtype) {
+		var id = +$(this).attr('data-id');
+		listTileEntityToggle[id] = false;
+		$(this).parent().removeClass('active');
+	    }
+	});
 	if (vectorPoints !== null) { 
 	    vectorPoints.changed();
 	}
-	$('.entityToggle').parent().removeClass('active');
     });
+    
     $('.entityToggle').click(function() {
 	var id = $(this).attr('data-id');
 	entityToggle(id);
@@ -2583,23 +2759,6 @@ $(function() {
 	}
     });
 
-    $('.tileEntityToggleAddAll').click(function() {
-	if ( vectorPoints === null ) {
-	    loadVectors();
-	}
-	$('.tileEntityToggle').each(function(index) {
-	    listTileEntityToggle[$(this).attr('data-id')] = true;
-	    $(this).parent().addClass('active');
-	});
-	vectorPoints.changed();
-    });
-    $('.tileEntityToggleRemoveAll').click(function() {
-	listTileEntityToggle = [];
-	if (vectorPoints !== null) { 
-	    vectorPoints.changed();
-	}
-	$('.tileEntityToggle').parent().removeClass('active');
-    });
     $('.tileEntityToggle').click(function() {
 	var id = $(this).attr('data-id');
 	tileEntityToggle(id);
@@ -2702,11 +2861,14 @@ $(function() {
 
     
     $('#btnHelp').click(function() {
-	doTour();
+	doTour(false);
     });
 
     $('#btnCheckUpdate').click(function() {
 	doCheckUpdate();
+    });
+    $('#btnAbout').click(function() {
+	doAbout();
     });
 
 
@@ -2738,7 +2900,6 @@ $(function() {
     // setup hotkeys
     $(document).on('keydown', function(evt) {
 	var key = String.fromCharCode(evt.which);
-
 	// escape key will quit any special modes
 	if ( evt.keyCode == 27 ) {
 	    doGlobalQuit();

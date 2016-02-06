@@ -149,3 +149,36 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
     max-height: 300px;
     overflow: auto;
 }
+
+.my-simple-scrollable {
+    overflow: auto;
+}
+
+
+.inventory-grid {
+    /* background-color: #ffdddd;*/
+    border: 1px dotted gray;
+    white-space:nowrap;
+    padding: 2px;
+    width: 60px;
+}
+.inventory-item-image {
+    /* background-color: #ddffdd;*/
+    /* display: inline-block; */
+    vertical-align: middle;
+    /* float: left; */
+}
+.inventory-item-count {
+    /* background-color: #ddddff; */
+    /* font-size: 24px; */
+    /* display: inline-block; */
+    vertical-align: middle;
+}
+
+/* make tabs on inventories etc much samller; indent them a bit */
+.myTabs > li > a {
+    padding: 2px;
+}
+.myTabsContainer {
+    padding-left: 1em;
+}

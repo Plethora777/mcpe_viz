@@ -11,6 +11,12 @@
 
   todohere
 
+  * add images/ stuff to git + zip files
+
+  * could use png files to determine avg color of each block!
+  * add icons for enchanted items?
+  * expand icons idea - use lil images of mobs etc in UI?
+
   * test web app on mobile -- what can be optimized? smaller tiles?
 
   * option to geojson items in chests etc (e.g. melon seeds; beetroot seeds)
@@ -148,6 +154,7 @@
 #include <algorithm>
 #include <getopt.h>
 #include <math.h>
+#include <dirent.h>
 
 #include "leveldb/db.h"
 // hide innocuous warnings here
@@ -190,7 +197,15 @@ namespace mcpe_viz {
   EntityInfoList entityInfoList;
   BiomeInfoList biomeInfoList;
   EnchantmentInfoList enchantmentInfoList;
-    
+
+  IntIntMap mcpcToMcpeBlock;
+  IntIntMap mcpeToMcpcBlock;
+  IntIntMap mcpcToMcpeItem;
+  IntIntMap mcpeToMcpcItem;
+
+  StringIntMap imageFileMap;
+  int32_t globalIconImageId = 1;
+  
   PlayerIdToName playerIdToName;
 
 
@@ -268,6 +283,10 @@ namespace mcpe_viz {
     bool quietFlag;
     int32_t movieX, movieY, movieW, movieH;
 
+    bool doFindImages;
+    std::string dirFindImagesIn;
+    std::string dirFindImagesOut;
+
     int32_t heightMode;
 
     int32_t tileWidth;
@@ -322,7 +341,11 @@ namespace mcpe_viz {
       // todobig - reasonable default? strike a balance between speed/# of files
       tileWidth = 1024;
       tileHeight = 1024;
-	
+
+      doFindImages = false;
+      dirFindImagesIn = "";
+      dirFindImagesOut = "";
+      
       shortRunFlag = false;
       colorTestFlag = false;
       verboseFlag = false;
@@ -509,7 +532,82 @@ namespace mcpe_viz {
   bool has_key(const EnchantmentInfoList &m, int32_t k) {
     return  m.find(k) != m.end();
   }
+  bool has_key(const IntIntMap &m, int32_t k) {
+    return  m.find(k) != m.end();
+  }
+  bool has_key(const StringIntMap &m, const std::string& k) {
+    return  m.find(k) != m.end();
+  }
 
+
+  // todobig - it would be nice to do something like this, but unique_ptr stands in the way...
+#if 0
+  BlockInfo* getBlockInfo(int32_t id, int32_t blockData) {
+    if ( blockInfoList[id].isValid() ) {
+      if ( blockInfoList[id].hasVariants() ) {
+	for ( auto& iter : blockInfoList[id].variantList ) {
+	  if ( iter->blockdata == blockData ) {
+	    // found variant
+	    return iter;
+	  }
+	}
+	// todo err
+	slogger.msg(kLogWarning, "getBlockInfo failed to find variant id=%d blockdata=%d\n", id, blockData);
+	return NULL;
+      } else {
+	return &blockInfoList[id];
+      }
+    }
+    
+    slogger.msg(kLogWarning, "getBlockInfoList failed to find id=%d blockdata=%d\n", id, blockData);
+    return NULL;
+  }
+#endif
+
+  std::string getBlockName(int32_t id, int32_t blockdata) {
+    if ( blockInfoList[id].isValid() ) {
+      if ( blockInfoList[id].hasVariants() ) {
+	for ( const auto& iter : blockInfoList[id].variantList ) {
+	  if ( iter->blockdata == blockdata ) {
+	    // found variant
+	    return iter->name;
+	  }
+	}
+	// todo err
+	slogger.msg(kLogWarning, "getBlockName failed to find variant id=%d blockdata=%d\n", id, blockdata);
+      } else {
+	return blockInfoList[id].name;
+      }
+    }
+    
+    slogger.msg(kLogWarning, "getBlockName failed to find id=%d blockdata=%d\n", id, blockdata);
+    char tmpstring[256];
+    sprintf(tmpstring,"(Unknown-block-id-%d-data-%d)", id, blockdata);
+    return std::string(tmpstring);
+  }
+  
+  std::string getItemName(int32_t id, int32_t extraData) {
+    if ( has_key(itemInfoList, id) ) {
+      if ( itemInfoList[id]->hasVariants() ) {
+	for ( const auto& iter : itemInfoList[id]->variantList ) {
+	  if ( iter->extraData == extraData ) {
+	    // found variant
+	    return iter->name;
+	  }
+	}
+	// todo err
+	slogger.msg(kLogWarning, "getItemName failed to find variant id=%d extradata=%d\n", id, extraData);
+      } else {
+	return itemInfoList[id]->name;
+      }
+    }
+    
+    slogger.msg(kLogWarning, "getItemName failed to find id=%d extradata=%d\n", id, extraData);
+    char tmpstring[256];
+    sprintf(tmpstring,"(Unknown-item-id-%d-data-%d)", id, extraData);
+    return std::string(tmpstring);
+  }
+  
   
   std::string getBiomeName(int32_t idv) {
     if ( has_key(biomeInfoList, idv) ) {
@@ -563,7 +661,7 @@ namespace mcpe_viz {
     uint8_t topLight[16][16];
 
     // we parse the block (et al) data in a chunk from leveldb
-    ChunkData_LevelDB(int32_t tchunkX, int32_t tchunkZ, const char* value,
+    ChunkData_LevelDB(int32_t tchunkX, int32_t tchunkZ, const char* cdata,
 	      int32_t dimensionId, const std::string& dimName,
 	      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
 	      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
@@ -612,7 +710,7 @@ namespace mcpe_viz {
       for (int32_t cy=MAX_BLOCK_HEIGHT; cy >= 0; cy--) {
 	for ( int32_t cx=0; cx < 16; cx++) {
 	  for ( int32_t cz=0; cz < 16; cz++ ) {
-	    blockId = getBlockId_LevelDB(value, cx,cz,cy);
+	    blockId = getBlockId_LevelDB(cdata, cx,cz,cy);
 	    histogramBlock[blockId]++;
 	    histogramGlobalBlock.add(blockId);
 	    
@@ -653,7 +751,7 @@ namespace mcpe_viz {
 
 		// note: rules adapted from: http://minecraft.gamepedia.com/Spawn
 
-		// todobig todohere - is this missing some spawnable blocks?
+		// todobig - is this missing some spawnable blocks?
 		
 		// "the spawning block itself must be non-opaque and non-liquid"
 		// we add: non-solid
@@ -663,20 +761,20 @@ namespace mcpe_viz {
 
 		  // "the block directly above it must be non-opaque"
 
-		  uint8_t aboveBlockId = getBlockId_LevelDB(value, cx,cz,cy+1);
+		  uint8_t aboveBlockId = getBlockId_LevelDB(cdata, cx,cz,cy+1);
 		  if ( ! blockInfoList[aboveBlockId].isOpaque() ) {
 
 		    // "the block directly below it must have a solid top surface (opaque, upside down slabs / stairs and others)"
 		    // "the block directly below it may not be bedrock or barrier" -- take care of with 'spawnable'
 
-		    uint8_t belowBlockId = getBlockId_LevelDB(value, cx,cz,cy-1);
-		    uint8_t belowBlockData = getBlockData_LevelDB(value, cx,cz,cy-1);
+		    uint8_t belowBlockId = getBlockId_LevelDB(cdata, cx,cz,cy-1);
+		    uint8_t belowBlockData = getBlockData_LevelDB(cdata, cx,cz,cy-1);
 		      
 		    //if ( blockInfoList[belowBlockId].isOpaque() && blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
 		    if ( blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
 
 		      // check the light level
-		      uint8_t bl = getBlockBlockLight_LevelDB(value, cx,cz,cy);
+		      uint8_t bl = getBlockBlockLight_LevelDB(cdata, cx,cz,cy);
 		      if ( bl <= 7 ) {
 			// spwawnable! add it to the list
 			double ix, iy;
@@ -715,7 +813,7 @@ namespace mcpe_viz {
 		   fastBlockForceTopList[blockId] ) {
 		
 		blocks[cx][cz] = blockId;
-		data[cx][cz] = getBlockData_LevelDB(value, cx,cz,cy);
+		data[cx][cz] = getBlockData_LevelDB(cdata, cx,cz,cy);
 		topBlockY[cx][cz] = cy;
 		
 #if 1
@@ -729,8 +827,8 @@ namespace mcpe_viz {
 		} else {
 		  // if not solid, don't adjust
 		}
-		uint8_t sl = getBlockSkyLight_LevelDB(value, cx,cz,cy2);
-		uint8_t bl = getBlockBlockLight_LevelDB(value, cx,cz,cy2);	
+		uint8_t sl = getBlockSkyLight_LevelDB(cdata, cx,cz,cy2);
+		uint8_t bl = getBlockBlockLight_LevelDB(cdata, cx,cz,cy2);	
 		// we combine the light nibbles into a byte
 		topLight[cx][cz] = (sl << 4) | bl;
 #endif
@@ -743,8 +841,8 @@ namespace mcpe_viz {
       // get per-column data
       for (int32_t cx=0; cx < 16; cx++) {
 	for (int32_t cz=0; cz < 16; cz++) {
-	  heightCol[cx][cz] = getColData_Height_LevelDB(value, cx,cz);
-	  grassAndBiome[cx][cz] = getColData_GrassAndBiome_LevelDB(value, cx,cz);
+	  heightCol[cx][cz] = getColData_Height_LevelDB(cdata, cx,cz);
+	  grassAndBiome[cx][cz] = getColData_GrassAndBiome_LevelDB(cdata, cx,cz);
 	  
 	  biomeId = (uint8_t)(grassAndBiome[cx][cz] & 0xFF);
 	  histogramBiome[biomeId]++;
@@ -754,8 +852,8 @@ namespace mcpe_viz {
 	  // todo - testing idea about lighting - get lighting from top solid block - result is part good, part crazy
 	  int32_t ty = heightCol[cx][cz] + 1;
 	  if ( ty > MAX_BLOCK_HEIGHT ) { ty=MAX_BLOCK_HEIGHT; }
-	  uint8_t sl = getBlockSkyLight_LevelDB(value, cx,cz,ty);
-	  uint8_t bl = getBlockBlockLight_LevelDB(value, cx,cz,ty);
+	  uint8_t sl = getBlockSkyLight_LevelDB(cdata, cx,cz,ty);
+	  uint8_t bl = getBlockBlockLight_LevelDB(cdata, cx,cz,ty);
 	  topLight[cx][cz] = (sl << 4) | bl;
 #endif
 	}
@@ -926,10 +1024,10 @@ namespace mcpe_viz {
     int32_t getMinChunkZ() { return minChunkZ; }
     int32_t getMaxChunkZ() { return maxChunkZ; }
 
-    int32_t addChunk ( int32_t chunkX, int32_t chunkZ, const char* value) {
+    int32_t addChunk ( int32_t chunkX, int32_t chunkZ, const char* cdata) {
       // todobig emplace_back? does this do a copy?
       list.push_back( std::unique_ptr<ChunkData_LevelDB>
-		      (new ChunkData_LevelDB(chunkX, chunkZ, value, dimId, name,
+		      (new ChunkData_LevelDB(chunkX, chunkZ, cdata, dimId, name,
 				     histogramGlobalBlock, histogramGlobalBiome,
 				     fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
 				     listCheckSpawn)) );
@@ -953,7 +1051,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    void worldPointToImagePoint(float wx, float wz, int32_t &ix, int32_t &iy, bool geoJsonFlag) {
+    void worldPointToImagePoint(double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
       
@@ -2422,9 +2520,9 @@ namespace mcpe_viz {
       int32_t recordCt = 0, ret;
 
       leveldb::Slice skey, svalue;
-      int32_t key_size, value_size;
+      int32_t key_size, cdata_size;
       const char* key;
-      const char* value;
+      const char* cdata;
       std::string dimName, chunkstr;
 
       leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
@@ -2436,8 +2534,8 @@ namespace mcpe_viz {
 	key = skey.data();
 
 	svalue = iter->value();
-	value_size = svalue.size();
-	value = svalue.data();
+	cdata_size = svalue.size();
+	cdata = svalue.data();
 
 	++recordCt;
 	if ( control.shortRunFlag && recordCt > 1000 ) {
@@ -2454,19 +2552,19 @@ namespace mcpe_viz {
 	if ( strncmp(key,"BiomeData",key_size) == 0 ) {
 	  // 0x61 +"BiomeData" -- snow accum? -- overworld only?
 	  logger.msg(kLogInfo1,"BiomeData value:\n");
-	  parseNbt("BiomeData: ", value, value_size, tagList);
+	  parseNbt("BiomeData: ", cdata, cdata_size, tagList);
 	  // todo - parse tagList? snow accumulation amounts
 	}
 
 	else if ( strncmp(key,"Overworld",key_size) == 0 ) {
 	  logger.msg(kLogInfo1,"Overworld value:\n");
-	  parseNbt("Overworld: ", value, value_size, tagList);
+	  parseNbt("Overworld: ", cdata, cdata_size, tagList);
 	  // todo - parse tagList? a list of "LimboEntities"
 	}
 
 	else if ( strncmp(key,"~local_player",key_size) == 0 ) {
 	  logger.msg(kLogInfo1,"Local Player value:\n");
-	  ret = parseNbt("Local Player: ", value, value_size, tagList);
+	  ret = parseNbt("Local Player: ", cdata, cdata_size, tagList);
 	  if ( ret == 0 ) { 
 	    parseNbt_entity(-1, "",tagList, true, false, "Local Player", "");
 	  }
@@ -2478,7 +2576,7 @@ namespace mcpe_viz {
 	  
 	  logger.msg(kLogInfo1,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
 
-	  ret = parseNbt("Remote Player: ", value, value_size, tagList);
+	  ret = parseNbt("Remote Player: ", cdata, cdata_size, tagList);
 	  if ( ret == 0 ) {
 	    parseNbt_entity(-1, "",tagList, false, true, "Remote Player", playerRemoteId);
 	  }
@@ -2486,14 +2584,14 @@ namespace mcpe_viz {
 
 	else if ( strncmp(key,"villages",key_size) == 0 ) {
 	  logger.msg(kLogInfo1,"Villages value:\n");
-	  parseNbt("villages: ", value, value_size, tagList);
+	  parseNbt("villages: ", cdata, cdata_size, tagList);
 	  // todo - parse tagList? usually empty, unless player is in range of village; test that!
 	}
 
 	else if ( strncmp(key,"mVillages",key_size) == 0 ) {
 	  // todobig -- new for 0.13? what is it?
 	  logger.msg(kLogInfo1,"mVillages value:\n");
-	  parseNbt("mVillages: ", value, value_size, tagList);
+	  parseNbt("mVillages: ", cdata, cdata_size, tagList);
 	  // todo - parse tagList?
 	}
 
@@ -2501,25 +2599,25 @@ namespace mcpe_viz {
 	  // todobig -- what is it?
 	  // example data (standard flat): 5b 37 2c 33 2c 33 2c 32 5d
 	  logger.msg(kLogInfo1,"game_flatworldlayers value: (todo)\n");
-	  // parseNbt("game_flatworldlayers: ", value, value_size, tagList);
+	  // parseNbt("game_flatworldlayers: ", cdata, cdata_size, tagList);
 	  // todo - parse tagList?
 	}
 	
 	else if ( strncmp(key,"idcounts",key_size) == 0 ) {
 	  // todobig -- new for 0.13? what is it? is it a 4-byte int?
 	  logger.msg(kLogInfo1,"idcounts value:\n");
-	  parseNbt("idcounts: ", value, value_size, tagList);
+	  parseNbt("idcounts: ", cdata, cdata_size, tagList);
 	}
 
 	else if ( strncmp(key,"Nether",key_size) == 0 ) {
 	  logger.msg(kLogInfo1,"Nether value:\n");
-	  parseNbt("Nether: ", value, value_size, tagList);
+	  parseNbt("Nether: ", cdata, cdata_size, tagList);
 	  // todo - parse tagList?  list of LimboEntities
 	}
 
 	else if ( strncmp(key,"portals",key_size) == 0 ) {
 	  logger.msg(kLogInfo1,"portals value:\n");
-	  ret = parseNbt("portals: ", value, value_size, tagList);
+	  ret = parseNbt("portals: ", cdata, cdata_size, tagList);
 	  if ( ret == 0 ) {
 	    parseNbt_portals(tagList);
 	  }
@@ -2566,9 +2664,11 @@ namespace mcpe_viz {
 	  chunkstr += tmpstring;
 	  if ( true ) {
 	    // show approximate image coordinates for chunk
-	    int32_t imageX, imageZ;
-	    dimDataList[chunkDimId]->worldPointToImagePoint(chunkX*16, chunkZ*16, imageX, imageZ, false);
-	    sprintf(tmpstring," (image %d %d)", imageX, imageZ);
+	    double tix, tiy;
+	    dimDataList[chunkDimId]->worldPointToImagePoint(chunkX*16, chunkZ*16, tix, tiy, false);
+	    int32_t imageX = tix;
+	    int32_t imageZ = tiy;
+	    sprintf(tmpstring," (image %d %d)", (int32_t)imageX, (int32_t)imageZ);
 	    chunkstr+=tmpstring;
 	  }
 	  chunkstr += "\n";
@@ -2579,13 +2679,13 @@ namespace mcpe_viz {
 	  case 0x30:
 	    // chunk block data
 	    // we do the parsing in the destination object to save memcpy's
-	    dimDataList[chunkDimId]->addChunk(chunkX,chunkZ,value);
+	    dimDataList[chunkDimId]->addChunk(chunkX,chunkZ,cdata);
 	    break;
 
 	  case 0x31:
 	    // tile entity record (e.g. a chest)
 	    logger.msg(kLogInfo1,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
-	    ret = parseNbt("0x31-te: ", value, value_size, tagList);
+	    ret = parseNbt("0x31-te: ", cdata, cdata_size, tagList);
 	    if ( ret == 0 ) { 
 	      parseNbt_tileEntity(chunkDimId, dimName+"-", tagList);
 	    }
@@ -2594,7 +2694,7 @@ namespace mcpe_viz {
 	  case 0x32:
 	    // entity record (e.g. a mob)
 	    logger.msg(kLogInfo1,"%s 0x32 chunk (entity data):\n", dimName.c_str());
-	    ret = parseNbt("0x32-e: ", value, value_size, tagList);
+	    ret = parseNbt("0x32-e: ", cdata, cdata_size, tagList);
 	    if ( ret == 0 ) {
 	      parseNbt_entity(chunkDimId, dimName+"-", tagList, false, false, "", "");
 	    }
@@ -2603,14 +2703,14 @@ namespace mcpe_viz {
 	  case 0x33:
 	    // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
 	    logger.msg(kLogInfo1,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
-	    parseNbt("0x33-tick: ", value, value_size, tagList);
+	    parseNbt("0x33-tick: ", cdata, cdata_size, tagList);
 	    // todo - parse tagList?
 	    // todobig - could show location of active fires
 	    break;
 
 	  case 0x34:
 	    logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
-	    printKeyValue(key,key_size,value,value_size,false);
+	    printKeyValue(key,key_size,cdata,cdata_size,false);
 	    /* 
 	       0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
 	       -- there are 206 of these in "another1" world
@@ -2622,7 +2722,7 @@ namespace mcpe_viz {
 
 	  case 0x35:
 	    logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
-	    printKeyValue(key,key_size,value,value_size,false);
+	    printKeyValue(key,key_size,cdata,cdata_size,false);
 	    /*
 	      0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
 	      -- there are 2907 in "another1"
@@ -2636,31 +2736,31 @@ namespace mcpe_viz {
 	    {
 	      // this record is not very interesting, we usually hide it
 	      // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
-	      if ( control.verboseFlag || (value[0] != 2) ) { 
-		logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(value[0]));
+	      if ( control.verboseFlag || (cdata[0] != 2) ) { 
+		logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
 	      }
 	    }
 	    break;
 
 	  default:
 	    logger.msg(kLogInfo1,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
-		       key_size, chunkType, value_size);
-	    printKeyValue(key,key_size,value,value_size,true);
+		       key_size, chunkType, cdata_size);
+	    printKeyValue(key,key_size,cdata,cdata_size,true);
 	    if ( false ) {
-	      if ( value_size > 10 ) {
-		parseNbt("UNK: ", value, value_size, tagList);
+	      if ( cdata_size > 10 ) {
+		parseNbt("UNK: ", cdata, cdata_size, tagList);
 	      }
 	    }
 	    break;
 	  }
 	}
 	else {
-	  logger.msg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d value_size=%d\n", key_size, value_size);
-	  printKeyValue(key,key_size,value,value_size,true);
+	  logger.msg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d cdata_size=%d\n", key_size, cdata_size);
+	  printKeyValue(key,key_size,cdata,cdata_size,true);
 	  if ( false ) { 
 	    // try to nbt decode
 	    logger.msg(kLogInfo1,"WARNING: Attempting NBT Decode:\n");
-	    parseNbt("WARNING: ", value, value_size, tagList);
+	    parseNbt("WARNING: ", cdata, cdata_size, tagList);
 	  }
 	}
       }
@@ -2907,7 +3007,18 @@ namespace mcpe_viz {
 	}
 	// last, put the catch-all
 	fprintf(fp,"'%d': '*UNKNOWN BIOME*'\n};\n",kColorDefault);
-	    
+
+
+	fprintf(fp,
+		"// lut for inventory items\n"
+		);
+
+	fprintf(fp, "var imageIconLUT = {\n");
+	for ( const auto& it : imageFileMap ) {
+	  fprintf(fp,"'%d': '%s',\n", it.second, it.first.c_str());
+	}
+	fprintf(fp, "'-1': ''};\n");
+	
 	fclose(fp);
 	    
       } else {
@@ -2921,16 +3032,24 @@ namespace mcpe_viz {
 	// todo - how to be sure that this is a diff dir?
 	sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
 	std::string fnJsDest = tmpstring;
-	copyFile(fnJsSrc, fnJsDest);
+	copyFile(fnJsSrc, fnJsDest, false);
 
 	sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnCssSrc).c_str());
 	std::string fnCssDest = tmpstring;
-	copyFile(fnCssSrc, fnCssDest);
+	copyFile(fnCssSrc, fnCssDest, false);
 
 	// copy javascript files
 	std::string dirJs = dirDest + "/js";
 	local_mkdir(dirJs);
-	copyDirToDir(dirExec + "/js", dirJs);
+	copyDirToDir(dirExec + "/js", dirJs, false);
+
+	// copy images
+	// todobig - could save a good amount of time per run if we detect if dir has already been copied
+	// todobig - could save a bit of time by only copying images used (use imageFileMap)
+	slogger.msg(kLogInfo1,"Copying icon images\n");
+	std::string dirImages = dirDest + "/images";
+	local_mkdir(dirImages);
+	copyDirToDir(dirExec + "/images", dirImages, true);
 	
       } else {
 	// if same dir, don't copy files
@@ -3138,7 +3257,7 @@ namespace mcpe_viz {
       return 0;
     }
 
-    void worldPointToImagePoint(int32_t dimId, float wx, float wz, int32_t &ix, int32_t &iy, bool geoJsonFlag) {
+    void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
       // hack to avoid using wrong dim on pre-0.12 worlds
       if ( dimId < 0 ) { dimId = 0; }
 
@@ -3151,32 +3270,12 @@ namespace mcpe_viz {
 
   
   
-  void worldPointToImagePoint(int32_t dimId, float wx, float wz, int32_t &ix, int32_t &iy, bool geoJsonFlag) {
+  void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
     return world->worldPointToImagePoint(dimId, wx, wz, ix, iy, geoJsonFlag);
   }
 
-  void worldPointToGeoJSONPoint(int32_t dimId, float wx, float wz, double &ix, double &iy) {
-    int32_t tix, tiy;
-
-    worldPointToImagePoint(dimId, wx, wz, tix, tiy, true);
-    ix = tix;
-    iy = tiy;
-
-    // we add 0.5 so that the vector point will be centered in the target pixel in the web app
-    // todobig - do we want this?
-    if ( false ) {
-      if ( ix >= 0.0 ) {
-	ix += 0.5;
-      } else {
-	ix -= 0.5;
-      }
-      
-      if ( iy >= 0.0 ) {
-	iy += 0.5;
-      } else {
-	iy -= 0.5;
-      }
-    }
+  void worldPointToGeoJSONPoint(int32_t dimId, double wx, double wz, double &ix, double &iy) {
+    worldPointToImagePoint(dimId, wx, wz, ix, iy, true);
   }
     
   
@@ -3362,6 +3461,7 @@ namespace mcpe_viz {
     for (int32_t i=0; i < 256; i++) {
       sprintf(tmpstring,"(unknown-id-0x%02x)", i);
       blockInfoList[i].setName(tmpstring);
+      blockInfoList[i].valid = false;
     }
     
     // as specified on cmdline
@@ -3401,7 +3501,205 @@ namespace mcpe_viz {
     slogger.msg(kLogInfo1,"ERROR: Did not find a valid XML file\n");
     return -1;
   }
+
+
+  // a developer's function to match MCPE Viz block + items with PNG files from minecraft wiki
+  int32_t findImages() {
+    std::string dirSrc = control.dirFindImagesIn;
+    std::string dirDest = control.dirFindImagesOut;
+
+    // clear block list
+    for (int i=0; i < 256; i++) {
+      if ( blockInfoList[i].isValid() ) {
+	if ( blockInfoList[i].hasVariants() ) {
+	  for (const auto& itbv : blockInfoList[i].variantList) {
+	    itbv->setUserVar1(0);
+	  }
+	}
+	blockInfoList[i].setUserVar1(0);
+      }
+    }
+
+    // clear item list
+    for ( auto& iter : itemInfoList ) {
+      iter.second->setUserVar1(0);
+    }
     
+    // get list of input images
+    // they are named like this: blockId.blockData.blockName.png (e.g. "1.0.Stone.png")
+
+    struct dirent *dp;
+    DIR *dfd = opendir(dirSrc.c_str());
+
+    if (dfd != NULL) {
+      while ((dp = readdir(dfd)) != NULL) {
+	if ( strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0 ) {
+	  // skip
+	} else {
+	  std::string fnSrc = dp->d_name;
+	  int32_t blockId = -1, blockData = -1;
+	  char blockName[1025];
+	  memset(blockName,0,1025);
+	  if ( sscanf(fnSrc.c_str(), "%d.%d.%s.png", &blockId, &blockData, blockName) == 3 ) {
+
+	    //slogger.msg(kLogInfo1, "Parsed (%d) (%d) (%s) (%s)\n", blockId, blockData, blockName, fnSrc.c_str());
+
+	    // check for mapping mcpc to mcpe
+	    if ( has_key(mcpcToMcpeBlock, blockId) ) {
+	      blockId = mcpcToMcpeBlock[blockId];
+	    }
+	    if ( has_key(mcpcToMcpeItem, blockId) ) {
+	      blockId = mcpcToMcpeItem[blockId];
+	    }
+	    
+	    bool found = false;
+
+	    if ( blockId < 256 ) {
+	      // it's a block, look it up
+	      
+	      if ( blockInfoList[blockId].isValid() ) {
+		if ( blockInfoList[blockId].hasVariants() ) {
+		  for (const auto& itbv : blockInfoList[blockId].variantList) {
+		    if ( itbv->blockdata == blockData ) {
+		      slogger.msg(kLogInfo1,"FOUND Block: %s (%d) (%d) (%s)\n", itbv->name.c_str(), blockId, blockData, blockName);
+		      itbv->deltaUserVar1(1);
+		      itbv->setUserString1(dirSrc + "/" + fnSrc);
+		      found = true;
+		    }
+		  }
+		} else {
+		  if ( blockData == 0 ) {
+		    slogger.msg(kLogInfo1,"FOUND Block: %s (%d) (%d) (%s)\n", blockInfoList[blockId].name.c_str(), blockId, blockData, blockName);
+		    blockInfoList[blockId].deltaUserVar1(1);
+		    blockInfoList[blockId].setUserString1(dirSrc + "/" + fnSrc);
+		    found = true;
+		  }
+		}
+	      }
+
+	    } else {
+	      if ( has_key(itemInfoList, blockId) ) {
+		if ( itemInfoList[blockId]->hasVariants() ) {
+		  for (const auto& itbv : itemInfoList[blockId]->variantList) {
+		    if ( itbv->extraData == blockData ) {
+		      slogger.msg(kLogInfo1,"FOUND  Item: %s (%d) (%d) (%s)\n", itbv->name.c_str(), blockId, blockData, blockName);
+		      itbv->deltaUserVar1(1);
+		      itbv->setUserString1(dirSrc + "/" + fnSrc);
+		      found = true;
+		    }
+		  }
+		} else {
+		  if ( blockData == 0 ) {
+		    slogger.msg(kLogInfo1,"FOUND  Item: %s (%d) (%d) (%s)\n", itemInfoList[blockId]->name.c_str(), blockId, blockData, blockName);
+		    itemInfoList[blockId]->deltaUserVar1(1);
+		    itemInfoList[blockId]->setUserString1(dirSrc + "/" + fnSrc);
+		    found = true;
+		  }
+		}
+	      }
+	    }
+
+	    if ( ! found ) {
+	      slogger.msg(kLogInfo1, "-- WARNING: did not find target for 0x%04x 0x%02x (%s)\n", blockId, blockData, blockName);
+	    }
+	    
+	  } else {
+	    slogger.msg(kLogWarning, "** Failed to parse filename (%s)\n", fnSrc.c_str());
+	  }
+	}
+      }
+      closedir(dfd);
+    } else {
+      slogger.msg(kLogError, "Failed to open source dir (%s)\n", dirSrc.c_str());
+      return -1;
+    }
+
+    // check blocks
+    slogger.msg(kLogInfo1,"\n** BLOCK SUMMARY **\n");
+    for (int i=0; i < 256; i++) {
+      if ( blockInfoList[i].isValid() ) {
+	if ( blockInfoList[i].hasVariants() ) {
+	  for (const auto& itbv : blockInfoList[i].variantList) {
+	    if ( itbv->getUserVar1() == 0 ) {
+	      slogger.msg(kLogInfo1, "Did NOT find block-variant: %d %d %s\n", i, itbv->blockdata, itbv->name.c_str());
+	    }
+	    if ( itbv->getUserVar1() > 1 ) {
+	      slogger.msg(kLogInfo1, "Found multiple (%d) for block-variant: %d %d %s\n", itbv->getUserVar1(), i, itbv->blockdata, itbv->name.c_str());
+	    }
+	  }
+	} else {
+	  if ( blockInfoList[i].getUserVar1() == 0 ) {
+	    slogger.msg(kLogInfo1, "Did NOT find block: %d %s\n", i, blockInfoList[i].name.c_str());
+	  }
+	  if ( blockInfoList[i].getUserVar1() > 1 ) {
+	    slogger.msg(kLogInfo1, "Found multiple (%d) for block: %d %s\n", blockInfoList[i].getUserVar1(), i, blockInfoList[i].name.c_str());
+	  }
+	}
+      }
+    }
+    
+    // clear item list
+    slogger.msg(kLogInfo1,"\n** ITEM SUMMARY **\n");
+    for ( auto& iter : itemInfoList ) {
+      if ( iter.second->hasVariants() ) {
+	for (const auto& itbv : iter.second->variantList) {
+	    if ( itbv->getUserVar1() == 0 ) {
+	      slogger.msg(kLogInfo1, "Did NOT find item-variant: %d %d %s\n", iter.first, itbv->extraData, itbv->name.c_str());
+	    }
+	    if ( itbv->getUserVar1() > 1 ) {
+	      slogger.msg(kLogInfo1, "Found multiple (%d) for item-variant: %d %d %s\n", itbv->getUserVar1(), iter.first, itbv->extraData, itbv->name.c_str());
+	    }
+	}
+      } else {
+	if ( iter.second->getUserVar1() == 0 ) {
+	  slogger.msg(kLogInfo1,"Did NOT find item: %d %s\n", iter.first, iter.second->name.c_str());
+	}
+	if ( iter.second->getUserVar1() > 1 ) {
+	  slogger.msg(kLogInfo1,"Found multiple (%d) for item: %d %s\n", iter.second->getUserVar1(), iter.first, iter.second->name.c_str());
+	}
+      }
+    }
+
+    // process found blocks
+    // todobig - might be faster/cooler to make a sprite sheet
+    char fnDest[1025];
+    for (int i=0; i < 256; i++) {
+      if ( blockInfoList[i].isValid() ) {
+	if ( blockInfoList[i].hasVariants() ) {
+	  for (const auto& itbv : blockInfoList[i].variantList) {
+	    if ( itbv->getUserVar1() > 0 ) {
+	      sprintf(fnDest,"%s/mcpe_viz.block.%d.%d.png",dirDest.c_str(), i, itbv->blockdata);
+	      copyFile( itbv->getUserString1(), fnDest, false);
+	    }
+	  }
+	} else {
+	  if ( blockInfoList[i].getUserVar1() > 0 ) {
+	    sprintf(fnDest,"%s/mcpe_viz.block.%d.%d.png",dirDest.c_str(), i, blockInfoList[i].blockdata);
+	    copyFile( blockInfoList[i].getUserString1(), fnDest, false);
+	  }
+	}
+      }
+    }
+
+    // process found items
+    for ( auto& iter : itemInfoList ) {
+      if ( iter.second->hasVariants() ) {
+	for (const auto& itbv : iter.second->variantList) {
+	  if ( itbv->getUserVar1() > 0 ) {
+	    sprintf(fnDest,"%s/mcpe_viz.item.%d.%d.png",dirDest.c_str(), iter.first, itbv->extraData);
+	    copyFile( itbv->getUserString1(), fnDest, false);
+	  }
+	}
+      } else {
+	if ( iter.second->getUserVar1() > 0 ) {
+	  sprintf(fnDest,"%s/mcpe_viz.item.%d.%d.png",dirDest.c_str(), iter.first, iter.second->extraData);
+	  copyFile( iter.second->getUserString1(), fnDest, false);
+	}
+      }
+    }
+    return 0;
+  }
+  
 
     
   void print_usage(const char* fn) {
@@ -3524,6 +3822,8 @@ namespace mcpe_viz {
 
       {"leveldb-filter", required_argument, NULL, '<'},
       {"leveldb-block-size", required_argument, NULL, '>'},
+
+      {"find-images", required_argument, NULL, '"'},
       
       {"verbose", no_argument, NULL, 'v'},
       {"quiet", no_argument, NULL, 'q'},
@@ -3571,6 +3871,13 @@ namespace mcpe_viz {
 	}
 	break;
 
+      case '"':
+	control.doFindImages = true;
+	// todobig - specify an in and an out dir
+	control.dirFindImagesIn = optarg;
+	control.dirFindImagesOut = optarg;
+	break;
+	
       case 'H':
 	{
 	  bool pass = false;
@@ -3885,6 +4192,11 @@ int main ( int argc, char **argv ) {
     return -1;
   }
 
+  if ( mcpe_viz::control.doFindImages ) {
+    mcpe_viz::findImages();
+    return 0;
+  }
+  
   mcpe_viz::world->init();
 
   mcpe_viz::world->dbOpen(std::string(mcpe_viz::control.dirLeveldb));

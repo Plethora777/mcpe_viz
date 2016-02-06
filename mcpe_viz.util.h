@@ -42,7 +42,7 @@ namespace mcpe_viz {
   std::string mybasename( const std::string& fn );
   std::string mydirname( const std::string& fn );
   
-  int32_t file_exists(const char* fn);
+  int32_t file_exists(const std::string& fn);
   
   std::string escapeString(const std::string& s, const std::string& escapeChars);
 
@@ -52,9 +52,9 @@ namespace mcpe_viz {
   int32_t copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
 				      const StringReplacementList& replaceStrings );
   
-  int32_t copyFile ( const std::string& fnSrc, const std::string& fnDest );
+  int32_t copyFile ( const std::string& fnSrc, const std::string& fnDest, bool checkExistingFlag );
 
-  int32_t copyDirToDir ( const std::string& dirSrc, const std::string& dirDest );
+  int32_t copyDirToDir ( const std::string& dirSrc, const std::string& dirDest, bool checkExistingFlag );
 
   int32_t deleteFile ( const std::string& fn );
   

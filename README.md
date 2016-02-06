@@ -233,9 +233,17 @@ From the top directory of mcpe_viz:
 ```
 > cd gui
 > qmake
+> make
 ```
 
-If all goes well, you will have "mcpe_viz_helper" in release/
+If all goes well, you will have "mcpe_viz_helper"
+
+Note: On Fedora, I use "qmake-qt4" instead of "qmake".
+
+
+## Icon Images
+
+Icon images used in the web app are borrowed from the [Minecraft Wiki](http://minecraft.gamepedia.com/).  The textures themselves are copyright Mojang.
 
 
 ## TODO

@@ -623,7 +623,10 @@
     <item id="0x104" name="Apple" />
     <item id="0x105" name="Bow" /> <!-- *D -->
     <item id="0x106" name="Arrow" />
-    <item id="0x107" name="Coal" /> <!-- *B -->
+    <item id="0x107" name="Coal"> <!-- *B -->
+      <itemvariant extradata="0" name="Coal" />
+      <itemvariant extradata="1" name="Charcoal" />
+    </item>
     <item id="0x108" name="Diamond" />
     <item id="0x109" name="Iron Ingot" />
     <item id="0x10A" name="Gold Ingot" />
@@ -682,7 +685,10 @@
     <item id="0x13F" name="Porkchop, Raw" />
     <item id="0x140" name="Porkchop, Cooked" />
     <item id="0x141" name="Painting" />
-    <item id="0x142" name="Golden Apple" /> <!-- *B -->
+    <item id="0x142" name="Golden Apple"> <!-- *B -->
+      <itemvariant extradata="0" name="Golden Apple" />
+      <itemvariant extradata="0" name="Golden Apple, Enchanted" />
+    </item>
     <item id="0x143" name="Sign" />
     <item id="0x144" name="Door, Oak" />
     <item id="0x145" name="Bucket" />
@@ -708,9 +714,37 @@
     <item id="0x15A" name="Fishing Rod" />
     <item id="0x15B" name="Clock" />
     <item id="0x15C" name="Glowstone Dust" />
-    <item id="0x15D" name="Fish, Raw" /> <!-- *B -->
-    <item id="0x15E" name="Fish, Cooked" /> <!-- *B -->
-    <item id="0x15F" name="Dye" /> <!-- *B -->
+    <item id="0x15D" name="Fish, Raw"> <!-- *B -->
+      <itemvariant extradata="0" name="Fish, Raw" />
+      <itemvariant extradata="1" name="Salmon, Raw" />
+      <itemvariant extradata="2" name="Clownfish" />
+      <itemvariant extradata="3" name="Pufferfish" />
+    </item>
+    <!-- todo - is this valid? -->
+    <item id="0x15E" name="Fish, Cooked"> <!-- *B -->
+      <itemvariant extradata="0" name="Fish, Cooked" />
+      <itemvariant extradata="1" name="Salmon, Cooked" />
+      <itemvariant extradata="2" name="Clownfish, Cooked?" />
+      <itemvariant extradata="3" name="Pufferfish, COoked?" />
+    </item>
+    <item id="0x15F" name="Dye"> <!-- *B -->
+      <itemvariant extradata="0x0" name="Ink Sac" />
+      <itemvariant extradata="0x1" name="Rose Red" />
+      <itemvariant extradata="0x2" name="Cactus Green" />
+      <itemvariant extradata="0x3" name="Cocoa Beans" />
+      <itemvariant extradata="0x4" name="Lapis Lazuli" />
+      <itemvariant extradata="0x5" name="Dye, Purple" />
+      <itemvariant extradata="0x6" name="Dye, Cyan" />
+      <itemvariant extradata="0x7" name="Dye, Light Gray" />
+      <itemvariant extradata="0x8" name="Dye, Gray" />
+      <itemvariant extradata="0x9" name="Dye, Pink" />
+      <itemvariant extradata="0xa" name="Dye, Lime" />
+      <itemvariant extradata="0xb" name="Dandelion Yellow" />
+      <itemvariant extradata="0xc" name="Dye, Light Blue" />
+      <itemvariant extradata="0xd" name="Dye, Magenta" />
+      <itemvariant extradata="0xe" name="Dye, Orange" />
+      <itemvariant extradata="0xf" name="Bone Meal" />
+    </item>
     <item id="0x160" name="Bone" />
     <item id="0x161" name="Sugar" />
     <item id="0x162" name="Cake" />
@@ -731,8 +765,45 @@
     <item id="0x172" name="Ghast Tear" />
     <item id="0x173" name="Gold Nugget" />
     <item id="0x174" name="Nether Wart" />
-    <!-- todo parse potions -->
-    <item id="0x175" name="Potion" /> <!-- *B -->
+    <!-- todobig parse potions - is this complete? -->
+    <item id="0x175" name="Potion"> <!-- *B -->
+      <itemvariant extradata="0x00" name="Water Bottle" />
+      <itemvariant extradata="0x01" name="Mundane Potion" />
+      <itemvariant extradata="0x02" name="Mundane Potion" />
+      <itemvariant extradata="0x03" name="Thick Potion" />
+      <itemvariant extradata="0x04" name="Awkward Potion" />
+      <itemvariant extradata="0x05" name="Potion of Night Vision (3:00)" />
+      <itemvariant extradata="0x06" name="Potion of Night Vision (8:00)" />
+      <itemvariant extradata="0x07" name="Potion of Invisibility (3:00)" />
+      <itemvariant extradata="0x08" name="Potion of Invisibility (8:00)" />
+      <itemvariant extradata="0x09" name="Potion of Leaping (3:00)" />
+      <itemvariant extradata="0x0A" name="Potion of Leaping (8:00)" />
+      <itemvariant extradata="0x0B" name="Potion of Leaping II (1:30)" />
+      <itemvariant extradata="0x0C" name="Potion of Fire Resistance (3:00)" />
+      <itemvariant extradata="0x0D" name="Potion of Fire Resistance (8:00)" />
+      <itemvariant extradata="0x0E" name="Potion of Swiftness (3:00)" />
+      <itemvariant extradata="0x0F" name="Potion of Swiftness (8:00)" />
+      <itemvariant extradata="0x10" name="Potion of Swiftness II (1:30)" />
+      <itemvariant extradata="0x11" name="Potion of Slowness (1:30)" />
+      <itemvariant extradata="0x12" name="Potion of Slowness (4:00)" />
+      <itemvariant extradata="0x13" name="Potion of Water Breathing (3:00)" />
+      <itemvariant extradata="0x14" name="Potion of Water Breathing (8:00)" />
+      <itemvariant extradata="0x15" name="Potion of Healing" />
+      <itemvariant extradata="0x16" name="Potion of Healing II" />
+      <itemvariant extradata="0x17" name="Potion of Harming" />
+      <itemvariant extradata="0x18" name="Potion of Harming II" />
+      <itemvariant extradata="0x19" name="Potion of Poison (0:45)" />
+      <itemvariant extradata="0x1a" name="Potion of Poison (2:00)" />
+      <itemvariant extradata="0x1b" name="Potion of Poison II (0:22)" />
+      <itemvariant extradata="0x1c" name="Potion of Regeneration (0:45)" />
+      <itemvariant extradata="0x1d" name="Potion of Regeneration (2:00)" />
+      <itemvariant extradata="0x1e" name="Potion of Regeneration II (0:22)" />
+      <itemvariant extradata="0x1f" name="Potion of Strength (3:00)" />
+      <itemvariant extradata="0x20" name="Potion of Strength (8:00)" />
+      <itemvariant extradata="0x21" name="Potion of Strength II (1:30)" />
+      <itemvariant extradata="0x22" name="Potion of Weakness (1:30)" />
+      <itemvariant extradata="0x23" name="Potion of Weakness (4:00)" />
+    </item>
     <item id="0x176" name="Glass Bottle" />
     <item id="0x177" name="Spider Eye" />
     <item id="0x178" name="TBD - Fermented Spider Eye" />
@@ -742,7 +813,36 @@
     <item id="0x17C" name="Cauldron" />
     <item id="0x17D" name="TBD - Eye of Ender" />
     <item id="0x17E" name="TBD - Glistering Melon" />
-    <item id="0x17F" name="Spawn Egg" /> <!-- *B -->
+    <item id="0x17F" name="Spawn Egg"> <!-- *B -->
+      <itemvariant extradata="50" name="Spawn Egg, Creeper" />
+      <itemvariant extradata="51" name="Spawn Egg, Skeleton" />
+      <itemvariant extradata="52" name="Spawn Egg, Spider" />
+      <itemvariant extradata="54" name="Spawn Egg, Zombie " />
+      <itemvariant extradata="55" name="Spawn Egg, Slime" />
+      <itemvariant extradata="56" name="Spawn Egg, Ghast" />
+      <itemvariant extradata="57" name="Spawn Egg, Zombie Pigman" />
+      <itemvariant extradata="58" name="Spawn Egg, Enderman" />
+      <itemvariant extradata="59" name="Spawn Egg, Cave Spider" />
+      <itemvariant extradata="60" name="Spawn Egg, Silverfish" />
+      <itemvariant extradata="61" name="Spawn Egg, Blaze" />
+      <itemvariant extradata="62" name="Spawn Egg, Magma Cube" />
+      <itemvariant extradata="65" name="Spawn Egg, Bat" />
+      <itemvariant extradata="66" name="Spawn Egg, Witch" />
+      <itemvariant extradata="67" name="Spawn Egg, Endermite" />
+      <itemvariant extradata="68" name="Spawn Egg, Guardian" />
+      <itemvariant extradata="69" name="Spawn Egg, Shulker" />
+      <itemvariant extradata="90" name="Spawn Egg, Pig" />
+      <itemvariant extradata="91" name="Spawn Egg, Sheep" />
+      <itemvariant extradata="92" name="Spawn Egg, Cow" />
+      <itemvariant extradata="93" name="Spawn Egg, Chicken" />
+      <itemvariant extradata="94" name="Spawn Egg, Squid" />
+      <itemvariant extradata="95" name="Spawn Egg, Wolf" />
+      <itemvariant extradata="96" name="Spawn Egg, Mooshroom" />
+      <itemvariant extradata="98" name="Spawn Egg, Ocelot" />
+      <itemvariant extradata="100" name="Spawn Egg, Horse" />
+      <itemvariant extradata="101" name="Spawn Egg, Rabbit" />
+      <itemvariant extradata="120" name="Spawn Egg, Villager" />
+    </item>
     <item id="0x180" name="Bottle o' Enchanting" />
     <item id="0x184" name="Emerald" />
     <item id="0x185" name="Item Frame" />
@@ -751,9 +851,15 @@
     <item id="0x188" name="Potato" />
     <item id="0x189" name="Baked Potato" />
     <item id="0x18A" name="Poisonous Potato" />
-    <item id="0x18B" name="Map" />
+    <item id="0x18B" name="Map" /> <!-- *B? -->
     <item id="0x18C" name="Golden Carrot" />
-    <item id="0x18D" name="Mob head" /> <!-- *B -->
+    <item id="0x18D" name="Mob Head"> <!-- *B -->
+      <itemvariant extradata="0" name="Mob Head, Skeleton" />
+      <itemvariant extradata="1" name="Mob Head, Wither Skeleton" />
+      <itemvariant extradata="2" name="Mob Head, Zombie" />
+      <itemvariant extradata="3" name="Mob Head, Player" />
+      <itemvariant extradata="4" name="Mob Head, Creeper" />
+    </item>
     <item id="0x190" name="Pumpkin Pie" />
     <item id="0x193" name="Enchanted Book" />
     <item id="0x194" name="Redstone Comparator" />
@@ -772,7 +878,44 @@
     <item id="0x1B3" name="TBD - Beetroot Seeds (MCPC)" />
     <item id="0x1B4" name="TBD - Beetroot Soup (MCPC)" />
     <!-- todo parse potions -->
-    <item id="0x1B6" name="Splash Potion" />
+    <item id="0x1B6" name="Splash Potion"> <!-- *B -->
+      <itemvariant extradata="0x00" name="Splash Water Bottle" />
+      <itemvariant extradata="0x01" name="Splash Mundane Potion" />
+      <itemvariant extradata="0x02" name="Splash Mundane Potion" />
+      <itemvariant extradata="0x03" name="Splash Thick Potion" />
+      <itemvariant extradata="0x04" name="Splash Awkward Potion" />
+      <itemvariant extradata="0x05" name="Splash Potion of Night Vision (2:15)" />
+      <itemvariant extradata="0x06" name="Splash Potion of Night Vision (6:00)" />
+      <itemvariant extradata="0x07" name="Splash Potion of Invisibility (2:15)" />
+      <itemvariant extradata="0x08" name="Splash Potion of Invisibility (6:00)" />
+      <itemvariant extradata="0x09" name="Splash Potion of Leaping (2:15)" />
+      <itemvariant extradata="0x0A" name="Splash Potion of Leaping (6:00)" />
+      <itemvariant extradata="0x0B" name="Splash Potion of Leaping II (1:07)" />
+      <itemvariant extradata="0x0C" name="Splash Potion of Fire Resistance (2:15)" />
+      <itemvariant extradata="0x0D" name="Splash Potion of Fire Resistance (6:00)" />
+      <itemvariant extradata="0x0E" name="Splash Potion of Swiftness (2:15)" />
+      <itemvariant extradata="0x0F" name="Splash Potion of Swiftness (6:00)" />
+      <itemvariant extradata="0x10" name="Splash Potion of Swiftness II (1:07)" />
+      <itemvariant extradata="0x11" name="Splash Potion of Slowness (1:07)" />
+      <itemvariant extradata="0x12" name="Splash Potion of Slowness (3:00)" />
+      <itemvariant extradata="0x13" name="Splash Potion of Water Breathing (2:15)" />
+      <itemvariant extradata="0x14" name="Splash Potion of Water Breathing (6:00)" />
+      <itemvariant extradata="0x15" name="Splash Potion of Healing" />
+      <itemvariant extradata="0x16" name="Splash Potion of Healing II" />
+      <itemvariant extradata="0x17" name="Splash Potion of Harming" />
+      <itemvariant extradata="0x18" name="Splash Potion of Harming II" />
+      <itemvariant extradata="0x19" name="Splash Potion of Poison (0:33)" />
+      <itemvariant extradata="0x1a" name="Splash Potion of Poison (1:30)" />
+      <itemvariant extradata="0x1b" name="Splash Potion of Poison II (0:16)" />
+      <itemvariant extradata="0x1c" name="Splash Potion of Regeneration (0:38)" />
+      <itemvariant extradata="0x1d" name="Splash Potion of Regeneration (1:30)" />
+      <itemvariant extradata="0x1e" name="Splash Potion of Regeneration II (0:16)" />
+      <itemvariant extradata="0x1f" name="Splash Potion of Strength (2:15)" />
+      <itemvariant extradata="0x20" name="Splash Potion of Strength (6:00)" />
+      <itemvariant extradata="0x21" name="Splash Potion of Strength II (1:07)" />
+      <itemvariant extradata="0x22" name="Splash Potion of Weakness (1:07)" />
+      <itemvariant extradata="0x23" name="Splash Potion of Weakness (3:00)" />
+    </item>    
     <item id="0x1C9" name="TBD - Beetroot (MCPE)" />
     <item id="0x1CA" name="Beetroot Seeds" />
     <item id="0x1CB" name="TBD - Beetroot Soup (MCPE)" />
@@ -832,6 +975,8 @@
     <entity id="0x5A" name="Boat" />
     <entity id="0x5e" name="Blaze fireball" />    <!-- note: reverse engineered by me -->
     <entity id="0x60" name="Minecart with Hopper" />    <!-- note: reverse engineered by me -->
+    <entity id="0x61" name="Minecart with TNT" />    <!-- note: reverse engineered by me -->
+    <entity id="0x62" name="Minecart with Chest" />    <!-- note: reverse engineered by me -->
   </entitylist>
 
   <!--
@@ -940,4 +1085,27 @@
     <enchantment id="0x17" name="Luck of the Sea" officialName="luck_of_the_sea" />
     <enchantment id="0x18" name="Lure" officialName="lure" />
   </enchantmentlist>
+
+
+  <!--
+      mapping of MCPC block id's to MCPE block id's
+      there are (unfortunately) some differences between MCPE and MCPC block id's.
+      this will help us translate between the two.
+      note: use -1 for items that do not exist
+  -->
+  <mcpcToMcpeList>
+    <!-- wooden double slab -->
+    <block mcpcId="0x7d" mcpeId="0x9d" />
+    <!-- wood slab -->
+    <block mcpcId="0x7e" mcpeId="0x9e" />
+    <!-- activator rail -->
+    <block mcpcId="0x9d" mcpeId="0x7e" />
+    <!-- dropper -->
+    <block mcpcId="0x9e" mcpeId="0x7d" />
+
+    <!-- prismarine -->
+    <item mcpcId="0x19a" mcpeId="-1" />
+    <!-- hopper -->
+    <!-- todobig - MCPC does NOT have a separate item for the hopper, but MCPE does? -->
+  </mcpcToMcpeList>
 </xml>

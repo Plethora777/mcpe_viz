@@ -88,17 +88,17 @@
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="16">Mooshroom</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="22">Ocelot</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="12">Pig</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="18">Rabbit</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="13">Sheep</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="21">Snow Golem</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="17">Squid</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="15">Villager</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="14">Wolf</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="entityToggle" data-id="64">Dropped Item</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="63">Player</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="entityToggleAddAll" data-type="P">Show All</a></li>
-	    <li><a href="#" class="entityToggleRemoveAll">Hide All</a></li>
+	    <li><a href="#" class="featureToggleAddAll" data-type="P">Show All</a></li>
+	    <li><a href="#" class="featureToggleRemoveAll" data-type="P">Hide All</a></li>
           </ul>
 	</div>
 
@@ -114,6 +114,7 @@
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="34">Skeleton</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="37">Slime</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="35">Spider</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="45">Witch</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="32">Zombie</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="44">Zombie Villager</a></li>
 	    <li role="separator" class="divider"></li>
@@ -124,8 +125,8 @@
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="63">Player</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="entityToggleAddAll" data-type="H">Show All</a></li>
-	    <li><a href="#" class="entityToggleRemoveAll">Hide All</a></li>
+	    <li><a href="#" class="featureToggleAddAll" data-type="H">Show All</a></li>
+	    <li><a href="#" class="featureToggleRemoveAll" data-type="H">Hide All</a></li>
           </ul>
 	</div>
 
@@ -134,14 +135,21 @@
 	    Objects
             <span class="caret"></span></button>
           <ul class="dropdown-menu">
-	    <li><a href="#" class="tileEntityToggle" data-id="Chest">Chest</a></li>
-	    <li><a href="#" class="tileEntityToggle" data-id="MobSpawner">Mob Spawner</a></li>
-	    <li><a href="#" class="tileEntityToggle" data-id="NetherPortal">Nether Portal</a></li>
-	    <li><a href="#" class="tileEntityToggle" data-id="SignNonBlank">Sign (Non-blank)</a></li>
-	    <li><a href="#" class="tileEntityToggle" data-id="SignBlank">Sign (Blank)</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="Chest">Chest</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="MobSpawner">Mob Spawner</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="NetherPortal">Nether Portal</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="SignNonBlank">Sign (Non-blank)</a></li>
+	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="SignBlank">Sign (Blank)</a></li>
 	    <li role="separator" class="divider"></li>
-	    <li><a href="#" class="tileEntityToggleAddAll">Show All</a></li>
-	    <li><a href="#" class="tileEntityToggleRemoveAll">Hide All</a></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="90">Boat</a></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="64">Dropped Item</a></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="84">Minecart</a></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="98">Minecart with Chest</a></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="96">Minecart with Hopper</a></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="97">Minecart with TNT</a></li>
+	    <li role="separator" class="divider"></li>
+	    <li><a href="#" class="featureToggleAddAll" data-type="O">Show All</a></li>
+	    <li><a href="#" class="featureToggleRemoveAll" data-type="O">Hide All</a></li>
           </ul>
 	</div>
 
@@ -213,6 +221,7 @@
 	    <li role="separator" class="divider"></li>
 
 	    <li><a href="#" id="btnCheckUpdate">Check for <b>MCPE Viz</b> update...</a></li>
+	    <li><a href="#" id="btnAbout">About <b>MCPE Viz</b>...</a></li>
 	  </ul>
 	</div>
 

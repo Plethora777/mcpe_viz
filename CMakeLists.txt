@@ -163,6 +163,7 @@ if(MCPE_VIZ_WIN32)
     "README.txt"
     "LICENSE.txt"
     "js"
+    "images"
     DEPENDS mcpe_viz.exe
     )
 elseif(MCPE_VIZ_WIN64)
@@ -186,6 +187,7 @@ elseif(MCPE_VIZ_WIN64)
     "README.txt"
     "LICENSE.txt"
     "js"
+    "images"
     DEPENDS mcpe_viz.exe
     )
 endif()

@@ -4,7 +4,25 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added support for new 0.14 blocks, items and mobs
+Highlight: Added block and item images for item / inventory display
+
+v0.0.19 - 2016.02.06
+Web - Added block and item images for item / inventory display;
+Web - Added option to view icon images or text for items/inventories;
+Web - Added previous / next buttons to feature popover when clicking a point that has multiple features;
+Web - Added passive mob Rabbit;
+Web - Added hostile mob Witch;
+Web - Added objects: Boat, Minecart, Minecart with Chest, Minecart with Hopper, Minecart with TNT;
+Web - Added Options: 'About MCPE Viz';
+Web - Added warning message about slime chunks calculation;
+Web - Simplified code for 'Add All' / 'Hide All';
+Web - Attempt to center geojson items in image pixels (still not quite right);
+Web - Improved geojson output for block and item variants;
+Web - Added a 'VillagerType' summary field for Villagers;
+XML - Added item variants (e.g. potions);
+XML - Added method to map from MCPC block/item id's to MCPE block/item id's;
+Added code to help convert wiki block/item renders to icon images;
+Added optimized file copy function for all platforms
 
 v0.0.18 - 2016.01.31
 Added support for new 0.14 blocks, items and mobs;

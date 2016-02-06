@@ -20,9 +20,9 @@ namespace mcpe_viz {
 
     // adjust position so that items are in the center of pixels
     // todobig - play with this to see if we can make it better
-    if ( false ) {
-      ix += 0.5;
-      iy -= 0.5;
+    if ( true ) {
+      ix -= 0.5;
+      iy += 0.5;
     }
     
     sprintf(tmpstring,"%.1lf,%.1lf",ix,iy);
@@ -307,8 +307,10 @@ namespace mcpe_viz {
     }
     std::string toStringImageCoords(int32_t dimId) {
       if ( valid ) {
-	int32_t ix, iy;
-	worldPointToImagePoint(dimId, x,z, ix,iy, false);
+	double tix, tiy;
+	worldPointToImagePoint(dimId, x,z, tix,tiy, false);
+	int32_t ix = tix;
+	int32_t iy = tiy;
 	std::ostringstream str;
 	str << ix << ", " << iy;
 	return str.str();
@@ -470,12 +472,10 @@ namespace mcpe_viz {
 	
       s = "\"Name\":";
       if ( id >= 0 && id <= 255 ) {
-	s += "\"" + blockInfoList[id].name + "\"";
-      } else if ( has_key(itemInfoList, id) ) {
-	s += "\"" + itemInfoList[id]->name + "\"";
+	s += "\"" + getBlockName(id,damage) + "\"";
       } else {
-	sprintf(tmpstring,"\"Unknown:id=%d 0x%x\"", id, id);
-	s += tmpstring;
+	std::string iname = getItemName(id, damage);
+	s += "\"" + iname + "\"";
       }
       list.push_back(s);
 
@@ -509,6 +509,37 @@ namespace mcpe_viz {
 	list.push_back(s);
       }
 
+      // check for icon image
+      char urlImage[1025];
+      if ( id < 256 ) {
+	sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, damage);
+      } else {
+	sprintf(urlImage,"images/mcpe_viz.item.%d.%d.png", id, damage);
+      }
+
+      if ( ! file_exists(urlImage) ) {
+	// check for non-variant
+	if ( id < 256 ) {
+	  sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, 0);
+	} else {
+	  sprintf(urlImage,"images/mcpe_viz.item.%d.%d.png", id, 0);
+	}
+      }
+      
+      if ( file_exists(dirExec + "/" + urlImage) ) {
+	std::string fImage(urlImage);
+	int32_t imgId = -1;
+	if ( has_key(imageFileMap, fImage) ) {
+	  imgId = imageFileMap[fImage];
+	} else {
+	  imgId = globalIconImageId++;
+	  imageFileMap.insert( std::make_pair(fImage,imgId) );
+	}
+	sprintf(tmpstring,"\"imgid\":%d",imgId);
+	list.push_back(tmpstring);
+      }
+      
+
       // combine the list and put the commas in the right spots (stupid json)
       s = "";
       int32_t i=list.size();
@@ -536,12 +567,9 @@ namespace mcpe_viz {
       std::string s = "[";
 
       if ( id >= 0 && id <= 255 ) {
-	s += "Block:" + blockInfoList[id].name;
-      } else if ( has_key(itemInfoList, id) ) {
-	s += "Item:" + itemInfoList[id]->name;
+	s += "Block:" + getBlockName(id,damage);
       } else {
-	sprintf(tmpstring,"(UNKNOWN: id=%d 0x%x)",id,id);
-	s += tmpstring;
+	s += "Item:" + getItemName(id, damage);
       }
 
       if ( damage >= 0 ) {
@@ -580,8 +608,8 @@ namespace mcpe_viz {
   public:
     Point3d<int> bedPosition;
     Point3d<int> spawn;
-    Point3d<float> pos;
-    Point2d<float> rotation;
+    Point3d<double> pos;
+    Point2d<double> rotation;
     int32_t id;
     int32_t tileId;
     int32_t dimensionId;
@@ -637,7 +665,7 @@ namespace mcpe_viz {
       tileId = ntileId;
       return 0;
     }
-
+    
     int32_t addArmor ( nbt::tag_compound &iarmor ) {
       std::unique_ptr<ParsedItem> armor(new ParsedItem());
       int32_t ret = armor->parseArmor(iarmor);
@@ -902,7 +930,7 @@ namespace mcpe_viz {
 	worldPointToGeoJSONPoint(actualDimensionId, pos.x,pos.z, playerPositionImageX, playerPositionImageY);
 	playerPositionDimensionId = actualDimensionId;
 	
-	fprintf(stderr,"Player Position: Dimension=%d Pos=%s Rotation=(%f, %f)\n", actualDimensionId, pos.toStringWithImageCoords(actualDimensionId).c_str(), rotation.x,rotation.y);
+	fprintf(stderr,"Player Position: Dimension=%d Pos=%s Rotation=(%lf, %lf)\n", actualDimensionId, pos.toStringWithImageCoords(actualDimensionId).c_str(), rotation.x,rotation.y);
       }
 
       if ( playerLocalFlag || playerRemoteFlag ) {
@@ -968,7 +996,7 @@ namespace mcpe_viz {
 
   class ParsedTileEntity {
   public:
-    Point3d<float> pos;
+    Point3d<double> pos;
     Point2d<int32_t> pairChest;
     std::string id;
     std::vector< std::unique_ptr<ParsedItem> > items;
@@ -1270,6 +1298,13 @@ namespace mcpe_viz {
 	if ( tc.has_key("Tile", nbt::tag_type::Byte) ) {
 	  entity->doTile( tc["Tile"].as<nbt::tag_byte>() );
 	}
+	if ( tc.has_key("Items", nbt::tag_type::List) ) {
+	  nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
+	  for ( const auto& iter: items ) {
+	    nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+	    entity->addInventoryItem(iitem);
+	  }
+	}
       }
 
       if ( tc.has_key("Pos", nbt::tag_type::List) ) {
@@ -1323,6 +1358,66 @@ namespace mcpe_viz {
       entity->checkOtherProp(tc, "Willing");
       entity->checkOtherProp(tc, "Sitting");
 
+      // make a summary field for villagers
+      if ( true ) {
+	// profession int
+	// career int
+	std::string vKey;
+	int32_t vProfession = -1;
+	int32_t vCareer = -1;
+
+	vKey="Profession";
+	if ( tc.has_key(vKey)) {
+	  vProfession = tc[vKey].as<nbt::tag_int>().get();
+	}
+
+	vKey="Career";
+	if ( tc.has_key(vKey)) {
+	  vCareer = tc[vKey].as<nbt::tag_int>().get();
+	}
+
+	if ( vProfession >= 0 ) {
+	  std::string vValue = "";
+	  // values from: http://minecraft.gamepedia.com/Villager#Data_values
+	  switch (vProfession) {
+	  case 0:
+	    vValue += "Farmer";
+	    switch (vCareer) {
+	    case 1: vValue += ": Farmer"; break;
+	    case 2: vValue += ": Fisherman"; break;
+	    case 3: vValue += ": Shepherd"; break;
+	    case 4: vValue += ": Fletcher"; break;
+	    }
+	    break;
+	  case 1:
+	    vValue += "Librarian";
+	    break;
+	  case 2:
+	    vValue += "Priest";
+	    break;
+	  case 3:
+	    vValue += "Blacksmith";
+	    switch (vCareer) {
+	    case 1: vValue += ": Armorer"; break;
+	    case 2: vValue += ": Weapon Smith"; break;
+	    case 3: vValue += ": Tool Smith"; break;
+	    }
+	    break;
+	  case 4:
+	    vValue += "Butcher";
+	    switch (vCareer) {
+	    case 1: vValue += ": Butcher"; break;
+	    case 2: vValue += ": Leatherworker"; break;
+	    }
+	    break;
+	  default:
+	    vValue += "(Unknown VillagerType)";
+	    break;
+	  }
+	  entity->addOtherProp( "VillagerType", vValue );
+	}
+      }
+      
       // breedable mobs
       entity->checkOtherProp(tc, "InLove");
       entity->checkOtherProp(tc, "Age");

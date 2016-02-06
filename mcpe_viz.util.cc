@@ -13,6 +13,21 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sstream>
+
+// ugliness to support fast file copies :)
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <copyfile.h>
+#else
+#if defined(WIN32)
+#include <windows.h>
+#else 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/sendfile.h>
+#endif
+#endif
+
 #include "mcpe_viz.util.h"
 #include "mcpe_viz.h"
 #include "mcpe_viz.xml.h"
@@ -64,9 +79,9 @@ namespace mcpe_viz {
   }
 
   
-  int32_t file_exists(const char* fn) {
+  int32_t file_exists(const std::string& fn) {
     struct stat buf;
-    int32_t ret = stat(fn, &buf);
+    int32_t ret = stat(fn.c_str(), &buf);
     return (ret == 0);
   }
     
@@ -146,20 +161,21 @@ namespace mcpe_viz {
     return 0;
   }
 
-  
+
+#if 0
   // hacky but expedient text file copy
-  int32_t copyFile ( const std::string& fnSrc, const std::string& fnDest ) {
+  int32_t slow_copyFile ( const std::string& fnSrc, const std::string& fnDest, bool checkExistingFlag ) {
     char buf[1025];
     memset(buf,0,1025);
 
     //slogger.msg(kLogInfo1,"  copyFile src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
-  
-    FILE *fpsrc = fopen(fnSrc.c_str(),"r");
+
+    FILE *fpsrc = fopen(fnSrc.c_str(),"rb");
     if ( ! fpsrc ) {
       slogger.msg(kLogInfo1,"ERROR: copyFile failed to open src (%s)\n", fnSrc.c_str());
       return -1;
     }
-    FILE *fpdest = fopen(fnDest.c_str(),"w");
+    FILE *fpdest = fopen(fnDest.c_str(),"wb");
     if ( ! fpdest ){
       slogger.msg(kLogInfo1,"ERROR: copyFile failed to open dest (%s)\n", fnDest.c_str());
       fclose(fpsrc);
@@ -167,18 +183,95 @@ namespace mcpe_viz {
     }
 
     while ( ! feof(fpsrc) ) {
+      size_t ct = fread(buf, 1, 1024, fpsrc);
+      if ( ct > 0 ) {
+	fwrite(buf, 1, ct, fpdest);
+      }
+      /*
       if ( fgets(buf, 1024, fpsrc) ) {
 	fputs(buf,fpdest);
       }
+      */
     }
     fclose(fpsrc);
     fclose(fpdest);
     return 0;
   }
+#endif
+  
+  // adapted from: http://stackoverflow.com/questions/2180079/how-can-i-copy-a-file-on-unix-using-c
+  int copyFile(const std::string& fnSrc, const std::string& fnDest, bool checkExistingFlag ) {
+#if defined(WIN32)
+    // todobig - check existing file?
+    int32_t ret = CopyFile(fnSrc.c_str(), fnDest.c_str(), false);
+    if ( ret != 0 ) {
+      return 0;
+    } else {
+      int32_t err = GetLastError();
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed for src (%s) to dest (%s) error-code (%d)\n", fnSrc.c_str(), fnDest.c_str(), err);
+      return 1;
+    }
+#else
+    int input, output;
+
+    if ( checkExistingFlag ) {
+      struct stat sSrc, sDest;
+      int resSrc = stat(fnSrc.c_str(), &sSrc);
+      int resDest = stat(fnDest.c_str(), &sDest);
+      if( resSrc == 0 && resDest == 0 ) {
+	if ( sSrc.st_size == sDest.st_size ) {
+	  if ( sSrc.st_mtim.tv_sec <= sDest.st_mtim.tv_sec ) {
+	    // file already exists, is the same size and has a good timestamp
+	    //slogger.msg(kLogInfo1,"INFO! Skipping existing file (%s) (%s)\n", fnSrc.c_str(), fnDest.c_str());
+	    return 0;
+	  }
+	}
+      }
+    }
+    
+    if ((input = open(fnSrc.c_str(), O_RDONLY)) == -1) {
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open src (%s)\n", fnSrc.c_str());
+      return -1;
+    }
+    if ((output = open(fnDest.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0644)) == -1) {
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open dest (%s)\n", fnDest.c_str());
+      close(input);
+      return -1;
+    }
+    
+    //Here we use kernel-space copying for performance reasons
+    int ret = -1;
+#if defined(__APPLE__) || defined(__FreeBSD__)
+    //fcopyfile works on FreeBSD and OS X 10.5+
+    int result = fcopyfile(input, output, 0, COPYFILE_ALL);
+    // todobig - would need to investigate what fcopyfile returns
+#else
+    //sendfile will work with non-socket output (i.e. regular file) on Linux 2.6.33+
+    off_t bytesCopied = 0;
+    struct stat fileinfo; // = {0};
+    int result = fstat(input, &fileinfo);
+    if ( result == 0 ) {
+      result = sendfile(output, input, &bytesCopied, fileinfo.st_size);
+    }
+    if ( result >= 0 ) {
+      ret = 0;
+    } else {
+      // todobig - we might fallback to slow_copyFile here
+      // todobig - this is not portable!
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed for src (%s) to dest (%s) error-code (%d)\n", fnSrc.c_str(), fnDest.c_str(), errno);
+      ret = 1;
+    }
+#endif
+    
+    close(input);
+    close(output);
+    
+    return ret;
+#endif
+  }
 
 
-
-  int32_t copyDirToDir ( const std::string& dirSrc, const std::string& dirDest ) {
+  int32_t copyDirToDir ( const std::string& dirSrc, const std::string& dirDest, bool checkExistingFlag ) {
     struct dirent *dp;
     DIR *dfd = opendir(dirSrc.c_str());
     if (dfd != NULL) {
@@ -188,7 +281,7 @@ namespace mcpe_viz {
 	} else {
 	  std::string fnSrc = dirSrc + "/" + dp->d_name;
 	  std::string fnDest = dirDest + "/" + mybasename(dp->d_name);
-	  copyFile(dirSrc + "/" + dp->d_name, fnDest);
+	  copyFile(fnSrc, fnDest, checkExistingFlag);
 	}
       }
       closedir(dfd);

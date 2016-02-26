@@ -4,7 +4,12 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added block and item images for item / inventory display
+Highlight: Updated code to support truly huge world files (e.g. 1gb 33000 x 26000!)
+
+v0.0.20 - 2016.02.25
+Updated code to support truly huge world files (e.g. 1gb 33000 x 26000!)
+Web - Added bounding circle for spawnable blocks areas
+XML - Added a few missing rabbit items
 
 v0.0.19 - 2016.02.06
 Web - Added block and item images for item / inventory display;

@@ -868,7 +868,11 @@
     <item id="0x197" name="Minecart, TNT" />
     <item id="0x198" name="Minecart, Hopper" />
     <item id="0x19A" name="Hopper" />
+    <item id="0x19B" name="Rabbit, Raw" />
+    <item id="0x19C" name="Rabbit, Cooked" />
+    <item id="0x19D" name="Rabbit Stew" />
     <item id="0x19E" name="Rabbit's Foot" />
+    <item id="0x19F" name="Rabbit Hide" />
     <item id="0x1AB" name="Door, Spruce" />
     <item id="0x1AC" name="Door, Birch" />
     <item id="0x1AD" name="Door, Jungle" />

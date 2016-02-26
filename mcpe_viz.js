@@ -1095,7 +1095,15 @@ var displayFeatureInfo = function(evt) {
     // we get a list in case there are multiple items (e.g. stacked chests)
     var features = [];
     map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-	features.push(feature);
+	var addFlag = true;
+	if ( feature.get('Clickable') !== undefined ) {
+	    if ( feature.get('Clickable') === '0' ) {
+		addFlag = false;
+	    }
+	}
+	if ( addFlag) { 
+	    features.push(feature);
+	}
     });
 
     if (features.length > 0) {
@@ -1106,6 +1114,9 @@ var displayFeatureInfo = function(evt) {
 	    // we need to show a feature select list
 	    doFeatureSelect(features, coordinate);
 	}
+    } else {
+	var element = popover.getElement();
+	$(element).popover('destroy');
     }
 };
 
@@ -2024,7 +2035,9 @@ function initDimension() {
     // todobig - could disable button if the menu is empty
     
     $('.blockToggleAddAll').click(function() {
+	var cflag = true;
 	if ( vectorPoints === null ) {
+	    cflag = false;
 	    loadVectors();
 	}
 	$('.blockToggle').each(function(index) {
@@ -2035,7 +2048,9 @@ function initDimension() {
 	    spawnableEnableFlag = true;
 	    $(this).parent().addClass('active');
 	});
-	vectorPoints.changed();
+	if ( cflag ) {
+	    vectorPoints.changed();
+	}
     });
     $('.blockToggleRemoveAll').click(function() {
 	listBlockToggle = [];
@@ -2076,7 +2091,7 @@ function initDimension() {
 }
 
 function setDimensionById(id) {
-    var prevDID = globalDimensionId;
+    var prevDimId = globalDimensionId;
     if (0) {
     }
     else if (id === 1) {
@@ -2089,7 +2104,7 @@ function setDimensionById(id) {
 	$('#dimensionSelectName').html('Overworld');
     }
 
-    if (prevDID !== globalDimensionId) {
+    if (prevDimId !== globalDimensionId) {
 	initDimension();
     }
 }
@@ -2102,17 +2117,17 @@ var createPointStyleFunction = function() {
 	var tileEntity = feature.get('TileEntity');
 	var block = feature.get('Block');
 	var spawnable = feature.get('Spawnable');
-	var did = feature.get('Dimension');
+	var dimId = feature.get('Dimension');
 
 	// hack for pre-0.12 worlds
-	if (did === undefined) {
-	    did = 0;
+	if (dimId === undefined) {
+	    dimId = 0;
 	} else {
-	    did = +did;
+	    dimId = +dimId;
 	}
 	
 	if (entity !== undefined) {
-	    if (did === globalDimensionId) {
+	    if (dimId === globalDimensionId) {
 		var id = +feature.get('id');
 		if (listEntityToggle[id] !== undefined) {
 		    if (listEntityToggle[id]) { 
@@ -2130,7 +2145,7 @@ var createPointStyleFunction = function() {
 	    }
 	}
 	else if (tileEntity !== undefined) {
-	    if (did === globalDimensionId) {
+	    if (dimId === globalDimensionId) {
 		var Name = feature.get('Name');
 		if (listTileEntityToggle[Name] !== undefined) {
 		    if (listTileEntityToggle[Name]) { 
@@ -2148,7 +2163,7 @@ var createPointStyleFunction = function() {
 	    }
 	}
 	else if (block !== undefined) {
-	    if (did === globalDimensionId) {
+	    if (dimId === globalDimensionId) {
 		var Name = feature.get('Name');
 		if (listBlockToggle[Name] !== undefined) {
 		    if (listBlockToggle[Name]) {
@@ -2171,21 +2186,32 @@ var createPointStyleFunction = function() {
 	    }
 	}
 	else if (spawnable !== undefined) {
-	    if (did === globalDimensionId) {
-		if ( spawnableEnableFlag ) { 
-		    // we return a single style to reduce memory consumption
-		    if ( globalLayerMode === 1 ) {
-			// we are in raw layer mode, let's see where this block is
-			var Pos = feature.get('Pos');
-			if ( Pos[1] > layerRawIndex ) {
-			    return [globalStyleBlockUp];
-			}
-			if ( Pos[1] < layerRawIndex ) {
-			    return [globalStyleBlockDown];
-			}
-			return [globalStyleBlockSame];
+	    if (dimId === globalDimensionId) {
+		if ( spawnableEnableFlag ) {
+		    if ( feature.get('BoundingCircle') ) {
+			var bcradius = feature.get('Radius');
+			return [ new ol.style.Style({
+			    image:  new ol.style.Circle({
+				radius: bcradius / resolution,
+				fill: new ol.style.Fill({color: 'rgba(255, 128, 255, 0.15)'}),
+				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.15)', width: 2})
+			    })
+			}) ];
 		    } else {
-			return [globalStyleBlock];
+			// we return a single style to reduce memory consumption
+			if ( globalLayerMode === 1 ) {
+			    // we are in raw layer mode, let's see where this block is
+			    var Pos = feature.get('Pos');
+			    if ( Pos[1] > layerRawIndex ) {
+				return [globalStyleBlockUp];
+			    }
+			    if ( Pos[1] < layerRawIndex ) {
+				return [globalStyleBlockDown];
+			    }
+			    return [globalStyleBlockSame];
+			} else {
+			    return [globalStyleBlock];
+			}
 		    }
 		}
 	    }
@@ -2257,7 +2283,9 @@ function loadVectors() {
 
 function entityToggle(id) {
     id = +id;
+    var cflag = true;
     if (vectorPoints === null) {
+	cflag = false;
 	loadVectors();
     }
     if (listEntityToggle[id] === undefined) {
@@ -2265,11 +2293,15 @@ function entityToggle(id) {
     } else {
 	listEntityToggle[id] = !listEntityToggle[id];
     }
-    vectorPoints.changed();
+    if ( cflag ) {
+	vectorPoints.changed();
+    }
 }
 
 function tileEntityToggle(name) {
+    var cflag = true;
     if (vectorPoints === null) {
+	cflag = false;
 	loadVectors();
     }
     if (listTileEntityToggle[name] === undefined) {
@@ -2277,11 +2309,15 @@ function tileEntityToggle(name) {
     } else {
 	listTileEntityToggle[name] = !listTileEntityToggle[name];
     }
-    vectorPoints.changed();
+    if ( cflag ) {
+	vectorPoints.changed();
+    }
 }
 
 function blockToggle(name) {
+    var cflag = true;
     if (vectorPoints === null) {
+	cflag = false;
 	loadVectors();
     }
     if (listBlockToggle[name] === undefined) {
@@ -2289,14 +2325,20 @@ function blockToggle(name) {
     } else {
 	listBlockToggle[name] = !listBlockToggle[name];
     }
-    vectorPoints.changed();
+    if ( cflag ) {
+	vectorPoints.changed();
+    }
 }
 
 function spawnableToggle() {
+    var cflag = true;
     if (vectorPoints === null) {
+	cflag = false;
 	loadVectors();
     }
-    vectorPoints.changed();
+    if ( cflag ) {
+	vectorPoints.changed();
+    }
 }
 
 function layerMove(delta) {
@@ -2708,7 +2750,9 @@ $(function() {
 
     $('.featureToggleAddAll').click(function() {
 	var dtype = $(this).attr('data-type');
+	var cflag = true;
 	if ( vectorPoints === null ) {
+	    cflag = false;
 	    loadVectors();
 	}
 	$('.entityToggle').each(function(index) {
@@ -2720,12 +2764,14 @@ $(function() {
 	});
 	$('.tileEntityToggle').each(function(index) {
 	    if ($(this).attr('data-type') === dtype) {
-		var id = +$(this).attr('data-id');
+		var id = $(this).attr('data-id');
 		listTileEntityToggle[id] = true;
 		$(this).parent().addClass('active');
 	    }
 	});
-	vectorPoints.changed();
+	if ( cflag ) {
+	    vectorPoints.changed();
+	}
     });
 
     $('.featureToggleRemoveAll').click(function() {
@@ -2739,7 +2785,7 @@ $(function() {
 	});
 	$('.tileEntityToggle').each(function(index) {
 	    if ($(this).attr('data-type') === dtype) {
-		var id = +$(this).attr('data-id');
+		var id = $(this).attr('data-id');
 		listTileEntityToggle[id] = false;
 		$(this).parent().removeClass('active');
 	    }

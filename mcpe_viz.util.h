@@ -188,12 +188,12 @@ namespace mcpe_viz {
       close();
     }
 
-    int32_t init(const std::string& xfn, const std::string& imageDescription, int32_t w, int32_t h, int32_t numRowPointers, bool rgbaFlag) {
+    int32_t init(const std::string& xfn, const std::string& imageDescription, int32_t w, int32_t h, int32_t numRowPointers, bool rgbaFlag, bool wholeImageFlag) {
       fn = std::string(xfn);
-      return open(imageDescription,w,h,numRowPointers,rgbaFlag);
+      return open(imageDescription,w,h,numRowPointers,rgbaFlag,wholeImageFlag);
     }
 
-    int32_t open(const std::string& imageDescription, int32_t width, int32_t height, int32_t numRowPointers, bool rgbaFlag) {
+    int32_t open(const std::string& imageDescription, int32_t width, int32_t height, int32_t numRowPointers, bool rgbaFlag, bool wholeImageFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
 	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
@@ -255,8 +255,11 @@ namespace mcpe_viz {
       // todo - other text?
       
       png_write_info(png, info);
-	
-      row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
+
+      if ( wholeImageFlag ) {
+	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
+      }
+      
       openFlag = true;
       return 0;
     }
@@ -265,7 +268,10 @@ namespace mcpe_viz {
       if ( fp != nullptr && openFlag ) {
 	png_write_end(png, info);
 	png_destroy_write_struct(&png, &info);
-	free(row_pointers);
+	if ( row_pointers != nullptr ) {
+	  free(row_pointers);
+	  row_pointers = nullptr;
+	}
 	fclose(fp);
 	fp = nullptr;
       }
@@ -390,6 +396,12 @@ namespace mcpe_viz {
       return 0;
     }
 
+    // use this before reading row-by-row
+    int32_t read_info() {
+      png_read_info(png, info);
+      return 0;
+    }
+
     int32_t close() {
       if ( fp != nullptr && openFlag ) {
 	// png_read_end(png, end_info);
@@ -426,7 +438,7 @@ namespace mcpe_viz {
       // open source file
       PngReader pngSrc;
       pngSrc.init(filename);
-      pngSrc.read();
+      pngSrc.read_info();
 
       int32_t srcW = pngSrc.getWidth();
       int32_t srcH = pngSrc.getHeight();
@@ -439,6 +451,9 @@ namespace mcpe_viz {
       }
       int32_t numPngW = (int)ceil((double)srcW / (double)tileWidth);
 
+      uint8_t *sbuf = new uint8_t[ srcW * bpp ];
+
+      
       PngWriter *pngOut = new PngWriter[numPngW];
       uint8_t **buf;
       buf = new uint8_t*[numPngW];
@@ -458,7 +473,7 @@ namespace mcpe_viz {
 	    sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
 		    tileCounterY, i);
 	    std::string fname = tmpstring;
-	    pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag);
+	    pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag, true);
 
 	    // clear buffer
 	    memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
@@ -471,7 +486,7 @@ namespace mcpe_viz {
 	  tileCounterY++;
 	}
 
-	uint8_t *srcbuf = pngSrc.row_pointers[sy];
+	png_read_row(pngSrc.png, sbuf, NULL);
 
 	int32_t tileOffsetY = sy % tileHeight;
 	  
@@ -479,7 +494,7 @@ namespace mcpe_viz {
 	for (int32_t sx=0; sx < srcW; sx++) {
 	  int32_t tileCounterX = sx / tileWidth;
 	  int32_t tileOffsetX = sx % tileWidth;
-	  memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &srcbuf[sx*bpp], bpp);
+	  memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &sbuf[sx*bpp], bpp);
 	}
 	  
 	// write tile png files when they are ready
@@ -510,7 +525,9 @@ namespace mcpe_viz {
       delete [] buf;
 
       pngSrc.close();
-	
+
+      delete [] sbuf;
+      
       return 0;
     }
       

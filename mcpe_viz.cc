@@ -11,9 +11,14 @@
 
   todohere
 
-  * add images/ stuff to git + zip files
+  * possible xml errors:
+  -- another1-dropbox - top of pyramid - quartz with unknown blockdata (6 and 10)
+  -- "upper slab, quartz" shows as "upper slab, nether brick" -- R.E. all variants in creative
+  -- "flower pot" w/ cactus shows as flower pot with poppy -- R.E. all variants in creative
+  -- block of quartz variants appear to be wrong -- R.E. in creative
 
-  * could use png files to determine avg color of each block!
+
+  * could use png files to determine avg color of each block
   * add icons for enchanted items?
   * expand icons idea - use lil images of mobs etc in UI?
 
@@ -25,6 +30,7 @@
 
   * bug: js in tile mode, zoom to extent, does not show full extent (right side is chopped for 'another1')
   -- also see reddit bartszelag world for extreme example (very wide, not so high world)
+  -- ol bug?
 
   * check spawnable code - it might be missing spots?
 
@@ -357,7 +363,7 @@ namespace mcpe_viz {
       leveldbFilter = 10;
       leveldbBlockSize = 4096;
 
-    // todo - cmdline option for this?
+      // todo - cmdline option for this?
       heightMode = kHeightModeTop;
 	
       for (int32_t did=0; did < kDimIdCount; did++) {
@@ -539,6 +545,7 @@ namespace mcpe_viz {
     return  m.find(k) != m.end();
   }
 
+  
 
   // todobig - it would be nice to do something like this, but unique_ptr stands in the way...
 #if 0
@@ -662,11 +669,11 @@ namespace mcpe_viz {
 
     // we parse the block (et al) data in a chunk from leveldb
     ChunkData_LevelDB(int32_t tchunkX, int32_t tchunkZ, const char* cdata,
-	      int32_t dimensionId, const std::string& dimName,
-	      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
-	      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
-	      const bool* fastBlockToGeoJSON,
-	      const CheckSpawnList& listCheckSpawn) {
+		      int32_t dimensionId, const std::string& dimName,
+		      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
+		      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
+		      const bool* fastBlockToGeoJSON,
+		      const CheckSpawnList& listCheckSpawn) {
       chunkX = tchunkX;
       chunkZ = tchunkZ;
 
@@ -909,8 +916,9 @@ namespace mcpe_viz {
     std::string name;
     int32_t dimId;
 
-    // todobig - is it actually important to keep this list?
-    std::vector< std::unique_ptr<ChunkData_LevelDB> > list;
+    typedef std::pair<uint32_t, uint32_t> ChunkKey;
+    typedef std::map< ChunkKey, std::unique_ptr<ChunkData_LevelDB> > ChunkData_LevelDB_Map;
+    ChunkData_LevelDB_Map chunks;
 
     int32_t minChunkX, maxChunkX;
     int32_t minChunkZ, maxChunkZ;
@@ -928,6 +936,10 @@ namespace mcpe_viz {
     std::string worldName;
     int32_t worldSpawnX, worldSpawnZ;
     int64_t worldSeed;
+
+    bool chunks_has_key(const ChunkData_LevelDB_Map &m, const ChunkKey& k) {
+      return  m.find(k) != m.end();
+    }
 
   public:
     // todobig - move these to private?
@@ -1025,12 +1037,12 @@ namespace mcpe_viz {
     int32_t getMaxChunkZ() { return maxChunkZ; }
 
     int32_t addChunk ( int32_t chunkX, int32_t chunkZ, const char* cdata) {
-      // todobig emplace_back? does this do a copy?
-      list.push_back( std::unique_ptr<ChunkData_LevelDB>
-		      (new ChunkData_LevelDB(chunkX, chunkZ, cdata, dimId, name,
-				     histogramGlobalBlock, histogramGlobalBiome,
-				     fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
-				     listCheckSpawn)) );
+      chunks[std::make_pair(chunkX, chunkZ)] =
+	std::unique_ptr<ChunkData_LevelDB>
+	( new ChunkData_LevelDB(chunkX, chunkZ, cdata, dimId, name,
+				histogramGlobalBlock, histogramGlobalBiome,
+				fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
+				listCheckSpawn) );
       return 0;
     }
 
@@ -1086,7 +1098,7 @@ namespace mcpe_viz {
     
     void doOutputStats() {
       logger.msg(kLogInfo1,"\n%s Statistics:\n", name.c_str());
-      logger.msg(kLogInfo1,"chunk-count: %d\n", (int)list.size());
+      logger.msg(kLogInfo1,"chunk-count: %d\n", (int)chunks.size());
       logger.msg(kLogInfo1,"Min-dim:  %d %d\n", minChunkX, minChunkZ);
       logger.msg(kLogInfo1,"Max-dim:  %d %d\n", maxChunkX, maxChunkZ);
       int32_t dx = (maxChunkX-minChunkX+1);
@@ -1182,7 +1194,7 @@ namespace mcpe_viz {
 
     int32_t outputPNG(const std::string& fname, const std::string& imageDescription, uint8_t* buf, int32_t width, int32_t height, bool rgbaFlag) {
       PngWriter png;
-      if ( png.init(fname, imageDescription, width, height, height, rgbaFlag) != 0 ) {
+      if ( png.init(fname, imageDescription, width, height, height, rgbaFlag, true) != 0 ) {
 	return -1;
       }
       int32_t bpp = 3;
@@ -1196,6 +1208,35 @@ namespace mcpe_viz {
       png.close();
       return 0;
     }
+
+    
+    // todohere - rename - we are in "row(s) at a time" mode here
+    int32_t outputPNG_init(PngWriter& png, const std::string& fname, const std::string& imageDescription, int32_t width, int32_t height, bool rgbaFlag) {
+      if ( png.init(fname, imageDescription, width, height, height, rgbaFlag, false) != 0 ) {
+	return -1;
+      }
+      return 0;
+    }
+
+    int32_t outputPNG_writeRow(PngWriter& png, uint8_t* buf) {
+      png_write_row(png.png, buf);
+      // todo - check err?
+      return 0;
+    }
+
+    int32_t outputPNG_writeRows(PngWriter& png, uint8_t** rows, uint32_t nrows) {
+      png_write_rows(png.png, rows, nrows);
+      // todo - check err?
+      return 0;
+    }
+    
+    int32_t outputPNG_close(PngWriter& png) {
+      png.close();
+      // todo - check err?
+      return 0;
+    }
+
+    
     
     void generateImage(const std::string& fname, const ImageModeType imageMode) {
       const int32_t chunkOffsetX = -minChunkX;
@@ -1224,10 +1265,19 @@ namespace mcpe_viz {
 	  lut[i] = v;
 	}
       }
+
+      // todohere -- reddit user silvergoat77 has a 1gb (!) world and it is approx 33k x 26k -- alloc chokes on this.
+      // the solution is to write a chunk of rows at a time instead of the whole image...
+      // but -- the code belows is optimized to just iterate through the list and do it's thing instead of searching for each chunk
+      // so --- we need to test before / after changing this to step thru in Z/X order
       
       // note RGB pixels
-      uint8_t *buf = new uint8_t[ imageW * imageH * bpp ];
-      memset(buf, 0, imageW*imageH*bpp);
+      uint8_t *buf = new uint8_t[ imageW * 16 * bpp ];
+
+      uint8_t *rows[16];
+      for (int i=0; i < 16; i++) {
+	rows[i] = &buf[ i * imageW * bpp ];
+      }
 
       int32_t color;
       const char *pcolor;
@@ -1237,152 +1287,173 @@ namespace mcpe_viz {
 	const char* pcolor_temp = (const char*)&color;
 	pcolor = &pcolor_temp[1];
       }
-      
-      for ( const auto& it: list ) {
-	int32_t imageX = (it->chunkX + chunkOffsetX) * 16;
-	int32_t imageZ = (it->chunkZ + chunkOffsetZ) * 16;
 
-	int32_t worldX = it->chunkX * 16;
-	int32_t worldZ = it->chunkZ * 16;
+      PngWriter png;
+      outputPNG_init(png, fname, makeImageDescription(imageMode,0), imageW, imageH, rgbaFlag);
+
+      for (int32_t iz=0, chunkZ=minChunkZ; iz < imageH; iz+=16, chunkZ++) {
+
+	// clear buffer
+	memset(buf, 0, imageW * 16 * bpp);
+	
+	for (int32_t ix=0, chunkX=minChunkX; ix < imageW; ix+=16, chunkX++) {
+
+	  ChunkKey chunkKey(chunkX, chunkZ);
+	  if ( ! chunks_has_key(chunks, chunkKey) ) {
+	    continue;
+	  }
+
+	  const auto& it = chunks.at(chunkKey);
 	  
-	for (int32_t cz=0; cz < 16; cz++) {
-	  for (int32_t cx=0; cx < 16; cx++) {
+	  int32_t imageX = (it->chunkX + chunkOffsetX) * 16;
+	  int32_t imageZ = (it->chunkZ + chunkOffsetZ) * 16;
 
-	    // todobig - we could do EVERYTHING (but initial key scan) in one pass:
-	    //   do images here, then iterate over chunkspace again looking for items that populate geojson list
+	  int32_t worldX = it->chunkX * 16;
+	  int32_t worldZ = it->chunkZ * 16;
+	  
+	  for (int32_t cz=0; cz < 16; cz++) {
+	    for (int32_t cx=0; cx < 16; cx++) {
+
+	      // todobig - we could do EVERYTHING (but initial key scan) in one pass:
+	      //   do images here, then iterate over chunkspace again looking for items that populate geojson list
 	      
-	    // todo - this big conditional inside an inner loop, not so good
+	      // todo - this big conditional inside an inner loop, not so good
 
-	    if ( imageMode == kImageModeBiome ) {
-	      // get biome color
-	      int32_t biomeId = it->grassAndBiome[cx][cz] & 0xff;
-	      if ( has_key(biomeInfoList, biomeId) ) {
-		color = biomeInfoList[biomeId]->color;
-	      } else {
-		slogger.msg(kLogInfo1,"ERROR: Unknown biome %d 0x%x\n", biomeId, biomeId);
-		color = htobe32(0xff2020);
+	      if ( imageMode == kImageModeBiome ) {
+		// get biome color
+		int32_t biomeId = it->grassAndBiome[cx][cz] & 0xff;
+		if ( has_key(biomeInfoList, biomeId) ) {
+		  color = biomeInfoList[biomeId]->color;
+		} else {
+		  slogger.msg(kLogInfo1,"ERROR: Unknown biome %d 0x%x\n", biomeId, biomeId);
+		  color = htobe32(0xff2020);
+		}
 	      }
-	    }
-	    else if ( imageMode == kImageModeGrass ) {
-	      // get grass color
-	      int32_t grassColor = it->grassAndBiome[cx][cz] >> 8;
-	      color = htobe32(grassColor);
-	    }
-	    else if ( imageMode == kImageModeHeightCol ) {
-	      // get height value and use red-black-green palette
-	      if ( control.heightMode == kHeightModeTop ) {
-		uint8_t c = it->topBlockY[cx][cz];
-		color = palRedBlackGreen[c];
-	      } else {
-		uint8_t c = it->heightCol[cx][cz];
-		color = palRedBlackGreen[c];
+	      else if ( imageMode == kImageModeGrass ) {
+		// get grass color
+		int32_t grassColor = it->grassAndBiome[cx][cz] >> 8;
+		color = htobe32(grassColor);
 	      }
-	    }
-	    else if ( imageMode == kImageModeHeightColGrayscale ) {
-	      // get height value and make it grayscale
-	      if ( control.heightMode == kHeightModeTop ) {
-		uint8_t c = it->topBlockY[cx][cz];
+	      else if ( imageMode == kImageModeHeightCol ) {
+		// get height value and use red-black-green palette
+		if ( control.heightMode == kHeightModeTop ) {
+		  uint8_t c = it->topBlockY[cx][cz];
+		  color = palRedBlackGreen[c];
+		} else {
+		  uint8_t c = it->heightCol[cx][cz];
+		  color = palRedBlackGreen[c];
+		}
+	      }
+	      else if ( imageMode == kImageModeHeightColGrayscale ) {
+		// get height value and make it grayscale
+		if ( control.heightMode == kHeightModeTop ) {
+		  uint8_t c = it->topBlockY[cx][cz];
+		  color = (c << 24) | (c << 16) | (c << 8);
+		} else {
+		  uint8_t c = it->heightCol[cx][cz];
+		  color = (c << 24) | (c << 16) | (c << 8);
+		}
+	      }
+	      else if ( imageMode == kImageModeHeightColAlpha ) {
+		// get height value and make it alpha
+		uint8_t c;
+		if ( control.heightMode == kHeightModeTop ) {
+		  c = it->topBlockY[cx][cz];
+		} else {
+		  c = it->heightCol[cx][cz];
+		}
+		// c = (90 - (int32_t)it->heightCol[cx][cz]) * 2;
+		c = lut[c];
+		color = ((c & 0xff) << 24);
+	      }
+	      else if ( imageMode == kImageModeBlockLight ) {
+		// get block light value and expand it (is only 4-bits)
+		uint8_t c = (it->topLight[cx][cz] & 0x0f) << 4;
 		color = (c << 24) | (c << 16) | (c << 8);
-	      } else {
-		uint8_t c = it->heightCol[cx][cz];
+	      }
+	      else if ( imageMode == kImageModeSkyLight ) {
+		// get sky light value and expand it (is only 4-bits)
+		uint8_t c = (it->topLight[cx][cz] & 0xf0);
 		color = (c << 24) | (c << 16) | (c << 8);
 	      }
-	    }
-	    else if ( imageMode == kImageModeHeightColAlpha ) {
-	      // get height value and make it alpha
-	      uint8_t c;
-	      if ( control.heightMode == kHeightModeTop ) {
-		c = it->topBlockY[cx][cz];
-	      } else {
-		c = it->heightCol[cx][cz];
-	      }
-	      // c = (90 - (int32_t)it->heightCol[cx][cz]) * 2;
-	      c = lut[c];
-	      color = ((c & 0xff) << 24);
-	    }
-	    else if ( imageMode == kImageModeBlockLight ) {
-	      // get block light value and expand it (is only 4-bits)
-	      uint8_t c = (it->topLight[cx][cz] & 0x0f) << 4;
-	      color = (c << 24) | (c << 16) | (c << 8);
-	    }
-	    else if ( imageMode == kImageModeSkyLight ) {
-	      // get sky light value and expand it (is only 4-bits)
-	      uint8_t c = (it->topLight[cx][cz] & 0xf0);
-	      color = (c << 24) | (c << 16) | (c << 8);
-	    }
-	    else {
-	      // regular image
-	      int32_t blockid = it->blocks[cx][cz];
+	      else {
+		// regular image
+		int32_t blockid = it->blocks[cx][cz];
 		
-	      if ( blockInfoList[blockid].hasVariants() ) {
-		// we need to get blockdata
-		int32_t blockdata = it->data[cx][cz];
-		bool vfound = false;
-		for (const auto& itbv : blockInfoList[blockid].variantList) {
-		  if ( itbv->blockdata == blockdata ) {
-		    vfound = true;
-		    color = itbv->color;
-		    break;
+		if ( blockInfoList[blockid].hasVariants() ) {
+		  // we need to get blockdata
+		  int32_t blockdata = it->data[cx][cz];
+		  bool vfound = false;
+		  for (const auto& itbv : blockInfoList[blockid].variantList) {
+		    if ( itbv->blockdata == blockdata ) {
+		      vfound = true;
+		      color = itbv->color;
+		      break;
+		    }
+		  }
+		  if ( ! vfound ) {
+		    // todo - warn once per id/blockdata or the output volume could get ridiculous
+		    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+				, blockInfoList[blockid].name.c_str()
+				, blockdata
+				, blockdata
+				);
+		    // since we did not find the variant, use the parent block's color
+		    color = blockInfoList[blockid].color;
+		  }
+		} else {
+		  color = blockInfoList[blockid].color;
+		  if ( ! blockInfoList[blockid].colorSetFlag ) {
+		    blockInfoList[blockid].colorSetNeedCount++;
 		  }
 		}
-		if ( ! vfound ) {
-		  // todo - warn once per id/blockdata or the output volume could get ridiculous
-		  slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-			      , blockInfoList[blockid].name.c_str()
-			      , blockdata
-			      , blockdata
-			      );
-		}
-	      } else {
-		color = blockInfoList[blockid].color;
-		if ( ! blockInfoList[blockid].colorSetFlag ) {
-		  blockInfoList[blockid].colorSetNeedCount++;
-		}
 	      }
-	    }
 
-	    // do grid lines
-	    if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
-	      if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
-		color = htobe32(0xeb3333);
-	      } else {
-		color = htobe32(0xc1ffc4);
+	      // do grid lines
+	      if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
+		if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
+		  color = htobe32(0xeb3333);
+		} else {
+		  color = htobe32(0xc1ffc4);
+		}
 	      }
-	    }
 
 #ifdef PIXEL_COPY_MEMCPY
-	    memcpy(&buf[ ((imageZ + cz) * imageW + (imageX + cx)) * bpp], pcolor, bpp);
+	      memcpy(&buf[ ((cz) * imageW + (imageX + cx)) * bpp], pcolor, bpp);
 #else
-	    // todobig - support for bpp here
-	    // todo - any use in optimizing the offset calc?
-	    buf[((imageZ + cz) * imageW + (imageX + cx)) * 3] = pcolor[1];
-	    buf[((imageZ + cz) * imageW + (imageX + cx)) * 3 + 1] = pcolor[2];
-	    buf[((imageZ + cz) * imageW + (imageX + cx)) * 3 + 2] = pcolor[3];
+	      // todobig - support for bpp here
+	      // todo - any use in optimizing the offset calc?
+	      buf[((cz) * imageW + (imageX + cx)) * 3] = pcolor[1];
+	      buf[((cz) * imageW + (imageX + cx)) * 3 + 1] = pcolor[2];
+	      buf[((cz) * imageW + (imageX + cx)) * 3 + 2] = pcolor[3];
 #endif
 
-	    // report interesting coordinates
-	    if ( dimId == kDimIdOverworld && imageMode == kImageModeTerrain ) {
-	      int32_t ix = (imageX + cx);
-	      int32_t iz = (imageZ + cz);
-	      int32_t wx = (worldX + cx);
-	      int32_t wz = (worldZ + cz);
-	      if ( (wx == 0) && (wz == 0) ) {
-		slogger.msg(kLogInfo1,"    Info: World (0, 0) is at image (%d, %d)\n", ix,iz);
-	      }
-	      // todobig - just report this somwhere instead of having to pass the spawn params
-	      if ( (wx == worldSpawnX) && (wz == worldSpawnZ) ) {
-		slogger.msg(kLogInfo1,"    Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, ix, iz);
+	      // report interesting coordinates
+	      if ( dimId == kDimIdOverworld && imageMode == kImageModeTerrain ) {
+		int32_t tix = (imageX + cx);
+		int32_t tiz = (imageZ + cz);
+		int32_t twx = (worldX + cx);
+		int32_t twz = (worldZ + cz);
+		if ( (twx == 0) && (twz == 0) ) {
+		  slogger.msg(kLogInfo1,"    Info: World (0, 0) is at image (%d, %d)\n", tix,tiz);
+		}
+		// todobig - just report this somwhere instead of having to pass the spawn params
+		if ( (twx == worldSpawnX) && (twz == worldSpawnZ) ) {
+		  slogger.msg(kLogInfo1,"    Info: World Spawn (%d, %d) is at image (%d, %d)\n", worldSpawnX, worldSpawnZ, tix, tiz);
+		}
 	      }
 	    }
 	  }
 	}
+	// write rows
+	outputPNG_writeRows(png, rows, 16);
       }
 	
       // output the image
-      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH, rgbaFlag);
-
+      outputPNG_close(png);
+      
       delete [] buf;
-
+      
       // report items that need to have their color set properly (in the XML file)
       if ( imageMode == kImageModeTerrain ) {
 	for (int32_t i=0; i < 256; i++) {
@@ -1392,6 +1463,7 @@ namespace mcpe_viz {
 	}
       }
     }
+    
 
 
     void generateImageSpecial(const std::string& fname, const ImageModeType imageMode) {
@@ -1412,11 +1484,19 @@ namespace mcpe_viz {
       }
       
       // note RGB pixels
-      uint8_t *buf = new uint8_t[ imageW * imageH * bpp ];
-      memset(buf, 0, imageW*imageH*bpp);
+      uint8_t *buf = new uint8_t[ imageW * 16 * bpp ];
 
+      uint8_t *rows[16];
+      for (int i=0; i < 16; i++) {
+	rows[i] = &buf[ i * imageW * bpp ];
+      }
+      
+      PngWriter png;
+      outputPNG_init(png, fname, makeImageDescription(imageMode,0), imageW, imageH, rgbaFlag);
+      
       int32_t color;
       for (int32_t iz=0, chunkZ=minChunkZ; iz < imageH; iz+=16, chunkZ++) {
+	memset(buf, 0, imageW*16*bpp);
 	for (int32_t ix=0, chunkX=minChunkX; ix < imageW; ix+=16, chunkX++) {
 
 	  if ( 0 ) {
@@ -1451,2733 +1531,2798 @@ namespace mcpe_viz {
 
 	    for (int32_t sz=0; sz < 16; sz++) {
 	      for (int32_t sx=0; sx < 16; sx++) {
-		memcpy(&buf[((iz + sz) * imageW + (ix + sx)) * bpp], &color, bpp);
+		memcpy(&buf[((sz) * imageW + (ix + sx)) * bpp], &color, bpp);
 	      }
 	    }
 	  }
 	  
 	}
+	outputPNG_writeRows(png, rows, 16);
       }
 	
       // output the image
-      outputPNG(fname, makeImageDescription(imageMode,0), buf, imageW, imageH, rgbaFlag);
+      outputPNG_close(png);
 
       delete [] buf;
     }
 
 
-    // originally from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
-    // but that code is actually *quite* insane
-    // rewritten based on:
-    //   http://edndoc.esri.com/arcobjects/9.2/net/shared/geoprocessing/spatial_analyst_tools/how_hillshade_works.htm
-    int32_t generateShadedRelief(const std::string& fnSrc, const std::string& fnDest) {
+  // originally from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
+  // but that code is actually *quite* insane
+  // rewritten based on:
+  //   http://edndoc.esri.com/arcobjects/9.2/net/shared/geoprocessing/spatial_analyst_tools/how_hillshade_works.htm
+  int32_t generateShadedRelief(const std::string& fnSrc, const std::string& fnDest) {
 
-      //todobig - make these params
-      double data_vert = 5;
+    //todobig - make these params
+    double data_vert = 5;
 
-      double data_sunEl = 45.0;
-      double data_sunAz = 315;
-      double data_resolution = 1;
+    double data_sunEl = 45.0;
+    double data_sunAz = 315;
+    double data_resolution = 1;
 
-      PngReader pngSrc;
-      if ( pngSrc.init(fnSrc) != 0 ) {
-	slogger.msg(kLogInfo1, "ERROR: Failed to open src png");
-	return -1;
-      }
-      pngSrc.read();
+    PngReader pngSrc;
+    if ( pngSrc.init(fnSrc) != 0 ) {
+      slogger.msg(kLogInfo1, "ERROR: Failed to open src png");
+      return -1;
+    }
 
-      int32_t srcW = pngSrc.getWidth();
-      int32_t srcH = pngSrc.getHeight();
-      int32_t colorType = pngSrc.getColorType();
-      int32_t bppSrc = 3;
-      if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
-	bppSrc = 4;
-      }
+    pngSrc.read_info();
+    
+    int32_t srcW = pngSrc.getWidth();
+    int32_t srcH = pngSrc.getHeight();
+    int32_t colorType = pngSrc.getColorType();
+    int32_t bppSrc = 3;
+    if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
+      bppSrc = 4;
+    }
+    int32_t srcStride = srcW * bppSrc;
+    
+    uint8_t *sbuf = new uint8_t[ srcStride * 3 ];
+    
+    // todobig - pngwriter support for 8-bit images (don't need RGBA for this)
+    int32_t bppDest = 4;
 
-      // todobig - pngwriter support for 8-bit images (don't need RGBA for this)
-      int32_t bppDest = 4;
-
-      int32_t destW = srcW;
-      int32_t destH = srcH;
-      uint8_t *buf = new uint8_t[ destW * destH * bppDest ];
-      memset(buf, 0, destW * destH * bppDest);
-
-      PngWriter pngOut;
-      pngOut.init(fnDest, makeImageDescription(kImageModeShadedRelief,0), destW, destH, destH, true);
-      for (int32_t ty=0; ty < destH; ty++) {
-	pngOut.row_pointers[ty] = &buf[ty * destW * bppDest];
-      }
-
-      /*
-	uint8_t lut[256];
+    int32_t destW = srcW;
+    int32_t destH = srcH;
+    uint8_t *buf = new uint8_t[ destW * bppDest ];
+    
+    PngWriter pngOut;
+    outputPNG_init(pngOut, fnDest, makeImageDescription(kImageModeShadedRelief,0), destW, destH, true);
+    
+    /*
+      uint8_t lut[256];
       
-	double vmax = 128.0 * 128.0;
-	for (int32_t i=0; i < 128; i++) {
-	// (log( 1.0 + (double)(128 - i)/4.0 ) / logmax) * 255;
-	double ti = (128 + 32) - i;
-	double v = ((double)(ti * ti) / vmax) * 255.0;
-	if ( v > 230.0 ) { v = 230.0; }
-	if ( v < 0.0 ) { v = 0.0; }
-	lut[i] = v;
-	}
-      */
+      double vmax = 128.0 * 128.0;
+      for (int32_t i=0; i < 128; i++) {
+      // (log( 1.0 + (double)(128 - i)/4.0 ) / logmax) * 255;
+      double ti = (128 + 32) - i;
+      double v = ((double)(ti * ti) / vmax) * 255.0;
+      if ( v > 230.0 ) { v = 230.0; }
+      if ( v < 0.0 ) { v = 0.0; }
+      lut[i] = v;
+      }
+    */
 
-      // weird - mingw32 doesn't get M_PI? - copied from math.h
+    // weird - mingw32 doesn't get M_PI? - copied from math.h
 #ifndef M_PI
 #define M_PI            3.14159265358979323846
 #endif
       
-      int32_t maxX = srcW - 1;
-      int32_t maxY = srcH - 1;
-      double twoPi = 2.0 * M_PI;
-      double halfPi = M_PI / 2.0;
+    int32_t maxX = srcW - 1;
+    int32_t maxY = srcH - 1;
+    double twoPi = 2.0 * M_PI;
+    double halfPi = M_PI / 2.0;
       
-      // (2)  Zenith_deg = 90 - Altitude
-      // (3)  Zenith_rad = Zenith_deg * pi / 180.0
-      double zenithRad = (90.0 - data_sunEl) * M_PI / 180.0;
+    // (2)  Zenith_deg = 90 - Altitude
+    // (3)  Zenith_rad = Zenith_deg * pi / 180.0
+    double zenithRad = (90.0 - data_sunEl) * M_PI / 180.0;
       
-      // (4)  Azimuth_math = 360.0 - Azimuth + 90
-      double azimuthMath = 360.0 - data_sunAz + 90.0;
-      // (5)  if Azimth_math >= 360.0 : Azimuth_math = Azimuth_math - 360.0
-      if (azimuthMath >= 360.0) {
-	azimuthMath = azimuthMath - 360.0;
+    // (4)  Azimuth_math = 360.0 - Azimuth + 90
+    double azimuthMath = 360.0 - data_sunAz + 90.0;
+    // (5)  if Azimth_math >= 360.0 : Azimuth_math = Azimuth_math - 360.0
+    if (azimuthMath >= 360.0) {
+      azimuthMath = azimuthMath - 360.0;
+    }
+    // (6)  Azimuth_rad = Azimuth_math *  pi / 180.0
+    double azimuthRad = azimuthMath * M_PI / 180.0;
+
+    double cosZenithRad = cos(zenithRad);
+    double sinZenithRad = sin(zenithRad);
+
+    // todo - since we need to multiply x2 to expand 0..127 to 0..255 we instead halve this (would be 8)
+    double dp = data_resolution * 4.0;  // data.resolution * 8; // todo - not totally sure about the use of resolution here
+
+    // notes: negative values simply reverse the sun azimuth; the range of interesting values is fairly narrow - somewhere on (0.001..0.8)
+    double zFactor = (data_vert / 10.0) - 0.075;
+
+    int32_t x0, x2, 
+      //y0, y2, 
+      offset;
+    double z0, z2,
+      dzdx, dzdy, 
+      slopeRad, aspectRad, hillshade, fhillshade;
+
+
+    // prime the src buffers (first two rows are src row 0, then src row 1)
+    png_read_row(pngSrc.png, &sbuf[0], NULL);
+    memcpy(&sbuf[srcStride], &sbuf[0], srcStride);
+    png_read_row(pngSrc.png, &sbuf[srcStride*2], NULL);
+
+    uint8_t *srcbuf0 = &sbuf[0];
+    uint8_t *srcbuf1 = &sbuf[srcStride];
+    uint8_t *srcbuf2 = &sbuf[srcStride * 2];
+    
+    for (int32_t y1=0; y1 < srcH; y1++) {
+      // y0 = (y1 == 0) ? 0 : (y1 - 1);
+      // y2 = (y1 == maxY) ? maxY : (y1 + 1);
+
+      if ( y1 > 0 ) {
+	// todo - this is slower than it needs to be, we could be clever about where we put the new row and not have to move stuff
+	// move data up
+	memcpy(&sbuf[0], &sbuf[srcStride], srcStride * 2);
+	if (  y1 < maxY ) {
+	  // read new row
+	  png_read_row(pngSrc.png, &sbuf[srcStride * 2], NULL);
+	}
       }
-      // (6)  Azimuth_rad = Azimuth_math *  pi / 180.0
-      double azimuthRad = azimuthMath * M_PI / 180.0;
-
-      double cosZenithRad = cos(zenithRad);
-      double sinZenithRad = sin(zenithRad);
-
-      // todo - since we need to multiply x2 to expand 0..127 to 0..255 we instead halve this (would be 8)
-      double dp = data_resolution * 4.0;  // data.resolution * 8; // todo - not totally sure about the use of resolution here
-
-      // notes: negative values simply reverse the sun azimuth; the range of interesting values is fairly narrow - somewhere on (0.001..0.8)
-      double zFactor = (data_vert / 10.0) - 0.075;
-
-      int32_t x0, x2, 
-	y0, y2, 
-	offset;
-      double z0, z2,
-	dzdx, dzdy, 
-	slopeRad, aspectRad, hillshade, fhillshade;
       
-      for (int32_t y1=0; y1 < srcH; y1++) {
-	y0 = (y1 == 0) ? 0 : (y1 - 1);
-	y2 = (y1 == maxY) ? maxY : (y1 + 1);
+      // clear output buffer
+      memset(buf, 0, destW * bppDest);
+      
+      for (int32_t x1=0; x1 < srcW; x1++) {
+	x0 = (x1 == 0) ? 0 : (x1 - 1);
+	x2 = (x1 == maxX) ? maxX : (x1 + 1);
 
-	uint8_t *srcbuf0 = pngSrc.row_pointers[y0];
-	uint8_t *srcbuf1 = pngSrc.row_pointers[y1];
-	uint8_t *srcbuf2 = pngSrc.row_pointers[y2];
-
-	for (int32_t x1=0; x1 < srcW; x1++) {
-	  x0 = (x1 == 0) ? 0 : (x1 - 1);
-	  x2 = (x1 == maxX) ? maxX : (x1 + 1);
-
-	  // z0 = a + 2d + g
-	  z0 = 
-	    srcbuf0[x0 * bppSrc] + 
-	    srcbuf1[x0 * bppSrc] * 2.0 + 
-	    srcbuf2[x0 * bppSrc];
+	// z0 = a + 2d + g
+	z0 = 
+	  srcbuf0[x0 * bppSrc] + 
+	  srcbuf1[x0 * bppSrc] * 2.0 + 
+	  srcbuf2[x0 * bppSrc];
 	  
-	  // z2 = c + 2f + i
-	  z2 = 
-	    srcbuf0[x2 * bppSrc] + 
-	    srcbuf1[x2 * bppSrc] * 2.0 + 
-	    srcbuf2[x2 * bppSrc];
+	// z2 = c + 2f + i
+	z2 = 
+	  srcbuf0[x2 * bppSrc] + 
+	  srcbuf1[x2 * bppSrc] * 2.0 + 
+	  srcbuf2[x2 * bppSrc];
 	  
-	  // (7)  [dz/dx] = ((c + 2f + i) - (a + 2d + g)) / (8 * cellsize)
-	  dzdx = (z2 - z0) / dp;
+	// (7)  [dz/dx] = ((c + 2f + i) - (a + 2d + g)) / (8 * cellsize)
+	dzdx = (z2 - z0) / dp;
 	  
 	  
-	  // z0 = a + 2b + c
-	  z0 = 
-	    srcbuf0[x0 * bppSrc] + 
-	    srcbuf0[x1 * bppSrc] * 2.0 + 
-	    srcbuf0[x2 * bppSrc];
+	// z0 = a + 2b + c
+	z0 = 
+	  srcbuf0[x0 * bppSrc] + 
+	  srcbuf0[x1 * bppSrc] * 2.0 + 
+	  srcbuf0[x2 * bppSrc];
 	  
-	  // z2 = g + 2h + i
-	  z2 = 
-	    srcbuf2[x0 * bppSrc] + 
-	    srcbuf2[x1 * bppSrc] * 2.0 + 
-	    srcbuf2[x2 * bppSrc];
+	// z2 = g + 2h + i
+	z2 = 
+	  srcbuf2[x0 * bppSrc] + 
+	  srcbuf2[x1 * bppSrc] * 2.0 + 
+	  srcbuf2[x2 * bppSrc];
 	  
-	  // (8)  [dz/dy] = ((g + 2h + i) - (a + 2b + c))  / (8 * cellsize)
-	  dzdy = (z2 - z0) / dp;
+	// (8)  [dz/dy] = ((g + 2h + i) - (a + 2b + c))  / (8 * cellsize)
+	dzdy = (z2 - z0) / dp;
 	  
-	  // (9)  Slope_rad = ATAN (z_factor * sqrt ([dz/dx]2 + [dz/dy]2)) 
-	  slopeRad = atan(zFactor * sqrt(dzdx * dzdx + dzdy * dzdy));
+	// (9)  Slope_rad = ATAN (z_factor * sqrt ([dz/dx]2 + [dz/dy]2)) 
+	slopeRad = atan(zFactor * sqrt(dzdx * dzdx + dzdy * dzdy));
 	  
-	  if (dzdx != 0.0) { 
-	    aspectRad = atan2(dzdy, -dzdx);
+	if (dzdx != 0.0) { 
+	  aspectRad = atan2(dzdy, -dzdx);
 	    
-	    if (aspectRad < 0) {
-	      aspectRad += twoPi;
-	    }
+	  if (aspectRad < 0) {
+	    aspectRad += twoPi;
+	  }
+	}
+	else {
+	  if (dzdy > 0.0) {
+	    aspectRad = halfPi;
+	  } 
+	  else if (dzdy < 0.0) {
+	    aspectRad = twoPi - halfPi;
 	  }
 	  else {
-	    if (dzdy > 0.0) {
-	      aspectRad = halfPi;
-	    } 
-	    else if (dzdy < 0.0) {
-	      aspectRad = twoPi - halfPi;
-	    }
-	    else {
-	      // aspectRad is fine
-	      aspectRad = 0.0; // todo - this is my guess; algo notes are ambiguous
-	    }
-	  }
-	  
-	  // (1)  Hillshade = 255.0 * ((cos(Zenith_rad) * cos(Slope_rad)) + 
-	  //        (sin(Zenith_rad) * sin(Slope_rad) * cos(Azimuth_rad - Aspect_rad)))
-	  // Note that if the calculation of Hillshade value is < 0, the cell value will be = 0.
-	  
-	  // todo - worth doing a sin/cos LUT?
-	  fhillshade = 255.0 * ((cosZenithRad * cos(slopeRad)) + (sinZenithRad * sin(slopeRad) * cos(azimuthRad - aspectRad)));
-	  
-	  if (fhillshade < 0.0) {
-	    hillshade = 0;
-	  } else {
-	    hillshade = round(fhillshade);
-	  }
-	  
-	  offset = (y1 * destW + x1) * bppDest;
-	  // rgb
-	  buf[offset] =
-	    buf[offset + 1] =
-	    buf[offset + 2] = hillshade;
-
-	  // alpha
-	  // note: reduce the opacity for brighter parts; idea is to reduce haziness
-	  // todo - adjust this -- we want BLACK to be opaque; WHITE to be transparent (or is it gray that should be transparent)
-	  //buf[offset+3] = 255 - (hillshade / 2);
-	  //buf[offset+3] = lut[ srcbuf1[x1 * bppSrc] ];
-	  buf[offset + 3] = 255;
-	}
-      }
-
-      png_write_image(pngOut.png, pngOut.row_pointers);
-      pngOut.close();
-
-      delete [] buf;
-
-      pngSrc.close();
-
-      return 0;
-    }
-    
-
-
-    // a run on old code (generateMovie):
-    // > time ./mcpe_viz --db another1/ --out test-all1/out1 --log log.tall1 --html-all
-    // 2672.248u 5.461s 45:47.69 97.4% 0+0k 72+1424304io 0pf+0w
-    // approx 45 minutes
-
-    // a run on this new code (generateSlices):
-    // 957.146u 4.463s 16:30.58 97.0%  0+0k 2536+1424304io 1pf+0w
-    // approx 17 minutes
-
-    // 823.212u 13.623s 14:23.86 96.8% 0+0k 2536+1423088io 1pf+0w
-    // 830.614u 13.871s 14:52.42 94.6% 0+0k 2536+1423088io 1pf+0w
-
-    // change memcpy to byte copy:
-    // 828.757u 13.842s 14:29.31 96.9% 0+0k 2536+1422656io 1pf+0w
-
-    // with -O3
-    // 827.337u 13.430s 14:27.58 96.9% 0+0k 2568+1422656io 1pf+0w
-
-    // with -O3 and png zlib set to 1 (default is 9) and filter set to NONE
-    //   with zlib=9 == 405M    test-all2
-    //   with zlib=1 == 508M    test-all2-zlib1/
-    // 392.597u 13.598s 7:07.25 95.0%  0+0k 2568+1633896io 1pf+0w
-
-    // as above, but disabled setting filter to NONE
-    //   with zlib=1 == 572M    test-all2-zlib1/
-    // 660.763u 13.799s 11:40.99 96.2% 0+0k 2568+1764624io 1pf+0w
-
-    // 402.214u 13.937s 7:26.63 93.1%  0+0k 2568+1633896io 1pf+0w
-
-    // without -O3, with zlib=1 and filter NONE
-    // 404.518u 13.369s 7:25.09 93.8%  0+0k 2536+1633896io 1pf+0w
-
-    // so we're at ~6.5x faster now
-
-    // 2015.10.24:
-    // 372.432u 13.435s 6:50.66 93.9%  0+0k 419456+1842944io 210pf+0w
-    
-    int32_t generateSlices(leveldb::DB* db, const std::string& fnBase) {
-      const int32_t chunkOffsetX = -minChunkX;
-      const int32_t chunkOffsetZ = -minChunkZ;
-
-      const int32_t chunkW = (maxChunkX-minChunkX+1);
-      const int32_t chunkH = (maxChunkZ-minChunkZ+1);
-      const int32_t imageW = chunkW * 16;
-      const int32_t imageH = chunkH * 16;
-
-      char keybuf[MAX_BLOCK_HEIGHT + 1];
-      int32_t keybuflen;
-      int32_t kw = dimId;
-      uint8_t kt = 0x30;
-      leveldb::Status dstatus;
-	
-      slogger.msg(kLogInfo1,"    Writing all images in one pass\n");
-	  
-      leveldb::ReadOptions readOptions;
-      readOptions.fill_cache=false; // may improve performance?
-
-      std::string svalue;
-      const char* ochunk = nullptr;
-      const char* pchunk = nullptr;
-	
-      int32_t color;
-      const char *pcolor = (const char*)&color;
-
-      // create png helpers
-      PngWriter png[MAX_BLOCK_HEIGHT + 1];
-      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	std::string fnameTmp = fnBase + ".mcpe_viz_slice.full.";
-	fnameTmp += name;
-	fnameTmp += ".";
-	sprintf(keybuf,"%03d",cy);
-	fnameTmp += keybuf;
-	fnameTmp += ".png";
-
-	control.fnLayerRaw[dimId][cy] = fnameTmp;
-	  
-	png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16, false);
-      }
-	
-      // create row buffers
-      uint8_t* rbuf[MAX_BLOCK_HEIGHT + 1];
-      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	rbuf[cy] = new uint8_t[(imageW*3)*16];
-	// setup row pointers
-	for (int32_t cz=0; cz<16; cz++) {
-	  png[cy].row_pointers[cz] = &rbuf[cy][(cz*imageW)*3];
-	}
-      }
-
-      // create a helper buffer which contains topBlockY for the entire image
-      uint8_t currTopBlockY = MAX_BLOCK_HEIGHT;
-      uint8_t* tbuf = new uint8_t[imageW * imageH];
-      memset(tbuf,MAX_BLOCK_HEIGHT,imageW*imageH);
-      for (const auto& it : list) {
-	int32_t ix = (it->chunkX + chunkOffsetX) * 16;
-	int32_t iz = (it->chunkZ + chunkOffsetZ) * 16;
-	for (int32_t cz=0; cz < 16; cz++) {
-	  for (int32_t cx=0; cx < 16; cx++) {
-	    tbuf[(iz+cz)*imageW + (ix+cx)] = it->topBlockY[cx][cz];
-	  }
-	}
-      };
-	
-      int32_t foundCt = 0, notFoundCt2 = 0;
-      uint8_t blockid, blockdata;
-	  
-      // we operate on sets of 16 rows (which is one chunk high) of image z
-      int32_t runCt = 0;
-      for (int32_t imageZ=0, chunkZ=minChunkZ; imageZ < imageH; imageZ += 16, chunkZ++) {
-
-	if ( (runCt++ % 20) == 0 ) {
-	  slogger.msg(kLogInfo1,"    Row %d of %d\n", imageZ, imageH);
-	}
-	    
-	for (int32_t imageX=0, chunkX=minChunkX; imageX < imageW; imageX += 16, chunkX++) {
-
-	  // construct key to get the chunk
-	  if ( dimId == kDimIdOverworld ) {
-	    //overworld
-	    memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
-	    memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
-	    memcpy(&keybuf[8],&kt,sizeof(uint8_t));
-	    keybuflen=9;
-	  } else {
-	    // nether (and probably any others that are added)
-	    memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
-	    memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
-	    memcpy(&keybuf[8],&kw,sizeof(int32_t));
-	    memcpy(&keybuf[12],&kt,sizeof(uint8_t));
-	    keybuflen=13;
-	  }
-
-	  dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
-	  if ( ! dstatus.ok() ) {
-	    notFoundCt2++;
-	    // slogger.msg(kLogInfo1,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
-	    // we need to clear this area
-	    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	      for (int32_t cz=0; cz < 16; cz++) {
-		memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
-	      }
-	    }
-	    continue;
-	  }
-
-	  pchunk = svalue.data();
-	  ochunk = pchunk;
-	  foundCt++;
-	      
-	  // we step through the chunk in the natural order to speed things up
-	  for (int32_t cx=0; cx < 16; cx++) {
-	    for (int32_t cz=0; cz < 16; cz++) {
-	      currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX+cx];
-	      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-		blockid = *(pchunk++);
-
-		if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
-
-		  // special handling for air -- keep existing value if we are above top block
-		  // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
-		  // however, we do NOT do this for the nether. because: the nether
-
-		  // we need to copy this pixel from another layer
-		  memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
-			 &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
-			 3);
-		      
-		} else {
-		    
-		  if ( blockInfoList[blockid].hasVariants() ) {
-		    // we need to get blockdata
-		    blockdata = getBlockData_LevelDB(ochunk, cx,cz,cy);
-		    bool vfound = false;
-		    for (const auto& itbv : blockInfoList[blockid].variantList) {
-		      if ( itbv->blockdata == blockdata ) {
-			vfound = true;
-			color = itbv->color;
-			break;
-		      }
-		    }
-		    if ( ! vfound ) {
-		      // todo - warn once per id/blockdata or the output volume could get ridiculous
-		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-				  , blockInfoList[blockid].name.c_str()
-				  , blockdata
-				  , blockdata
-				  );
-		    }
-		  } else {
-		    color = blockInfoList[blockid].color;
-		  }
-		    
-#ifdef PIXEL_COPY_MEMCPY
-		  memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
-#else
-		  // todo - any use in optimizing the offset calc?
-		  rbuf[cy][((cz*imageW) + imageX + cx)*3] = pcolor[1];
-		  rbuf[cy][((cz*imageW) + imageX + cx)*3 + 1] = pcolor[2];
-		  rbuf[cy][((cz*imageW) + imageX + cx)*3 + 2] = pcolor[3];
-#endif
-		}
-	      }
-	    }
+	    // aspectRad is fine
+	    aspectRad = 0.0; // todo - this is my guess; algo notes are ambiguous
 	  }
 	}
 	  
-	// put the png rows
-	// todo - png lib is SLOW - worth it to alloc a larger window (16-row increments) and write in batches?
-	for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	  png_write_rows(png[cy].png, png[cy].row_pointers, 16);
-	}
-      }
-	
-      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	delete [] rbuf[cy];
-	png[cy].close();
-      }
-
-      delete [] tbuf;
-	
-      // slogger.msg(kLogInfo1,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
-	
-      return 0;
-    }
-
-      
-    int32_t generateMovie(leveldb::DB* db, const std::string& fnBase, const std::string& fnOut, bool makeMovieFlag, bool useCropFlag ) {
-      const int32_t chunkOffsetX = -minChunkX;
-      const int32_t chunkOffsetZ = -minChunkZ;
-	
-      const int32_t chunkW = (maxChunkX-minChunkX+1);
-      const int32_t chunkH = (maxChunkZ-minChunkZ+1);
-      const int32_t imageW = chunkW * 16;
-      const int32_t imageH = chunkH * 16;
-
-      int32_t divisor = 1;
-      if ( dimId == kDimIdNether ) { 
-	// if nether, we divide coordinates by 8
-	divisor = 8; 
-      }
-
-      int32_t cropX, cropZ, cropW, cropH;
-
-      if ( useCropFlag ) {
-	cropX = control.movieX / divisor;
-	cropZ = control.movieY / divisor;
-	cropW = control.movieW / divisor;
-	cropH = control.movieH / divisor;
-      } else {
-	cropX = cropZ = 0;
-	cropW = imageW;
-	cropH = imageH;
-      }
-	
-      // note RGB pixels
-      uint8_t* buf = new uint8_t[ cropW * cropH * 3 ];
-      memset(buf, 0, cropW*cropH*3);
-
-      // todobig - we *could* write image data to flat files during dbParse and then convert 
-      //   these flat files into png here (but temp disk space requirements are *huge*); could try gzwrite etc
-
-      leveldb::ReadOptions readOptions;
-      readOptions.fill_cache=false; // may improve performance?
-
-      std::string svalue;
-      const char* pchunk = nullptr;
-      int32_t pchunkX = 0;
-      int32_t pchunkZ = 0;
-	
-      int32_t color;
-      const char *pcolor = (const char*)&color;
-      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	// todo - make this part a func so that user can ask for specific slices from the cmdline?
-	slogger.msg(kLogInfo1,"  Layer %d\n", cy);
-	for ( const auto& it : list ) {
-	  int32_t imageX = (it->chunkX + chunkOffsetX) * 16;
-	  int32_t imageZ = (it->chunkZ + chunkOffsetZ) * 16;
-
-	  for (int32_t cz=0; cz < 16; cz++) {
-	    int32_t iz = (imageZ + cz);
-
-	    for (int32_t cx=0; cx < 16; cx++) {
-	      int32_t ix = (imageX + cx);
-
-	      if ( !useCropFlag || ((ix >= cropX) && (ix < (cropX + cropW)) && (iz >= cropZ) && (iz < (cropZ + cropH))) ) {
-
-		if ( pchunk==nullptr || (pchunkX != it->chunkX) || (pchunkZ != it->chunkZ) ) {
-		  // get the chunk
-		  // construct key
-		  char keybuf[20];
-		  int32_t keybuflen;
-		  int32_t kx = it->chunkX, kz=it->chunkZ, kw=dimId;
-		  uint8_t kt=0x30;
-		  switch (dimId) {
-		  case kDimIdOverworld:
-		    //overworld
-		    memcpy(&keybuf[0],&kx,sizeof(int32_t));
-		    memcpy(&keybuf[4],&kz,sizeof(int32_t));
-		    memcpy(&keybuf[8],&kt,sizeof(uint8_t));
-		    keybuflen=9;
-		    break;
-		  default:
-		    // nether
-		    memcpy(&keybuf[0],&kx,sizeof(int32_t));
-		    memcpy(&keybuf[4],&kz,sizeof(int32_t));
-		    memcpy(&keybuf[8],&kw,sizeof(int32_t));
-		    memcpy(&keybuf[12],&kt,sizeof(uint8_t));
-		    keybuflen=13;
-		    break;
-		  }
-		  leveldb::Slice key(keybuf,keybuflen);
-		  leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
-		  if (!dstatus.ok()) {
-		    slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
-		  }
-		  pchunk = svalue.data();
-		  pchunkX = it->chunkX;
-		  pchunkZ = it->chunkZ;
-		}
-		 
-		uint8_t blockid = getBlockId_LevelDB(pchunk, cx,cz,cy);
-
-		if ( blockid == 0 && ( cy > it->topBlockY[cx][cz] ) && (dimId != kDimIdNether) ) {
-		  // special handling for air -- keep existing value if we are above top block
-		  // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
-		  // however, we do NOT do this for the nether. because: the nether
-		} else {
-		    
-		  if ( blockInfoList[blockid].hasVariants() ) {
-		    // we need to get blockdata
-		    int32_t blockdata = it->data[cx][cz];
-		    bool vfound = false;
-		    for (const auto& itbv : blockInfoList[blockid].variantList) {
-		      if ( itbv->blockdata == blockdata ) {
-			vfound = true;
-			color = itbv->color;
-			break;
-		      }
-		    }
-		    if ( ! vfound ) {
-		      // todo - warn once per id/blockdata or the output volume could get ridiculous
-		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-				  , blockInfoList[blockid].name.c_str()
-				  , blockdata
-				  , blockdata
-				  );
-		    }
-		  } else {
-		    color = blockInfoList[blockid].color;
-		  }
-		  
-		  // do grid lines
-		  if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
-		    if ( (it->chunkX == 0) && (it->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
-		      // highlight (0,0)
-		      color = htobe32(0xeb3333);
-		    } else {
-		      color = htobe32(0xc1ffc4);
-		    }
-		  }
-		  
-#ifdef PIXEL_COPY_MEMCPY
-		  memcpy(&buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3], &pcolor[1], 3);
-#else
-		  // todo - any use in optimizing the offset calc?
-		  buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3] = pcolor[1];
-		  buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3 + 1] = pcolor[2];
-		  buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3 + 2] = pcolor[3];
-#endif
-		}
-	      }
-	    }
-	  }
-	}
-
-	// output the image
-	std::string fnameTmp = fnBase + ".mcpe_viz_slice.";
-	if ( !makeMovieFlag) {
-	  fnameTmp += "full.";
-	}
-	fnameTmp += name;
-	fnameTmp += ".";
-	char xtmp[100];
-	sprintf(xtmp,"%03d",cy);
-	fnameTmp += xtmp;
-	fnameTmp += ".png";
-
-	control.fnLayerRaw[dimId][cy] = fnameTmp;
+	// (1)  Hillshade = 255.0 * ((cos(Zenith_rad) * cos(Slope_rad)) + 
+	//        (sin(Zenith_rad) * sin(Slope_rad) * cos(Azimuth_rad - Aspect_rad)))
+	// Note that if the calculation of Hillshade value is < 0, the cell value will be = 0.
 	  
-	outputPNG(fnameTmp, makeImageDescription(-1,cy), buf, cropW, cropH, false);
-      }
-
-      delete [] buf;
-
-      if ( makeMovieFlag ) {
-	// "ffmpeg" method
-	std::string fnameTmp = fnBase + ".mcpe_viz_slice.";	
-	fnameTmp += name;
-	fnameTmp += ".%03d.png";
+	// todo - worth doing a sin/cos LUT?
+	fhillshade = 255.0 * ((cosZenithRad * cos(slopeRad)) + (sinZenithRad * sin(slopeRad) * cos(azimuthRad - aspectRad)));
 	  
-	// todo - ffmpeg on win32? need bin path option?
-	// todo - provide other user options for ffmpeg cmd line params?
-	std::string cmdline = std::string("ffmpeg -y -framerate 1 -i " + fnameTmp + " -c:v libx264 -r 30 ");
-	cmdline += fnOut;
-	int32_t ret = system(cmdline.c_str());
-	if ( ret != 0 ) {
-	  slogger.msg(kLogInfo1,"Failed to create movie ret=(%d) cmd=(%s)\n",ret,cmdline.c_str());
-	}
-	
-	// todo - delete temp slice files? cmdline option to NOT delete
-      }
-
-      return 0;
-    }
-
-      
-    int32_t doOutput(leveldb::DB* db) {
-      slogger.msg(kLogInfo1,"Do Output: %s\n",name.c_str());
-	
-      doOutputStats();
-
-      // we put images in subdir
-      std::string fnBase = mybasename(control.fnOutputBase);
-      std::string dirOut = mydirname(control.fnOutputBase) + "/images";
-      local_mkdir(dirOut.c_str());
-      
-      slogger.msg(kLogInfo1,"  Generate Image\n");
-      control.fnLayerTop[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".map.png");
-      generateImage(control.fnLayerTop[dimId], kImageModeTerrain);
-	
-      if ( checkDoForDim(control.doImageBiome) ) {
-	slogger.msg(kLogInfo1,"  Generate Biome Image\n");
-	control.fnLayerBiome[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".biome.png");
-	generateImage(control.fnLayerBiome[dimId], kImageModeBiome);
-      }
-      if ( checkDoForDim(control.doImageGrass) ) {
-	slogger.msg(kLogInfo1,"  Generate Grass Image\n");
-	control.fnLayerGrass[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".grass.png");
-	generateImage(control.fnLayerGrass[dimId], kImageModeGrass);
-      }
-      if ( checkDoForDim(control.doImageHeightCol) ) {
-	slogger.msg(kLogInfo1,"  Generate Height Column Image\n");
-	control.fnLayerHeight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col.png");
-	generateImage(control.fnLayerHeight[dimId], kImageModeHeightCol);
-      }
-      if ( checkDoForDim(control.doImageHeightColGrayscale) ) {
-	slogger.msg(kLogInfo1,"  Generate Height Column (grayscale) Image\n");
-	control.fnLayerHeightGrayscale[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col_grayscale.png");
-	generateImage(control.fnLayerHeightGrayscale[dimId], kImageModeHeightColGrayscale);
-      }
-      if ( checkDoForDim(control.doImageHeightColAlpha) ) {
-	slogger.msg(kLogInfo1,"  Generate Height Column (alpha) Image\n");
-	control.fnLayerHeightAlpha[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col_alpha.png");
-	generateImage(control.fnLayerHeightAlpha[dimId], kImageModeHeightColAlpha);
-      }
-      if ( checkDoForDim(control.doImageLightBlock) ) {
-	slogger.msg(kLogInfo1,"  Generate Block Light Image\n");
-	control.fnLayerBlockLight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".light_block.png");
-	generateImage(control.fnLayerBlockLight[dimId], kImageModeBlockLight);
-      }
-      if ( checkDoForDim(control.doImageLightSky) ) {
-	slogger.msg(kLogInfo1,"  Generate Sky Light Image\n");
-	control.fnLayerSkyLight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".light_sky.png");
-	generateImage(control.fnLayerSkyLight[dimId], kImageModeSkyLight);
-      }
-      if ( checkDoForDim(control.doImageSlimeChunks) ) {
-	slogger.msg(kLogInfo1,"  Generate Slime Chunks Image\n");
-	control.fnLayerSlimeChunks[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".slime_chunks.png");
-	generateImageSpecial(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
-      }
-
-      if ( checkDoForDim(control.doImageShadedRelief) ) {
-	slogger.msg(kLogInfo1,"  Generate Shaded Relief Image\n");
-	control.fnLayerShadedRelief[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".shaded_relief.png");
-
-	if ( false ) {
-	  // todobig - idea is to oversample the src image and then get higher resolution shaded relief - but, openlayers does not cooperate with this idea :) -- could fiddle with it later
-	  // todo - param for oversample
-	  std::string fnTemp = std::string(dirOut + "/" + fnBase + "." + name + ".shaded_relief.temp.png");
-	  if ( oversampleImage(control.fnLayerHeightGrayscale[dimId], fnTemp, 2) == 0 ) {
-	    generateShadedRelief(fnTemp, control.fnLayerShadedRelief[dimId]);
-	    // remove temporary file
-	    deleteFile(fnTemp);
-	  }
+	if (fhillshade < 0.0) {
+	  hillshade = 0;
 	} else {
-	  generateShadedRelief(control.fnLayerHeightGrayscale[dimId], control.fnLayerShadedRelief[dimId]);
+	  hillshade = round(fhillshade);
+	}
+	  
+	offset = (x1) * bppDest;
+	// rgb
+	buf[offset] =
+	  buf[offset + 1] =
+	  buf[offset + 2] = hillshade;
+
+	// alpha
+	// note: reduce the opacity for brighter parts; idea is to reduce haziness
+	// todo - adjust this -- we want BLACK to be opaque; WHITE to be transparent (or is it gray that should be transparent)
+	//buf[offset+3] = 255 - (hillshade / 2);
+	//buf[offset+3] = lut[ srcbuf1[x1 * bppSrc] ];
+	buf[offset + 3] = 255;
+      }
+
+      // output image data
+      outputPNG_writeRow(pngOut, buf);
+      
+    }
+
+    outputPNG_close(pngOut);
+
+    delete [] buf;
+
+    pngSrc.close();
+
+    delete [] sbuf;
+
+    return 0;
+  }
+    
+
+
+  // a run on old code (generateMovie):
+  // > time ./mcpe_viz --db another1/ --out test-all1/out1 --log log.tall1 --html-all
+  // 2672.248u 5.461s 45:47.69 97.4% 0+0k 72+1424304io 0pf+0w
+  // approx 45 minutes
+
+  // a run on this new code (generateSlices):
+  // 957.146u 4.463s 16:30.58 97.0%  0+0k 2536+1424304io 1pf+0w
+  // approx 17 minutes
+
+  // 823.212u 13.623s 14:23.86 96.8% 0+0k 2536+1423088io 1pf+0w
+  // 830.614u 13.871s 14:52.42 94.6% 0+0k 2536+1423088io 1pf+0w
+
+  // change memcpy to byte copy:
+  // 828.757u 13.842s 14:29.31 96.9% 0+0k 2536+1422656io 1pf+0w
+
+  // with -O3
+  // 827.337u 13.430s 14:27.58 96.9% 0+0k 2568+1422656io 1pf+0w
+
+  // with -O3 and png zlib set to 1 (default is 9) and filter set to NONE
+  //   with zlib=9 == 405M    test-all2
+  //   with zlib=1 == 508M    test-all2-zlib1/
+  // 392.597u 13.598s 7:07.25 95.0%  0+0k 2568+1633896io 1pf+0w
+
+  // as above, but disabled setting filter to NONE
+  //   with zlib=1 == 572M    test-all2-zlib1/
+  // 660.763u 13.799s 11:40.99 96.2% 0+0k 2568+1764624io 1pf+0w
+
+  // 402.214u 13.937s 7:26.63 93.1%  0+0k 2568+1633896io 1pf+0w
+
+  // without -O3, with zlib=1 and filter NONE
+  // 404.518u 13.369s 7:25.09 93.8%  0+0k 2536+1633896io 1pf+0w
+
+  // so we're at ~6.5x faster now
+
+  // 2015.10.24:
+  // 372.432u 13.435s 6:50.66 93.9%  0+0k 419456+1842944io 210pf+0w
+    
+  int32_t generateSlices(leveldb::DB* db, const std::string& fnBase) {
+    const int32_t chunkOffsetX = -minChunkX;
+    const int32_t chunkOffsetZ = -minChunkZ;
+
+    const int32_t chunkW = (maxChunkX-minChunkX+1);
+    const int32_t chunkH = (maxChunkZ-minChunkZ+1);
+    const int32_t imageW = chunkW * 16;
+    const int32_t imageH = chunkH * 16;
+
+    char keybuf[MAX_BLOCK_HEIGHT + 1];
+    int32_t keybuflen;
+    int32_t kw = dimId;
+    uint8_t kt = 0x30;
+    leveldb::Status dstatus;
+	
+    slogger.msg(kLogInfo1,"    Writing all images in one pass\n");
+	  
+    leveldb::ReadOptions readOptions;
+    readOptions.fill_cache=false; // may improve performance?
+
+    std::string svalue;
+    const char* ochunk = nullptr;
+    const char* pchunk = nullptr;
+	
+    int32_t color;
+    const char *pcolor = (const char*)&color;
+
+    // create png helpers
+    PngWriter png[MAX_BLOCK_HEIGHT + 1];
+    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+      std::string fnameTmp = fnBase + ".mcpe_viz_slice.full.";
+      fnameTmp += name;
+      fnameTmp += ".";
+      sprintf(keybuf,"%03d",cy);
+      fnameTmp += keybuf;
+      fnameTmp += ".png";
+
+      control.fnLayerRaw[dimId][cy] = fnameTmp;
+	  
+      png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16, false, true);
+    }
+	
+    // create row buffers
+    uint8_t* rbuf[MAX_BLOCK_HEIGHT + 1];
+    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+      rbuf[cy] = new uint8_t[(imageW*3)*16];
+      // setup row pointers
+      for (int32_t cz=0; cz<16; cz++) {
+	png[cy].row_pointers[cz] = &rbuf[cy][(cz*imageW)*3];
+      }
+    }
+
+    // create a helper buffer which contains topBlockY for the entire image
+    uint8_t currTopBlockY = MAX_BLOCK_HEIGHT;
+    uint8_t* tbuf = new uint8_t[imageW * imageH];
+    memset(tbuf,MAX_BLOCK_HEIGHT,imageW*imageH);
+    for (const auto& it : chunks) {
+      int32_t ix = (it.second->chunkX + chunkOffsetX) * 16;
+      int32_t iz = (it.second->chunkZ + chunkOffsetZ) * 16;
+      for (int32_t cz=0; cz < 16; cz++) {
+	for (int32_t cx=0; cx < 16; cx++) {
+	  tbuf[(iz+cz)*imageW + (ix+cx)] = it.second->topBlockY[cx][cz];
 	}
       }
-
-      if ( checkDoForDim(control.doMovie) ) {
-	slogger.msg(kLogInfo1,"  Generate movie\n");
-	generateMovie(db, dirOut + "/" + fnBase, std::string(control.fnOutputBase + "." + name + ".mp4"), true, true);
-      }
-
-      if ( checkDoForDim(control.doSlices) ) {
-	slogger.msg(kLogInfo1,"  Generate full-size slices\n");
-	generateSlices(db, dirOut + "/" + fnBase);
-      }
+    };
 	
-      // reset
-      for (int32_t i=0; i < 256; i++) {
-	blockInfoList[i].colorSetNeedCount = 0;
+    int32_t foundCt = 0, notFoundCt2 = 0;
+    uint8_t blockid, blockdata;
+	  
+    // we operate on sets of 16 rows (which is one chunk high) of image z
+    int32_t runCt = 0;
+    for (int32_t imageZ=0, chunkZ=minChunkZ; imageZ < imageH; imageZ += 16, chunkZ++) {
+
+      if ( (runCt++ % 20) == 0 ) {
+	slogger.msg(kLogInfo1,"    Row %d of %d\n", imageZ, imageH);
       }
+	    
+      for (int32_t imageX=0, chunkX=minChunkX; imageX < imageW; imageX += 16, chunkX++) {
 
-      return 0;
-    }
-  };
+	// construct key to get the chunk
+	if ( dimId == kDimIdOverworld ) {
+	  //overworld
+	  memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	  memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	  memcpy(&keybuf[8],&kt,sizeof(uint8_t));
+	  keybuflen=9;
+	} else {
+	  // nether (and probably any others that are added)
+	  memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	  memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	  memcpy(&keybuf[8],&kw,sizeof(int32_t));
+	  memcpy(&keybuf[12],&kt,sizeof(uint8_t));
+	  keybuflen=13;
+	}
 
-  
-  
-  // todobig - move to util?
-  int32_t printKeyValue(const char* key, int32_t key_size, const char* value, int32_t value_size, bool printKeyAsStringFlag) {
-    logger.msg(kLogInfo1,"WARNING: Unparsed Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
-	       (printKeyAsStringFlag ? key : "(SKIPPED)"));
-    for (int32_t i=0; i < key_size; i++) {
-      if ( i > 0 ) { logger.msg(kLogInfo1," "); }
-      logger.msg(kLogInfo1,"%02x",((int)key[i] & 0xff));
+	dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+	if ( ! dstatus.ok() ) {
+	  notFoundCt2++;
+	  // slogger.msg(kLogInfo1,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
+	  // we need to clear this area
+	  for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+	    for (int32_t cz=0; cz < 16; cz++) {
+	      memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
+	    }
+	  }
+	  continue;
+	}
+
+	pchunk = svalue.data();
+	ochunk = pchunk;
+	foundCt++;
+	      
+	// we step through the chunk in the natural order to speed things up
+	for (int32_t cx=0; cx < 16; cx++) {
+	  for (int32_t cz=0; cz < 16; cz++) {
+	    currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX+cx];
+	    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+	      blockid = *(pchunk++);
+
+	      if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
+
+		// special handling for air -- keep existing value if we are above top block
+		// the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
+		// however, we do NOT do this for the nether. because: the nether
+
+		// we need to copy this pixel from another layer
+		memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
+		       &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
+		       3);
+		      
+	      } else {
+		    
+		if ( blockInfoList[blockid].hasVariants() ) {
+		  // we need to get blockdata
+		  blockdata = getBlockData_LevelDB(ochunk, cx,cz,cy);
+		  bool vfound = false;
+		  for (const auto& itbv : blockInfoList[blockid].variantList) {
+		    if ( itbv->blockdata == blockdata ) {
+		      vfound = true;
+		      color = itbv->color;
+		      break;
+		    }
+		  }
+		  if ( ! vfound ) {
+		    // todo - warn once per id/blockdata or the output volume could get ridiculous
+		    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+				, blockInfoList[blockid].name.c_str()
+				, blockdata
+				, blockdata
+				);
+		    // since we did not find the variant, use the parent block's color
+		    color = blockInfoList[blockid].color;
+		  }
+		} else {
+		  color = blockInfoList[blockid].color;
+		}
+		    
+#ifdef PIXEL_COPY_MEMCPY
+		memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
+#else
+		// todo - any use in optimizing the offset calc?
+		rbuf[cy][((cz*imageW) + imageX + cx)*3] = pcolor[1];
+		rbuf[cy][((cz*imageW) + imageX + cx)*3 + 1] = pcolor[2];
+		rbuf[cy][((cz*imageW) + imageX + cx)*3 + 2] = pcolor[3];
+#endif
+	      }
+	    }
+	  }
+	}
+      }
+	  
+      // put the png rows
+      // todo - png lib is SLOW - worth it to alloc a larger window (16-row increments) and write in batches?
+      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+	png_write_rows(png[cy].png, png[cy].row_pointers, 16);
+      }
     }
-    logger.msg(kLogInfo1,"] value_size=%d value_hex=[",value_size);
-    for (int32_t i=0; i < value_size; i++) {
-      if ( i > 0 ) { logger.msg(kLogInfo1," "); }
-      logger.msg(kLogInfo1,"%02x",((int)value[i] & 0xff));
+	
+    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+      delete [] rbuf[cy];
+      png[cy].close();
     }
-    logger.msg(kLogInfo1,"]\n");
+
+    delete [] tbuf;
+	
+    // slogger.msg(kLogInfo1,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
+	
     return 0;
   }
 
-
-  // note: this is an attempt to remove "bad" chunks as seen in "nyan.zip" world
-  inline bool legalChunkPos ( int32_t chunkX, int32_t chunkZ ) {
-    if ( (uint32_t)chunkX == 0x80000000 && (uint32_t)chunkZ == 0x80000000 ) {
-      return false;
-    }
-    return true;
-  }
-    
-
-
-  // base class for a minecraft world
-  class MinecraftWorld {
-  private:
-    std::string worldName;
-    int64_t worldSeed;
-    int32_t worldSpawnX;
-    int32_t worldSpawnY;
-    int32_t worldSpawnZ;
-
-  public:
-    MinecraftWorld() {
-      worldName = "UNKNOWN-NOT-SET";
-      worldSeed = 0;
-      worldSpawnX = 0;
-      worldSpawnY = 0;
-      worldSpawnZ = 0;
-    }
-
-    void setWorldName(const std::string& s) { worldName = s; }
-    const std::string& getWorldName() const { return worldName; }
-
-    void setWorldSeed(int64_t s) { worldSeed = s; }
-    int64_t getWorldSeed() const { return worldSeed; }
-
-    void setWorldSpawnX(int32_t v) { worldSpawnX = v; }
-    int32_t getWorldSpawnX() const { return worldSpawnX; }
-    void setWorldSpawnY(int32_t v) { worldSpawnY = v; }
-    int32_t getWorldSpawnY() const { return worldSpawnY; }
-    void setWorldSpawnZ(int32_t v) { worldSpawnZ = v; }
-    int32_t getWorldSpawnZ() const { return worldSpawnZ; }
-  };
-
-
-  class MinecraftWorld_LevelDB : public MinecraftWorld {
-  private:
-    leveldb::DB* db;
-    std::unique_ptr<leveldb::Options> dbOptions;
-    std::unique_ptr<leveldb::ReadOptions> dbReadOptions;
-    
-  public:
-    // todobig - move to private?
-    std::unique_ptr<DimensionData_LevelDB> dimDataList[kDimIdCount];
-
-    MinecraftWorld_LevelDB() {
-      db = nullptr;
       
-      dbReadOptions = std::unique_ptr<leveldb::ReadOptions>(new leveldb::ReadOptions());
-      dbReadOptions->fill_cache = false;
-
-
-      dbOptions = std::unique_ptr<leveldb::Options>(new leveldb::Options);
-      dbOptions->compressors[0] = new leveldb::ZlibCompressor();
-      dbOptions->create_if_missing = false;
-
-      // this filter is supposed to reduce disk reads - light testing indicates that it is faster when doing 'html-all'
-      if ( control.leveldbFilter > 0 ) {
-	dbOptions->filter_policy = leveldb::NewBloomFilterPolicy(control.leveldbFilter);
-      }
-
-      dbOptions->block_size = control.leveldbBlockSize;
-      
-      for (int32_t i=0; i < kDimIdCount; i++) {
-	dimDataList[i] = std::unique_ptr<DimensionData_LevelDB>(new DimensionData_LevelDB());
-	dimDataList[i]->setDimId(i);
-	dimDataList[i]->unsetChunkBoundsValid();
-      }
-      dimDataList[kDimIdOverworld]->setName("overworld");
-      dimDataList[kDimIdNether]->setName("nether");
-    }
-    ~MinecraftWorld_LevelDB() {
-      dbClose();
-    }
-
-    int32_t parseLevelFile(const std::string& fname) {
-      FILE *fp = fopen(fname.c_str(), "rb");
-      if(!fp) {
-	return -1;
-      }
-
-      int32_t fVersion;
-      int32_t bufLen;
-      fread(&fVersion, sizeof(int32_t), 1, fp);
-      fread(&bufLen, sizeof(int32_t), 1, fp);
-
-      slogger.msg(kLogInfo1,"parseLevelFile: name=%s version=%d len=%d\n", fname.c_str(), fVersion, bufLen);
-
-      int32_t ret = -2;
-      if ( bufLen > 0 ) { 
-	// read content
-	char* buf = new char[bufLen];
-	fread(buf,1,bufLen,fp);
-	fclose(fp);
-
-	MyNbtTagList tagList;
-	ret = parseNbt("level.dat: ", buf, bufLen, tagList);
+  int32_t generateMovie(leveldb::DB* db, const std::string& fnBase, const std::string& fnOut, bool makeMovieFlag, bool useCropFlag ) {
+    const int32_t chunkOffsetX = -minChunkX;
+    const int32_t chunkOffsetZ = -minChunkZ;
 	
-	if ( ret == 0 ) {
-	  nbt::tag_compound tc = tagList[0].second->as<nbt::tag_compound>();
+    const int32_t chunkW = (maxChunkX-minChunkX+1);
+    const int32_t chunkH = (maxChunkZ-minChunkZ+1);
+    const int32_t imageW = chunkW * 16;
+    const int32_t imageH = chunkH * 16;
 
-	  setWorldSpawnX( tc["SpawnX"].as<nbt::tag_int>().get() );
-	  setWorldSpawnY( tc["SpawnY"].as<nbt::tag_int>().get() );
-	  setWorldSpawnZ( tc["SpawnZ"].as<nbt::tag_int>().get() );
-	  slogger.msg(kLogInfo1, "  Found World Spawn: x=%d y=%d z=%d\n", getWorldSpawnX(), getWorldSpawnY(), getWorldSpawnZ());
-
-	  setWorldSeed( tc["RandomSeed"].as<nbt::tag_long>().get() );
-	}
-
-	delete [] buf;
-      } else {
-	fclose(fp);
-      }
-      
-      return ret;
+    int32_t divisor = 1;
+    if ( dimId == kDimIdNether ) { 
+      // if nether, we divide coordinates by 8
+      divisor = 8; 
     }
 
-    int32_t parseLevelName(const std::string& fname) {
-      FILE *fp = fopen(fname.c_str(), "r");
-      if(!fp) {
-	return -1;
-      }
+    int32_t cropX, cropZ, cropW, cropH;
 
-      char buf[1025];
-      memset(buf,0,1025);
-      fgets(buf,1024,fp);
-
-      setWorldName(buf);
-      
-      slogger.msg(kLogInfo1,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
-      logger.msg(kLogInfo1,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
-      fclose(fp);
-
-      return 0;
+    if ( useCropFlag ) {
+      cropX = control.movieX / divisor;
+      cropZ = control.movieY / divisor;
+      cropW = control.movieW / divisor;
+      cropH = control.movieH / divisor;
+    } else {
+      cropX = cropZ = 0;
+      cropW = imageW;
+      cropH = imageH;
     }
-
-    int32_t init() {
-      int32_t ret;
-      
-      ret = parseLevelFile(std::string(control.dirLeveldb + "/level.dat"));
-      if ( ret != 0 ) {
-	slogger.msg(kLogInfo1,"ERROR: Failed to parse level.dat file.  Exiting...\n");
-	slogger.msg(kLogInfo1,"** Hint: --db must point to the dir which contains level.dat\n");
-	return -1;
-      }
-      
-      ret = parseLevelName(std::string(control.dirLeveldb + "/levelname.txt"));
-      if ( ret != 0 ) {
-	slogger.msg(kLogInfo1,"WARNING: Failed to parse levelname.txt file.\n");
-	slogger.msg(kLogInfo1,"** Hint: --db must point to the dir which contains levelname.txt\n");
-      }
-
-      // update dimension data
-      for (int32_t i=0; i < kDimIdCount; i++) {
-	dimDataList[i]->setWorldInfo(getWorldName(), getWorldSpawnX(), getWorldSpawnZ(), getWorldSeed());
-      }
-      
-      return 0;
-    }
-    
-    int32_t dbOpen(const std::string& dirDb) {
-      // todobig - leveldb read-only? snapshot?
-      slogger.msg(kLogInfo1,"DB Open: dir=%s\n",dirDb.c_str());
-      leveldb::Status dstatus = leveldb::DB::Open(*dbOptions, std::string(dirDb+"/db"), &db);
-      slogger.msg(kLogInfo1,"DB Open Status: %s (block_size=%d bloom filter bits=%d)\n", dstatus.ToString().c_str(), control.leveldbBlockSize, control.leveldbFilter); fflush(stderr);
-      if (!dstatus.ok()) {
-	slogger.msg(kLogInfo1,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
-	exit(-2);
-      }
-      dbReadOptions->fill_cache=false; // may improve performance?
-      return 0;
-    }
-
-    int32_t dbClose() {
-      if ( db != nullptr ) {
-	delete db;
-	db = nullptr;
-      }
-      if ( dbOptions != nullptr ) {
-	if ( dbOptions->compressors[0] ) {
-	  delete dbOptions->compressors[0];
-	  dbOptions->compressors[0] = nullptr;
-	}
-	if ( dbOptions->filter_policy != NULL ) {
-	  delete dbOptions->filter_policy;
-	  dbOptions->filter_policy = NULL;
-	}
-      }
-      return 0;
-    }
-
-    int32_t calcChunkBounds() {
-      // see if we already calculated bounds
-      bool passFlag = true;
-      for (int32_t i=0; i < kDimIdCount; i++) {
-	if ( ! dimDataList[i]->getChunkBoundsValid() ) {
-	  passFlag = false;
-	}
-      }
-      if ( passFlag ) {
-	return 0;
-      }
-
-      // clear bounds
-      for (int32_t i=0; i < kDimIdCount; i++) {
-	dimDataList[i]->unsetChunkBoundsValid();
-      }
-
-      int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
 	
-      slogger.msg(kLogInfo1,"Scan keys to get world boundaries\n");
-      int32_t recordCt = 0;
+    // note RGB pixels
+    uint8_t* buf = new uint8_t[ cropW * cropH * 3 ];
+    memset(buf, 0, cropW*cropH*3);
 
-      // todobig - is there a faster way to enumerate the keys?
-      leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
-      leveldb::Slice skey;
-      int32_t key_size;
-      const char* key;
-      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-	skey = iter->key();
-	key_size = skey.size();
-	key = skey.data();
-	  
-	++recordCt;
-	if ( control.shortRunFlag && recordCt > 1000 ) {
-	  break;
-	}
-	  
-	if ( key_size == 9 ) {
-	  chunkX = myParseInt32(key, 0);
-	  chunkZ = myParseInt32(key, 4);
-	  chunkType = myParseInt8(key, 8);
-	    
-	  // sanity checks
-	  if ( chunkType == 0x30 ) {
-	    if ( legalChunkPos(chunkX,chunkZ) ) {
-	      dimDataList[0]->addToChunkBounds(chunkX, chunkZ);
+    // todobig - we *could* write image data to flat files during dbParse and then convert 
+    //   these flat files into png here (but temp disk space requirements are *huge*); could try gzwrite etc
+
+    leveldb::ReadOptions readOptions;
+    readOptions.fill_cache=false; // may improve performance?
+
+    std::string svalue;
+    const char* pchunk = nullptr;
+    int32_t pchunkX = 0;
+    int32_t pchunkZ = 0;
+	
+    int32_t color;
+    const char *pcolor = (const char*)&color;
+    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+      // todo - make this part a func so that user can ask for specific slices from the cmdline?
+      slogger.msg(kLogInfo1,"  Layer %d\n", cy);
+      for ( const auto& it : chunks ) {
+	int32_t imageX = (it.second->chunkX + chunkOffsetX) * 16;
+	int32_t imageZ = (it.second->chunkZ + chunkOffsetZ) * 16;
+
+	for (int32_t cz=0; cz < 16; cz++) {
+	  int32_t iz = (imageZ + cz);
+
+	  for (int32_t cx=0; cx < 16; cx++) {
+	    int32_t ix = (imageX + cx);
+
+	    if ( !useCropFlag || ((ix >= cropX) && (ix < (cropX + cropW)) && (iz >= cropZ) && (iz < (cropZ + cropH))) ) {
+
+	      if ( pchunk==nullptr || (pchunkX != it.second->chunkX) || (pchunkZ != it.second->chunkZ) ) {
+		// get the chunk
+		// construct key
+		char keybuf[20];
+		int32_t keybuflen;
+		int32_t kx = it.second->chunkX, kz=it.second->chunkZ, kw=dimId;
+		uint8_t kt=0x30;
+		switch (dimId) {
+		case kDimIdOverworld:
+		  //overworld
+		  memcpy(&keybuf[0],&kx,sizeof(int32_t));
+		  memcpy(&keybuf[4],&kz,sizeof(int32_t));
+		  memcpy(&keybuf[8],&kt,sizeof(uint8_t));
+		  keybuflen=9;
+		  break;
+		default:
+		  // nether
+		  memcpy(&keybuf[0],&kx,sizeof(int32_t));
+		  memcpy(&keybuf[4],&kz,sizeof(int32_t));
+		  memcpy(&keybuf[8],&kw,sizeof(int32_t));
+		  memcpy(&keybuf[12],&kt,sizeof(uint8_t));
+		  keybuflen=13;
+		  break;
+		}
+		leveldb::Slice key(keybuf,keybuflen);
+		leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
+		if (!dstatus.ok()) {
+		  slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+		}
+		pchunk = svalue.data();
+		pchunkX = it.second->chunkX;
+		pchunkZ = it.second->chunkZ;
+	      }
+		 
+	      uint8_t blockid = getBlockId_LevelDB(pchunk, cx,cz,cy);
+
+	      if ( blockid == 0 && ( cy > it.second->topBlockY[cx][cz] ) && (dimId != kDimIdNether) ) {
+		// special handling for air -- keep existing value if we are above top block
+		// the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
+		// however, we do NOT do this for the nether. because: the nether
+	      } else {
+		    
+		if ( blockInfoList[blockid].hasVariants() ) {
+		  // we need to get blockdata
+		  int32_t blockdata = it.second->data[cx][cz];
+		  bool vfound = false;
+		  for (const auto& itbv : blockInfoList[blockid].variantList) {
+		    if ( itbv->blockdata == blockdata ) {
+		      vfound = true;
+		      color = itbv->color;
+		      break;
+		    }
+		  }
+		  if ( ! vfound ) {
+		    // todo - warn once per id/blockdata or the output volume could get ridiculous
+		    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+				, blockInfoList[blockid].name.c_str()
+				, blockdata
+				, blockdata
+				);
+		    // since we did not find the variant, use the parent block's color
+		    color = blockInfoList[blockid].color;
+		  }
+		} else {
+		  color = blockInfoList[blockid].color;
+		}
+		  
+		// do grid lines
+		if ( checkDoForDim(control.doGrid) && (cx==0 || cz==0) ) {
+		  if ( (it.second->chunkX == 0) && (it.second->chunkZ == 0) && (cx == 0) && (cz == 0) ) {
+		    // highlight (0,0)
+		    color = htobe32(0xeb3333);
+		  } else {
+		    color = htobe32(0xc1ffc4);
+		  }
+		}
+		  
+#ifdef PIXEL_COPY_MEMCPY
+		memcpy(&buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3], &pcolor[1], 3);
+#else
+		// todo - any use in optimizing the offset calc?
+		buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3] = pcolor[1];
+		buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3 + 1] = pcolor[2];
+		buf[ (((imageZ + cz) - cropZ) * cropW + ((imageX + cx) - cropX)) * 3 + 2] = pcolor[3];
+#endif
+	      }
 	    }
 	  }
 	}
+      }
+
+      // output the image
+      std::string fnameTmp = fnBase + ".mcpe_viz_slice.";
+      if ( !makeMovieFlag) {
+	fnameTmp += "full.";
+      }
+      fnameTmp += name;
+      fnameTmp += ".";
+      char xtmp[100];
+      sprintf(xtmp,"%03d",cy);
+      fnameTmp += xtmp;
+      fnameTmp += ".png";
+
+      control.fnLayerRaw[dimId][cy] = fnameTmp;
+	  
+      outputPNG(fnameTmp, makeImageDescription(-1,cy), buf, cropW, cropH, false);
+    }
+
+    delete [] buf;
+
+    if ( makeMovieFlag ) {
+      // "ffmpeg" method
+      std::string fnameTmp = fnBase + ".mcpe_viz_slice.";	
+      fnameTmp += name;
+      fnameTmp += ".%03d.png";
+	  
+      // todo - ffmpeg on win32? need bin path option?
+      // todo - provide other user options for ffmpeg cmd line params?
+      std::string cmdline = std::string("ffmpeg -y -framerate 1 -i " + fnameTmp + " -c:v libx264 -r 30 ");
+      cmdline += fnOut;
+      int32_t ret = system(cmdline.c_str());
+      if ( ret != 0 ) {
+	slogger.msg(kLogInfo1,"Failed to create movie ret=(%d) cmd=(%s)\n",ret,cmdline.c_str());
+      }
+	
+      // todo - delete temp slice files? cmdline option to NOT delete
+    }
+
+    return 0;
+  }
+
+  int32_t doOutput_GeoJSON() {
+    // put spawnable info
+    for ( const auto& it : listCheckSpawn ) {
+      // spwawnable! add it to the list
+      double ix, iy;
+      char tmpstring[512];
+      worldPointToGeoJSONPoint(dimId, it->x, it->z, ix,iy);
+      sprintf(tmpstring, ""
+	      "\"Spawnable\":true,"
+	      "\"Name\":\"SpawnableBoundingCircle\","
+	      "\"BoundingCircle\":\"1\","
+	      "\"Clickable\":\"0\","
+	      "\"Dimension\":\"%d\","
+	      "\"Radius\":\"%d\","
+	      "\"Pos\":[%d,%d,%d]"
+	      "}}"
+	      , dimId
+	      , it->distance
+	      , it->x
+	      , 0
+	      , it->z
+	      );
+      std::string json = ""
+	+ makeGeojsonHeader(ix,iy)
+	+ tmpstring
+	;
+      listGeoJSON.push_back( json );
+    }
+
+    return 0;
+  }
+      
+  int32_t doOutput(leveldb::DB* db) {
+    slogger.msg(kLogInfo1,"Do Output: %s\n",name.c_str());
+	
+    doOutputStats();
+
+    doOutput_GeoJSON();
+      
+    // we put images in subdir
+    std::string fnBase = mybasename(control.fnOutputBase);
+    std::string dirOut = mydirname(control.fnOutputBase) + "/images";
+    local_mkdir(dirOut.c_str());
+      
+    slogger.msg(kLogInfo1,"  Generate Image\n");
+    control.fnLayerTop[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".map.png");
+    generateImage(control.fnLayerTop[dimId], kImageModeTerrain);
+	
+    if ( checkDoForDim(control.doImageBiome) ) {
+      slogger.msg(kLogInfo1,"  Generate Biome Image\n");
+      control.fnLayerBiome[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".biome.png");
+      generateImage(control.fnLayerBiome[dimId], kImageModeBiome);
+    }
+    if ( checkDoForDim(control.doImageGrass) ) {
+      slogger.msg(kLogInfo1,"  Generate Grass Image\n");
+      control.fnLayerGrass[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".grass.png");
+      generateImage(control.fnLayerGrass[dimId], kImageModeGrass);
+    }
+    if ( checkDoForDim(control.doImageHeightCol) ) {
+      slogger.msg(kLogInfo1,"  Generate Height Column Image\n");
+      control.fnLayerHeight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col.png");
+      generateImage(control.fnLayerHeight[dimId], kImageModeHeightCol);
+    }
+    if ( checkDoForDim(control.doImageHeightColGrayscale) ) {
+      slogger.msg(kLogInfo1,"  Generate Height Column (grayscale) Image\n");
+      control.fnLayerHeightGrayscale[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col_grayscale.png");
+      generateImage(control.fnLayerHeightGrayscale[dimId], kImageModeHeightColGrayscale);
+    }
+    if ( checkDoForDim(control.doImageHeightColAlpha) ) {
+      slogger.msg(kLogInfo1,"  Generate Height Column (alpha) Image\n");
+      control.fnLayerHeightAlpha[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".height_col_alpha.png");
+      generateImage(control.fnLayerHeightAlpha[dimId], kImageModeHeightColAlpha);
+    }
+    if ( checkDoForDim(control.doImageLightBlock) ) {
+      slogger.msg(kLogInfo1,"  Generate Block Light Image\n");
+      control.fnLayerBlockLight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".light_block.png");
+      generateImage(control.fnLayerBlockLight[dimId], kImageModeBlockLight);
+    }
+    if ( checkDoForDim(control.doImageLightSky) ) {
+      slogger.msg(kLogInfo1,"  Generate Sky Light Image\n");
+      control.fnLayerSkyLight[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".light_sky.png");
+      generateImage(control.fnLayerSkyLight[dimId], kImageModeSkyLight);
+    }
+    if ( checkDoForDim(control.doImageSlimeChunks) ) {
+      slogger.msg(kLogInfo1,"  Generate Slime Chunks Image\n");
+      control.fnLayerSlimeChunks[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".slime_chunks.png");
+      generateImageSpecial(control.fnLayerSlimeChunks[dimId], kImageModeSlimeChunks);
+    }
+
+    if ( checkDoForDim(control.doImageShadedRelief) ) {
+      slogger.msg(kLogInfo1,"  Generate Shaded Relief Image\n");
+      control.fnLayerShadedRelief[dimId] = std::string(dirOut + "/" + fnBase + "." + name + ".shaded_relief.png");
+
+      if ( false ) {
+	// todobig - idea is to oversample the src image and then get higher resolution shaded relief - but, openlayers does not cooperate with this idea :) -- could fiddle with it later
+	// todo - param for oversample
+	std::string fnTemp = std::string(dirOut + "/" + fnBase + "." + name + ".shaded_relief.temp.png");
+	if ( oversampleImage(control.fnLayerHeightGrayscale[dimId], fnTemp, 2) == 0 ) {
+	  generateShadedRelief(fnTemp, control.fnLayerShadedRelief[dimId]);
+	  // remove temporary file
+	  deleteFile(fnTemp);
+	}
+      } else {
+	generateShadedRelief(control.fnLayerHeightGrayscale[dimId], control.fnLayerShadedRelief[dimId]);
+      }
+    }
+
+    if ( checkDoForDim(control.doMovie) ) {
+      slogger.msg(kLogInfo1,"  Generate movie\n");
+      generateMovie(db, dirOut + "/" + fnBase, std::string(control.fnOutputBase + "." + name + ".mp4"), true, true);
+    }
+
+    if ( checkDoForDim(control.doSlices) ) {
+      slogger.msg(kLogInfo1,"  Generate full-size slices\n");
+      generateSlices(db, dirOut + "/" + fnBase);
+    }
+	
+    // reset
+    for (int32_t i=0; i < 256; i++) {
+      blockInfoList[i].colorSetNeedCount = 0;
+    }
+
+    return 0;
+  }
+};
+
+  
+  
+// todobig - move to util?
+int32_t printKeyValue(const char* key, int32_t key_size, const char* value, int32_t value_size, bool printKeyAsStringFlag) {
+  logger.msg(kLogInfo1,"WARNING: Unparsed Record: key_size=%d key_string=[%s] key_hex=[", key_size, 
+	     (printKeyAsStringFlag ? key : "(SKIPPED)"));
+  for (int32_t i=0; i < key_size; i++) {
+    if ( i > 0 ) { logger.msg(kLogInfo1," "); }
+    logger.msg(kLogInfo1,"%02x",((int)key[i] & 0xff));
+  }
+  logger.msg(kLogInfo1,"] value_size=%d value_hex=[",value_size);
+  for (int32_t i=0; i < value_size; i++) {
+    if ( i > 0 ) { logger.msg(kLogInfo1," "); }
+    logger.msg(kLogInfo1,"%02x",((int)value[i] & 0xff));
+  }
+  logger.msg(kLogInfo1,"]\n");
+  return 0;
+}
+
+
+// note: this is an attempt to remove "bad" chunks as seen in "nyan.zip" world
+inline bool legalChunkPos ( int32_t chunkX, int32_t chunkZ ) {
+  if ( (uint32_t)chunkX == 0x80000000 && (uint32_t)chunkZ == 0x80000000 ) {
+    return false;
+  }
+  return true;
+}
+    
+
+
+// base class for a minecraft world
+class MinecraftWorld {
+private:
+  std::string worldName;
+  int64_t worldSeed;
+  int32_t worldSpawnX;
+  int32_t worldSpawnY;
+  int32_t worldSpawnZ;
+
+public:
+  MinecraftWorld() {
+    worldName = "UNKNOWN-NOT-SET";
+    worldSeed = 0;
+    worldSpawnX = 0;
+    worldSpawnY = 0;
+    worldSpawnZ = 0;
+  }
+
+  void setWorldName(const std::string& s) { worldName = s; }
+  const std::string& getWorldName() const { return worldName; }
+
+  void setWorldSeed(int64_t s) { worldSeed = s; }
+  int64_t getWorldSeed() const { return worldSeed; }
+
+  void setWorldSpawnX(int32_t v) { worldSpawnX = v; }
+  int32_t getWorldSpawnX() const { return worldSpawnX; }
+  void setWorldSpawnY(int32_t v) { worldSpawnY = v; }
+  int32_t getWorldSpawnY() const { return worldSpawnY; }
+  void setWorldSpawnZ(int32_t v) { worldSpawnZ = v; }
+  int32_t getWorldSpawnZ() const { return worldSpawnZ; }
+};
+
+
+class MinecraftWorld_LevelDB : public MinecraftWorld {
+private:
+  leveldb::DB* db;
+  std::unique_ptr<leveldb::Options> dbOptions;
+  std::unique_ptr<leveldb::ReadOptions> dbReadOptions;
+  int32_t totalRecordCt;
+  
+public:
+  // todobig - move to private?
+  std::unique_ptr<DimensionData_LevelDB> dimDataList[kDimIdCount];
+
+  MinecraftWorld_LevelDB() {
+    db = nullptr;
+      
+    dbReadOptions = std::unique_ptr<leveldb::ReadOptions>(new leveldb::ReadOptions());
+    dbReadOptions->fill_cache = false;
+
+
+    dbOptions = std::unique_ptr<leveldb::Options>(new leveldb::Options);
+    dbOptions->compressors[0] = new leveldb::ZlibCompressor();
+    dbOptions->create_if_missing = false;
+
+    // this filter is supposed to reduce disk reads - light testing indicates that it is faster when doing 'html-all'
+    if ( control.leveldbFilter > 0 ) {
+      dbOptions->filter_policy = leveldb::NewBloomFilterPolicy(control.leveldbFilter);
+    }
+
+    dbOptions->block_size = control.leveldbBlockSize;
+      
+    for (int32_t i=0; i < kDimIdCount; i++) {
+      dimDataList[i] = std::unique_ptr<DimensionData_LevelDB>(new DimensionData_LevelDB());
+      dimDataList[i]->setDimId(i);
+      dimDataList[i]->unsetChunkBoundsValid();
+    }
+    dimDataList[kDimIdOverworld]->setName("overworld");
+    dimDataList[kDimIdNether]->setName("nether");
+  }
+  ~MinecraftWorld_LevelDB() {
+    dbClose();
+  }
+
+  int32_t parseLevelFile(const std::string& fname) {
+    FILE *fp = fopen(fname.c_str(), "rb");
+    if(!fp) {
+      return -1;
+    }
+
+    int32_t fVersion;
+    int32_t bufLen;
+    fread(&fVersion, sizeof(int32_t), 1, fp);
+    fread(&bufLen, sizeof(int32_t), 1, fp);
+
+    slogger.msg(kLogInfo1,"parseLevelFile: name=%s version=%d len=%d\n", fname.c_str(), fVersion, bufLen);
+
+    int32_t ret = -2;
+    if ( bufLen > 0 ) { 
+      // read content
+      char* buf = new char[bufLen];
+      fread(buf,1,bufLen,fp);
+      fclose(fp);
+
+      MyNbtTagList tagList;
+      ret = parseNbt("level.dat: ", buf, bufLen, tagList);
+	
+      if ( ret == 0 ) {
+	nbt::tag_compound tc = tagList[0].second->as<nbt::tag_compound>();
+
+	setWorldSpawnX( tc["SpawnX"].as<nbt::tag_int>().get() );
+	setWorldSpawnY( tc["SpawnY"].as<nbt::tag_int>().get() );
+	setWorldSpawnZ( tc["SpawnZ"].as<nbt::tag_int>().get() );
+	slogger.msg(kLogInfo1, "  Found World Spawn: x=%d y=%d z=%d\n", getWorldSpawnX(), getWorldSpawnY(), getWorldSpawnZ());
+
+	setWorldSeed( tc["RandomSeed"].as<nbt::tag_long>().get() );
+      }
+
+      delete [] buf;
+    } else {
+      fclose(fp);
+    }
+      
+    return ret;
+  }
+
+  int32_t parseLevelName(const std::string& fname) {
+    FILE *fp = fopen(fname.c_str(), "r");
+    if(!fp) {
+      return -1;
+    }
+
+    char buf[1025];
+    memset(buf,0,1025);
+    fgets(buf,1024,fp);
+
+    setWorldName(buf);
+      
+    slogger.msg(kLogInfo1,"  Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+    logger.msg(kLogInfo1,"\nlevelname.txt: Level name is [%s]\n", (strlen(buf) > 0 ) ? buf : "(UNKNOWN)");
+    fclose(fp);
+
+    return 0;
+  }
+
+  int32_t init() {
+    int32_t ret;
+      
+    ret = parseLevelFile(std::string(control.dirLeveldb + "/level.dat"));
+    if ( ret != 0 ) {
+      slogger.msg(kLogInfo1,"ERROR: Failed to parse level.dat file.  Exiting...\n");
+      slogger.msg(kLogInfo1,"** Hint: --db must point to the dir which contains level.dat\n");
+      return -1;
+    }
+      
+    ret = parseLevelName(std::string(control.dirLeveldb + "/levelname.txt"));
+    if ( ret != 0 ) {
+      slogger.msg(kLogInfo1,"WARNING: Failed to parse levelname.txt file.\n");
+      slogger.msg(kLogInfo1,"** Hint: --db must point to the dir which contains levelname.txt\n");
+    }
+
+    // update dimension data
+    for (int32_t i=0; i < kDimIdCount; i++) {
+      dimDataList[i]->setWorldInfo(getWorldName(), getWorldSpawnX(), getWorldSpawnZ(), getWorldSeed());
+    }
+      
+    return 0;
+  }
+    
+  int32_t dbOpen(const std::string& dirDb) {
+    // todobig - leveldb read-only? snapshot?
+    slogger.msg(kLogInfo1,"DB Open: dir=%s\n",dirDb.c_str());
+    leveldb::Status dstatus = leveldb::DB::Open(*dbOptions, std::string(dirDb+"/db"), &db);
+    slogger.msg(kLogInfo1,"DB Open Status: %s (block_size=%d bloom_filter_bits=%d)\n", dstatus.ToString().c_str(), control.leveldbBlockSize, control.leveldbFilter); fflush(stderr);
+    if (!dstatus.ok()) {
+      slogger.msg(kLogInfo1,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+      exit(-2);
+    }
+    dbReadOptions->fill_cache=false; // may improve performance?
+    return 0;
+  }
+
+  int32_t dbClose() {
+    if ( db != nullptr ) {
+      delete db;
+      db = nullptr;
+    }
+    if ( dbOptions != nullptr ) {
+      if ( dbOptions->compressors[0] ) {
+	delete dbOptions->compressors[0];
+	dbOptions->compressors[0] = nullptr;
+      }
+      if ( dbOptions->filter_policy != NULL ) {
+	delete dbOptions->filter_policy;
+	dbOptions->filter_policy = NULL;
+      }
+    }
+    return 0;
+  }
+
+  int32_t calcChunkBounds() {
+    // see if we already calculated bounds
+    bool passFlag = true;
+    for (int32_t i=0; i < kDimIdCount; i++) {
+      if ( ! dimDataList[i]->getChunkBoundsValid() ) {
+	passFlag = false;
+      }
+    }
+    if ( passFlag ) {
+      return 0;
+    }
+
+    // clear bounds
+    for (int32_t i=0; i < kDimIdCount; i++) {
+      dimDataList[i]->unsetChunkBoundsValid();
+    }
+
+    int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
+	
+    slogger.msg(kLogInfo1,"Scan keys to get world boundaries\n");
+    int32_t recordCt = 0;
+
+    // todobig - is there a faster way to enumerate the keys?
+    leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
+    leveldb::Slice skey;
+    int32_t key_size;
+    const char* key;
+    for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+      skey = iter->key();
+      key_size = skey.size();
+      key = skey.data();
+	  
+      ++recordCt;
+      if ( control.shortRunFlag && recordCt > 1000 ) {
+	break;
+      }
+	  
+      if ( key_size == 9 ) {
+	chunkX = myParseInt32(key, 0);
+	chunkZ = myParseInt32(key, 4);
+	chunkType = myParseInt8(key, 8);
+	    
+	// sanity checks
+	if ( chunkType == 0x30 ) {
+	  if ( legalChunkPos(chunkX,chunkZ) ) {
+	    dimDataList[0]->addToChunkBounds(chunkX, chunkZ);
+	  }
+	}
+      }
+      else if ( key_size == 13 ) {
+	chunkX = myParseInt32(key, 0);
+	chunkZ = myParseInt32(key, 4);
+	chunkDimId = myParseInt32(key, 8);
+	chunkType = myParseInt8(key, 12);
+	    
+	// sanity checks
+	if ( chunkType == 0x30 ) {
+	  if ( legalChunkPos(chunkX,chunkZ) ) {
+	    dimDataList[chunkDimId]->addToChunkBounds(chunkX, chunkZ);
+	  }
+	}
+      }
+    }
+
+    if (!iter->status().ok()) {
+      slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
+    }
+    delete iter;
+
+    // mark bounds valid
+    for (int32_t i=0; i < kDimIdCount; i++) {
+      dimDataList[i]->setChunkBoundsValid();
+      dimDataList[i]->reportChunkBounds();
+    }
+
+    slogger.msg(kLogInfo1,"  %d records\n", recordCt);
+    totalRecordCt = recordCt;
+	
+    return 0;
+  }
+
+  // this is where we go through every item in the leveldb, we parse interesting things as we go
+  int32_t dbParse () {
+
+    char tmpstring[256];
+
+    int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
+
+    // we make sure that we know the chunk bounds before we start so that we can translate world coords to image coords
+    calcChunkBounds();
+
+    // report hide and force lists
+    {
+      slogger.msg(kLogInfo1,"Active 'hide-top', 'force-top', and 'geojson-block':\n");
+      int32_t itemCt = 0;
+      int32_t blockId;
+      for (int32_t dimId=0; dimId < kDimIdCount; dimId++) {
+	dimDataList[dimId]->updateFastLists();
+	for ( const auto& iter : dimDataList[dimId]->blockHideList ) {
+	  blockId = iter;
+	  slogger.msg(kLogInfo1,"  'hide-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", dimDataList[dimId]->getName().c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
+	  itemCt++;
+	}
+
+	for ( const auto& iter : dimDataList[dimId]->blockForceTopList ) {
+	  blockId = iter;
+	  slogger.msg(kLogInfo1,"  'force-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", dimDataList[dimId]->getName().c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
+	  itemCt++;
+	}
+
+	for ( const auto& iter : dimDataList[dimId]->blockToGeoJSONList ) {
+	  blockId = iter;
+	  slogger.msg(kLogInfo1,"  'geojson' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", dimDataList[dimId]->getName().c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
+	  itemCt++;
+	}
+      }
+      if ( itemCt == 0 ) {
+	slogger.msg(kLogInfo1,"None\n");
+      }
+    }
+	    
+    slogger.msg(kLogInfo1,"Parse all leveldb records\n");
+
+    MyNbtTagList tagList;
+    int32_t recordCt = 0, ret;
+
+    leveldb::Slice skey, svalue;
+    int32_t key_size, cdata_size;
+    const char* key;
+    const char* cdata;
+    std::string dimName, chunkstr;
+
+    leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
+    for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+
+      // note: we get the raw buffer early to avoid overhead (maybe?)
+      skey = iter->key();
+      key_size = (int)skey.size();
+      key = skey.data();
+
+      svalue = iter->value();
+      cdata_size = svalue.size();
+      cdata = svalue.data();
+
+      ++recordCt;
+      if ( control.shortRunFlag && recordCt > 1000 ) {
+	break;
+      }
+      if ( (recordCt % 10000) == 0 ) {
+	double pct = (double)recordCt / (double)totalRecordCt;
+	slogger.msg(kLogInfo1, "  Processing records: %d / %d (%.1lf%%)\n", recordCt, totalRecordCt, (pct * 100.0));
+      }
+
+      logger.msg(kLogInfo1,"\n");
+
+      // we look at the key to determine what we have, some records have text keys
+
+      if ( strncmp(key,"BiomeData",key_size) == 0 ) {
+	// 0x61 +"BiomeData" -- snow accum? -- overworld only?
+	logger.msg(kLogInfo1,"BiomeData value:\n");
+	parseNbt("BiomeData: ", cdata, cdata_size, tagList);
+	// todo - parse tagList? snow accumulation amounts
+      }
+
+      else if ( strncmp(key,"Overworld",key_size) == 0 ) {
+	logger.msg(kLogInfo1,"Overworld value:\n");
+	parseNbt("Overworld: ", cdata, cdata_size, tagList);
+	// todo - parse tagList? a list of "LimboEntities"
+      }
+
+      else if ( strncmp(key,"~local_player",key_size) == 0 ) {
+	logger.msg(kLogInfo1,"Local Player value:\n");
+	ret = parseNbt("Local Player: ", cdata, cdata_size, tagList);
+	if ( ret == 0 ) { 
+	  parseNbt_entity(-1, "",tagList, true, false, "Local Player", "");
+	}
+      }
+
+      else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
+	// note: key contains player id (e.g. "player_-1234")
+	std::string playerRemoteId = std::string(&key[strlen("player_")], key_size - strlen("player_"));
+	  
+	logger.msg(kLogInfo1,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
+
+	ret = parseNbt("Remote Player: ", cdata, cdata_size, tagList);
+	if ( ret == 0 ) {
+	  parseNbt_entity(-1, "",tagList, false, true, "Remote Player", playerRemoteId);
+	}
+      }
+
+      else if ( strncmp(key,"villages",key_size) == 0 ) {
+	logger.msg(kLogInfo1,"Villages value:\n");
+	parseNbt("villages: ", cdata, cdata_size, tagList);
+	// todo - parse tagList? usually empty, unless player is in range of village; test that!
+      }
+
+      else if ( strncmp(key,"mVillages",key_size) == 0 ) {
+	// todobig -- new for 0.13? what is it?
+	logger.msg(kLogInfo1,"mVillages value:\n");
+	parseNbt("mVillages: ", cdata, cdata_size, tagList);
+	// todo - parse tagList?
+      }
+
+      else if ( strncmp(key,"game_flatworldlayers",key_size) == 0 ) {
+	// todobig -- what is it?
+	// example data (standard flat): 5b 37 2c 33 2c 33 2c 32 5d
+	logger.msg(kLogInfo1,"game_flatworldlayers value: (todo)\n");
+	// parseNbt("game_flatworldlayers: ", cdata, cdata_size, tagList);
+	// todo - parse tagList?
+      }
+	
+      else if ( strncmp(key,"idcounts",key_size) == 0 ) {
+	// todobig -- new for 0.13? what is it? is it a 4-byte int?
+	logger.msg(kLogInfo1,"idcounts value:\n");
+	parseNbt("idcounts: ", cdata, cdata_size, tagList);
+      }
+
+      else if ( strncmp(key,"Nether",key_size) == 0 ) {
+	logger.msg(kLogInfo1,"Nether value:\n");
+	parseNbt("Nether: ", cdata, cdata_size, tagList);
+	// todo - parse tagList?  list of LimboEntities
+      }
+
+      else if ( strncmp(key,"portals",key_size) == 0 ) {
+	logger.msg(kLogInfo1,"portals value:\n");
+	ret = parseNbt("portals: ", cdata, cdata_size, tagList);
+	if ( ret == 0 ) {
+	  parseNbt_portals(tagList);
+	}
+      }
+			 
+      else if ( key_size == 9 || key_size == 13 ) {
+
+	// these are probably chunk records, we parse the key and determine what we've got
+
+	if ( key_size == 9 ) {
+	  // overworld chunk
+	  chunkX = myParseInt32(key, 0);
+	  chunkZ = myParseInt32(key, 4);
+	  chunkDimId = kDimIdOverworld;
+	  chunkType = myParseInt8(key, 8);
+	  dimName = "overworld";
+	}
 	else if ( key_size == 13 ) {
+	  // non-overworld chunk
 	  chunkX = myParseInt32(key, 0);
 	  chunkZ = myParseInt32(key, 4);
 	  chunkDimId = myParseInt32(key, 8);
 	  chunkType = myParseInt8(key, 12);
-	    
-	  // sanity checks
-	  if ( chunkType == 0x30 ) {
-	    if ( legalChunkPos(chunkX,chunkZ) ) {
-	      dimDataList[chunkDimId]->addToChunkBounds(chunkX, chunkZ);
-	    }
-	  }
-	}
-      }
+	  dimName = "nether";
 
-      if (!iter->status().ok()) {
-	slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
-      }
-      delete iter;
-
-      // mark bounds valid
-      for (int32_t i=0; i < kDimIdCount; i++) {
-	dimDataList[i]->setChunkBoundsValid();
-	dimDataList[i]->reportChunkBounds();
-      }
-
-      slogger.msg(kLogInfo1,"  %d records\n", recordCt);
-	
-      return 0;
-    }
-
-    // this is where we go through every item in the leveldb, we parse interesting things as we go
-    int32_t dbParse () {
-
-      char tmpstring[256];
-
-      int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
-
-      // we make sure that we know the chunk bounds before we start so that we can translate world coords to image coords
-      calcChunkBounds();
-
-      // report hide and force lists
-      {
-	slogger.msg(kLogInfo1,"Active 'hide-top', 'force-top', and 'geojson-block':\n");
-	int32_t itemCt = 0;
-	int32_t blockId;
-	for (int32_t dimId=0; dimId < kDimIdCount; dimId++) {
-	  dimDataList[dimId]->updateFastLists();
-	  for ( const auto& iter : dimDataList[dimId]->blockHideList ) {
-	    blockId = iter;
-	    slogger.msg(kLogInfo1,"  'hide-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", dimDataList[dimId]->getName().c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
-	    itemCt++;
-	  }
-
-	  for ( const auto& iter : dimDataList[dimId]->blockForceTopList ) {
-	    blockId = iter;
-	    slogger.msg(kLogInfo1,"  'force-top' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", dimDataList[dimId]->getName().c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
-	    itemCt++;
-	  }
-
-	  for ( const auto& iter : dimDataList[dimId]->blockToGeoJSONList ) {
-	    blockId = iter;
-	    slogger.msg(kLogInfo1,"  'geojson' block: %s - %s (dimId=%d blockId=%d (0x%02x))\n", dimDataList[dimId]->getName().c_str(), blockInfoList[blockId].name.c_str(), dimId, blockId, blockId);
-	    itemCt++;
-	  }
-	}
-	if ( itemCt == 0 ) {
-	  slogger.msg(kLogInfo1,"None\n");
-	}
-      }
-	    
-      slogger.msg(kLogInfo1,"Parse all leveldb records\n");
-
-      MyNbtTagList tagList;
-      int32_t recordCt = 0, ret;
-
-      leveldb::Slice skey, svalue;
-      int32_t key_size, cdata_size;
-      const char* key;
-      const char* cdata;
-      std::string dimName, chunkstr;
-
-      leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
-      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-
-	// note: we get the raw buffer early to avoid overhead (maybe?)
-	skey = iter->key();
-	key_size = (int)skey.size();
-	key = skey.data();
-
-	svalue = iter->value();
-	cdata_size = svalue.size();
-	cdata = svalue.data();
-
-	++recordCt;
-	if ( control.shortRunFlag && recordCt > 1000 ) {
-	  break;
-	}
-	if ( (recordCt % 10000) == 0 ) {
-	  slogger.msg(kLogInfo1, "  Reading records: %d\n", recordCt);
-	}
-
-	logger.msg(kLogInfo1,"\n");
-
-	// we look at the key to determine what we have, some records have text keys
-
-	if ( strncmp(key,"BiomeData",key_size) == 0 ) {
-	  // 0x61 +"BiomeData" -- snow accum? -- overworld only?
-	  logger.msg(kLogInfo1,"BiomeData value:\n");
-	  parseNbt("BiomeData: ", cdata, cdata_size, tagList);
-	  // todo - parse tagList? snow accumulation amounts
-	}
-
-	else if ( strncmp(key,"Overworld",key_size) == 0 ) {
-	  logger.msg(kLogInfo1,"Overworld value:\n");
-	  parseNbt("Overworld: ", cdata, cdata_size, tagList);
-	  // todo - parse tagList? a list of "LimboEntities"
-	}
-
-	else if ( strncmp(key,"~local_player",key_size) == 0 ) {
-	  logger.msg(kLogInfo1,"Local Player value:\n");
-	  ret = parseNbt("Local Player: ", cdata, cdata_size, tagList);
-	  if ( ret == 0 ) { 
-	    parseNbt_entity(-1, "",tagList, true, false, "Local Player", "");
-	  }
-	}
-
-	else if ( (key_size>=7) && (strncmp(key,"player_",7) == 0) ) {
-	  // note: key contains player id (e.g. "player_-1234")
-	  std::string playerRemoteId = std::string(&key[strlen("player_")], key_size - strlen("player_"));
-	  
-	  logger.msg(kLogInfo1,"Remote Player (id=%s) value:\n",playerRemoteId.c_str());
-
-	  ret = parseNbt("Remote Player: ", cdata, cdata_size, tagList);
-	  if ( ret == 0 ) {
-	    parseNbt_entity(-1, "",tagList, false, true, "Remote Player", playerRemoteId);
-	  }
-	}
-
-	else if ( strncmp(key,"villages",key_size) == 0 ) {
-	  logger.msg(kLogInfo1,"Villages value:\n");
-	  parseNbt("villages: ", cdata, cdata_size, tagList);
-	  // todo - parse tagList? usually empty, unless player is in range of village; test that!
-	}
-
-	else if ( strncmp(key,"mVillages",key_size) == 0 ) {
-	  // todobig -- new for 0.13? what is it?
-	  logger.msg(kLogInfo1,"mVillages value:\n");
-	  parseNbt("mVillages: ", cdata, cdata_size, tagList);
-	  // todo - parse tagList?
-	}
-
-	else if ( strncmp(key,"game_flatworldlayers",key_size) == 0 ) {
-	  // todobig -- what is it?
-	  // example data (standard flat): 5b 37 2c 33 2c 33 2c 32 5d
-	  logger.msg(kLogInfo1,"game_flatworldlayers value: (todo)\n");
-	  // parseNbt("game_flatworldlayers: ", cdata, cdata_size, tagList);
-	  // todo - parse tagList?
-	}
-	
-	else if ( strncmp(key,"idcounts",key_size) == 0 ) {
-	  // todobig -- new for 0.13? what is it? is it a 4-byte int?
-	  logger.msg(kLogInfo1,"idcounts value:\n");
-	  parseNbt("idcounts: ", cdata, cdata_size, tagList);
-	}
-
-	else if ( strncmp(key,"Nether",key_size) == 0 ) {
-	  logger.msg(kLogInfo1,"Nether value:\n");
-	  parseNbt("Nether: ", cdata, cdata_size, tagList);
-	  // todo - parse tagList?  list of LimboEntities
-	}
-
-	else if ( strncmp(key,"portals",key_size) == 0 ) {
-	  logger.msg(kLogInfo1,"portals value:\n");
-	  ret = parseNbt("portals: ", cdata, cdata_size, tagList);
-	  if ( ret == 0 ) {
-	    parseNbt_portals(tagList);
-	  }
-	}
-			 
-	else if ( key_size == 9 || key_size == 13 ) {
-
-	  // these are probably chunk records, we parse the key and determine what we've got
-
-	  if ( key_size == 9 ) {
-	    // overworld chunk
-	    chunkX = myParseInt32(key, 0);
-	    chunkZ = myParseInt32(key, 4);
-	    chunkDimId = kDimIdOverworld;
-	    chunkType = myParseInt8(key, 8);
-	    dimName = "overworld";
-	  }
-	  else if ( key_size == 13 ) {
-	    // non-overworld chunk
-	    chunkX = myParseInt32(key, 0);
-	    chunkZ = myParseInt32(key, 4);
-	    chunkDimId = myParseInt32(key, 8);
-	    chunkType = myParseInt8(key, 12);
-	    dimName = "nether";
-
-	    // check for new dim id's
-	    if ( chunkDimId != kDimIdNether ) {
-	      slogger.msg(kLogInfo1, "HEY! Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
-	      continue;
-	    }
-	  }
-
-	  // we check for corrupt chunks
-	  if ( ! legalChunkPos(chunkX,chunkZ) ) {
-	    slogger.msg(kLogInfo1,"WARNING: Found a chunk with invalid chunk coordinates cx=%d cz=%d\n", chunkX, chunkZ);
+	  // check for new dim id's
+	  if ( chunkDimId != kDimIdNether ) {
+	    slogger.msg(kLogInfo1, "HEY! Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
 	    continue;
 	  }
-
-	  dimDataList[chunkDimId]->addHistogramChunkType(chunkType);
-
-	  // report info about the chunk
-	  chunkstr = dimName + "-chunk: ";
-	  sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
-	  chunkstr += tmpstring;
-	  if ( true ) {
-	    // show approximate image coordinates for chunk
-	    double tix, tiy;
-	    dimDataList[chunkDimId]->worldPointToImagePoint(chunkX*16, chunkZ*16, tix, tiy, false);
-	    int32_t imageX = tix;
-	    int32_t imageZ = tiy;
-	    sprintf(tmpstring," (image %d %d)", (int32_t)imageX, (int32_t)imageZ);
-	    chunkstr+=tmpstring;
-	  }
-	  chunkstr += "\n";
-	  logger.msg(kLogInfo1, "%s", chunkstr.c_str());
-
-	  // see what kind of chunk we have
-	  switch ( chunkType ) {
-	  case 0x30:
-	    // chunk block data
-	    // we do the parsing in the destination object to save memcpy's
-	    dimDataList[chunkDimId]->addChunk(chunkX,chunkZ,cdata);
-	    break;
-
-	  case 0x31:
-	    // tile entity record (e.g. a chest)
-	    logger.msg(kLogInfo1,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
-	    ret = parseNbt("0x31-te: ", cdata, cdata_size, tagList);
-	    if ( ret == 0 ) { 
-	      parseNbt_tileEntity(chunkDimId, dimName+"-", tagList);
-	    }
-	    break;
-
-	  case 0x32:
-	    // entity record (e.g. a mob)
-	    logger.msg(kLogInfo1,"%s 0x32 chunk (entity data):\n", dimName.c_str());
-	    ret = parseNbt("0x32-e: ", cdata, cdata_size, tagList);
-	    if ( ret == 0 ) {
-	      parseNbt_entity(chunkDimId, dimName+"-", tagList, false, false, "", "");
-	    }
-	    break;
-
-	  case 0x33:
-	    // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
-	    logger.msg(kLogInfo1,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
-	    parseNbt("0x33-tick: ", cdata, cdata_size, tagList);
-	    // todo - parse tagList?
-	    // todobig - could show location of active fires
-	    break;
-
-	  case 0x34:
-	    logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
-	    printKeyValue(key,key_size,cdata,cdata_size,false);
-	    /* 
-	       0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
-	       -- there are 206 of these in "another1" world
-	       -- something to do with snow?
-	       -- to examine data:
-	       cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
-	    */
-	    break;
-
-	  case 0x35:
-	    logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
-	    printKeyValue(key,key_size,cdata,cdata_size,false);
-	    /*
-	      0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
-	      -- there are 2907 in "another1"
-	      -- to examine data:
-	      cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
-	    */
-	    break;
-
-	  case 0x76:
-	    // todo - this is chunk version information?
-	    {
-	      // this record is not very interesting, we usually hide it
-	      // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
-	      if ( control.verboseFlag || (cdata[0] != 2) ) { 
-		logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
-	      }
-	    }
-	    break;
-
-	  default:
-	    logger.msg(kLogInfo1,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
-		       key_size, chunkType, cdata_size);
-	    printKeyValue(key,key_size,cdata,cdata_size,true);
-	    if ( false ) {
-	      if ( cdata_size > 10 ) {
-		parseNbt("UNK: ", cdata, cdata_size, tagList);
-	      }
-	    }
-	    break;
-	  }
 	}
-	else {
-	  logger.msg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d cdata_size=%d\n", key_size, cdata_size);
+
+	// we check for corrupt chunks
+	if ( ! legalChunkPos(chunkX,chunkZ) ) {
+	  slogger.msg(kLogInfo1,"WARNING: Found a chunk with invalid chunk coordinates cx=%d cz=%d\n", chunkX, chunkZ);
+	  continue;
+	}
+
+	dimDataList[chunkDimId]->addHistogramChunkType(chunkType);
+
+	// report info about the chunk
+	chunkstr = dimName + "-chunk: ";
+	sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
+	chunkstr += tmpstring;
+	if ( true ) {
+	  // show approximate image coordinates for chunk
+	  double tix, tiy;
+	  dimDataList[chunkDimId]->worldPointToImagePoint(chunkX*16, chunkZ*16, tix, tiy, false);
+	  int32_t imageX = tix;
+	  int32_t imageZ = tiy;
+	  sprintf(tmpstring," (image %d %d)", (int32_t)imageX, (int32_t)imageZ);
+	  chunkstr+=tmpstring;
+	}
+	chunkstr += "\n";
+	logger.msg(kLogInfo1, "%s", chunkstr.c_str());
+
+	// see what kind of chunk we have
+	switch ( chunkType ) {
+	case 0x30:
+	  // chunk block data
+	  // we do the parsing in the destination object to save memcpy's
+	  dimDataList[chunkDimId]->addChunk(chunkX,chunkZ,cdata);
+	  break;
+
+	case 0x31:
+	  // tile entity record (e.g. a chest)
+	  logger.msg(kLogInfo1,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
+	  ret = parseNbt("0x31-te: ", cdata, cdata_size, tagList);
+	  if ( ret == 0 ) { 
+	    parseNbt_tileEntity(chunkDimId, dimName+"-", tagList);
+	  }
+	  break;
+
+	case 0x32:
+	  // entity record (e.g. a mob)
+	  logger.msg(kLogInfo1,"%s 0x32 chunk (entity data):\n", dimName.c_str());
+	  ret = parseNbt("0x32-e: ", cdata, cdata_size, tagList);
+	  if ( ret == 0 ) {
+	    parseNbt_entity(chunkDimId, dimName+"-", tagList, false, false, "", "");
+	  }
+	  break;
+
+	case 0x33:
+	  // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
+	  logger.msg(kLogInfo1,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
+	  parseNbt("0x33-tick: ", cdata, cdata_size, tagList);
+	  // todo - parse tagList?
+	  // todobig - could show location of active fires
+	  break;
+
+	case 0x34:
+	  logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
+	  printKeyValue(key,key_size,cdata,cdata_size,false);
+	  /* 
+	     0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
+	     -- there are 206 of these in "another1" world
+	     -- something to do with snow?
+	     -- to examine data:
+	     cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
+	  */
+	  break;
+
+	case 0x35:
+	  logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
+	  printKeyValue(key,key_size,cdata,cdata_size,false);
+	  /*
+	    0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
+	    -- there are 2907 in "another1"
+	    -- to examine data:
+	    cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
+	  */
+	  break;
+
+	case 0x76:
+	  // todo - this is chunk version information?
+	  {
+	    // this record is not very interesting, we usually hide it
+	    // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
+	    if ( control.verboseFlag || (cdata[0] != 2) ) { 
+	      logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
+	    }
+	  }
+	  break;
+
+	default:
+	  logger.msg(kLogInfo1,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
+		     key_size, chunkType, cdata_size);
 	  printKeyValue(key,key_size,cdata,cdata_size,true);
-	  if ( false ) { 
-	    // try to nbt decode
-	    logger.msg(kLogInfo1,"WARNING: Attempting NBT Decode:\n");
-	    parseNbt("WARNING: ", cdata, cdata_size, tagList);
+	  if ( false ) {
+	    if ( cdata_size > 10 ) {
+	      parseNbt("UNK: ", cdata, cdata_size, tagList);
+	    }
 	  }
+	  break;
 	}
       }
-      slogger.msg(kLogInfo1,"Read %d records\n", recordCt);
-      slogger.msg(kLogInfo1,"Status: %s\n", iter->status().ToString().c_str());
+      else {
+	logger.msg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d cdata_size=%d\n", key_size, cdata_size);
+	printKeyValue(key,key_size,cdata,cdata_size,true);
+	if ( false ) { 
+	  // try to nbt decode
+	  logger.msg(kLogInfo1,"WARNING: Attempting NBT Decode:\n");
+	  parseNbt("WARNING: ", cdata, cdata_size, tagList);
+	}
+      }
+    }
+    slogger.msg(kLogInfo1,"Read %d records\n", recordCt);
+    slogger.msg(kLogInfo1,"Status: %s\n", iter->status().ToString().c_str());
       
-      if (!iter->status().ok()) {
-	slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
-      }
-      delete iter;
-
-      return 0;
+    if (!iter->status().ok()) {
+      slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
     }
+    delete iter;
 
-    int32_t doOutput_Tile_image(const std::string& fn) {
-      if ( fn.size() <= 0 ) {
-	return -1;
-      }
-      
-      std::string dirOut = mydirname(control.fnOutputBase) + "/tiles";
-      local_mkdir(dirOut.c_str());
-
-      slogger.msg(kLogInfo1,"Creating tiles for %s...\n", mybasename(fn).c_str());
-      PngTiler pngTiler(fn, control.tileWidth, control.tileHeight, dirOut);
-      if ( pngTiler.doTile() == 0 ) {
-	// all is good
-      } else {
-	// todobig - error
-      }
-
-      return 0;
-    }
-
-    int32_t doOutput_Tile() {
-      if ( ! control.doTiles ) {
-	return 0;
-      }
-
-      for (int32_t dimid=0; dimid < kDimIdCount; dimid++) {
-	doOutput_Tile_image(control.fnLayerTop[dimid]);
-	doOutput_Tile_image(control.fnLayerBiome[dimid]);
-	doOutput_Tile_image(control.fnLayerHeight[dimid]);
-	doOutput_Tile_image(control.fnLayerHeightGrayscale[dimid]);
-	doOutput_Tile_image(control.fnLayerHeightAlpha[dimid]);
-	doOutput_Tile_image(control.fnLayerBlockLight[dimid]);
-	doOutput_Tile_image(control.fnLayerSkyLight[dimid]);
-	doOutput_Tile_image(control.fnLayerSlimeChunks[dimid]);
-	doOutput_Tile_image(control.fnLayerGrass[dimid]);
-	doOutput_Tile_image(control.fnLayerShadedRelief[dimid]);
-	for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-	  doOutput_Tile_image(control.fnLayerRaw[dimid][cy]);
-	}
-      }
-
-      return 0;
-    }
-
-    
-    std::string makeTileURL(const std::string& fn) {
-      std::string ret = mybasename(fn);
-      if ( ! control.doTiles ) {
-	return "images/" + ret;
-      }
-      if ( ret.size() > 1 ) {
-	return "tiles/" + ret + ".{y}.{x}.png";
-      }
-      return "";
-    }
-
-    
-    int32_t doOutput_html() {
-      char tmpstring[1025];
-	
-      slogger.msg(kLogInfo1,"Do Output: html viewer\n");
-	
-      sprintf(tmpstring,"%s/mcpe_viz.html.template", dirExec.c_str());
-      std::string fnHtmlSrc = tmpstring;
-	
-      sprintf(tmpstring,"%s/mcpe_viz.js", dirExec.c_str());
-      std::string fnJsSrc = tmpstring;
-	
-      sprintf(tmpstring,"%s/mcpe_viz.css", dirExec.c_str());
-      std::string fnCssSrc = tmpstring;
-	  
-      // create html file -- need to substitute one variable (extra js file)
-      StringReplacementList replaceStrings;
-
-      if ( control.noForceGeoJSONFlag ) {
-	// we do not include the geojson file
-	replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
-						  "<script src=\"" +
-						  std::string(mybasename(control.fnJs.c_str())) +
-						  "\"></script>"
-						  )
-				  );
-      } else {
-	// we do include the geojson file
-	replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
-						  "<script src=\"" +
-						  std::string(mybasename(control.fnJs.c_str())) +
-						  "\"></script>\n" +
-						  "<script src=\"" +
-						  std::string(mybasename(control.fnGeoJSON.c_str())) +
-						  "\"></script>"
-						  )
-				  );
-      }
-      copyFileWithStringReplacement(fnHtmlSrc, control.fnHtml, replaceStrings);
-	  
-      // create javascript file w/ filenames etc
-      FILE *fp = fopen(control.fnJs.c_str(),"w");
-      if ( fp ) {
-	time_t xtime = time(NULL);
-	char timebuf[256];
-	ctime_r(&xtime, timebuf);
-	// todo - this is hideous.
-	// fix time string
-	char *p = strchr(timebuf,'\n');
-	if ( p ) { *p = 0; }
-
-	fprintf(fp,
-		"// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
-		"var worldName = '%s';\n"
-		"var worldSeed = %lld;\n"
-		"var creationTime = '%s';\n"
-		"var creationMcpeVizVersion = '%s';\n"
-		"var loadGeoJSONFlag = %s;\n"
-		"var fnGeoJSON = '%s';\n"
-		"var useTilesFlag = %s;\n"
-		"var tileW = %d;\n"
-		"var tileH = %d;\n"
-		"var dimensionInfo = {\n"
-		, escapeString(getWorldName().c_str(), "'").c_str()
-		, (long long int)getWorldSeed()
-		, escapeString(timebuf,"'").c_str()
-		, mcpe_viz_version_short.c_str()
-		, control.noForceGeoJSONFlag ? "true" : "false"
-		, mybasename(control.fnGeoJSON).c_str()
-		, control.doTiles ? "true" : "false"
-		, control.tileWidth
-		, control.tileHeight
-		);
-	for (int32_t did=0; did < kDimIdCount; did++) {
-	  fprintf(fp, "'%d': {\n", did);
-	  fprintf(fp,"  minWorldX: %d,\n", dimDataList[did]->getMinChunkX()*16);
-	  fprintf(fp,"  maxWorldX: %d + 15,\n", dimDataList[did]->getMaxChunkX()*16);
-	  fprintf(fp,"  minWorldY: %d,\n", dimDataList[did]->getMinChunkZ()*16);
-	  fprintf(fp,"  maxWorldY: %d + 15,\n", dimDataList[did]->getMaxChunkZ()*16);
-
-	  double px = playerPositionImageX;
-	  double py = playerPositionImageY;
-
-	  // auto-adjust player position based on where they actually are
-	  if ( did == kDimIdNether ) {
-	    if ( playerPositionDimensionId != kDimIdNether ) {
-	      px /= 8;
-	      py /= 8;
-	    }
-	  } else {
-	    if ( playerPositionDimensionId == kDimIdNether ) {
-	      px *= 8;
-	      py *= 8;
-	    }
-	  }
-	  fprintf(fp,"  playerPosX: %lf,\n", px);
-	  fprintf(fp,"  playerPosY: %lf,\n", py);
-
-	  // list of blocks that were added to geojson
-	  fprintf(fp,"  geojsonBlocks: [ ");
-	  int32_t llen = dimDataList[did]->blockToGeoJSONList.size();
-	  for ( const auto& it : dimDataList[did]->blockToGeoJSONList ) {
-	    fprintf(fp,"'%s'", blockInfoList[it].name.c_str());
-	    if ( --llen > 0 ) {
-	      fprintf(fp, ", ");
-	    }
-	  }
-	  fprintf(fp," ],\n");
-	  
-	  fprintf(fp, "  spawnableFlag: %s,\n", ( dimDataList[did]->listCheckSpawn.size() > 0 ) ? "true" : "false");
-	  
-	  fprintf(fp,"  fnLayerTop: '%s',\n", makeTileURL(control.fnLayerTop[did]).c_str());
-	  fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
-	  fprintf(fp,"  fnLayerHeight: '%s',\n", makeTileURL(control.fnLayerHeight[did]).c_str());
-	  fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", makeTileURL(control.fnLayerHeightGrayscale[did]).c_str());
-	  fprintf(fp,"  fnLayerHeightAlpha: '%s',\n", makeTileURL(control.fnLayerHeightAlpha[did]).c_str());
-	  fprintf(fp,"  fnLayerShadedRelief: '%s',\n", makeTileURL(control.fnLayerShadedRelief[did]).c_str());
-	  fprintf(fp,"  fnLayerBlockLight: '%s',\n", makeTileURL(control.fnLayerBlockLight[did]).c_str());
-	  fprintf(fp,"  fnLayerSlimeChunks: '%s',\n", makeTileURL(control.fnLayerSlimeChunks[did]).c_str());
-	  fprintf(fp,"  fnLayerGrass: '%s',\n", makeTileURL(control.fnLayerGrass[did]).c_str());
-	      
-	  fprintf(fp,"  listLayers: [\n");
-	  for (int32_t i=0; i <= MAX_BLOCK_HEIGHT; i++) {
-	    fprintf(fp, "    '%s',\n", makeTileURL(control.fnLayerRaw[did][i]).c_str());
-	  }
-	  fprintf(fp,"  ]\n");
-	  if ( (did+1) < kDimIdCount ) {
-	    fprintf(fp,"},\n");
-	  } else {
-	    fprintf(fp,"}\n");
-	  }
-	}
-	fprintf(fp,"};\n");
-
-	// write block color info
-	fprintf(fp,
-		"// a lookup table for identifying blocks in the web app\n"
-		"// key is color (decimal), value is block name\n"
-		"// hacky? it sure is!\n"
-		);
-	    
-	fprintf(fp,"var blockColorLUT = {\n");
-	for (int32_t i=0; i < 256; i++) {
-	  if ( blockInfoList[i].hasVariants() ) {
-	    // we need to get blockdata
-	    for (const auto& itbv : blockInfoList[i].variantList) {
-	      fprintf(fp,"'%d': '%s',\n", be32toh(itbv->color), escapeString(itbv->name,"'").c_str());
-	    }
-	  } else {
-	    if ( blockInfoList[i].colorSetFlag ) {
-	      fprintf(fp,"'%d': '%s',\n", be32toh(blockInfoList[i].color), escapeString(blockInfoList[i].name,"'").c_str());
-	    }
-	  }
-	}
-	// last, put the catch-all
-	fprintf(fp,"'%d': '*UNKNOWN BLOCK*'\n};\n",kColorDefault);
-
-	// write biome color info
-	fprintf(fp,
-		"// a lookup table for identifying biomes in the web app\n"
-		"// key is color (decimal), value is biome name\n"
-		"// hacky? it sure is!\n"
-		);
-	    
-	fprintf(fp,"var biomeColorLUT = {\n");
-	for ( const auto& it : biomeInfoList ) {
-	  if ( it.second->colorSetFlag ) {
-	    fprintf(fp,"'%d': '%s (id=%d (0x%x))',\n"
-		    , be32toh(it.second->color)
-		    , escapeString(it.second->name,"'").c_str()
-		    , it.first
-		    , it.first
-		    );
-	  }
-	}
-	// last, put the catch-all
-	fprintf(fp,"'%d': '*UNKNOWN BIOME*'\n};\n",kColorDefault);
-
-
-	fprintf(fp,
-		"// lut for inventory items\n"
-		);
-
-	fprintf(fp, "var imageIconLUT = {\n");
-	for ( const auto& it : imageFileMap ) {
-	  fprintf(fp,"'%d': '%s',\n", it.second, it.first.c_str());
-	}
-	fprintf(fp, "'-1': ''};\n");
-	
-	fclose(fp);
-	    
-      } else {
-	slogger.msg(kLogInfo1,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
-      }
-	  
-      // copy helper files to destination directory
-      std::string dirDest = mydirname(control.fnOutputBase);
-	  
-      if ( dirDest.size() > 0 && dirDest != "." ) {
-	// todo - how to be sure that this is a diff dir?
-	sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
-	std::string fnJsDest = tmpstring;
-	copyFile(fnJsSrc, fnJsDest, false);
-
-	sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnCssSrc).c_str());
-	std::string fnCssDest = tmpstring;
-	copyFile(fnCssSrc, fnCssDest, false);
-
-	// copy javascript files
-	std::string dirJs = dirDest + "/js";
-	local_mkdir(dirJs);
-	copyDirToDir(dirExec + "/js", dirJs, false);
-
-	// copy images
-	// todobig - could save a good amount of time per run if we detect if dir has already been copied
-	// todobig - could save a bit of time by only copying images used (use imageFileMap)
-	slogger.msg(kLogInfo1,"Copying icon images\n");
-	std::string dirImages = dirDest + "/images";
-	local_mkdir(dirImages);
-	copyDirToDir(dirExec + "/images", dirImages, true);
-	
-      } else {
-	// if same dir, don't copy files
-      }
-
-      return 0;
-    }
-
-      
-    int32_t doOutput_colortest() {
-      slogger.msg(kLogInfo1,"Do Output: html colortest\n");
-	
-      std::string fnOut = control.fnOutputBase + ".colortest.html";
-      FILE *fp = fopen(fnOut.c_str(), "w");
-	
-      if ( !fp ) {
-	slogger.msg(kLogInfo1, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
-	return -1;
-      } 
-	  
-      // put start of html file
-      fprintf(fp,
-	      "<!doctype html>\n"
-	      "<html><head><title>MCPE Viz Color Test</title>\n"
-	      "<style>"
-	      ".section { width: 100%%; padding: 2em 2em; }"
-	      ".colorBlock { width: 100%%; padding: 0.5em 2em; }"
-	      ".darkBlock  { color: #ffffff; }"
-	      "</style>"
-	      "</head>"
-	      "<body>"
-	      );
-	
-      // create list of all colors and sort them by HSL
-      std::vector< std::unique_ptr<ColorInfo> > webColorList;
-
-      webColorList.clear();
-      for (int32_t i=0; i < 256; i++) {
-	if ( blockInfoList[i].hasVariants() ) {
-	  for (const auto& itbv : blockInfoList[i].variantList) {
-	    webColorList.push_back( std::unique_ptr<ColorInfo>
-				    ( new ColorInfo(itbv->name, be32toh(itbv->color)) ) );
-	  }
-	}
-	else {
-	  if ( blockInfoList[i].colorSetFlag ) {
-	    webColorList.push_back( std::unique_ptr<ColorInfo>
-				    ( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
-	  }
-	}
-      }
-
-      std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
-      fprintf(fp, "<div class=\"section\">Block Colors</div>");
-      for (const auto& it : webColorList) {
-	fprintf(fp, "%s\n", it->toHtml().c_str());
-      }
-
-
-
-      webColorList.clear();
-      for ( const auto& it : biomeInfoList ) {
-	if ( it.second->colorSetFlag ) {
-	  // webColorList.emplace_back(blockInfoList[i].name, (int32_t)be32toh(blockInfoList[i].color));
-	  webColorList.push_back( std::unique_ptr<ColorInfo>( new ColorInfo(it.second->name, be32toh(it.second->color)) ) );
-	}
-      }
-
-      std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
-      fprintf(fp, "<div class=\"section\">Biome Colors</div>");
-      for (const auto& it : webColorList) {
-	fprintf(fp, "%s\n", it->toHtml().c_str());
-      }
-	
-      fprintf(fp,"\n</body></html>\n");
-      fclose(fp);
-      return 0;
-    }
-
-
-    int32_t doOutput_GeoJSON() {
-
-      if ( false ) { 
-#if 0
-	// todobig - this would be lovely but does not work when run on windows (browser does not like the gzip'ed geojson file)
-	
-	// we output gzip'ed data (saves a ton of disk+bandwidth for very little cost)
-	
-	gzFile_s* fpGeoJSON = gzopen(control.fnGeoJSON.c_str(), "w");
-	if ( ! fpGeoJSON ) {
-	  slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
-	  return -1;
-	}
-	
-	// set params for gzip
-	//gzsetparams(fpGeoJSON, Z_BEST_COMPRESSION, Z_DEFAULT_STRATEGY);
-	
-	// put the geojson preamble stuff
-	if ( ! control.noForceGeoJSONFlag ) {
-	  gzprintf(fpGeoJSON, "var geojson =\n" );
-	}
-	gzprintf(fpGeoJSON,
-		 "{ \"type\": \"FeatureCollection\",\n"
-		 // todo - correct way to specify this?
-		 "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
-		 "\"features\": [\n"
-		 );
-
-	// put the list with correct commas (silly)
-	int32_t i = listGeoJSON.size();
-	for ( const auto& it: listGeoJSON ) {
-	  gzputs(fpGeoJSON, it.c_str());
-	  if ( --i > 0 ) {
-	    gzputc(fpGeoJSON,',');
-	  }
-	  gzputc(fpGeoJSON,'\n');
-	}
-
-	// close out the geojson properly
-	if ( control.noForceGeoJSONFlag ) {
-	  gzprintf(fpGeoJSON,"] }\n");
-	} else {
-	  gzprintf(fpGeoJSON,"] };\n");
-	}
-	  
-	gzclose(fpGeoJSON);
-#endif
-      } else {
-
-	// plain text file version
-	
-	FILE* fpGeoJSON = fopen(control.fnGeoJSON.c_str(), "w");
-	if ( ! fpGeoJSON ) {
-	  slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
-	  return -1;
-	}
-	
-	// put the geojson preamble stuff
-	if ( ! control.noForceGeoJSONFlag ) {
-	  fprintf(fpGeoJSON, "var geojson =\n" );
-	}
-	fprintf(fpGeoJSON,
-		"{ \"type\": \"FeatureCollection\",\n"
-		// todo - correct way to specify this?
-		"\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
-		"\"features\": [\n"
-		);
-
-	// put the list with correct commas (silly)
-	int32_t i = listGeoJSON.size();
-	for ( const auto& it: listGeoJSON ) {
-	  fputs(it.c_str(), fpGeoJSON);
-	  if ( --i > 0 ) {
-	    fputc(',',fpGeoJSON);
-	  }
-	  fputc('\n',fpGeoJSON);
-	}
-
-	// close out the geojson properly
-	if ( control.noForceGeoJSONFlag ) {
-	  fprintf(fpGeoJSON,"] }\n");
-	} else {
-	  fprintf(fpGeoJSON,"] };\n");
-	}
-	  
-	fclose(fpGeoJSON);
-	
-      }
-      return 0;
-    }
-
-      
-    int32_t doOutput() {
-      calcChunkBounds();
-      for (int32_t i=0; i < kDimIdCount; i++) {
-	dimDataList[i]->doOutput(db);
-      }
-
-      if ( control.doHtml ) {
-
-	if ( control.autoTileFlag ) {
-	  int32_t xdimId = kDimIdOverworld;
-	  const int32_t chunkW = (dimDataList[xdimId]->getMaxChunkX() - dimDataList[xdimId]->getMinChunkX() + 1);
-	  const int32_t imageW = chunkW * 16;
-	  const int32_t chunkH = (dimDataList[xdimId]->getMaxChunkZ() - dimDataList[xdimId]->getMinChunkZ() + 1);
-	  const int32_t imageH = chunkH * 16;
-	  
-	  // todobig - 5000 a reasonable default max image size before we auto-tile?
-	  int32_t maxImageSize = 5000;
-	  if ( imageW > maxImageSize || imageH > maxImageSize ) {
-	    slogger.msg(kLogInfo1, "Detected large images and 'auto-tile' is enabled, enabling tiles!\n");
-	    control.doTiles = true;
-	  }
-	}
-
-	doOutput_Tile();
-	doOutput_html();
-	doOutput_GeoJSON();
-      }
-	
-      if ( control.colorTestFlag ) {
-	doOutput_colortest();
-      }
-	
-      return 0;
-    }
-
-    void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
-      // hack to avoid using wrong dim on pre-0.12 worlds
-      if ( dimId < 0 ) { dimId = 0; }
-
-      return dimDataList[dimId]->worldPointToImagePoint(wx, wz, ix, iy, geoJsonFlag);
-    }
-    
-  };
-    
-  std::unique_ptr<MinecraftWorld_LevelDB> world;
-
-  
-  
-  void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
-    return world->worldPointToImagePoint(dimId, wx, wz, ix, iy, geoJsonFlag);
+    return 0;
   }
 
-  void worldPointToGeoJSONPoint(int32_t dimId, double wx, double wz, double &ix, double &iy) {
-    worldPointToImagePoint(dimId, wx, wz, ix, iy, true);
-  }
-    
-  
-    
-  int32_t doParseConfigFile ( const std::string& fn ) {
-    if ( ! file_exists(fn.c_str()) ) {
+  int32_t doOutput_Tile_image(const std::string& fn) {
+    if ( fn.size() <= 0 ) {
       return -1;
     }
-
-    // todo - this should use streams
-
-    const char* hdr = "";
-    int32_t indent = 1;
       
-    FILE *fp = fopen(fn.c_str(), "r");
-    if ( ! fp ) {
-      slogger.msg(kLogInfo1,"ERROR: Failed to open file (%s)\n", fn.c_str());
-      return 1;
+    std::string dirOut = mydirname(control.fnOutputBase) + "/tiles";
+    local_mkdir(dirOut.c_str());
+
+    slogger.msg(kLogInfo1,"Creating tiles for %s...\n", mybasename(fn).c_str());
+    PngTiler pngTiler(fn, control.tileWidth, control.tileHeight, dirOut);
+    if ( pngTiler.doTile() == 0 ) {
+      // all is good
+    } else {
+      // todobig - error
     }
 
-    slogger.msg(kLogInfo1,"Reading config from %s\n", fn.c_str());
-      
-    char buf[1025], *p;
-    while ( !feof(fp) ) {
-      memset(buf,0,1025);
-      fgets(buf,1024,fp);
+    return 0;
+  }
 
-      // remove comments and newlines
-      if ( (p=strchr(buf,'#')) ) {
-	*p = 0;
-      }
-      if ( (p=strchr(buf,'\n')) ) {
-	*p = 0;
-      }
-      if ( (p=strchr(buf,'\r')) ) {
-	*p = 0;
-      }
-	
-      if ( (p=strstr(buf,"hide-top:")) ) {
-	int32_t dimId = -1;
-	int32_t blockId = -1;
-	int32_t pass = false;
-	if ( sscanf(&p[9],"%d 0x%x", &dimId, &blockId) == 2 ) {
-	  pass = true;
-	}
-	else if ( sscanf(&p[9],"%d %d", &dimId, &blockId) == 2 ) {
-	  pass = true;
-	}
-	// check dimId
-	if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	  pass = false;
-	}
-	if ( pass ) {
-	  // add to hide list
-	  world->dimDataList[dimId]->blockHideList.push_back(blockId);
-	} else {
-	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'hide-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
-	}
-      }
-
-      else if ( (p=strstr(buf,"force-top:")) ) {
-	int32_t dimId = -1;
-	int32_t blockId = -1;
-	int32_t pass = false;
-	if ( sscanf(&p[10],"%d 0x%x", &dimId, &blockId) == 2 ) {
-	  pass = true;
-	}
-	else if ( sscanf(&p[10],"%d %d", &dimId, &blockId) == 2 ) {
-	  pass = true;
-	}
-	// check dimId
-	if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	  pass = false;
-	}
-	if ( pass ) {
-	  // add to hide list
-	  world->dimDataList[dimId]->blockForceTopList.push_back(blockId);
-	} else {
-	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'force-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
-	}
-      }
-
-      else if ( (p=strstr(buf,"geojson-block:")) ) {
-	int32_t dimId = -1;
-	int32_t blockId = -1;
-	int32_t pass = false;
-	if ( sscanf(&p[14],"%d 0x%x", &dimId, &blockId) == 2 ) {
-	  pass = true;
-	}
-	else if ( sscanf(&p[14],"%d %d", &dimId, &blockId) == 2 ) {
-	  pass = true;
-	}
-	// check dimId
-	if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	  pass = false;
-	}
-	if ( pass ) {
-	  // add to list
-	  world->dimDataList[dimId]->blockToGeoJSONList.push_back(blockId);
-	} else {
-	  slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'geojson-block': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
-	}
-      }
-
-      else if ( (p=strstr(buf,"player-id:")) ) {
-	if ( parsePlayerIdToName(&p[strlen("player-id:")]) == 0 ) {
-	  // all good
-	} else {
-	  slogger.msg(kLogInfo1,"%sWARNING: Unparsed config line: [%s]\n", makeIndent(indent,hdr).c_str(),buf);
-	}
-      }
-	
+  int32_t doOutput_Tile() {
+    if ( ! control.doTiles ) {
+      return 0;
     }
 
+    for (int32_t dimid=0; dimid < kDimIdCount; dimid++) {
+      doOutput_Tile_image(control.fnLayerTop[dimid]);
+      doOutput_Tile_image(control.fnLayerBiome[dimid]);
+      doOutput_Tile_image(control.fnLayerHeight[dimid]);
+      doOutput_Tile_image(control.fnLayerHeightGrayscale[dimid]);
+      doOutput_Tile_image(control.fnLayerHeightAlpha[dimid]);
+      doOutput_Tile_image(control.fnLayerBlockLight[dimid]);
+      doOutput_Tile_image(control.fnLayerSkyLight[dimid]);
+      doOutput_Tile_image(control.fnLayerSlimeChunks[dimid]);
+      doOutput_Tile_image(control.fnLayerGrass[dimid]);
+      doOutput_Tile_image(control.fnLayerShadedRelief[dimid]);
+      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+	doOutput_Tile_image(control.fnLayerRaw[dimid][cy]);
+      }
+    }
+
+    return 0;
+  }
+
+    
+  std::string makeTileURL(const std::string& fn) {
+    std::string ret = mybasename(fn);
+    if ( ! control.doTiles ) {
+      return "images/" + ret;
+    }
+    if ( ret.size() > 1 ) {
+      return "tiles/" + ret + ".{y}.{x}.png";
+    }
+    return "";
+  }
+
+    
+  int32_t doOutput_html() {
+    char tmpstring[1025];
+	
+    slogger.msg(kLogInfo1,"Do Output: html viewer\n");
+	
+    sprintf(tmpstring,"%s/mcpe_viz.html.template", dirExec.c_str());
+    std::string fnHtmlSrc = tmpstring;
+	
+    sprintf(tmpstring,"%s/mcpe_viz.js", dirExec.c_str());
+    std::string fnJsSrc = tmpstring;
+	
+    sprintf(tmpstring,"%s/mcpe_viz.css", dirExec.c_str());
+    std::string fnCssSrc = tmpstring;
+	  
+    // create html file -- need to substitute one variable (extra js file)
+    StringReplacementList replaceStrings;
+
+    if ( control.noForceGeoJSONFlag ) {
+      // we do not include the geojson file
+      replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
+						"<script src=\"" +
+						std::string(mybasename(control.fnJs.c_str())) +
+						"\"></script>"
+						)
+				);
+    } else {
+      // we do include the geojson file
+      replaceStrings.push_back( std::make_pair( std::string("%JSFILE%"),
+						"<script src=\"" +
+						std::string(mybasename(control.fnJs.c_str())) +
+						"\"></script>\n" +
+						"<script src=\"" +
+						std::string(mybasename(control.fnGeoJSON.c_str())) +
+						"\"></script>"
+						)
+				);
+    }
+    copyFileWithStringReplacement(fnHtmlSrc, control.fnHtml, replaceStrings);
+	  
+    // create javascript file w/ filenames etc
+    FILE *fp = fopen(control.fnJs.c_str(),"w");
+    if ( fp ) {
+      time_t xtime = time(NULL);
+      char timebuf[256];
+      ctime_r(&xtime, timebuf);
+      // todo - this is hideous.
+      // fix time string
+      char *p = strchr(timebuf,'\n');
+      if ( p ) { *p = 0; }
+
+      fprintf(fp,
+	      "// mcpe_viz javascript helper file -- created by mcpe_viz program\n"
+	      "var worldName = '%s';\n"
+	      "var worldSeed = %lld;\n"
+	      "var creationTime = '%s';\n"
+	      "var creationMcpeVizVersion = '%s';\n"
+	      "var loadGeoJSONFlag = %s;\n"
+	      "var fnGeoJSON = '%s';\n"
+	      "var useTilesFlag = %s;\n"
+	      "var tileW = %d;\n"
+	      "var tileH = %d;\n"
+	      "var dimensionInfo = {\n"
+	      , escapeString(getWorldName().c_str(), "'").c_str()
+	      , (long long int)getWorldSeed()
+	      , escapeString(timebuf,"'").c_str()
+	      , mcpe_viz_version_short.c_str()
+	      , control.noForceGeoJSONFlag ? "true" : "false"
+	      , mybasename(control.fnGeoJSON).c_str()
+	      , control.doTiles ? "true" : "false"
+	      , control.tileWidth
+	      , control.tileHeight
+	      );
+      for (int32_t did=0; did < kDimIdCount; did++) {
+	fprintf(fp, "'%d': {\n", did);
+	fprintf(fp,"  minWorldX: %d,\n", dimDataList[did]->getMinChunkX()*16);
+	fprintf(fp,"  maxWorldX: %d + 15,\n", dimDataList[did]->getMaxChunkX()*16);
+	fprintf(fp,"  minWorldY: %d,\n", dimDataList[did]->getMinChunkZ()*16);
+	fprintf(fp,"  maxWorldY: %d + 15,\n", dimDataList[did]->getMaxChunkZ()*16);
+
+	double px = playerPositionImageX;
+	double py = playerPositionImageY;
+
+	// auto-adjust player position based on where they actually are
+	if ( did == kDimIdNether ) {
+	  if ( playerPositionDimensionId != kDimIdNether ) {
+	    px /= 8;
+	    py /= 8;
+	  }
+	} else {
+	  if ( playerPositionDimensionId == kDimIdNether ) {
+	    px *= 8;
+	    py *= 8;
+	  }
+	}
+	fprintf(fp,"  playerPosX: %lf,\n", px);
+	fprintf(fp,"  playerPosY: %lf,\n", py);
+
+	// list of blocks that were added to geojson
+	fprintf(fp,"  geojsonBlocks: [ ");
+	int32_t llen = dimDataList[did]->blockToGeoJSONList.size();
+	for ( const auto& it : dimDataList[did]->blockToGeoJSONList ) {
+	  fprintf(fp,"'%s'", blockInfoList[it].name.c_str());
+	  if ( --llen > 0 ) {
+	    fprintf(fp, ", ");
+	  }
+	}
+	fprintf(fp," ],\n");
+	  
+	fprintf(fp,"  spawnableFlag: %s,\n", ( dimDataList[did]->listCheckSpawn.size() > 0 ) ? "true" : "false");
+	  
+	fprintf(fp,"  fnLayerTop: '%s',\n", makeTileURL(control.fnLayerTop[did]).c_str());
+	fprintf(fp,"  fnLayerBiome: '%s',\n", makeTileURL(control.fnLayerBiome[did]).c_str());
+	fprintf(fp,"  fnLayerHeight: '%s',\n", makeTileURL(control.fnLayerHeight[did]).c_str());
+	fprintf(fp,"  fnLayerHeightGrayscale: '%s',\n", makeTileURL(control.fnLayerHeightGrayscale[did]).c_str());
+	fprintf(fp,"  fnLayerHeightAlpha: '%s',\n", makeTileURL(control.fnLayerHeightAlpha[did]).c_str());
+	fprintf(fp,"  fnLayerShadedRelief: '%s',\n", makeTileURL(control.fnLayerShadedRelief[did]).c_str());
+	fprintf(fp,"  fnLayerBlockLight: '%s',\n", makeTileURL(control.fnLayerBlockLight[did]).c_str());
+	fprintf(fp,"  fnLayerSlimeChunks: '%s',\n", makeTileURL(control.fnLayerSlimeChunks[did]).c_str());
+	fprintf(fp,"  fnLayerGrass: '%s',\n", makeTileURL(control.fnLayerGrass[did]).c_str());
+	      
+	fprintf(fp,"  listLayers: [\n");
+	for (int32_t i=0; i <= MAX_BLOCK_HEIGHT; i++) {
+	  fprintf(fp, "    '%s',\n", makeTileURL(control.fnLayerRaw[did][i]).c_str());
+	}
+	fprintf(fp,"  ]\n");
+	if ( (did+1) < kDimIdCount ) {
+	  fprintf(fp,"},\n");
+	} else {
+	  fprintf(fp,"}\n");
+	}
+      }
+      fprintf(fp,"};\n");
+
+      // write block color info
+      fprintf(fp,
+	      "// a lookup table for identifying blocks in the web app\n"
+	      "// key is color (decimal), value is block name\n"
+	      "// hacky? it sure is!\n"
+	      );
+	    
+      fprintf(fp,"var blockColorLUT = {\n");
+      for (int32_t i=0; i < 256; i++) {
+	if ( blockInfoList[i].hasVariants() ) {
+	  // we need to get blockdata
+	  for (const auto& itbv : blockInfoList[i].variantList) {
+	    fprintf(fp,"'%d': '%s',\n", be32toh(itbv->color), escapeString(itbv->name,"'").c_str());
+	  }
+	} else {
+	  if ( blockInfoList[i].colorSetFlag ) {
+	    fprintf(fp,"'%d': '%s',\n", be32toh(blockInfoList[i].color), escapeString(blockInfoList[i].name,"'").c_str());
+	  }
+	}
+      }
+      // last, put the catch-all
+      fprintf(fp,"'%d': '*UNKNOWN BLOCK*'\n};\n",kColorDefault);
+
+      // write biome color info
+      fprintf(fp,
+	      "// a lookup table for identifying biomes in the web app\n"
+	      "// key is color (decimal), value is biome name\n"
+	      "// hacky? it sure is!\n"
+	      );
+	    
+      fprintf(fp,"var biomeColorLUT = {\n");
+      for ( const auto& it : biomeInfoList ) {
+	if ( it.second->colorSetFlag ) {
+	  fprintf(fp,"'%d': '%s (id=%d (0x%x))',\n"
+		  , be32toh(it.second->color)
+		  , escapeString(it.second->name,"'").c_str()
+		  , it.first
+		  , it.first
+		  );
+	}
+      }
+      // last, put the catch-all
+      fprintf(fp,"'%d': '*UNKNOWN BIOME*'\n};\n",kColorDefault);
+
+
+      fprintf(fp,
+	      "// lut for inventory items\n"
+	      );
+
+      fprintf(fp, "var imageIconLUT = {\n");
+      for ( const auto& it : imageFileMap ) {
+	fprintf(fp,"'%d': '%s',\n", it.second, it.first.c_str());
+      }
+      fprintf(fp, "'-1': ''};\n");
+	
+      fclose(fp);
+	    
+    } else {
+      slogger.msg(kLogInfo1,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
+    }
+	  
+    // copy helper files to destination directory
+    std::string dirDest = mydirname(control.fnOutputBase);
+	  
+    if ( dirDest.size() > 0 && dirDest != "." ) {
+      // todo - how to be sure that this is a diff dir?
+      sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnJsSrc).c_str());
+      std::string fnJsDest = tmpstring;
+      copyFile(fnJsSrc, fnJsDest, false);
+
+      sprintf(tmpstring,"%s/%s", dirDest.c_str(), mybasename(fnCssSrc).c_str());
+      std::string fnCssDest = tmpstring;
+      copyFile(fnCssSrc, fnCssDest, false);
+
+      // copy javascript files
+      std::string dirJs = dirDest + "/js";
+      local_mkdir(dirJs);
+      copyDirToDir(dirExec + "/js", dirJs, false);
+
+      // copy images
+      // todobig - could save a good amount of time per run if we detect if dir has already been copied
+      // todobig - could save a bit of time by only copying images used (use imageFileMap)
+      slogger.msg(kLogInfo1,"Copying icon images\n");
+      std::string dirImages = dirDest + "/images";
+      local_mkdir(dirImages);
+      copyDirToDir(dirExec + "/images", dirImages, true);
+	
+    } else {
+      // if same dir, don't copy files
+    }
+
+    return 0;
+  }
+
+      
+  int32_t doOutput_colortest() {
+    slogger.msg(kLogInfo1,"Do Output: html colortest\n");
+	
+    std::string fnOut = control.fnOutputBase + ".colortest.html";
+    FILE *fp = fopen(fnOut.c_str(), "w");
+	
+    if ( !fp ) {
+      slogger.msg(kLogInfo1, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
+      return -1;
+    } 
+	  
+    // put start of html file
+    fprintf(fp,
+	    "<!doctype html>\n"
+	    "<html><head><title>MCPE Viz Color Test</title>\n"
+	    "<style>"
+	    ".section { width: 100%%; padding: 2em 2em; }"
+	    ".colorBlock { width: 100%%; padding: 0.5em 2em; }"
+	    ".darkBlock  { color: #ffffff; }"
+	    "</style>"
+	    "</head>"
+	    "<body>"
+	    );
+	
+    // create list of all colors and sort them by HSL
+    std::vector< std::unique_ptr<ColorInfo> > webColorList;
+
+    webColorList.clear();
+    for (int32_t i=0; i < 256; i++) {
+      if ( blockInfoList[i].hasVariants() ) {
+	for (const auto& itbv : blockInfoList[i].variantList) {
+	  webColorList.push_back( std::unique_ptr<ColorInfo>
+				  ( new ColorInfo(itbv->name, be32toh(itbv->color)) ) );
+	}
+      }
+      else {
+	if ( blockInfoList[i].colorSetFlag ) {
+	  webColorList.push_back( std::unique_ptr<ColorInfo>
+				  ( new ColorInfo(blockInfoList[i].name, be32toh(blockInfoList[i].color)) ) );
+	}
+      }
+    }
+
+    std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
+    fprintf(fp, "<div class=\"section\">Block Colors</div>");
+    for (const auto& it : webColorList) {
+      fprintf(fp, "%s\n", it->toHtml().c_str());
+    }
+
+
+
+    webColorList.clear();
+    for ( const auto& it : biomeInfoList ) {
+      if ( it.second->colorSetFlag ) {
+	// webColorList.emplace_back(blockInfoList[i].name, (int32_t)be32toh(blockInfoList[i].color));
+	webColorList.push_back( std::unique_ptr<ColorInfo>( new ColorInfo(it.second->name, be32toh(it.second->color)) ) );
+      }
+    }
+
+    std::sort(webColorList.begin(), webColorList.end(), compareColorInfo);
+    fprintf(fp, "<div class=\"section\">Biome Colors</div>");
+    for (const auto& it : webColorList) {
+      fprintf(fp, "%s\n", it->toHtml().c_str());
+    }
+	
+    fprintf(fp,"\n</body></html>\n");
     fclose(fp);
     return 0;
   }
 
 
-  int32_t parseConfigFile () {
-    // parse cfg files in this order:
-    // -- option specified on command-line
-    // -- master dir
-    // -- exec dir
-    // -- local dir
-    std::string fn;
+  int32_t doOutput_GeoJSON() {
 
-    // same dir as exec - special filename
-    fn = dirExec;
-    fn += "/mcpe_viz.local.cfg";
-    if ( doParseConfigFile( fn ) == 0 ) {
-      // we keep reading other config files
-    }
-
-    // as specified on cmdline
-    if ( control.fnCfg.size() > 0 ) {
-      if ( doParseConfigFile( control.fnCfg ) == 0 ) {
-	return 0;
+    if ( false ) { 
+#if 0
+      // todobig - this would be lovely but does not work when run on windows (browser does not like the gzip'ed geojson file)
+	
+      // we output gzip'ed data (saves a ton of disk+bandwidth for very little cost)
+	
+      gzFile_s* fpGeoJSON = gzopen(control.fnGeoJSON.c_str(), "w");
+      if ( ! fpGeoJSON ) {
+	slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
+	return -1;
       }
-    }
-
-    // default config file
-    // todo - how to support on win32? %HOMEPATH%?
-    if ( getenv("HOME") ) {
-      std::string fnHome = getenv("HOME");
-      fnHome += "/.mcpe_viz/mcpe_viz.cfg";
-      if ( doParseConfigFile( fnHome ) == 0 ) {
-	return 0;
+	
+      // set params for gzip
+      //gzsetparams(fpGeoJSON, Z_BEST_COMPRESSION, Z_DEFAULT_STRATEGY);
+	
+      // put the geojson preamble stuff
+      if ( ! control.noForceGeoJSONFlag ) {
+	gzprintf(fpGeoJSON, "var geojson =\n" );
       }
-    }
-      
-    // same dir as exec
-    fn = dirExec;
-    fn += "/mcpe_viz.cfg";
-    if ( doParseConfigFile( fn ) == 0 ) {
-      return 0;
-    }
+      gzprintf(fpGeoJSON,
+	       "{ \"type\": \"FeatureCollection\",\n"
+	       // todo - correct way to specify this?
+	       "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
+	       "\"features\": [\n"
+	       );
 
-    // local dir
-    fn = "./mcpe_viz.cfg";
-    if ( doParseConfigFile( fn ) == 0 ) {
-      return 0;
-    }
-
-    //slogger.msg(kLogInfo1,"WARNING: Did not find a valid config file\n");
-    return -1;
-  }
-
-
-
-  int32_t parseXml ( ) {
-    // parse xml file in this order:
-    // -- option specified on command-line
-    // -- master dir
-    // -- exec dir
-    // -- local dir
-    std::string fn;
-    int32_t ret;
-    char tmpstring[256];
-    
-    // initialize lists
-    // todobig - others?
-    for (int32_t i=0; i < 256; i++) {
-      sprintf(tmpstring,"(unknown-id-0x%02x)", i);
-      blockInfoList[i].setName(tmpstring);
-      blockInfoList[i].valid = false;
-    }
-    
-    // as specified on cmdline
-    if ( control.fnXml.length() > 0 ) {
-      ret = doParseXml(control.fnXml);
-      if ( ret >= 0 ) {
-	return ret;
-      }
-    }
-
-    // default config file
-    // todo - how to support on win32? %HOMEPATH%?
-    if ( getenv("HOME") ) {
-      std::string fnHome = getenv("HOME");
-      fnHome += "/.mcpe_viz/mcpe_viz.xml";
-      ret = doParseXml( fnHome );
-      if ( ret >= 0 ) {
-	return ret;
-      }
-    }
-
-    // same dir as exec
-    fn = dirExec;
-    fn += "/mcpe_viz.xml";
-    ret = doParseXml( fn );
-    if ( ret >= 0 ) {
-      return ret;
-    }
-
-    // local dir
-    fn = "./mcpe_viz.xml";
-    ret = doParseXml( fn );
-    if ( ret >= 0 ) {
-      return ret;
-    }
-
-    slogger.msg(kLogInfo1,"ERROR: Did not find a valid XML file\n");
-    return -1;
-  }
-
-
-  // a developer's function to match MCPE Viz block + items with PNG files from minecraft wiki
-  int32_t findImages() {
-    std::string dirSrc = control.dirFindImagesIn;
-    std::string dirDest = control.dirFindImagesOut;
-
-    // clear block list
-    for (int i=0; i < 256; i++) {
-      if ( blockInfoList[i].isValid() ) {
-	if ( blockInfoList[i].hasVariants() ) {
-	  for (const auto& itbv : blockInfoList[i].variantList) {
-	    itbv->setUserVar1(0);
-	  }
+      // put the list with correct commas (silly)
+      int32_t i = listGeoJSON.size();
+      for ( const auto& it: listGeoJSON ) {
+	gzputs(fpGeoJSON, it.c_str());
+	if ( --i > 0 ) {
+	  gzputc(fpGeoJSON,',');
 	}
-	blockInfoList[i].setUserVar1(0);
+	gzputc(fpGeoJSON,'\n');
       }
-    }
 
-    // clear item list
-    for ( auto& iter : itemInfoList ) {
-      iter.second->setUserVar1(0);
-    }
-    
-    // get list of input images
-    // they are named like this: blockId.blockData.blockName.png (e.g. "1.0.Stone.png")
-
-    struct dirent *dp;
-    DIR *dfd = opendir(dirSrc.c_str());
-
-    if (dfd != NULL) {
-      while ((dp = readdir(dfd)) != NULL) {
-	if ( strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0 ) {
-	  // skip
-	} else {
-	  std::string fnSrc = dp->d_name;
-	  int32_t blockId = -1, blockData = -1;
-	  char blockName[1025];
-	  memset(blockName,0,1025);
-	  if ( sscanf(fnSrc.c_str(), "%d.%d.%s.png", &blockId, &blockData, blockName) == 3 ) {
-
-	    //slogger.msg(kLogInfo1, "Parsed (%d) (%d) (%s) (%s)\n", blockId, blockData, blockName, fnSrc.c_str());
-
-	    // check for mapping mcpc to mcpe
-	    if ( has_key(mcpcToMcpeBlock, blockId) ) {
-	      blockId = mcpcToMcpeBlock[blockId];
-	    }
-	    if ( has_key(mcpcToMcpeItem, blockId) ) {
-	      blockId = mcpcToMcpeItem[blockId];
-	    }
-	    
-	    bool found = false;
-
-	    if ( blockId < 256 ) {
-	      // it's a block, look it up
-	      
-	      if ( blockInfoList[blockId].isValid() ) {
-		if ( blockInfoList[blockId].hasVariants() ) {
-		  for (const auto& itbv : blockInfoList[blockId].variantList) {
-		    if ( itbv->blockdata == blockData ) {
-		      slogger.msg(kLogInfo1,"FOUND Block: %s (%d) (%d) (%s)\n", itbv->name.c_str(), blockId, blockData, blockName);
-		      itbv->deltaUserVar1(1);
-		      itbv->setUserString1(dirSrc + "/" + fnSrc);
-		      found = true;
-		    }
-		  }
-		} else {
-		  if ( blockData == 0 ) {
-		    slogger.msg(kLogInfo1,"FOUND Block: %s (%d) (%d) (%s)\n", blockInfoList[blockId].name.c_str(), blockId, blockData, blockName);
-		    blockInfoList[blockId].deltaUserVar1(1);
-		    blockInfoList[blockId].setUserString1(dirSrc + "/" + fnSrc);
-		    found = true;
-		  }
-		}
-	      }
-
-	    } else {
-	      if ( has_key(itemInfoList, blockId) ) {
-		if ( itemInfoList[blockId]->hasVariants() ) {
-		  for (const auto& itbv : itemInfoList[blockId]->variantList) {
-		    if ( itbv->extraData == blockData ) {
-		      slogger.msg(kLogInfo1,"FOUND  Item: %s (%d) (%d) (%s)\n", itbv->name.c_str(), blockId, blockData, blockName);
-		      itbv->deltaUserVar1(1);
-		      itbv->setUserString1(dirSrc + "/" + fnSrc);
-		      found = true;
-		    }
-		  }
-		} else {
-		  if ( blockData == 0 ) {
-		    slogger.msg(kLogInfo1,"FOUND  Item: %s (%d) (%d) (%s)\n", itemInfoList[blockId]->name.c_str(), blockId, blockData, blockName);
-		    itemInfoList[blockId]->deltaUserVar1(1);
-		    itemInfoList[blockId]->setUserString1(dirSrc + "/" + fnSrc);
-		    found = true;
-		  }
-		}
-	      }
-	    }
-
-	    if ( ! found ) {
-	      slogger.msg(kLogInfo1, "-- WARNING: did not find target for 0x%04x 0x%02x (%s)\n", blockId, blockData, blockName);
-	    }
-	    
-	  } else {
-	    slogger.msg(kLogWarning, "** Failed to parse filename (%s)\n", fnSrc.c_str());
-	  }
-	}
+      // close out the geojson properly
+      if ( control.noForceGeoJSONFlag ) {
+	gzprintf(fpGeoJSON,"] }\n");
+      } else {
+	gzprintf(fpGeoJSON,"] };\n");
       }
-      closedir(dfd);
+	  
+      gzclose(fpGeoJSON);
+#endif
     } else {
-      slogger.msg(kLogError, "Failed to open source dir (%s)\n", dirSrc.c_str());
-      return -1;
+
+      // plain text file version
+	
+      FILE* fpGeoJSON = fopen(control.fnGeoJSON.c_str(), "w");
+      if ( ! fpGeoJSON ) {
+	slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
+	return -1;
+      }
+
+      // put the geojson preamble stuff
+      if ( ! control.noForceGeoJSONFlag ) {
+	fprintf(fpGeoJSON, "var geojson =\n" );
+      }
+      fprintf(fpGeoJSON,
+	      "{ \"type\": \"FeatureCollection\",\n"
+	      // todo - correct way to specify this?
+	      "\"crs\": { \"type\": \"name\", \"properties\": { \"name\": \"mcpe_viz-image\" } },\n"
+	      "\"features\": [\n"
+	      );
+
+      // put the list with correct commas (silly)
+      int32_t i = listGeoJSON.size();
+      for ( const auto& it: listGeoJSON ) {
+	fputs(it.c_str(), fpGeoJSON);
+	if ( --i > 0 ) {
+	  fputc(',',fpGeoJSON);
+	}
+	fputc('\n',fpGeoJSON);
+      }
+
+      // close out the geojson properly
+      if ( control.noForceGeoJSONFlag ) {
+	fprintf(fpGeoJSON,"] }\n");
+      } else {
+	fprintf(fpGeoJSON,"] };\n");
+      }
+	  
+      fclose(fpGeoJSON);
+	
+    }
+    return 0;
+  }
+
+      
+  int32_t doOutput() {
+    calcChunkBounds();
+    for (int32_t i=0; i < kDimIdCount; i++) {
+      dimDataList[i]->doOutput(db);
     }
 
-    // check blocks
-    slogger.msg(kLogInfo1,"\n** BLOCK SUMMARY **\n");
-    for (int i=0; i < 256; i++) {
-      if ( blockInfoList[i].isValid() ) {
-	if ( blockInfoList[i].hasVariants() ) {
-	  for (const auto& itbv : blockInfoList[i].variantList) {
-	    if ( itbv->getUserVar1() == 0 ) {
-	      slogger.msg(kLogInfo1, "Did NOT find block-variant: %d %d %s\n", i, itbv->blockdata, itbv->name.c_str());
+    if ( control.doHtml ) {
+
+      if ( control.autoTileFlag ) {
+	int32_t xdimId = kDimIdOverworld;
+	const int32_t chunkW = (dimDataList[xdimId]->getMaxChunkX() - dimDataList[xdimId]->getMinChunkX() + 1);
+	const int32_t imageW = chunkW * 16;
+	const int32_t chunkH = (dimDataList[xdimId]->getMaxChunkZ() - dimDataList[xdimId]->getMinChunkZ() + 1);
+	const int32_t imageH = chunkH * 16;
+	  
+	// todobig - 5000 a reasonable default max image size before we auto-tile?
+	int32_t maxImageSize = 5000;
+	if ( imageW > maxImageSize || imageH > maxImageSize ) {
+	  slogger.msg(kLogInfo1, "Detected large images and 'auto-tile' is enabled, enabling tiles!\n");
+	  control.doTiles = true;
+	}
+      }
+
+      doOutput_Tile();
+      doOutput_html();
+      doOutput_GeoJSON();
+    }
+	
+    if ( control.colorTestFlag ) {
+      doOutput_colortest();
+    }
+	
+    return 0;
+  }
+
+  void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
+    // hack to avoid using wrong dim on pre-0.12 worlds
+    if ( dimId < 0 ) { dimId = 0; }
+
+    return dimDataList[dimId]->worldPointToImagePoint(wx, wz, ix, iy, geoJsonFlag);
+  }
+    
+};
+    
+std::unique_ptr<MinecraftWorld_LevelDB> world;
+
+  
+  
+void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag) {
+  return world->worldPointToImagePoint(dimId, wx, wz, ix, iy, geoJsonFlag);
+}
+
+void worldPointToGeoJSONPoint(int32_t dimId, double wx, double wz, double &ix, double &iy) {
+  worldPointToImagePoint(dimId, wx, wz, ix, iy, true);
+}
+    
+  
+    
+int32_t doParseConfigFile ( const std::string& fn ) {
+  if ( ! file_exists(fn.c_str()) ) {
+    return -1;
+  }
+
+  // todo - this should use streams
+
+  const char* hdr = "";
+  int32_t indent = 1;
+      
+  FILE *fp = fopen(fn.c_str(), "r");
+  if ( ! fp ) {
+    slogger.msg(kLogInfo1,"ERROR: Failed to open file (%s)\n", fn.c_str());
+    return 1;
+  }
+
+  slogger.msg(kLogInfo1,"Reading config from %s\n", fn.c_str());
+      
+  char buf[1025], *p;
+  while ( !feof(fp) ) {
+    memset(buf,0,1025);
+    fgets(buf,1024,fp);
+
+    // remove comments and newlines
+    if ( (p=strchr(buf,'#')) ) {
+      *p = 0;
+    }
+    if ( (p=strchr(buf,'\n')) ) {
+      *p = 0;
+    }
+    if ( (p=strchr(buf,'\r')) ) {
+      *p = 0;
+    }
+	
+    if ( (p=strstr(buf,"hide-top:")) ) {
+      int32_t dimId = -1;
+      int32_t blockId = -1;
+      int32_t pass = false;
+      if ( sscanf(&p[9],"%d 0x%x", &dimId, &blockId) == 2 ) {
+	pass = true;
+      }
+      else if ( sscanf(&p[9],"%d %d", &dimId, &blockId) == 2 ) {
+	pass = true;
+      }
+      // check dimId
+      if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	pass = false;
+      }
+      if ( pass ) {
+	// add to hide list
+	world->dimDataList[dimId]->blockHideList.push_back(blockId);
+      } else {
+	slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'hide-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+      }
+    }
+
+    else if ( (p=strstr(buf,"force-top:")) ) {
+      int32_t dimId = -1;
+      int32_t blockId = -1;
+      int32_t pass = false;
+      if ( sscanf(&p[10],"%d 0x%x", &dimId, &blockId) == 2 ) {
+	pass = true;
+      }
+      else if ( sscanf(&p[10],"%d %d", &dimId, &blockId) == 2 ) {
+	pass = true;
+      }
+      // check dimId
+      if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	pass = false;
+      }
+      if ( pass ) {
+	// add to hide list
+	world->dimDataList[dimId]->blockForceTopList.push_back(blockId);
+      } else {
+	slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'force-top': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+      }
+    }
+
+    else if ( (p=strstr(buf,"geojson-block:")) ) {
+      int32_t dimId = -1;
+      int32_t blockId = -1;
+      int32_t pass = false;
+      if ( sscanf(&p[14],"%d 0x%x", &dimId, &blockId) == 2 ) {
+	pass = true;
+      }
+      else if ( sscanf(&p[14],"%d %d", &dimId, &blockId) == 2 ) {
+	pass = true;
+      }
+      // check dimId
+      if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	pass = false;
+      }
+      if ( pass ) {
+	// add to list
+	world->dimDataList[dimId]->blockToGeoJSONList.push_back(blockId);
+      } else {
+	slogger.msg(kLogInfo1,"%sERROR: Failed to parse cfg item 'geojson-block': [%s]\n", makeIndent(indent,hdr).c_str(), buf);
+      }
+    }
+
+    else if ( (p=strstr(buf,"player-id:")) ) {
+      if ( parsePlayerIdToName(&p[strlen("player-id:")]) == 0 ) {
+	// all good
+      } else {
+	slogger.msg(kLogInfo1,"%sWARNING: Unparsed config line: [%s]\n", makeIndent(indent,hdr).c_str(),buf);
+      }
+    }
+	
+  }
+
+  fclose(fp);
+  return 0;
+}
+
+
+int32_t parseConfigFile () {
+  // parse cfg files in this order:
+  // -- option specified on command-line
+  // -- master dir
+  // -- exec dir
+  // -- local dir
+  std::string fn;
+
+  // same dir as exec - special filename
+  fn = dirExec;
+  fn += "/mcpe_viz.local.cfg";
+  if ( doParseConfigFile( fn ) == 0 ) {
+    // we keep reading other config files
+  }
+
+  // as specified on cmdline
+  if ( control.fnCfg.size() > 0 ) {
+    if ( doParseConfigFile( control.fnCfg ) == 0 ) {
+      return 0;
+    }
+  }
+
+  // default config file
+  // todo - how to support on win32? %HOMEPATH%?
+  if ( getenv("HOME") ) {
+    std::string fnHome = getenv("HOME");
+    fnHome += "/.mcpe_viz/mcpe_viz.cfg";
+    if ( doParseConfigFile( fnHome ) == 0 ) {
+      return 0;
+    }
+  }
+      
+  // same dir as exec
+  fn = dirExec;
+  fn += "/mcpe_viz.cfg";
+  if ( doParseConfigFile( fn ) == 0 ) {
+    return 0;
+  }
+
+  // local dir
+  fn = "./mcpe_viz.cfg";
+  if ( doParseConfigFile( fn ) == 0 ) {
+    return 0;
+  }
+
+  //slogger.msg(kLogInfo1,"WARNING: Did not find a valid config file\n");
+  return -1;
+}
+
+
+
+int32_t parseXml ( ) {
+  // parse xml file in this order:
+  // -- option specified on command-line
+  // -- master dir
+  // -- exec dir
+  // -- local dir
+  std::string fn;
+  int32_t ret;
+  char tmpstring[256];
+    
+  // initialize lists
+  // todobig - others?
+  for (int32_t i=0; i < 256; i++) {
+    sprintf(tmpstring,"(unknown-id-0x%02x)", i);
+    blockInfoList[i].setName(tmpstring);
+    blockInfoList[i].valid = false;
+  }
+    
+  // as specified on cmdline
+  if ( control.fnXml.length() > 0 ) {
+    ret = doParseXml(control.fnXml);
+    if ( ret >= 0 ) {
+      return ret;
+    }
+  }
+
+  // default config file
+  // todo - how to support on win32? %HOMEPATH%?
+  if ( getenv("HOME") ) {
+    std::string fnHome = getenv("HOME");
+    fnHome += "/.mcpe_viz/mcpe_viz.xml";
+    ret = doParseXml( fnHome );
+    if ( ret >= 0 ) {
+      return ret;
+    }
+  }
+
+  // same dir as exec
+  fn = dirExec;
+  fn += "/mcpe_viz.xml";
+  ret = doParseXml( fn );
+  if ( ret >= 0 ) {
+    return ret;
+  }
+
+  // local dir
+  fn = "./mcpe_viz.xml";
+  ret = doParseXml( fn );
+  if ( ret >= 0 ) {
+    return ret;
+  }
+
+  slogger.msg(kLogInfo1,"ERROR: Did not find a valid XML file\n");
+  return -1;
+}
+
+
+// a developer's function to match MCPE Viz block + items with PNG files from minecraft wiki
+int32_t findImages() {
+  std::string dirSrc = control.dirFindImagesIn;
+  std::string dirDest = control.dirFindImagesOut;
+
+  // clear block list
+  for (int i=0; i < 256; i++) {
+    if ( blockInfoList[i].isValid() ) {
+      if ( blockInfoList[i].hasVariants() ) {
+	for (const auto& itbv : blockInfoList[i].variantList) {
+	  itbv->setUserVar1(0);
+	}
+      }
+      blockInfoList[i].setUserVar1(0);
+    }
+  }
+
+  // clear item list
+  for ( auto& iter : itemInfoList ) {
+    iter.second->setUserVar1(0);
+  }
+    
+  // get list of input images
+  // they are named like this: blockId.blockData.blockName.png (e.g. "1.0.Stone.png")
+
+  struct dirent *dp;
+  DIR *dfd = opendir(dirSrc.c_str());
+
+  if (dfd != NULL) {
+    while ((dp = readdir(dfd)) != NULL) {
+      if ( strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0 ) {
+	// skip
+      } else {
+	std::string fnSrc = dp->d_name;
+	int32_t blockId = -1, blockData = -1;
+	char blockName[1025];
+	memset(blockName,0,1025);
+	if ( sscanf(fnSrc.c_str(), "%d.%d.%s.png", &blockId, &blockData, blockName) == 3 ) {
+
+	  //slogger.msg(kLogInfo1, "Parsed (%d) (%d) (%s) (%s)\n", blockId, blockData, blockName, fnSrc.c_str());
+
+	  // check for mapping mcpc to mcpe
+	  if ( has_key(mcpcToMcpeBlock, blockId) ) {
+	    blockId = mcpcToMcpeBlock[blockId];
+	  }
+	  if ( has_key(mcpcToMcpeItem, blockId) ) {
+	    blockId = mcpcToMcpeItem[blockId];
+	  }
+	    
+	  bool found = false;
+
+	  if ( blockId < 256 ) {
+	    // it's a block, look it up
+	      
+	    if ( blockInfoList[blockId].isValid() ) {
+	      if ( blockInfoList[blockId].hasVariants() ) {
+		for (const auto& itbv : blockInfoList[blockId].variantList) {
+		  if ( itbv->blockdata == blockData ) {
+		    slogger.msg(kLogInfo1,"FOUND Block: %s (%d) (%d) (%s)\n", itbv->name.c_str(), blockId, blockData, blockName);
+		    itbv->deltaUserVar1(1);
+		    itbv->setUserString1(dirSrc + "/" + fnSrc);
+		    found = true;
+		  }
+		}
+	      } else {
+		if ( blockData == 0 ) {
+		  slogger.msg(kLogInfo1,"FOUND Block: %s (%d) (%d) (%s)\n", blockInfoList[blockId].name.c_str(), blockId, blockData, blockName);
+		  blockInfoList[blockId].deltaUserVar1(1);
+		  blockInfoList[blockId].setUserString1(dirSrc + "/" + fnSrc);
+		  found = true;
+		}
+	      }
 	    }
-	    if ( itbv->getUserVar1() > 1 ) {
-	      slogger.msg(kLogInfo1, "Found multiple (%d) for block-variant: %d %d %s\n", itbv->getUserVar1(), i, itbv->blockdata, itbv->name.c_str());
+
+	  } else {
+	    if ( has_key(itemInfoList, blockId) ) {
+	      if ( itemInfoList[blockId]->hasVariants() ) {
+		for (const auto& itbv : itemInfoList[blockId]->variantList) {
+		  if ( itbv->extraData == blockData ) {
+		    slogger.msg(kLogInfo1,"FOUND  Item: %s (%d) (%d) (%s)\n", itbv->name.c_str(), blockId, blockData, blockName);
+		    itbv->deltaUserVar1(1);
+		    itbv->setUserString1(dirSrc + "/" + fnSrc);
+		    found = true;
+		  }
+		}
+	      } else {
+		if ( blockData == 0 ) {
+		  slogger.msg(kLogInfo1,"FOUND  Item: %s (%d) (%d) (%s)\n", itemInfoList[blockId]->name.c_str(), blockId, blockData, blockName);
+		  itemInfoList[blockId]->deltaUserVar1(1);
+		  itemInfoList[blockId]->setUserString1(dirSrc + "/" + fnSrc);
+		  found = true;
+		}
+	      }
 	    }
 	  }
+
+	  if ( ! found ) {
+	    slogger.msg(kLogInfo1, "-- WARNING: did not find target for 0x%04x 0x%02x (%s)\n", blockId, blockData, blockName);
+	  }
+	    
 	} else {
-	  if ( blockInfoList[i].getUserVar1() == 0 ) {
-	    slogger.msg(kLogInfo1, "Did NOT find block: %d %s\n", i, blockInfoList[i].name.c_str());
-	  }
-	  if ( blockInfoList[i].getUserVar1() > 1 ) {
-	    slogger.msg(kLogInfo1, "Found multiple (%d) for block: %d %s\n", blockInfoList[i].getUserVar1(), i, blockInfoList[i].name.c_str());
-	  }
+	  slogger.msg(kLogWarning, "** Failed to parse filename (%s)\n", fnSrc.c_str());
 	}
       }
     }
-    
-    // clear item list
-    slogger.msg(kLogInfo1,"\n** ITEM SUMMARY **\n");
-    for ( auto& iter : itemInfoList ) {
-      if ( iter.second->hasVariants() ) {
-	for (const auto& itbv : iter.second->variantList) {
-	    if ( itbv->getUserVar1() == 0 ) {
-	      slogger.msg(kLogInfo1, "Did NOT find item-variant: %d %d %s\n", iter.first, itbv->extraData, itbv->name.c_str());
-	    }
-	    if ( itbv->getUserVar1() > 1 ) {
-	      slogger.msg(kLogInfo1, "Found multiple (%d) for item-variant: %d %d %s\n", itbv->getUserVar1(), iter.first, itbv->extraData, itbv->name.c_str());
-	    }
+    closedir(dfd);
+  } else {
+    slogger.msg(kLogError, "Failed to open source dir (%s)\n", dirSrc.c_str());
+    return -1;
+  }
+
+  // check blocks
+  slogger.msg(kLogInfo1,"\n** BLOCK SUMMARY **\n");
+  for (int i=0; i < 256; i++) {
+    if ( blockInfoList[i].isValid() ) {
+      if ( blockInfoList[i].hasVariants() ) {
+	for (const auto& itbv : blockInfoList[i].variantList) {
+	  if ( itbv->getUserVar1() == 0 ) {
+	    slogger.msg(kLogInfo1, "Did NOT find block-variant: %d %d %s\n", i, itbv->blockdata, itbv->name.c_str());
+	  }
+	  if ( itbv->getUserVar1() > 1 ) {
+	    slogger.msg(kLogInfo1, "Found multiple (%d) for block-variant: %d %d %s\n", itbv->getUserVar1(), i, itbv->blockdata, itbv->name.c_str());
+	  }
 	}
       } else {
-	if ( iter.second->getUserVar1() == 0 ) {
-	  slogger.msg(kLogInfo1,"Did NOT find item: %d %s\n", iter.first, iter.second->name.c_str());
+	if ( blockInfoList[i].getUserVar1() == 0 ) {
+	  slogger.msg(kLogInfo1, "Did NOT find block: %d %s\n", i, blockInfoList[i].name.c_str());
 	}
-	if ( iter.second->getUserVar1() > 1 ) {
-	  slogger.msg(kLogInfo1,"Found multiple (%d) for item: %d %s\n", iter.second->getUserVar1(), iter.first, iter.second->name.c_str());
-	}
-      }
-    }
-
-    // process found blocks
-    // todobig - might be faster/cooler to make a sprite sheet
-    char fnDest[1025];
-    for (int i=0; i < 256; i++) {
-      if ( blockInfoList[i].isValid() ) {
-	if ( blockInfoList[i].hasVariants() ) {
-	  for (const auto& itbv : blockInfoList[i].variantList) {
-	    if ( itbv->getUserVar1() > 0 ) {
-	      sprintf(fnDest,"%s/mcpe_viz.block.%d.%d.png",dirDest.c_str(), i, itbv->blockdata);
-	      copyFile( itbv->getUserString1(), fnDest, false);
-	    }
-	  }
-	} else {
-	  if ( blockInfoList[i].getUserVar1() > 0 ) {
-	    sprintf(fnDest,"%s/mcpe_viz.block.%d.%d.png",dirDest.c_str(), i, blockInfoList[i].blockdata);
-	    copyFile( blockInfoList[i].getUserString1(), fnDest, false);
-	  }
+	if ( blockInfoList[i].getUserVar1() > 1 ) {
+	  slogger.msg(kLogInfo1, "Found multiple (%d) for block: %d %s\n", blockInfoList[i].getUserVar1(), i, blockInfoList[i].name.c_str());
 	}
       }
     }
+  }
+    
+  // clear item list
+  slogger.msg(kLogInfo1,"\n** ITEM SUMMARY **\n");
+  for ( auto& iter : itemInfoList ) {
+    if ( iter.second->hasVariants() ) {
+      for (const auto& itbv : iter.second->variantList) {
+	if ( itbv->getUserVar1() == 0 ) {
+	  slogger.msg(kLogInfo1, "Did NOT find item-variant: %d %d %s\n", iter.first, itbv->extraData, itbv->name.c_str());
+	}
+	if ( itbv->getUserVar1() > 1 ) {
+	  slogger.msg(kLogInfo1, "Found multiple (%d) for item-variant: %d %d %s\n", itbv->getUserVar1(), iter.first, itbv->extraData, itbv->name.c_str());
+	}
+      }
+    } else {
+      if ( iter.second->getUserVar1() == 0 ) {
+	slogger.msg(kLogInfo1,"Did NOT find item: %d %s\n", iter.first, iter.second->name.c_str());
+      }
+      if ( iter.second->getUserVar1() > 1 ) {
+	slogger.msg(kLogInfo1,"Found multiple (%d) for item: %d %s\n", iter.second->getUserVar1(), iter.first, iter.second->name.c_str());
+      }
+    }
+  }
 
-    // process found items
-    for ( auto& iter : itemInfoList ) {
-      if ( iter.second->hasVariants() ) {
-	for (const auto& itbv : iter.second->variantList) {
+  // process found blocks
+  // todobig - might be faster/cooler to make a sprite sheet
+  char fnDest[1025];
+  for (int i=0; i < 256; i++) {
+    if ( blockInfoList[i].isValid() ) {
+      if ( blockInfoList[i].hasVariants() ) {
+	for (const auto& itbv : blockInfoList[i].variantList) {
 	  if ( itbv->getUserVar1() > 0 ) {
-	    sprintf(fnDest,"%s/mcpe_viz.item.%d.%d.png",dirDest.c_str(), iter.first, itbv->extraData);
+	    sprintf(fnDest,"%s/mcpe_viz.block.%d.%d.png",dirDest.c_str(), i, itbv->blockdata);
 	    copyFile( itbv->getUserString1(), fnDest, false);
 	  }
 	}
       } else {
-	if ( iter.second->getUserVar1() > 0 ) {
-	  sprintf(fnDest,"%s/mcpe_viz.item.%d.%d.png",dirDest.c_str(), iter.first, iter.second->extraData);
-	  copyFile( iter.second->getUserString1(), fnDest, false);
+	if ( blockInfoList[i].getUserVar1() > 0 ) {
+	  sprintf(fnDest,"%s/mcpe_viz.block.%d.%d.png",dirDest.c_str(), i, blockInfoList[i].blockdata);
+	  copyFile( blockInfoList[i].getUserString1(), fnDest, false);
 	}
       }
     }
-    return 0;
-  }
-  
-
-    
-  void print_usage(const char* fn) {
-    slogger.msg(kLogInfo1,"Usage:\n\n");
-    slogger.msg(kLogInfo1,"  %s [required parameters] [options]\n\n",fn);
-    slogger.msg(kLogInfo1,"Required Parameters:\n"
-		"  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
-		"  --out fn-part            Filename base for output file(s)\n"
-		"\n"
-		);
-    slogger.msg(kLogInfo1,"Options:\n"
-		//"  --detail                 Log extensive details about the world to the log file\n"
-		"  --html                   Create html and javascript files to use as a fancy viewer\n"
-		"  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
-		"  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
-		//"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
-		"  --tiles[=tilew,tileh]    Create tiles in subdirectory tiles/ (useful for LARGE worlds)\n"
-		"\n"
-		"  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
-		"  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
-		"  --geojson-block=did,bid  Add block to GeoJSON file for use in web app (did=dimension id, bid=block id)\n"
-		"\n"
-		"  --check-spawn did,x,z,dist  Add spawnable blocks to the geojson file (did=dimension id; checks a circle of radius 'dist' centered on x,z)\n"
-		"\n"
-		"  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
-		"  --grid[=did]             Display chunk grid on top of images\n"
-		"\n"
-		"  --all-image[=did]        Create all image types\n"
-		"  --biome[=did]            Create a biome map image\n"
-		"  --grass[=did]            Create a grass color map image\n"
-		"  --height-col[=did]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
-		"  --height-col-gs[=did]    Create a height column map image (grayscale)\n"
-		"  --height-col-alpha[=did] Create a height column map image (alpha)\n"
-		"  --shaded-relief[=did]    Create a shaded relief image\n"
-		"  --blocklight[=did]       Create a block light map image\n"
-		"  --skylight[=did]         Create a sky light map image\n"
-		"  --slime-chunk[=did]      Create a slime chunk map image\n"
-		"\n"
-		"  --slices[=did]           Create slices (one image for each layer)\n"
-		"  --movie[=did]            Create movie of layers\n"
-		"  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
-		"\n"
-		"  --xml fn                 XML file containing data definitions\n"
-		"  --log fn                 Send log to a file\n"
-		"\n"
-		"  --no-force-geojson       Don't load geojson in html because we are going to use a web server (or Firefox)\n"
-		"\n"
-		"  --verbose                verbose output\n"
-		"  --quiet                  supress normal output, continue to output warning and error messages\n"
-		"  --help                   this info\n"
-		);
   }
 
-  int32_t parseDimIdOptArg(const char* arg) {
-    int32_t did = kDoOutputAll;
-    if ( arg ) {
-      did = atoi(arg);
-
-      // sanity check
-      if ( did >= kDimIdOverworld && did < kDimIdCount ) {
-	// all is good
-      } else {
-	slogger.msg(kLogInfo1,"ERROR: Invalid dimension-id supplied (%d), defaulting to Overworld only\n", did);
-	did=kDimIdOverworld;
+  // process found items
+  for ( auto& iter : itemInfoList ) {
+    if ( iter.second->hasVariants() ) {
+      for (const auto& itbv : iter.second->variantList) {
+	if ( itbv->getUserVar1() > 0 ) {
+	  sprintf(fnDest,"%s/mcpe_viz.item.%d.%d.png",dirDest.c_str(), iter.first, itbv->extraData);
+	  copyFile( itbv->getUserString1(), fnDest, false);
+	}
       }
     } else {
-      // if no arg, we want output for all dimensions
-    }
-    return did;
-  }
-    
-  int32_t parse_args ( int argc, char **argv ) {
-
-    static struct option longoptlist[] = {
-      {"db", required_argument, NULL, 'D'},
-      {"out", required_argument, NULL, 'O'},
-
-      {"xml", required_argument, NULL, 'X'},
-      {"log", required_argument, NULL, 'L'},
-
-      {"detail", no_argument, NULL, '@'},
-
-      {"hide-top", required_argument, NULL, 'H'},
-      {"force-top", required_argument, NULL, 'F'},
-      {"geojson-block", required_argument, NULL, '+'},
-
-      {"check-spawn", required_argument, NULL, 'C'},
-      {"check-spawnable", required_argument, NULL, 'C'},
-	
-      {"all-image", optional_argument, NULL, 'A'},
-      {"biome", optional_argument, NULL, 'B'},
-      {"grass", optional_argument, NULL, 'g'},
-      {"height-col", optional_argument, NULL, 'd'},
-      {"height-col-gs", optional_argument, NULL, '#'},
-      {"height-col-alpha", optional_argument, NULL, 'a'},
-      {"shaded-relief", optional_argument, NULL, 'S'},
-      {"blocklight", optional_argument, NULL, 'b'},
-      {"skylight", optional_argument, NULL, 's'},
-      {"slime-chunk", optional_argument, NULL, '%'},
-    
-      {"slices", optional_argument, NULL, '('},
-
-      {"movie", optional_argument, NULL, 'M'},
-      {"movie-dim", required_argument, NULL, '*'},
-	
-      {"grid", optional_argument, NULL, 'G'},
-
-      {"html", no_argument, NULL, ')'},
-      {"html-most", no_argument, NULL, '='},
-      {"html-all", no_argument, NULL, '_'},
-      {"no-force-geojson", no_argument, NULL, ':'},
-
-      {"auto-tile", no_argument, NULL, ']'},
-      {"tiles", optional_argument, NULL, '['},
-
-      {"shortrun", no_argument, NULL, '$'}, // this is just for testing
-      {"colortest", no_argument, NULL, '!'}, // this is just for testing
-
-      {"flush", no_argument, NULL, 'f'},
-
-      {"leveldb-filter", required_argument, NULL, '<'},
-      {"leveldb-block-size", required_argument, NULL, '>'},
-
-      {"find-images", required_argument, NULL, '"'},
-      
-      {"verbose", no_argument, NULL, 'v'},
-      {"quiet", no_argument, NULL, 'q'},
-      {"help", no_argument, NULL, 'h'},
-      {NULL, no_argument, NULL, 0}
-    };
-
-    int32_t option_index = 0;
-    int32_t optc;
-    int32_t errct=0;
-
-    control.init();
-
-    while ((optc = getopt_long_only (argc, argv, "", longoptlist, &option_index)) != -1) {
-      switch (optc) {
-      case 'O':
-	control.fnOutputBase = optarg;
-	break;      
-      case 'X':
-	control.fnXml = optarg;
-	break;      
-      case 'L':
-	control.fnLog = optarg;
-	break;      
-      case 'D':
-	control.dirLeveldb = optarg;
-	break;
-      case '@':
-	control.doDetailParseFlag = true;
-	break;
-      case 'f':
-	slogger.setFlush(true);
-	break;
-
-      case '<':
-	control.leveldbFilter = atoi(optarg);
-	if ( control.leveldbFilter < 0 ) {
-	  control.leveldbFilter = 0;
-	}
-	break;
-      case '>':
-	control.leveldbBlockSize = atoi(optarg);
-	if ( control.leveldbBlockSize < 0 ) {
-	  control.leveldbBlockSize = 4096;
-	}
-	break;
-
-      case '"':
-	control.doFindImages = true;
-	// todobig - specify an in and an out dir
-	control.dirFindImagesIn = optarg;
-	control.dirFindImagesOut = optarg;
-	break;
-	
-      case 'H':
-	{
-	  bool pass = false;
-	  int32_t dimId, blockId;
-	  if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
-	    pass = true;
-	  }
-	  else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
-	    pass = true;
-	  }
-
-	  if ( pass ) {
-	    // check dimId
-	    if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	      pass = false;
-	    }
-	    if ( pass ) {
-	      world->dimDataList[dimId]->blockHideList.push_back(blockId);
-	    }
-	  }
-
-	  if ( ! pass ) {
-	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --hide-top %s\n",optarg);
-	    errct++;
-	  }
-	}
-	break;
-	  
-      case 'F':
-	{
-	  bool pass = false;
-	  int32_t dimId, blockId;
-	  if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
-	    pass = true;
-	  }
-	  else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
-	    pass = true;
-	  }
-
-	  if ( pass ) {
-	    // check dimId
-	    if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	      pass = false;
-	    }
-	    if ( pass ) {
-	      world->dimDataList[dimId]->blockForceTopList.push_back(blockId);
-	    }
-	  }
-
-	  if ( ! pass ) {
-	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --force-top %s\n",optarg);
-	    errct++;
-	  }
-	}
-	break;
-	  
-      case '+':
-	{
-	  bool pass = false;
-	  int32_t dimId, blockId;
-	  if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
-	    pass = true;
-	  }
-	  else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
-	    pass = true;
-	  }
-
-	  if ( pass ) {
-	    // check dimId
-	    if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	      pass = false;
-	    }
-	    if ( pass ) {
-	      world->dimDataList[dimId]->blockToGeoJSONList.push_back(blockId);
-	    }
-	  }
-
-	  if ( ! pass ) {
-	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --geojson-block %s\n",optarg);
-	    errct++;
-	  }
-	}
-	break;
-
-      case 'C':
-	{
-	  bool pass = false;
-	  int32_t dimId, checkX, checkZ, checkDistance;
-	  if ( sscanf(optarg,"%d,%d,%d,%d", &dimId, &checkX, &checkZ, &checkDistance) == 4 ) {
-	    pass = true;
-	  }
-
-	  if ( pass ) {
-	    // todo - check params
-
-	    if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
-	      pass = false;
-	    }
-
-	    if ( pass ) {
-	      world->dimDataList[dimId]->addCheckSpawn(checkX,checkZ,checkDistance);
-	    }
-	  }
-
-	  if ( ! pass ) {
-	    slogger.msg(kLogInfo1,"ERROR: Failed to parse --check-spawn %s\n",optarg);
-	    errct++;
-	  }
-	}
-	break;
-	  
-	
-      case 'G':
-	control.doGrid = parseDimIdOptArg(optarg);
-	break;
-
-      case ')':
-	control.doHtml = true;
-	break;
-
-      case '[':
-	control.doTiles = true;
-	{
-	  int32_t tw, th;
-	  if ( optarg ) {
-	    if ( sscanf(optarg,"%d,%d",&tw,&th) == 2 ) {
-	      control.tileWidth = tw;
-	      control.tileHeight = th;
-	      slogger.msg(kLogInfo1,"Overriding tile dimensions: %d x %d\n", control.tileWidth, control.tileHeight);
-	    }
-	  }
-	}
-	break;
-      case ']':
-	control.autoTileFlag = true;
-	break;
-	
-      case '=':
-	// html most
-	control.doHtml = true;
-	control.doImageBiome = 
-	  control.doImageGrass = 
-	  control.doImageHeightCol = 
-	  control.doImageHeightColGrayscale =
-	  control.doImageHeightColAlpha =
-	  control.doImageShadedRelief =
-	  control.doImageLightBlock = 
-	  control.doImageLightSky =
-	  control.doImageSlimeChunks =
-	  kDoOutputAll;
-	break;
-
-      case '_':
-	// html all
-	control.doHtml = true;
-	control.doImageBiome = 
-	  control.doImageGrass = 
-	  control.doImageHeightCol = 
-	  control.doImageHeightColGrayscale =
-	  control.doImageHeightColAlpha =
-	  control.doImageShadedRelief =
-	  control.doImageLightBlock = 
-	  control.doImageLightSky =
-	  control.doImageSlimeChunks =
-	  kDoOutputAll;
-	control.doSlices = kDoOutputAll;
-	break;
-
-      case ':':
-	control.noForceGeoJSONFlag = true;
-	break;
-	  
-      case 'B':
-	control.doImageBiome = parseDimIdOptArg(optarg);
-	break;
-      case 'g':
-	control.doImageGrass = parseDimIdOptArg(optarg);
-	break;
-      case 'd':
-	control.doImageHeightCol = parseDimIdOptArg(optarg);
-	break;
-      case '#':
-	control.doImageHeightColGrayscale = parseDimIdOptArg(optarg);
-	break;
-      case 'a':
-	control.doImageHeightColAlpha = parseDimIdOptArg(optarg);
-	break;
-      case 'S':
-	control.doImageShadedRelief = parseDimIdOptArg(optarg);
-	break;
-      case 'b':
-	control.doImageLightBlock = parseDimIdOptArg(optarg);
-	break;
-      case 's':
-	control.doImageLightSky = parseDimIdOptArg(optarg);
-	break;
-      case '%':
-	control.doImageSlimeChunks = parseDimIdOptArg(optarg);
-	break;
-
-      case 'A':
-	control.doImageBiome = 
-	  control.doImageGrass = 
-	  control.doImageHeightCol = 
-	  control.doImageHeightColGrayscale =
-	  control.doImageHeightColAlpha =
-	  control.doImageShadedRelief =
-	  control.doImageLightBlock = 
-	  control.doImageLightSky =
-	  control.doImageSlimeChunks =
-	  parseDimIdOptArg(optarg);
-	break;
-      
-      case '(':
-	control.doSlices = parseDimIdOptArg(optarg);
-	break;
-      case 'M':
-	control.doMovie = parseDimIdOptArg(optarg);
-	break;
-      case '*':
-	// movie dimensions
-	if ( sscanf(optarg,"%d,%d,%d,%d", &control.movieX, &control.movieY, &control.movieW, &control.movieH) == 4 ) {
-	  // good
-	} else {
-	  slogger.msg(kLogInfo1,"ERROR: Failed to parse --movie-dim\n");
-	  errct++;
-	}
-	break;
-
-      case '$':
-	control.shortRunFlag = true;
-	break;
-      case '!':
-	control.colorTestFlag = true;
-	break;
-      
-      case 'v': 
-	control.verboseFlag = true; 
-	break;
-      case 'q':
-	control.quietFlag = true;
-	logger.setLogLevelMask(kLogQuiet);
-	break;
-
-	/* Usage */
-      default:
-	slogger.msg(kLogInfo1,"ERROR: Unrecognized option: '%c'\n",optc);
-      case 'h':
-	return -1;
+      if ( iter.second->getUserVar1() > 0 ) {
+	sprintf(fnDest,"%s/mcpe_viz.item.%d.%d.png",dirDest.c_str(), iter.first, iter.second->extraData);
+	copyFile( iter.second->getUserString1(), fnDest, false);
       }
     }
-
-    // todobig - be more clever about dirLeveldb -- allow it to be the dir or the level.dat file
-    
-    // verify/test args
-    if ( control.dirLeveldb.length() <= 0 ) {
-      errct++;
-      slogger.msg(kLogInfo1,"ERROR: Must specify --db\n");
-    }
-    if ( control.fnOutputBase.length() <= 0 ) {
-      errct++;
-      slogger.msg(kLogInfo1,"ERROR: Must specify --out\n");
-    }
-
-    if ( errct <= 0 ) {
-      control.setupOutput();
-    }
-    
-    return errct;
   }
+  return 0;
+}
   
-  int32_t init(int argc, char** argv) {
-    int32_t ret;
 
-    dirExec = mydirname(argv[0]);
+    
+void print_usage(const char* fn) {
+  slogger.msg(kLogInfo1,"Usage:\n\n");
+  slogger.msg(kLogInfo1,"  %s [required parameters] [options]\n\n",fn);
+  slogger.msg(kLogInfo1,"Required Parameters:\n"
+	      "  --db dir                 Directory which holds world files (level.dat is in this dir)\n"
+	      "  --out fn-part            Filename base for output file(s)\n"
+	      "\n"
+	      );
+  slogger.msg(kLogInfo1,"Options:\n"
+	      //"  --detail                 Log extensive details about the world to the log file\n"
+	      "  --html                   Create html and javascript files to use as a fancy viewer\n"
+	      "  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
+	      "  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
+	      //"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
+	      "  --tiles[=tilew,tileh]    Create tiles in subdirectory tiles/ (useful for LARGE worlds)\n"
+	      "\n"
+	      "  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"
+	      "  --force-top=did,bid      Force a block to top block (did=dimension id, bid=block id)\n"
+	      "  --geojson-block=did,bid  Add block to GeoJSON file for use in web app (did=dimension id, bid=block id)\n"
+	      "\n"
+	      "  --check-spawn did,x,z,dist  Add spawnable blocks to the geojson file (did=dimension id; checks a circle of radius 'dist' centered on x,z)\n"
+	      "\n"
+	      "  (note: [=did] is optional dimension-id - if not specified, do all dimensions; 0=Overworld; 1=Nether)\n"
+	      "  --grid[=did]             Display chunk grid on top of images\n"
+	      "\n"
+	      "  --all-image[=did]        Create all image types\n"
+	      "  --biome[=did]            Create a biome map image\n"
+	      "  --grass[=did]            Create a grass color map image\n"
+	      "  --height-col[=did]       Create a height column map image (red is below sea; gray is sea; green is above sea)\n"
+	      "  --height-col-gs[=did]    Create a height column map image (grayscale)\n"
+	      "  --height-col-alpha[=did] Create a height column map image (alpha)\n"
+	      "  --shaded-relief[=did]    Create a shaded relief image\n"
+	      "  --blocklight[=did]       Create a block light map image\n"
+	      "  --skylight[=did]         Create a sky light map image\n"
+	      "  --slime-chunk[=did]      Create a slime chunk map image\n"
+	      "\n"
+	      "  --slices[=did]           Create slices (one image for each layer)\n"
+	      "  --movie[=did]            Create movie of layers\n"
+	      "  --movie-dim x,y,w,h      Integers describing the bounds of the movie (UL X, UL Y, WIDTH, HEIGHT)\n"
+	      "\n"
+	      "  --xml fn                 XML file containing data definitions\n"
+	      "  --log fn                 Send log to a file\n"
+	      "\n"
+	      "  --no-force-geojson       Don't load geojson in html because we are going to use a web server (or Firefox)\n"
+	      "\n"
+	      "  --verbose                verbose output\n"
+	      "  --quiet                  supress normal output, continue to output warning and error messages\n"
+	      "  --help                   this info\n"
+	      );
+}
 
-    world = std::unique_ptr<MinecraftWorld_LevelDB>(new MinecraftWorld_LevelDB());
-    
-    slogger.setStdout(stderr);
-    slogger.setStderr(stderr);
-    
-    ret = parse_args(argc, argv);
-    if (ret != 0) {
-      print_usage(argv[0]);
-      return ret;
+int32_t parseDimIdOptArg(const char* arg) {
+  int32_t did = kDoOutputAll;
+  if ( arg ) {
+    did = atoi(arg);
+
+    // sanity check
+    if ( did >= kDimIdOverworld && did < kDimIdCount ) {
+      // all is good
+    } else {
+      slogger.msg(kLogInfo1,"ERROR: Invalid dimension-id supplied (%d), defaulting to Overworld only\n", did);
+      did=kDimIdOverworld;
     }
+  } else {
+    // if no arg, we want output for all dimensions
+  }
+  return did;
+}
     
-    ret = parseXml();
-    if ( ret != 0 ) {
-      slogger.msg(kLogInfo1,"ERROR: Failed to parse XML file.  Exiting...\n");
-      slogger.msg(kLogInfo1,"** Hint: Make sure that mcpe_viz.xml is in any of: current dir, exec dir, ~/.mcpe_viz/\n");
+int32_t parse_args ( int argc, char **argv ) {
+
+  static struct option longoptlist[] = {
+    {"db", required_argument, NULL, 'D'},
+    {"out", required_argument, NULL, 'O'},
+
+    {"xml", required_argument, NULL, 'X'},
+    {"log", required_argument, NULL, 'L'},
+
+    {"detail", no_argument, NULL, '@'},
+
+    {"hide-top", required_argument, NULL, 'H'},
+    {"force-top", required_argument, NULL, 'F'},
+    {"geojson-block", required_argument, NULL, '+'},
+
+    {"check-spawn", required_argument, NULL, 'C'},
+    {"check-spawnable", required_argument, NULL, 'C'},
+	
+    {"all-image", optional_argument, NULL, 'A'},
+    {"biome", optional_argument, NULL, 'B'},
+    {"grass", optional_argument, NULL, 'g'},
+    {"height-col", optional_argument, NULL, 'd'},
+    {"height-col-gs", optional_argument, NULL, '#'},
+    {"height-col-alpha", optional_argument, NULL, 'a'},
+    {"shaded-relief", optional_argument, NULL, 'S'},
+    {"blocklight", optional_argument, NULL, 'b'},
+    {"skylight", optional_argument, NULL, 's'},
+    {"slime-chunk", optional_argument, NULL, '%'},
+    
+    {"slices", optional_argument, NULL, '('},
+
+    {"movie", optional_argument, NULL, 'M'},
+    {"movie-dim", required_argument, NULL, '*'},
+	
+    {"grid", optional_argument, NULL, 'G'},
+
+    {"html", no_argument, NULL, ')'},
+    {"html-most", no_argument, NULL, '='},
+    {"html-all", no_argument, NULL, '_'},
+    {"no-force-geojson", no_argument, NULL, ':'},
+
+    {"auto-tile", no_argument, NULL, ']'},
+    {"tiles", optional_argument, NULL, '['},
+
+    {"shortrun", no_argument, NULL, '$'}, // this is just for testing
+    {"colortest", no_argument, NULL, '!'}, // this is just for testing
+
+    {"flush", no_argument, NULL, 'f'},
+
+    {"leveldb-filter", required_argument, NULL, '<'},
+    {"leveldb-block-size", required_argument, NULL, '>'},
+
+    {"find-images", required_argument, NULL, '"'},
+      
+    {"verbose", no_argument, NULL, 'v'},
+    {"quiet", no_argument, NULL, 'q'},
+    {"help", no_argument, NULL, 'h'},
+    {NULL, no_argument, NULL, 0}
+  };
+
+  int32_t option_index = 0;
+  int32_t optc;
+  int32_t errct=0;
+
+  control.init();
+
+  while ((optc = getopt_long_only (argc, argv, "", longoptlist, &option_index)) != -1) {
+    switch (optc) {
+    case 'O':
+      control.fnOutputBase = optarg;
+      break;      
+    case 'X':
+      control.fnXml = optarg;
+      break;      
+    case 'L':
+      control.fnLog = optarg;
+      break;      
+    case 'D':
+      control.dirLeveldb = optarg;
+      break;
+    case '@':
+      control.doDetailParseFlag = true;
+      break;
+    case 'f':
+      slogger.setFlush(true);
+      break;
+
+    case '<':
+      control.leveldbFilter = atoi(optarg);
+      if ( control.leveldbFilter < 0 ) {
+	control.leveldbFilter = 0;
+      }
+      break;
+    case '>':
+      control.leveldbBlockSize = atoi(optarg);
+      if ( control.leveldbBlockSize < 0 ) {
+	control.leveldbBlockSize = 4096;
+      }
+      break;
+
+    case '"':
+      control.doFindImages = true;
+      // todobig - specify an in and an out dir
+      control.dirFindImagesIn = optarg;
+      control.dirFindImagesOut = optarg;
+      break;
+	
+    case 'H':
+      {
+	bool pass = false;
+	int32_t dimId, blockId;
+	if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+	else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+
+	if ( pass ) {
+	  // check dimId
+	  if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	    pass = false;
+	  }
+	  if ( pass ) {
+	    world->dimDataList[dimId]->blockHideList.push_back(blockId);
+	  }
+	}
+
+	if ( ! pass ) {
+	  slogger.msg(kLogInfo1,"ERROR: Failed to parse --hide-top %s\n",optarg);
+	  errct++;
+	}
+      }
+      break;
+	  
+    case 'F':
+      {
+	bool pass = false;
+	int32_t dimId, blockId;
+	if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+	else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+
+	if ( pass ) {
+	  // check dimId
+	  if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	    pass = false;
+	  }
+	  if ( pass ) {
+	    world->dimDataList[dimId]->blockForceTopList.push_back(blockId);
+	  }
+	}
+
+	if ( ! pass ) {
+	  slogger.msg(kLogInfo1,"ERROR: Failed to parse --force-top %s\n",optarg);
+	  errct++;
+	}
+      }
+      break;
+	  
+    case '+':
+      {
+	bool pass = false;
+	int32_t dimId, blockId;
+	if ( sscanf(optarg,"%d,0x%x", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+	else if ( sscanf(optarg,"%d,%d", &dimId, &blockId) == 2 ) {
+	  pass = true;
+	}
+
+	if ( pass ) {
+	  // check dimId
+	  if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	    pass = false;
+	  }
+	  if ( pass ) {
+	    world->dimDataList[dimId]->blockToGeoJSONList.push_back(blockId);
+	  }
+	}
+
+	if ( ! pass ) {
+	  slogger.msg(kLogInfo1,"ERROR: Failed to parse --geojson-block %s\n",optarg);
+	  errct++;
+	}
+      }
+      break;
+
+    case 'C':
+      {
+	bool pass = false;
+	int32_t dimId, checkX, checkZ, checkDistance;
+	if ( sscanf(optarg,"%d,%d,%d,%d", &dimId, &checkX, &checkZ, &checkDistance) == 4 ) {
+	  pass = true;
+	}
+
+	if ( pass ) {
+	  // todo - check params
+
+	  if ( dimId < kDimIdOverworld || dimId >= kDimIdCount ) {
+	    pass = false;
+	  }
+
+	  if ( pass ) {
+	    world->dimDataList[dimId]->addCheckSpawn(checkX,checkZ,checkDistance);
+	  }
+	}
+
+	if ( ! pass ) {
+	  slogger.msg(kLogInfo1,"ERROR: Failed to parse --check-spawn %s\n",optarg);
+	  errct++;
+	}
+      }
+      break;
+	  
+	
+    case 'G':
+      control.doGrid = parseDimIdOptArg(optarg);
+      break;
+
+    case ')':
+      control.doHtml = true;
+      break;
+
+    case '[':
+      control.doTiles = true;
+      {
+	int32_t tw, th;
+	if ( optarg ) {
+	  if ( sscanf(optarg,"%d,%d",&tw,&th) == 2 ) {
+	    control.tileWidth = tw;
+	    control.tileHeight = th;
+	    slogger.msg(kLogInfo1,"Overriding tile dimensions: %d x %d\n", control.tileWidth, control.tileHeight);
+	  }
+	}
+      }
+      break;
+    case ']':
+      control.autoTileFlag = true;
+      break;
+	
+    case '=':
+      // html most
+      control.doHtml = true;
+      control.doImageBiome = 
+	control.doImageGrass = 
+	control.doImageHeightCol = 
+	control.doImageHeightColGrayscale =
+	control.doImageHeightColAlpha =
+	control.doImageShadedRelief =
+	control.doImageLightBlock = 
+	control.doImageLightSky =
+	control.doImageSlimeChunks =
+	kDoOutputAll;
+      break;
+
+    case '_':
+      // html all
+      control.doHtml = true;
+      control.doImageBiome = 
+	control.doImageGrass = 
+	control.doImageHeightCol = 
+	control.doImageHeightColGrayscale =
+	control.doImageHeightColAlpha =
+	control.doImageShadedRelief =
+	control.doImageLightBlock = 
+	control.doImageLightSky =
+	control.doImageSlimeChunks =
+	kDoOutputAll;
+      control.doSlices = kDoOutputAll;
+      break;
+
+    case ':':
+      control.noForceGeoJSONFlag = true;
+      break;
+	  
+    case 'B':
+      control.doImageBiome = parseDimIdOptArg(optarg);
+      break;
+    case 'g':
+      control.doImageGrass = parseDimIdOptArg(optarg);
+      break;
+    case 'd':
+      control.doImageHeightCol = parseDimIdOptArg(optarg);
+      break;
+    case '#':
+      control.doImageHeightColGrayscale = parseDimIdOptArg(optarg);
+      break;
+    case 'a':
+      control.doImageHeightColAlpha = parseDimIdOptArg(optarg);
+      break;
+    case 'S':
+      control.doImageShadedRelief = parseDimIdOptArg(optarg);
+      break;
+    case 'b':
+      control.doImageLightBlock = parseDimIdOptArg(optarg);
+      break;
+    case 's':
+      control.doImageLightSky = parseDimIdOptArg(optarg);
+      break;
+    case '%':
+      control.doImageSlimeChunks = parseDimIdOptArg(optarg);
+      break;
+
+    case 'A':
+      control.doImageBiome = 
+	control.doImageGrass = 
+	control.doImageHeightCol = 
+	control.doImageHeightColGrayscale =
+	control.doImageHeightColAlpha =
+	control.doImageShadedRelief =
+	control.doImageLightBlock = 
+	control.doImageLightSky =
+	control.doImageSlimeChunks =
+	parseDimIdOptArg(optarg);
+      break;
+      
+    case '(':
+      control.doSlices = parseDimIdOptArg(optarg);
+      break;
+    case 'M':
+      control.doMovie = parseDimIdOptArg(optarg);
+      break;
+    case '*':
+      // movie dimensions
+      if ( sscanf(optarg,"%d,%d,%d,%d", &control.movieX, &control.movieY, &control.movieW, &control.movieH) == 4 ) {
+	// good
+      } else {
+	slogger.msg(kLogInfo1,"ERROR: Failed to parse --movie-dim\n");
+	errct++;
+      }
+      break;
+
+    case '$':
+      control.shortRunFlag = true;
+      break;
+    case '!':
+      control.colorTestFlag = true;
+      break;
+      
+    case 'v': 
+      control.verboseFlag = true; 
+      break;
+    case 'q':
+      control.quietFlag = true;
+      logger.setLogLevelMask(kLogQuiet);
+      break;
+
+      /* Usage */
+    default:
+      slogger.msg(kLogInfo1,"ERROR: Unrecognized option: '%c'\n",optc);
+    case 'h':
       return -1;
     }
-    
-    parseConfigFile();
-    
-    makePalettes();
-
-    return 0;
   }
+
+  // todobig - be more clever about dirLeveldb -- allow it to be the dir or the level.dat file
+    
+  // verify/test args
+  if ( control.dirLeveldb.length() <= 0 ) {
+    errct++;
+    slogger.msg(kLogInfo1,"ERROR: Must specify --db\n");
+  }
+  if ( control.fnOutputBase.length() <= 0 ) {
+    errct++;
+    slogger.msg(kLogInfo1,"ERROR: Must specify --out\n");
+  }
+
+  if ( errct <= 0 ) {
+    control.setupOutput();
+  }
+    
+  return errct;
+}
+  
+int32_t init(int argc, char** argv) {
+  int32_t ret;
+
+  dirExec = mydirname(argv[0]);
+
+  world = std::unique_ptr<MinecraftWorld_LevelDB>(new MinecraftWorld_LevelDB());
+    
+  slogger.setStdout(stderr);
+  slogger.setStderr(stderr);
+    
+  ret = parse_args(argc, argv);
+  if (ret != 0) {
+    print_usage(argv[0]);
+    return ret;
+  }
+    
+  ret = parseXml();
+  if ( ret != 0 ) {
+    slogger.msg(kLogInfo1,"ERROR: Failed to parse XML file.  Exiting...\n");
+    slogger.msg(kLogInfo1,"** Hint: Make sure that mcpe_viz.xml is in any of: current dir, exec dir, ~/.mcpe_viz/\n");
+    return -1;
+  }
+    
+  parseConfigFile();
+    
+  makePalettes();
+
+  return 0;
+}
   
 }  // namespace mcpe_viz
 

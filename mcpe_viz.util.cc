@@ -474,7 +474,7 @@ namespace mcpe_viz {
     memset(buf, 0, destW * destH * bppDest);
 
     PngWriter pngOut;
-    pngOut.init(fnDest, "MCPE Viz Oversampled Image", destW, destH, destH, true);
+    pngOut.init(fnDest, "MCPE Viz Oversampled Image", destW, destH, destH, true, true);
     for (int32_t ty=0; ty < destH; ty++) {
       pngOut.row_pointers[ty] = &buf[ty * destW * bppDest];
     }

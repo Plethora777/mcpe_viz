@@ -11,12 +11,25 @@
 
   todohere
 
+  * add a tool to help convert from overwold to nether coordinates
+
+  * check minor update to libnbt++ 5/2/2016
+
+  * should error on fail copy js lib files
+
+  * out56.log had a zombie pigman with 'nan' for position - filter this
+
+  * xml missing item 358 (probably filled map); probably other map related things + maps in item frames etc
+
   * possible xml errors:
   -- another1-dropbox - top of pyramid - quartz with unknown blockdata (6 and 10)
   -- "upper slab, quartz" shows as "upper slab, nether brick" -- R.E. all variants in creative
   -- "flower pot" w/ cactus shows as flower pot with poppy -- R.E. all variants in creative
   -- block of quartz variants appear to be wrong -- R.E. in creative
 
+  * win gui -- 
+  -- icon
+  -- use taskbar progress bar - see: http://www.codeproject.com/Articles/42345/Windows-Goodies-in-C-Taskbar-Progress-and-Status
 
   * could use png files to determine avg color of each block
   * add icons for enchanted items?
@@ -2736,8 +2749,10 @@ public:
       else if ( strncmp(key,"mVillages",key_size) == 0 ) {
 	// todobig -- new for 0.13? what is it?
 	logger.msg(kLogInfo1,"mVillages value:\n");
-	parseNbt("mVillages: ", cdata, cdata_size, tagList);
-	// todo - parse tagList?
+	ret = parseNbt("mVillages: ", cdata, cdata_size, tagList);
+	if ( ret == 0 ) {
+	  parseNbt_mVillages(tagList);
+	}
       }
 
       else if ( strncmp(key,"game_flatworldlayers",key_size) == 0 ) {

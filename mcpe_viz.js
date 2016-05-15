@@ -116,6 +116,12 @@ var globalItemStyleSelector = null;
 var globalItemStyleCount = 0;
 
 var globalWarnSlimeChunks = false;
+var globalWarnVillage = false;
+
+var showChunkCoordinatesFlag = false;
+var chunkGridFlag = false;
+
+var showNetherCoordinatesFlag = false;
 
 // this removes the hideous blurriness when zoomed in
 var setCanvasSmoothingMode = function(evt) {
@@ -647,7 +653,10 @@ function doGlobalQuit() {
     // todo - is this too broad?
     $('.mytooltip_dyn').tooltip('hide');
     $('.mytooltip').tooltip('hide');
-    
+
+    // clear village doors
+    srcVillageVectorPoints.clear();
+
     // todo - others?
 }
 
@@ -814,6 +823,17 @@ var featureOverlay = new ol.layer.Vector({
     }
 });
 
+// given coords in mcpe world, return coords for openlayers
+function mcpeToOpenlayers(tx, ty, adjustToCenterFlag) {
+    var px = tx - dimensionInfo[globalDimensionId].globalOffsetX;
+    var py = (dimensionInfo[globalDimensionId].worldHeight - 1 - ty) + dimensionInfo[globalDimensionId].globalOffsetY;
+    if ( adjustToCenterFlag ) {
+	px += 0.5;
+	py += 0.5;
+    }
+    return [ px, py ];
+}
+
 function correctGeoJSONName(feature) {
     var name = feature.get('Name');
     if (name == 'MobSpawner') {
@@ -865,6 +885,19 @@ function correctGeoJSONName(feature) {
     return name;
 }
 
+function doParsedDoors(doors) {
+    // {"idx":0,"idz":-2,"ts":54461602,"Pos":[118,76,-45]},
+    var a = [];
+    for (var d in doors) {
+	var s = '';
+	s += '' + '<a href="#" class="layerGoto_dyn mytooltip_dyn" data-id="' + doors[d]['Pos'][1] + '" title="Click to go to layer">' + JSON.stringify(doors[d]['Pos'], null, 2) + '</a>';
+	s +=  ' : ' + doors[d]['ts'] + ' : ' + doors[d]['idx'] + ' ' + doors[d]['idz'];
+	// make "Pos" clickable if we have raw layers
+	a.push(s);
+    }
+    return a.join('<br/>');
+}
+
 function doFeaturePopover(features, id, coordinate) {
     var feature = features[id];
     
@@ -899,6 +932,54 @@ function doFeaturePopover(features, id, coordinate) {
 	stitle += '<span class="mob_name">' + name + '</span>';
     }
     stitle += '</div>';
+
+    if (name === 'Village') {
+	
+	if ( !globalWarnVillage ) {
+	    doModal('Villages',
+		    '<i>Warning:</i> MCPE only tracks villages that you are near when you exit the game.  You will <b>not</b> see villages that are outside your area.  If you want to see info on them, go near them, exit the game, and then re-run mcpe_viz.');
+	    globalWarnVillage = true;
+	}
+
+	// remove old items
+	srcVillageVectorPoints.clear();
+
+	// add doors to map
+	for (var d in props['Doors']) {
+	    var door = props['Doors'][d];
+
+	    // adjust point to ol coordinates
+	    var pts = mcpeToOpenlayers(door.Pos[0], door.Pos[2], true);
+	    
+	    var pt = new ol.geom.Point( pts );
+
+	    var feature = new ol.Feature({
+		name: 'Village Door',
+		geometry: pt
+	    });
+	    
+	    // copy properties (for popup)
+	    for (var dp in door) {
+		feature.set(dp, door[dp], true);
+	    }
+	    feature.set('Name', 'Village Door');
+
+	    featuresVillageVectorPoints.push(feature);
+	}
+
+	// add a bounding circle for the village
+	var cpts = mcpeToOpenlayers(props.Pos[0], props.Pos[2], true);
+	var fcircle = new ol.Feature({
+	    name: 'Village Radius',
+	    radius: props['radius'],
+	    geometry: new ol.geom.Point( cpts ),
+	    Pos: props.Pos,
+	    Name: 'Village Radius'
+	});
+	featuresVillageVectorPoints.push(fcircle);
+
+	// todobig todohere - how to remove this?! (currently only escape key will do it)
+    }
     
     var s = '<div class="container-fluid my-scrollable">';
 
@@ -949,6 +1030,23 @@ function doFeaturePopover(features, id, coordinate) {
 			'Name: <b>' + props[i].Name + '</b><br/>' +
 			'entityId: <b>' + props[i].entityId + '</b><br/>';
 		}
+
+		// Village-specific stuff
+		else if ( i === 'APos' ) {
+		    // hide it
+		}
+		else if ( i === 'Doors' ) {
+		    s += 'Door Count: <b>' + props[i].length + '</b><br/>';
+		    s += 'Doors (Pos : TS : IDX IDZ):<br/><div class="my-indent">' + doParsedDoors(props[i]) + '</div>';
+		}
+		else if ( i === 'Players' ) {
+		    // todo - more info here? i've never seen this filled
+		    s += 'Players Count: <b>' + props[i].length + '</b><br/>';
+		}
+		else if ( i === 'Villagers' ) {
+		    s += 'Villager Count: <b>' + props[i].length + '</b><br/>';
+		}
+		
 		else if (i === 'Pos') {
 		    // make "Pos" clickable if we have raw layers
 		    s += '' + i + ': <a href="#" class="layerGoto_dyn mytooltip_dyn" data-id="' + props[i][1] + '" title="Click to go to layer">' + JSON.stringify(props[i], null, 2) + '</a><br/>';
@@ -1041,11 +1139,12 @@ function doFeatureSelect(features, coordinate) {
 
     var stitle = '<div class="mob"><span class="mob_name">Multiple Items</span></div>\n';
 
-    features.sort(function(a, b) { 
+    features.sort(function(a, b) {
+	// we use trickery (/255) to sort by height
 	var ap = a.getProperties();
-	var astr = ap.Name + ' @ ' + ap.Pos[0] + ', ' + ap.Pos[1] + ', ' + ap.Pos[2];
+	var astr = ap.Name + ' @ ' + (ap.Pos[1] / 255.0) + ', ' + ap.Pos[0] + ', ' + ap.Pos[2];
 	var bp = b.getProperties();
-	var bstr = bp.Name + ' @ ' + bp.Pos[0] + ', ' + bp.Pos[1] + ', ' + bp.Pos[2];
+	var bstr = bp.Name + ' @ ' + (bp.Pos[1] / 255.0) + ', ' + bp.Pos[0] + ', ' + bp.Pos[2];
 	return astr.localeCompare(bstr);
     });
     
@@ -1629,6 +1728,7 @@ function makeChunkGrid(inputs, data) {
 var rasterChunkGrid = null, layerChunkGrid = null;
 
 function doChunkGrid(enableFlag) {
+    chunkGridFlag = enableFlag;
     if (enableFlag) {
 	if (srcLayerMain === null) {
 	    doModal('Error', 'Weird.  Main layer source is null.  Cannot proceed.');
@@ -1646,7 +1746,7 @@ function doChunkGrid(enableFlag) {
 
 	    layerChunkGrid = new ol.layer.Image({
 		myStackOrder: 200,
-		opacity: 0.4,
+		opacity: 0.5,
 		source: rasterChunkGrid
 	    });
 	}
@@ -1922,8 +2022,8 @@ function initDimension() {
 	dimensionInfo[globalDimensionId].maxWorldY - dimensionInfo[globalDimensionId].minWorldY + 1;
 
     extent = [0, 0,
-	      dimensionInfo[globalDimensionId].worldWidth - 1,
-	      dimensionInfo[globalDimensionId].worldHeight - 1];
+	      dimensionInfo[globalDimensionId].worldWidth,
+	      dimensionInfo[globalDimensionId].worldHeight];
 
     dimensionInfo[globalDimensionId].globalOffsetX = dimensionInfo[globalDimensionId].minWorldX;
     dimensionInfo[globalDimensionId].globalOffsetY = dimensionInfo[globalDimensionId].minWorldY;
@@ -2116,6 +2216,7 @@ var createPointStyleFunction = function() {
 	var entity = feature.get('Entity');
 	var tileEntity = feature.get('TileEntity');
 	var block = feature.get('Block');
+	// todobig - instead of a prop for 'spawnable' just check the name prop? (save big on geojson filesize)
 	var spawnable = feature.get('Spawnable');
 	var dimId = feature.get('Dimension');
 
@@ -2223,7 +2324,64 @@ var createPointStyleFunction = function() {
     };
 };
 
+
+var villageCreatePointStyleFunction = function() {
+    return function(feature, resolution) {
+
+	if ( feature.get('name') === 'Village Radius' ) {
+	    var bcradius = feature.get('radius');
+	    return [ new ol.style.Style({
+		image:  new ol.style.Circle({
+		    radius: bcradius / resolution,
+		    fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 0.1)'}),
+		    stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 0.1)', width: 2})
+		})
+	    }) ];
+	}
+	
+	var weight = 'bold';
+	var size;
+	// smaller font when we are zoomed out
+	if ( resolution > 3 ) {
+	    size = '6pt';
+	} else if ( resolution > 2 ) {
+	    size = '8pt';
+	} else {
+	    size = '10pt';
+	}
+	var font = weight + ' ' + size + ' Calibri,sans-serif';
+	var style = new ol.style.Style({
+	    image: new ol.style.RegularShape({
+		fill: new ol.style.Fill({color: '#ad7d28'}),
+		stroke: new ol.style.Stroke({color: '#533b12', width: 2}),
+		points: 4,
+		radius: 6,
+		angle: Math.PI / 4
+	    }),
+	    text: new ol.style.Text({
+		textAlign: 'left',
+		textBaseline: 'bottom',
+		font: font,
+		color: '#ffffff',
+		text: 'Door',
+		fill: new ol.style.Fill({color: '#efe81f'}),
+		stroke: new ol.style.Stroke({color: '#000000', width: 3}),
+		offsetX: 3,
+		offsetY: -2,
+		rotation: 0
+	    })
+	});
+	return [style];
+    }
+};
+
+
+
+
 var vectorPoints = null;
+var villageVectorPoints = null;
+var srcVillageVectorPoints = null;
+var featuresVillageVectorPoints = new ol.Collection();
 
 function loadVectors() {
     if (vectorPoints !== null) {
@@ -2270,6 +2428,7 @@ function loadVectors() {
 	});
 	
 	map_addLayer(vectorPoints);
+
     } catch (e) {
 	updateLoadEventCount(-1);
 	doModal('Vector Load Error',
@@ -2278,7 +2437,21 @@ function loadVectors() {
 		globalCORSWarning);
     } 
     // todobig - how to catch CORS issue here?
+
+    // add village doors vector layer
+    srcVillageVectorPoints = new ol.source.Vector({
+	features: featuresVillageVectorPoints
+    });
+    villageVectorPoints = new ol.layer.Vector({
+	myStackOrder: 310,
+	source: srcVillageVectorPoints,
+	//todobig - could use a func to set door labels w/ more info
+	style: villageCreatePointStyleFunction()
+    });
+    
+    map_addLayer(villageVectorPoints);
 }
+
 
 
 function entityToggle(id) {
@@ -2350,6 +2523,8 @@ function layerMove(delta) {
 }
 
 function layerGoto(layer) {
+    // we make sure that layer is an integer (mob positions can have decimal points)
+    layer = Math.floor(layer);
     if (layer < 0) { layer = 0; }
     if (layer > 127) { layer = 127; }
     if (setLayer(dimensionInfo[globalDimensionId].listLayers[layer], 'You need to run mcpe_viz with --html-all') === 0) {
@@ -2380,8 +2555,31 @@ var coordinateFormatFunction = function(coordinate) {
 	iy = cy - dimensionInfo[globalDimensionId].minWorldY;
     }
     
+    var chunkX = Math.floor(cx / 16);
+    var chunkY = Math.floor(cy / 16);
+
     var prec = 1;
-    var s = '<span class="lgray">World</span> ' + cx.toFixed(prec) + ' ' + cy.toFixed(prec) + ' <span class="lgray">Image</span> ' + ix.toFixed(prec) + ' ' + iy.toFixed(prec);
+    var s = '<span class="lgray">World</span> ' + cx.toFixed(prec) + ' ' + cy.toFixed(prec) + 
+	' <span class="lgray">Image</span> ' + ix.toFixed(prec) + ' ' + iy.toFixed(prec);
+    if ( showChunkCoordinatesFlag || chunkGridFlag ) {
+	s += '<br/><span class="lgray">Chunk</span> ' + chunkX.toFixed(0) + ' ' + chunkY.toFixed(0);
+    }
+    if ( showNetherCoordinatesFlag ) {
+	var nx = 0, ny = 0;
+	var ns = '';
+	if ( globalDimensionId === 1 ) {
+	    // convert from nether to overworld
+	    nx = cx * 8.0;
+	    ny = cy * 8.0;
+	    ns = 'Overworld';
+	} else {
+	    // convert from overworld to nether
+	    nx = cx / 8.0;
+	    ny = cy / 8.0;
+	    ns = 'Nether';
+	}
+	s += '<br/><span class="lgray">' + ns + '</span> ' + nx.toFixed(prec) + ' ' + ny.toFixed(prec);
+    }
     if (pixelDataName.length > 0) {
 	s += '<br/>' + pixelDataName;
     }
@@ -2427,6 +2625,10 @@ function doTour(aboutFlag) {
 		    '<li>Double click to zoom in</li>' +
 		    '<li><kbd>Shift</kbd> + Double click to zoom out</li>' +
 		    '<li>Rotate map with <kbd>Shift</kbd> + <kbd>Alt</kbd> + drag</li>' +
+		    '</ul>' +
+		    '<i>Tips:</i><br/><ul>' +
+		    '<li>Press "G" to toggle chunk grid</li>' +
+		    '<li>Press "N" to toggle showing Nether coordinate conversion</li>' +
 		    '</ul>'
 	    },
 	    {
@@ -2824,7 +3026,15 @@ $(function() {
 	    doChunkGrid(true);
 	}
     });
+
+    $('#showNetherCoordinatesToggle').click(function() {
+	showNetherCoordinatesFlag = !showNetherCoordinatesFlag;
+    });
     
+    $('#chunkDisplayToggle').click(function() {
+	showChunkCoordinatesFlag = !showChunkCoordinatesFlag;
+    });
+
     $('#slimeChunksToggle').click(function() {
 	if ($('#slimeChunksToggle').parent().hasClass('active')) {
 	    $('#slimeChunksToggle').parent().removeClass('active');
@@ -2957,6 +3167,14 @@ $(function() {
 	// 'c' will put us in circle measurement mode
 	else if ( key === 'C' ) {
 	    measureControl.forceDrawType('Circle');
+	}
+	// 'g' will toggle chunk grid
+	else if ( key === 'G' ) {
+	    $('#gridToggle').click();
+	}
+	// 'n' will toggle nether conversion
+	else if ( key === 'N' ) {
+	    $('#showNetherCoordinatesToggle').click();
 	}
     });
 

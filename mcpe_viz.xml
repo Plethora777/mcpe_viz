@@ -691,7 +691,12 @@
     </item>
     <item id="0x143" name="Sign" />
     <item id="0x144" name="Door, Oak" />
-    <item id="0x145" name="Bucket" />
+    <item id="0x145" name="Bucket">
+      <itemvariant extradata="0x0" name="Bucket, Empty" />
+      <itemvariant extradata="0x8" name="Bucket, Water" />
+      <itemvariant extradata="0xa" name="Bucket, Lava" />
+      <!-- todo - milk -->
+    </item>
     <item id="0x146" name="TBD - Water Bucket" />
     <item id="0x147" name="TBD - Lava Bucket" />
     <item id="0x148" name="Minecart" />

@@ -182,3 +182,7 @@ div.ol-attribution.ol-unselectable.ol-control.ol-uncollapsible {
 .myTabsContainer {
     padding-left: 1em;
 }
+
+.my-indent {
+    padding-left: 1.5em;
+}

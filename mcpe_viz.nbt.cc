@@ -15,13 +15,13 @@
 
 namespace mcpe_viz {
 
-  std::string makeGeojsonHeader(double ix, double iy) {
+  std::string makeGeojsonHeader(double ix, double iy, bool adjustCoordFlag) {
     char tmpstring[256];
 
     // adjust position so that items are in the center of pixels
     // todobig - play with this to see if we can make it better
-    if ( true ) {
-      ix -= 0.5;
+    if ( adjustCoordFlag ) {
+      ix += 0.5; //todobig todohere - plus or minus here? hmm
       iy += 0.5;
     }
     
@@ -32,6 +32,38 @@ namespace mcpe_viz {
       "\"geometry\":{\"type\":\"Point\",\"coordinates\":["
       ;
     s += tmpstring;
+    s +=
+      "]},"
+      "\"properties\":{"
+      ;
+    return s;
+  }
+  
+  std::string makeGeojsonHeader_MultiPoint(int n, double *ix, double *iy) {
+    char tmpstring[256];
+
+    std::string s =
+      "{"
+      "\"type\":\"Feature\","
+      "\"geometry\":{\"type\":\"MultiPoint\",\"coordinates\":["
+      ;
+
+    for (int i=0; i < n; i++) {
+
+      // adjust position so that items are in the center of pixels
+      // todobig - play with this to see if we can make it better
+      if ( true ) {
+	ix[i] += 0.5;
+	iy[i] += 0.5;
+      }
+      
+      sprintf(tmpstring,"[%.1lf,%.1lf]",ix[i],iy[i]);
+      s += tmpstring;
+      if ( i < (n-1) ) {
+	s += ",";
+      }
+    }
+
     s +=
       "]},"
       "\"properties\":{"
@@ -1003,7 +1035,8 @@ namespace mcpe_viz {
     std::vector< std::string > text;
     int32_t signTotalStringLength;
     int32_t entityId;
-      
+    bool containerFlag;
+    
     ParsedTileEntity() {
       clear();
     }
@@ -1015,6 +1048,7 @@ namespace mcpe_viz {
       items.clear();
       text.clear();
       signTotalStringLength = 0;
+      containerFlag = false;
     }
     int32_t addItem ( nbt::tag_compound &iitem ) {
       std::unique_ptr<ParsedItem> it(new ParsedItem());
@@ -1055,8 +1089,8 @@ namespace mcpe_viz {
       std::vector<std::string> list;
       char tmpstring[1025];
 
-      if ( items.size() > 0 ) {
-	list.push_back("\"Name\":\"Chest\"");
+      if ( containerFlag ) {
+	list.push_back("\"Name\":\"" + id + "\"");
 	  
 	if ( pairChest.valid ) {
 	  // todobig - should we keep lists and combine chests so that we can show full content of double chests?
@@ -1163,13 +1197,13 @@ namespace mcpe_viz {
 	
       s += "Pos=" + pos.toStringWithImageCoords(dimensionId);
 
-      if ( items.size() > 0 ) {
+      if ( containerFlag ) {
 	if ( pairChest.valid ) {
 	  // todobig - should we keep lists and combine chests so that we can show full content of double chests?
 	  s += " PairChest=(" + pairChest.toString() + ")";
 	}
 	  
-	s+=" Chest=[";
+	s+=" " + id + "=[";
 	int32_t i = items.size();
 	for ( const auto& it: items ) {
 	  std::string sitem = it->toString(true,0);
@@ -1496,14 +1530,17 @@ namespace mcpe_viz {
       }
 	
       if ( tc.has_key("id", nbt::tag_type::String) ) {
-	std::string id = tc["id"].as<nbt::tag_string>().get();
-	  
-	if ( id == "Sign" ) {
+	tileEntity->id = tc["id"].as<nbt::tag_string>().get();
+
+	if ( false ) {
+	}
+	else if ( tileEntity->id == "Sign" ) {
 	  tileEntity->addSign(tc);
 	  parseFlag = true;
 	}
-	else if ( id == "Chest" ) {
+	else if ( tileEntity->id == "Chest" ) {
 	  if ( tc.has_key("Items", nbt::tag_type::List) ) {
+	    tileEntity->containerFlag = true;
 	    nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
 	    for ( const auto& iter: items ) {
 	      nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
@@ -1512,69 +1549,96 @@ namespace mcpe_viz {
 	    parseFlag = true;
 	  }
 	}
-	else if ( id == "BrewingStand" ) {
+	else if ( tileEntity->id == "BrewingStand" ) {
 	  // todo - anything interesting?
 	}
-	else if ( id == "EnchantTable" ) {
+	else if ( tileEntity->id == "EnchantTable" ) {
 	  // todo - anything interesting?
 	}
-	else if ( id == "Furnace" ) {
+	else if ( tileEntity->id == "Furnace" ) {
 	  // todo - anything interesting?
 	}
-	else if ( id == "MobSpawner" ) {
+	else if ( tileEntity->id == "MobSpawner" ) {
 	  tileEntity->addMobSpawner(tc);
 	  parseFlag = true;
 	}
-	else if ( id == "DaylightDetector" ) {
+	else if ( tileEntity->id == "DaylightDetector" ) {
 	  // todo - new for 0.13
 	  // todo - anything interesting?
 	}
-	else if ( id == "Skull" ) {
+	else if ( tileEntity->id == "Skull" ) {
 	  // todo - new for 0.13
 	  // todo - anything interesting?
 	}
-	else if ( id == "Music" ) {
+	else if ( tileEntity->id == "Music" ) {
 	  // todo - new for 0.13
 	  // todo - anything interesting?
 	}
-	else if ( id == "FlowerPot" ) {
+	else if ( tileEntity->id == "FlowerPot" ) {
 	  // todo - new for 0.13
 	  // todo - anything interesting?
 	  // todo - 'item' (short) is the blockid in the flower pot
 	  // todo - 'mData' (int) is the blockdata of the block in the pot? (e.g. flower / blue orchid)
 	}
-	else if ( id == "Hopper" ) {
+	else if ( tileEntity->id == "Hopper" ) {
 	  // todo - new for 0.14
 	  // todo - anything interesting?
 	  // todo - has a LIST of items in the hopper; 'TransferCooldown'
+	  if ( tc.has_key("Items", nbt::tag_type::List) ) {
+	    tileEntity->containerFlag = true;
+	    nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
+	    for ( const auto& iter: items ) {
+	      nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+	      tileEntity->addItem(iitem);
+	    }
+	    parseFlag = true;
+	  }
 	}
-	else if ( id == "Dropper" ) {
+	else if ( tileEntity->id == "Dropper" ) {
 	  // todo - new for 0.14
 	  // todo - anything interesting?
 	  // todo - has a LIST of items in the dropper
+	  if ( tc.has_key("Items", nbt::tag_type::List) ) {
+	    tileEntity->containerFlag = true;
+	    nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
+	    for ( const auto& iter: items ) {
+	      nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+	      tileEntity->addItem(iitem);
+	    }
+	    parseFlag = true;
+	  }
 	}
-	else if ( id == "Dispenser" ) {
+	else if ( tileEntity->id == "Dispenser" ) {
 	  // todo - new for 0.14
 	  // todo - anything interesting?
 	  // todo - has a LIST of items in the dispenser
+	  if ( tc.has_key("Items", nbt::tag_type::List) ) {
+	    tileEntity->containerFlag = true;
+	    nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
+	    for ( const auto& iter: items ) {
+	      nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+	      tileEntity->addItem(iitem);
+	    }
+	    parseFlag = true;
+	  }
 	}
-	else if ( id == "Cauldron" ) {
+	else if ( tileEntity->id == "Cauldron" ) {
 	  // todo - new for 0.14
 	  // todo - anything interesting?
 	  // todo - has a LIST of items in the cauldron?; PotionId; SplashPotion
 	}
-	else if ( id == "ItemFrame" ) {
+	else if ( tileEntity->id == "ItemFrame" ) {
 	  // todo - new for 0.14
 	  // todo - anything interesting?
 	  // todo - Item; ItemDropChance; ItemRotation
 	}
-	else if ( id == "Comparator" ) {
+	else if ( tileEntity->id == "Comparator" ) {
 	  // todo - new for 0.14
 	  // todo - anything interesting?
 	  // todo - 'OutputSignal'
 	}
 	else {
-	  logger.msg(kLogInfo1,"WARNING: Unknown tileEntity id=(%s)\n", id.c_str());
+	  logger.msg(kLogInfo1,"WARNING: Unknown tileEntity id=(%s)\n", tileEntity->id.c_str());
 	}
       }
 
@@ -1610,7 +1674,7 @@ namespace mcpe_viz {
       dimId = -1;
       span = xa = za = 0;
     }
-    int32_t add ( nbt::tag_compound &tc ) {
+    int32_t set ( nbt::tag_compound &tc ) {
       dimId = tc["DimId"].as<nbt::tag_int>().get();
       span = tc["Span"].as<nbt::tag_byte>().get();
       int32_t tpx = tc["TpX"].as<nbt::tag_int>().get();
@@ -1702,7 +1766,6 @@ namespace mcpe_viz {
     ParsedPortalList portalList;
     portalList.clear();
       
-    // this could be a list of mobs
     for ( size_t i=0; i < tagList.size(); i++ ) { 
 
       // check tagList
@@ -1720,7 +1783,7 @@ namespace mcpe_viz {
 	      std::unique_ptr<ParsedPortal> portal(new ParsedPortal());
 	      portal->clear();
 		
-	      portal->add( pc );
+	      portal->set( pc );
 		
 	      logger.msg(kLogInfo1, "ParsedPortal: %s\n", portal->toString().c_str());
 		
@@ -1730,6 +1793,409 @@ namespace mcpe_viz {
 	      }
 		
 	      portalList.push_back( std::move(portal) );
+	    }
+	  }
+	}
+      }
+    }
+      
+    return 0;
+  }
+
+
+  class ParsedVillageDoor {
+  public:
+    int32_t idx, idz;
+    int32_t ts;
+    Point3d<int32_t> pos;
+    
+    ParsedVillageDoor() {
+      clear();
+    }
+    void clear() {
+      idx = idz = ts = 0;
+      pos.clear();
+    }
+    int32_t set ( nbt::tag_compound &tc ) {
+      idx = tc["IDX"].as<nbt::tag_int>().get();
+      idz = tc["IDZ"].as<nbt::tag_int>().get();
+      ts = tc["TS"].as<nbt::tag_int>().get();
+      int32_t tx = tc["X"].as<nbt::tag_int>().get();
+      int32_t ty = tc["Y"].as<nbt::tag_int>().get();
+      int32_t tz = tc["Z"].as<nbt::tag_int>().get();
+      pos.set(tx,ty,tz);
+      return 0;
+    }
+    std::string toGeoJSON() {
+      std::vector<std::string> list;
+      char tmpstring[1025];
+
+      sprintf(tmpstring, "\"idx\":%d", idx);
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"idz\":%d", idz);
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"ts\":%d", ts);
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"Pos\":[%s]", pos.toGeoJSON().c_str());
+      list.push_back(std::string(tmpstring));
+
+      if ( list.size() > 0 ) {
+	std::string s="";
+
+	int32_t i = list.size();
+	for (const auto& iter : list ) {
+	  s += iter;
+	  if ( --i > 0 ) {
+	    s += ",";
+	  }
+	}
+	//s += "}}";
+	return s;
+      }
+
+      return std::string("");
+    }    
+  };
+  typedef std::vector< std::unique_ptr<ParsedVillageDoor> > ParsedVillageDoorList;
+
+
+  class ParsedVillagePlayer {
+  public:
+    // todobig todohere - don't know what this is yet
+    ParsedVillagePlayer() {
+      clear();
+    }
+    void clear() {
+    }
+    int32_t set ( nbt::tag_compound &tc ) {
+      return 0;
+    }
+    std::string toGeoJSON() {
+      return std::string("");
+    }
+  };
+  typedef std::vector< std::unique_ptr<ParsedVillagePlayer> > ParsedVillagePlayerList;
+
+  
+  class ParsedVillageVillager {
+  public:
+    int64_t id;
+
+    ParsedVillageVillager() {
+      clear();
+    }
+    void clear() {
+      id = 0;
+    }
+    int32_t set ( nbt::tag_compound &tc ) {
+      id = tc["ID"].as<nbt::tag_long>().get();
+      return 0;
+    }
+    std::string toGeoJSON() {
+      std::vector<std::string> list;
+      char tmpstring[1025];
+
+      sprintf(tmpstring, "\"id\":%ld", id);
+      list.push_back(std::string(tmpstring));
+
+      if ( list.size() > 0 ) {
+	std::string s="";
+
+	int32_t i = list.size();
+	for (const auto& iter : list ) {
+	  s += iter;
+	  if ( --i > 0 ) {
+	    s += ",";
+	  }
+	}
+	//s += "}}";
+	return s;
+      }
+
+      return std::string("");
+    }    
+  };
+  typedef std::vector< std::unique_ptr<ParsedVillageVillager> > ParsedVillageVillagerList;
+
+  
+  class ParsedVillage {
+  public:
+    Point3d<int32_t> pos;
+    Point3d<int32_t> apos; // todo - a fixed point pos? appears to be pos*48 + fractional part
+    Point3d<double> fpos;  // calculated from apos
+
+    ParsedVillageDoorList doorList;
+    int32_t golems;
+    int32_t mTick;
+    ParsedVillagePlayerList playerList;
+    int32_t radius;
+    int32_t stable;
+    int32_t tick;
+    ParsedVillageVillagerList villagerList;
+    
+    ParsedVillage() {
+      clear();
+    }
+    void clear() {
+      pos.clear();
+      apos.clear();
+      fpos.clear();
+      doorList.clear();
+      golems = 0;
+      mTick = 0;
+      playerList.clear();
+      radius = 0;
+      stable = 0;
+      tick = 0;
+      villagerList.clear();
+    }
+    int32_t set ( nbt::tag_compound &tc ) {
+      int32_t acx = tc["ACX"].as<nbt::tag_int>().get();
+      int32_t acy = tc["ACY"].as<nbt::tag_int>().get();
+      int32_t acz = tc["ACZ"].as<nbt::tag_int>().get();
+      apos.set(acx,acy,acz);
+      // todobig todohere - correct this to a true floating point number?
+      
+      int32_t cx = tc["CX"].as<nbt::tag_int>().get();
+      int32_t cy = tc["CY"].as<nbt::tag_int>().get();
+      int32_t cz = tc["CZ"].as<nbt::tag_int>().get();
+      pos.set(cx,cy,cz);
+
+      fpos.set(acx / 48.0, acy / 48.0, acz / 48.0);
+      
+      if ( tc.has_key("Doors", nbt::tag_type::List) ) {
+	nbt::tag_list dlist = tc["Doors"].as<nbt::tag_list>();
+	
+	for ( const auto& it : dlist ) {
+	  nbt::tag_compound dc = it.as<nbt::tag_compound>();
+	  std::unique_ptr<ParsedVillageDoor> door(new ParsedVillageDoor());
+	  door->set( dc );
+	  doorList.push_back( std::move(door) );
+	}
+      }
+
+      golems = tc["Golems"].as<nbt::tag_int>().get();
+      mTick = tc["MTick"].as<nbt::tag_int>().get();
+	  
+      if ( tc.has_key("Players", nbt::tag_type::List) ) {
+	nbt::tag_list dlist = tc["Players"].as<nbt::tag_list>();
+	
+	for ( const auto& it : dlist ) {
+	  nbt::tag_compound pc = it.as<nbt::tag_compound>();
+	  std::unique_ptr<ParsedVillagePlayer> player(new ParsedVillagePlayer());
+	  player->set( pc );
+	  playerList.push_back( std::move(player) );
+	}
+      }
+
+      radius = tc["Radius"].as<nbt::tag_int>().get();
+      stable = tc["Stable"].as<nbt::tag_int>().get();
+      tick = tc["Tick"].as<nbt::tag_int>().get();
+	  
+      if ( tc.has_key("Villagers", nbt::tag_type::List) ) {
+	nbt::tag_list dlist = tc["Villagers"].as<nbt::tag_list>();
+	
+	for ( const auto& it : dlist ) {
+	  nbt::tag_compound vc = it.as<nbt::tag_compound>();
+	  std::unique_ptr<ParsedVillageVillager> villager(new ParsedVillageVillager());
+	  villager->set( vc );
+	  villagerList.push_back( std::move(villager) );
+	}
+      }
+
+      return 0;
+    }
+    std::string toGeoJSON() {
+      std::vector<std::string> list;
+      std::vector<std::string> templist;
+      //todobig todohere - something better than this :)
+      char tmpstring[8192];
+
+      // note: we fake this as a tile entity so that it is easy to deal with in js
+      list.push_back(std::string("\"TileEntity\":\"true\""));
+
+      list.push_back("\"Name\":\"Village\"");
+
+      sprintf(tmpstring, "\"Pos\":[%s]", pos.toGeoJSON().c_str());
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"APos\":[%s]", apos.toGeoJSON().c_str());
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"FPos\":[%s]", fpos.toGeoJSON().c_str());
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"golems\":%d", golems);
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"mTick\":%d", mTick);
+      list.push_back(std::string(tmpstring));
+
+      sprintf(tmpstring, "\"radius\":%d", radius);
+      list.push_back(std::string(tmpstring));
+      
+      sprintf(tmpstring, "\"stable\":%d", stable);
+      list.push_back(std::string(tmpstring));
+      
+      sprintf(tmpstring, "\"tick\":%d", tick);
+      list.push_back(std::string(tmpstring));
+      
+      templist.clear();
+      for ( const auto& it : villagerList ) {
+	templist.push_back( "{" + it->toGeoJSON() + "}" );
+      }
+      if ( templist.size() > 0 ) {
+	std::string s="";
+	int32_t i = templist.size();
+	for (const auto& iter : templist ) {
+	  s += iter;
+	  if ( --i > 0 ) {
+	    s += ",";
+	  }
+	}
+	sprintf(tmpstring, "\"Villagers\":[%s]", s.c_str());
+	list.push_back(std::string(tmpstring));
+      } else {
+	sprintf(tmpstring, "\"Villagers\":[]");
+	list.push_back(std::string(tmpstring));
+      }
+
+      templist.clear();
+      for ( const auto& it : doorList ) {
+	templist.push_back( "{" + it->toGeoJSON() + "}" );
+      }
+      if ( templist.size() > 0 ) {
+	std::string s="";
+	int32_t i = templist.size();
+	for (const auto& iter : templist ) {
+	  s += iter;
+	  if ( --i > 0 ) {
+	    s += ",";
+	  }
+	}
+	sprintf(tmpstring, "\"Doors\":[%s]", s.c_str());
+	list.push_back(std::string(tmpstring));
+      } else {
+	sprintf(tmpstring, "\"Doors\":[]");
+	list.push_back(std::string(tmpstring));
+      }
+      
+      templist.clear();
+      for ( const auto& it : playerList ) {
+	templist.push_back( "{" + it->toGeoJSON() + "}" );
+      }
+      if ( templist.size() > 0 ) {
+	std::string s="";
+	int32_t i = templist.size();
+	for (const auto& iter : templist ) {
+	  s += iter;
+	  if ( --i > 0 ) {
+	    s += ",";
+	  }
+	}
+	sprintf(tmpstring, "\"Players\":[%s]", s.c_str());
+	list.push_back(std::string(tmpstring));
+      } else {
+	sprintf(tmpstring, "\"Players\":[]");
+	list.push_back(std::string(tmpstring));
+      }
+
+      if ( list.size() > 0 ) {
+	std::string s="";
+
+	sprintf(tmpstring,"\"Dimension\":\"%d\"", 0);
+	list.push_back(std::string(tmpstring));
+
+	// todobig todohere - just a test
+#if 1
+	// point style
+	double ix, iy;
+	worldPointToGeoJSONPoint(0, fpos.x,fpos.z, ix,iy);
+	s += makeGeojsonHeader(ix,iy,false);
+#else
+	// multi-point style
+	int npoints = doorList.size() + 1;
+	double *xlist = new double[ npoints ];
+	double *ylist = new double[ npoints ];
+
+	int p=0;
+	double ix, iy;
+	worldPointToGeoJSONPoint(0, fpos.x,fpos.z, ix,iy);
+	xlist[p]=ix;
+	ylist[p]=iy;
+	p++;
+
+	for ( const auto& it : doorList ) {
+	  worldPointToGeoJSONPoint(0, it->pos.x, it->pos.z, ix,iy);
+	  xlist[p]=ix;
+	  ylist[p]=iy;
+	  p++;
+	}
+
+	s += makeGeojsonHeader_MultiPoint(npoints, xlist, ylist);
+
+	delete [] xlist;
+	delete [] ylist;
+#endif
+
+	int32_t i = list.size();
+	for (const auto& iter : list ) {
+	  s += iter;
+	  if ( --i > 0 ) {
+	    s += ",";
+	  }
+	}
+	s += "}}";
+	return s;
+      }
+
+      return std::string("");
+    }
+      
+    // todo - this should probably be multi-line so it's not so insane looking :)
+    std::string toString() {
+      std::string s = "";
+      return s;
+    }
+  };
+  typedef std::vector< std::unique_ptr<ParsedVillage> > ParsedVillageList;
+  
+  int32_t parseNbt_mVillages(MyNbtTagList &tagList) {
+    ParsedVillageList villageList;
+    villageList.clear();
+      
+    for ( size_t i=0; i < tagList.size(); i++ ) { 
+
+      // check tagList
+      if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+	nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+	if ( tc.has_key("data", nbt::tag_type::Compound) ) {
+	  nbt::tag_compound td = tc["data"].as<nbt::tag_compound>();
+
+	  int32_t vTick = td["Tick"].as<nbt::tag_int>().get();
+	  
+	  if ( td.has_key("Villages", nbt::tag_type::List) ) {
+	    // all is good
+	    nbt::tag_list vlist = td["Villages"].as<nbt::tag_list>();
+	      
+	    for ( const auto& it : vlist ) {
+	      nbt::tag_compound pc = it.as<nbt::tag_compound>();
+	  
+	      std::unique_ptr<ParsedVillage> village(new ParsedVillage());
+	      village->clear();
+	      village->set( pc );
+	      
+	      logger.msg(kLogInfo1, "ParsedVillage: %s\n", village->toString().c_str());
+	      
+	      std::string json = village->toGeoJSON();
+	      if ( json.size() > 0 ) {
+		listGeoJSON.push_back( json );
+	      }
+	      
+	      villageList.push_back( std::move(village) );
 	    }
 	  }
 	}

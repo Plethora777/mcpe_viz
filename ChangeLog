@@ -4,7 +4,18 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Updated code to support truly huge world files (e.g. 1gb 33000 x 26000!)
+Highlight: Display details of villages; More coordinate view options
+
+v0.0.21 - 2016.05.15
+Parse villages (mVillages) NBT data and put them in geojson
+Web - Added display of detailed information about villages (doors, radius, etc)
+Web - Added display of objects (Tile Entities): Hopper, Dropper, Dispenser
+Web - Added option to show Nether-to-Overworld (and vice versa) coordinate conversion
+Web - Added option to display chunk coordinates
+Web - Added hotkeys for chunk grid ('G'), nether coordinate conversion ('N')
+Web - Fixed bug setting extent which caused newer versions of OpenLayers to stretch the image oddly
+Web - Updated to OpenLayers 3.15.1
+XML - Added bucket item variants ('empty', 'water', 'lava')
 
 v0.0.20 - 2016.02.25
 Updated code to support truly huge world files (e.g. 1gb 33000 x 26000!)

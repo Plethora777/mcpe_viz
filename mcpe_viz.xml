@@ -130,6 +130,14 @@
     <block id="0x1A" name="Bed" color="0xff0000" opaque="0" spawnable="0" /> <!-- *S -->
     <block id="0x1B" name="Powered Rail" color="0xfe4902" solid="0" opaque="0" spawnable="0" /> <!-- *S -->
     <block id="0x1C" name="Detector Rail" color="0xce6841" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
+    <block id="0x1D" name="Piston, Sticky" color="0x74d48b" solid="0" opaque="0" spawnable="0"> <!-- *S 0.15 -->
+      <blockvariant blockdata="0x0" name="Piston, Sticky (Down)" />
+      <blockvariant blockdata="0x1" name="Piston, Sticky (Up)" />
+      <blockvariant blockdata="0x2" name="Piston, Sticky (South)" />
+      <blockvariant blockdata="0x3" name="Piston, Sticky (North)" />
+      <blockvariant blockdata="0x4" name="Piston, Sticky (East)" />
+      <blockvariant blockdata="0x5" name="Piston, Sticky (West)" />
+    </block>
     <block id="0x1E" name="Cobweb" color="0xe0e0e0" solid="0" />
     <block id="0x1F" name="Grass" color="0x1f953f" solid="0" opaque="0" spawnable="0" > <!-- *B -->
       <blockvariant blockdata="0x0" name="Shrub" />
@@ -137,6 +145,15 @@
       <blockvariant blockdata="0x2" name="Fern" />
     </block>
     <block id="0x20" name="Dead Bush" color="0x47461e" solid="0" opaque="0" spawnable="0" />
+    <block id="0x21" name="Piston" color="0x669f73" solid="0" opaque="0" spawnable="0"> <!-- *S 0.15 -->
+      <blockvariant blockdata="0x0" name="Piston (Down)" />
+      <blockvariant blockdata="0x1" name="Piston (Up)" />
+      <blockvariant blockdata="0x2" name="Piston (South)" />
+      <blockvariant blockdata="0x3" name="Piston (North)" />
+      <blockvariant blockdata="0x4" name="Piston (East)" />
+      <blockvariant blockdata="0x5" name="Piston (West)" />
+    </block>
+    <block id="0x22" name="Piston Head" color="0x8f8d4c" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.15 -->
     <block id="0x23" name="Wool"> <!-- *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="1" name="Wool, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="1" name="Wool, Orange" />
@@ -421,12 +438,12 @@
     <block id="0x98" name="Block of Redstone" color="0xcd5c5c" opaque="0" />
     <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
     <block id="0x9A" name="Hopper" color="0xa5a5a5" opaque="0" spawnable="0" /> <!-- *S *E 0.14 -->
-    <block id="0x9B" name="Block of Quartz" color="0xfffff8"> <!-- *B -->
+    <block id="0x9B" name="Block of Quartz" color="0xfffff1"> <!-- *B -->
       <blockvariant blockdata="0x0" name="Quartz" />
       <blockvariant blockdata="0x1" name="Quartz, Chiseled" />
       <blockvariant blockdata="0x2" name="Quartz, Pillar (Vertical)" />
-      <blockvariant blockdata="0x3" name="Quartz, Pillar (North/South)" />
-      <blockvariant blockdata="0x4" name="Quartz, Pillar (East/West)" />
+      <blockvariant blockdata="0x6" name="Quartz, Pillar (East/West)" />
+      <blockvariant blockdata="0xa" name="Quartz, Pillar (North/South)" />
     </block>
     <block id="0x9C" name="Stairs, Quartz" color="0xe8e7e7" spawnable="0"> <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Quartz, East" />
@@ -603,6 +620,14 @@
     <block id="0xF7" name="Nether Reactor Core" color="0xbaf5f2" />
     <block id="0xF8" name="Update Game Block (update!) [note 1]" /> <!-- todo -->
     <block id="0xF9" name="Update Game Block (ate!upd)" /> <!-- todo -->
+    <block id="0xFB" name="Observer" color="0xa13d3d" opaque="0" spawnable="0"> <!-- *S *E 0.15 -->
+      <blockvariant blockdata="0x0" name="Observer (Down)" />
+      <blockvariant blockdata="0x1" name="Observer (Up)" />
+      <blockvariant blockdata="0x2" name="Observer (North)" />
+      <blockvariant blockdata="0x3" name="Observer (South)" />
+      <blockvariant blockdata="0x4" name="Observer (East)" />
+      <blockvariant blockdata="0x5" name="Observer (West)" />
+    </block>
     <block id="0xFF" name="info_reserved6" /> <!-- todo -->
   </blocklist>
 
@@ -622,7 +647,40 @@
     <item id="0x103" name="Flint and Steel" /> <!-- *D -->
     <item id="0x104" name="Apple" />
     <item id="0x105" name="Bow" /> <!-- *D -->
-    <item id="0x106" name="Arrow" />
+    <item id="0x106" name="Arrow">
+      <itemvariant extradata="0" name="Arrow" />
+      <itemvariant extradata="6" name="Arrow of Night Vision (0:22)" />
+      <itemvariant extradata="7" name="Arrow of Night Vision (1:00)" />
+      <itemvariant extradata="8" name="Arrow of Invisibility (0:22)" />
+      <itemvariant extradata="9" name="Arrow of Invisibility (1:00)" />
+      <itemvariant extradata="10" name="Arrow of Jump Boost (0:22)" />
+      <itemvariant extradata="11" name="Arrow of Jump Boost (1:00)" />
+      <itemvariant extradata="12" name="Arrow of Jump Boost II (0:11)" />
+      <itemvariant extradata="13" name="Arrow of Fire Resistance (0:22)" />
+      <itemvariant extradata="14" name="Arrow of Fire Resistance (1:00)" />
+      <itemvariant extradata="15" name="Arrow of Speed (0:22)" />
+      <itemvariant extradata="16" name="Arrow of Speed (1:00)" />
+      <itemvariant extradata="17" name="Arrow of Speed II (0:11)" />
+      <itemvariant extradata="18" name="Arrow of Slowness (0:11)" />
+      <itemvariant extradata="19" name="Arrow of Slowness (0:30)" />
+      <itemvariant extradata="20" name="Arrow of Water Breathing (0:22)" />
+      <itemvariant extradata="21" name="Arrow of Water Breathing (1:00)" />
+      <itemvariant extradata="22" name="Arrow of Instant Health" />
+      <itemvariant extradata="23" name="Arrow of Instant Health II" />
+      <itemvariant extradata="24" name="Arrow of Instant Damage" />
+      <itemvariant extradata="25" name="Arrow of Instant Damage II" />
+      <itemvariant extradata="26" name="Arrow of Poison (0:05)" />
+      <itemvariant extradata="27" name="Arrow of Poison (0:15)" />
+      <itemvariant extradata="28" name="Arrow of Poison II (0:02)" />
+      <itemvariant extradata="29" name="Arrow of Regeneration (0:05)" />
+      <itemvariant extradata="30" name="Arrow of Regeneration (0:15)" />
+      <itemvariant extradata="31" name="Arrow of Regeneration II (0:02)" />
+      <itemvariant extradata="32" name="Arrow of Strength (0:22)" />
+      <itemvariant extradata="33" name="Arrow of Strength (1:00)" />
+      <itemvariant extradata="34" name="Arrow of Strength II (0:11)" />
+      <itemvariant extradata="35" name="Arrow of Weakness (0:11)" />
+      <itemvariant extradata="36" name="Arrow of Weakness (0:30)" />
+    </item>
     <item id="0x107" name="Coal"> <!-- *B -->
       <itemvariant extradata="0" name="Coal" />
       <itemvariant extradata="1" name="Charcoal" />
@@ -819,6 +877,13 @@
     <item id="0x17D" name="TBD - Eye of Ender" />
     <item id="0x17E" name="TBD - Glistering Melon" />
     <item id="0x17F" name="Spawn Egg"> <!-- *B -->
+      <itemvariant extradata="23" name="Spawn Egg, Horse" />
+      <itemvariant extradata="24" name="Spawn Egg, Donkey" />
+      <itemvariant extradata="25" name="Spawn Egg, Mule" />
+      <itemvariant extradata="26" name="Spawn Egg, Skeleton Horse" />
+      <itemvariant extradata="27" name="Spawn Egg, Zombie Horse" />
+      <itemvariant extradata="46" name="Spawn Egg, Stray" />
+      <itemvariant extradata="47" name="Spawn Egg, Husk" />
       <itemvariant extradata="50" name="Spawn Egg, Creeper" />
       <itemvariant extradata="51" name="Spawn Egg, Skeleton" />
       <itemvariant extradata="52" name="Spawn Egg, Spider" />
@@ -849,6 +914,7 @@
       <itemvariant extradata="120" name="Spawn Egg, Villager" />
     </item>
     <item id="0x180" name="Bottle o' Enchanting" />
+    <item id="0x181" name="Fire Charge" /> <!-- 0.15 -->
     <item id="0x184" name="Emerald" />
     <item id="0x185" name="Item Frame" />
     <item id="0x186" name="Flower Pot" />
@@ -865,6 +931,7 @@
       <itemvariant extradata="3" name="Mob Head, Player" />
       <itemvariant extradata="4" name="Mob Head, Creeper" />
     </item>
+    <item id="0x18E" name="Carrot on a Stick" /> <!-- 0.15 -->
     <item id="0x190" name="Pumpkin Pie" />
     <item id="0x193" name="Enchanted Book" />
     <item id="0x194" name="Redstone Comparator" />
@@ -878,6 +945,14 @@
     <item id="0x19D" name="Rabbit Stew" />
     <item id="0x19E" name="Rabbit's Foot" />
     <item id="0x19F" name="Rabbit Hide" />
+    <item id="0x1A0" name="Horse Armor, Leather" /> <!-- 0.15 -->
+    <item id="0x1A1" name="Horse Armor, Iron" /> <!-- 0.15 -->
+    <item id="0x1A2" name="Horse Armor, Gold" /> <!-- 0.15 -->
+    <item id="0x1A3" name="Horse Armor, Diamond" /> <!-- 0.15 -->
+    <item id="0x1A4" name="Lead" /> <!-- 0.15 -->
+    <item id="0x1A5" name="Name Tag" /> <!-- 0.15 -->
+    <item id="0x1A7" name="Mutton, Raw" /> <!-- 0.15 -->
+    <item id="0x1A8" name="Mutton, Cooked" /> <!-- 0.15 -->
     <item id="0x1AB" name="Door, Spruce" />
     <item id="0x1AC" name="Door, Birch" />
     <item id="0x1AD" name="Door, Jungle" />
@@ -955,6 +1030,11 @@
     <entity id="0x14" name="Iron Golem" />
     <entity id="0x15" name="Snow Golem" />
     <entity id="0x16" name="Ocelot" />
+    <entity id="0x17" name="Horse" /> <!-- 0.15 -->
+    <entity id="0x18" name="Donkey" /> <!-- 0.15 -->
+    <entity id="0x19" name="Mule" /> <!-- 0.15 -->
+    <entity id="0x1a" name="Horse, Skeleton" /> <!-- 0.15 -->
+    <entity id="0x1b" name="Horse, Zombie" /> <!-- 0.15 -->
     <entity id="0x20" name="Zombie" />
     <entity id="0x21" name="Creeper" />
     <entity id="0x22" name="Skeleton" />
@@ -969,6 +1049,8 @@
     <entity id="0x2B" name="Blaze" />
     <entity id="0x2C" name="Zombie Villager" />
     <entity id="0x2D" name="Witch" />
+    <entity id="0x2E" name="Stray" /> <!-- 0.15 -->
+    <entity id="0x2F" name="Husk" /> <!-- 0.15 -->
     <entity id="0x3F" name="The Player" />
     <entity id="0x40" name="Dropped item" />
     <entity id="0x41" name="Primed TNT" />
@@ -1112,6 +1194,8 @@
     <!-- dropper -->
     <block mcpcId="0x9e" mcpeId="0x7d" />
 
+    <!-- armor stand -->
+    <item mcpcId="0x1a0" mcpeId="-1" />
     <!-- prismarine -->
     <item mcpcId="0x19a" mcpeId="-1" />
     <!-- hopper -->

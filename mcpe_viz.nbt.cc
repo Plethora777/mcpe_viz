@@ -18,20 +18,23 @@ namespace mcpe_viz {
   std::string makeGeojsonHeader(double ix, double iy, bool adjustCoordFlag) {
     char tmpstring[256];
 
-    // adjust position so that items are in the center of pixels
-    // todobig - play with this to see if we can make it better
-    if ( adjustCoordFlag ) {
-      ix += 0.5; //todobig todohere - plus or minus here? hmm
-      iy += 0.5;
-    }
-    
-    sprintf(tmpstring,"%.1lf,%.1lf",ix,iy);
     std::string s =
       "{"
       "\"type\":\"Feature\","
       "\"geometry\":{\"type\":\"Point\",\"coordinates\":["
       ;
-    s += tmpstring;
+    if ( std::isnan(ix) || std::isnan(iy) ) {
+      // we don't put out anything because "NaN" is not valid JSON
+    } else {
+      // adjust position so that items are in the center of pixels
+      // todobig - play with this to see if we can make it better
+      if ( adjustCoordFlag ) {
+	ix += 0.5; //todobig todohere - plus or minus here? hmm
+	iy += 0.5;
+      }
+      sprintf(tmpstring,"%.1lf,%.1lf",ix,iy);
+      s += tmpstring;
+    }
     s +=
       "]},"
       "\"properties\":{"
@@ -281,11 +284,19 @@ namespace mcpe_viz {
       y=(T)0;
       valid=false;
     }
+    bool isValid() {
+      return ! ( std::isnan(x) || std::isnan(y) );
+    }
     std::string toGeoJSON() {
       // todo - how to report invalid in geojson?
       // if ( valid ) {
       std::ostringstream str;
-      str << x << "," << y;
+      if ( std::isnan(x) || std::isnan(y) ) {
+	// we don't put out anything because "NaN" is not valid JSON
+	str << "";
+      } else {
+	str << x << "," << y;
+      }
       return str.str();
     }
     std::string toString() {
@@ -321,11 +332,19 @@ namespace mcpe_viz {
       z=(T)0;
       valid=false;
     }
+    bool isValid() {
+      return ! ( std::isnan(x) || std::isnan(y) || std::isnan(z) );
+    }
     std::string toGeoJSON() {
       // todo - how to report invalid in geojson?
       // if ( valid ) {
       std::ostringstream str;
-      str << x << "," << y << "," << z;
+      if ( std::isnan(x) || std::isnan(y) || std::isnan(z) ) {
+	// we don't put out anything because "NaN" is not valid JSON
+	str << "";
+      } else {
+	str << x << "," << y << "," << z;
+      }
       return str.str();
     }
     std::string toString() {
@@ -781,7 +800,13 @@ namespace mcpe_viz {
       std::vector<std::string> list;
       std::string s = "";
       char tmpstring[1025];
-	
+
+      // we make sure that the entity is valid -- have seen rare occurances of mobs with "nan" in pos et al
+      if ( ! pos.isValid() || ! rotation.isValid() ) {
+	logger.msg(kLogInfo1,"WARNING: Not outputting geojson for mob with invalid position/rotation\n");
+	return "";
+      }
+      
       double ix, iy;
       worldPointToGeoJSONPoint(forceDimensionId, pos.x,pos.z, ix,iy);
       s += makeGeojsonHeader(ix,iy);
@@ -1452,6 +1477,98 @@ namespace mcpe_viz {
 	}
       }
       
+     
+      // horse: Bred, CanPickUpLoot, ChestedHorse, CUrrentHealth, EatingHaystack, Fire, HasCustomName, HasReproduced, IsGlobal, LeasherID, MaxHealth, OwnerNew, Saddled, Sitting, Temper, Type, Variant
+      // todobig - other interesting stuff: armor (list), attributes (list), Items (list)
+      entity->checkOtherProp(tc, "Bred");
+      entity->checkOtherProp(tc, "CanPickUpLoot");
+      entity->checkOtherProp(tc, "ChestedHorse");
+      entity->checkOtherProp(tc, "CurrentHealth");
+      entity->checkOtherProp(tc, "DeathTime");
+      entity->checkOtherProp(tc, "EatingHaystack");
+      entity->checkOtherProp(tc, "ForcedAge");
+      entity->checkOtherProp(tc, "HasCustomName");
+      entity->checkOtherProp(tc, "HasReproduced");
+      entity->checkOtherProp(tc, "IsGlobal");
+      entity->checkOtherProp(tc, "LeasherID");
+      entity->checkOtherProp(tc, "MaxHealth");
+      entity->checkOtherProp(tc, "Saddled");
+      entity->checkOtherProp(tc, "Temper");
+      entity->checkOtherProp(tc, "Type");
+      entity->checkOtherProp(tc, "UniqueID");
+      entity->checkOtherProp(tc, "Variant");
+
+      // todo these will not work until we support list and compound in checkOtherProp
+      //entity->checkOtherProp(tc, "Attributes");
+      //entity->checkOtherProp(tc, "Armor");
+      //entity->checkOtherProp(tc, "Items");
+
+      // parse horse variant/type into a user-friendly string
+      
+      if ( true ) {
+	std::string vKey;
+	int32_t vType = -1;
+	int32_t vVariant = -1;
+
+	vKey="Variant";
+	if ( tc.has_key(vKey)) {
+	  vVariant = tc[vKey].as<nbt::tag_int>().get();
+	}
+
+	vKey="Type";
+	if ( tc.has_key(vKey)) {
+	  vType = tc[vKey].as<nbt::tag_int>().get();
+	}
+
+	if ( vType == 0 ) {
+	  // we only parse variants for horses
+
+	  std::string vbase="";
+	  switch (vVariant & 0xf) {
+	  case 0: vbase = "White"; break;
+	  case 1: vbase = "Creamy"; break;
+	  case 2: vbase = "Chestnut"; break;
+	  case 3: vbase = "Brown"; break;
+	  case 4: vbase = "Black"; break;
+	  case 5: vbase = "Gray"; break;
+	  case 6: vbase = "Dark Brown"; break;
+	  }
+
+	  std::vector<std::string> vadd;
+	  if (vVariant & 1024) {
+	    vadd.push_back("Black Dots");
+	  }
+	  else if (vVariant & 768) {
+	    vadd.push_back("White Dots");
+	  }
+	  else if (vVariant & 512) {
+	    vadd.push_back("White Field");
+	  }
+	  else if (vVariant & 256) {
+	    vadd.push_back("White");
+	  }
+
+	  std::string vout = "";
+	  if (vadd.size() > 0 ) {
+	    vout = vbase + " (";
+	    int32_t j = vadd.size();
+	    for (const auto& iter : vadd ) {
+	      vout += iter;
+	      if ( --j > 0 ) {
+		vout += ", ";
+	      }
+	    }
+	    vout += ")";
+	  } else {
+	    vout = vbase;
+	  }
+
+	  entity->addOtherProp("HorseVariant", vout);
+
+	}
+      }
+      
+
       // breedable mobs
       entity->checkOtherProp(tc, "InLove");
       entity->checkOtherProp(tc, "Age");
@@ -1487,7 +1604,10 @@ namespace mcpe_viz {
 	
       logger.msg(kLogInfo1, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(actualDimensionId).c_str());
 
-      listGeoJSON.push_back( entity->toGeoJSON(actualDimensionId) );
+      std::string geojson = entity->toGeoJSON(actualDimensionId);
+      if ( geojson.length() > 0 ) {
+	listGeoJSON.push_back( geojson );
+      }
 
       entityList.push_back( std::move(entity) );
     }
@@ -1637,6 +1757,32 @@ namespace mcpe_viz {
 	  // todo - anything interesting?
 	  // todo - 'OutputSignal'
 	}
+	else if ( tileEntity->id == "PistonArm" ) {
+	  // todo - new for 0.15
+	  // todo - anything interesting?
+	  /*
+	    0x31-te: NBT Decode Start
+	    0x31-te: [] COMPOUND-1 {
+	    0x31-te:   [AttachedBlocks] LIST-1 {
+	    0x31-te:   } LIST-1
+	    0x31-te:   [BreakBlocks] LIST-2 {
+	    0x31-te:   } LIST-2
+	    0x31-te:   [LastProgress] 0.000000 (float)
+	    0x31-te:   [LastRedstoneStrength] 0 0x0 (byte)
+	    0x31-te:   [NewState] 0 0x0 (byte)
+	    0x31-te:   [Progress] 0.000000 (float)
+	    0x31-te:   [State] 0 0x0 (byte)
+	    0x31-te:   [Sticky] 0 0x0 (byte)
+	    0x31-te:   [id] 'PistonArm' (string)
+	    0x31-te:   [needsUpdate] 1 0x1 (byte)
+	    0x31-te:   [x] 138 0x8a (int)
+	    0x31-te:   [y] 4 0x4 (int)
+	    0x31-te:   [z] 3 0x3 (int)
+	    0x31-te: } COMPOUND-1
+	    0x31-te: NBT Decode End (1 tags)
+	  */
+	}
+	
 	else {
 	  logger.msg(kLogInfo1,"WARNING: Unknown tileEntity id=(%s)\n", tileEntity->id.c_str());
 	}

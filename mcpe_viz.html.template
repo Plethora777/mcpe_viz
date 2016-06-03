@@ -84,8 +84,13 @@
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="19">Bat</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="10">Chicken</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="11">Cow</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="24">Donkey</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="23">Horse</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="26">Horse, Skeleton</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="27">Horse, Zombie</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="20">Iron Golem</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="16">Mooshroom</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="25">Mule</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="22">Ocelot</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="12">Pig</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="18">Rabbit</a></li>
@@ -110,10 +115,12 @@
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="40">Cave Spider</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="33">Creeper</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="38">Enderman</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="47">Husk</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="39">Silverfish</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="34">Skeleton</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="37">Slime</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="35">Spider</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="46">Stray</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="45">Witch</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="32">Zombie</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="44">Zombie Villager</a></li>
@@ -178,6 +185,7 @@
 	    <li><a href="#" id="chunkDisplayToggle">Show Chunk Coordinates</a></li>
 	    <li><a href="#" id="showNetherCoordinatesToggle">Show Nether Coordinate Conversion</a></li>
 	    <li><a href="#" id="slimeChunksToggle">Show Slime Chunks</a></li>
+	    <li><a href="#" id="checkPlayerDistanceToggle">Only Show Mobs Within 128 Blocks of Player</a></li>
 
 	    <li role="separator" class="divider"></li>
 

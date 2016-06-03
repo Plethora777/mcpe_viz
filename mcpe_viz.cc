@@ -11,6 +11,10 @@
 
   todohere
 
+  * tool to show differences between worlds (v1 vs v2 etc)
+  -- layer by layer?
+  -- geojson?
+
   * add a tool to help convert from overwold to nether coordinates
 
   * check minor update to libnbt++ 5/2/2016

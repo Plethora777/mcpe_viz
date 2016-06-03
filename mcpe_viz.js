@@ -123,6 +123,8 @@ var chunkGridFlag = false;
 
 var showNetherCoordinatesFlag = false;
 
+var doCheckPlayerDistanceFlag = false;
+
 // this removes the hideous blurriness when zoomed in
 var setCanvasSmoothingMode = function(evt) {
     evt.context.mozImageSmoothingEnabled = false;
@@ -826,6 +828,18 @@ var featureOverlay = new ol.layer.Vector({
 // given coords in mcpe world, return coords for openlayers
 function mcpeToOpenlayers(tx, ty, adjustToCenterFlag) {
     var px = tx - dimensionInfo[globalDimensionId].globalOffsetX;
+    var py = (dimensionInfo[globalDimensionId].worldHeight - 1 - ty) + dimensionInfo[globalDimensionId].globalOffsetY;
+    if ( adjustToCenterFlag ) {
+	px += 0.5;
+	py += 0.5;
+    }
+    return [ px, py ];
+}
+
+// given coords in openlayers, return coords for mcpe world
+function openlayersToMcpe(tx, ty, adjustToCenterFlag) {
+    var px = tx + dimensionInfo[globalDimensionId].globalOffsetX;
+    // todo - is this correct?
     var py = (dimensionInfo[globalDimensionId].worldHeight - 1 - ty) + dimensionInfo[globalDimensionId].globalOffsetY;
     if ( adjustToCenterFlag ) {
 	px += 0.5;
@@ -1686,9 +1700,6 @@ function makeChunkGrid(inputs, data) {
     // todo - so fiddly.  it's still off a bit (not 100% locked to src pixels)
     
     var truncate = function(value) {
-	if (value < 0) {
-	    return Math.ceil(value);
-	}
 	return Math.floor(value);
     };
     
@@ -2210,6 +2221,22 @@ function setDimensionById(id) {
 }
 
 
+function checkPlayerDistance(feature) {
+    if ( ! doCheckPlayerDistanceFlag ) { return true; }
+
+    var playerpos = openlayersToMcpe(dimensionInfo[globalDimensionId].playerPosX,
+				     dimensionInfo[globalDimensionId].playerPosY,
+				     false);
+    var featurepos = feature.get('Pos');
+    var dx = playerpos[0] - featurepos[0];
+    var dy = playerpos[1] - featurepos[2];
+    var dist = Math.sqrt( (dx * dx) + (dy * dy) );
+    if ( dist <= 128.0 ) {
+	return true;
+    }
+    return false;
+}
+
 var createPointStyleFunction = function() {
     return function(feature, resolution) {
 	var style;
@@ -2231,7 +2258,7 @@ var createPointStyleFunction = function() {
 	    if (dimId === globalDimensionId) {
 		var id = +feature.get('id');
 		if (listEntityToggle[id] !== undefined) {
-		    if (listEntityToggle[id]) { 
+		    if (listEntityToggle[id] && checkPlayerDistance(feature)) { 
 			style = new ol.style.Style({
 			    image: new ol.style.Circle({
 				radius: 4,
@@ -3028,10 +3055,20 @@ $(function() {
     });
 
     $('#showNetherCoordinatesToggle').click(function() {
+	if ($(this).parent().hasClass('active')) {
+	    $(this).parent().removeClass('active');
+	} else {
+	    $(this).parent().addClass('active');
+	}
 	showNetherCoordinatesFlag = !showNetherCoordinatesFlag;
     });
     
     $('#chunkDisplayToggle').click(function() {
+	if ($(this).parent().hasClass('active')) {
+	    $(this).parent().removeClass('active');
+	} else {
+	    $(this).parent().addClass('active');
+	}
 	showChunkCoordinatesFlag = !showChunkCoordinatesFlag;
     });
 
@@ -3042,6 +3079,18 @@ $(function() {
 	} else {
 	    $('#slimeChunksToggle').parent().addClass('active');
 	    doSlimeChunks(true);
+	}
+    });
+
+    $('#checkPlayerDistanceToggle').click(function() {
+	if ($(this).parent().hasClass('active')) {
+	    $(this).parent().removeClass('active');
+	} else {
+	    $(this).parent().addClass('active');
+	}
+	doCheckPlayerDistanceFlag = !doCheckPlayerDistanceFlag;
+	if ( vectorPoints ) {
+	    vectorPoints.changed();
 	}
     });
     
@@ -3176,6 +3225,7 @@ $(function() {
 	else if ( key === 'N' ) {
 	    $('#showNetherCoordinatesToggle').click();
 	}
+	// todobig -- more keyboard toggles/controls here
     });
 
     // fix map size

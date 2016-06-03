@@ -4,7 +4,14 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Display details of villages; More coordinate view options
+Highlight: Added new blocks, items and mobs for MCPE v0.15 beta
+
+v0.0.22 - 2016.06.03
+Added new blocks, items and mobs for MCPE v0.15 beta
+Web - Added option to hide mobs more than 128 blocks from player
+Web - Fixed inconsistency in chunk grid display near the zero crossings for X and Z
+Fixed issue with outputing entities with invalid positions (NaN)
+XML - Fixed issue with Quartz block variants
 
 v0.0.21 - 2016.05.15
 Parse villages (mVillages) NBT data and put them in geojson

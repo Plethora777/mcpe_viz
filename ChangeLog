@@ -4,7 +4,14 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added new blocks, items and mobs for MCPE v0.15 beta
+Highlight: Added proper slime chunk finding (algorithm credit: MCPE slime-chunk checker; reverse engineered by @protolambda and @jocopa3)
+
+v0.0.23 - 2016.06.23
+Added proper slime chunk finding (algorithm credit: MCPE slime-chunk checker; reverse engineered by @protolambda and @jocopa3)
+Web - Added colored labels for passive / hostile mobs
+Added very preliminary support for extracting schematics from world files (see --schematic-get)
+Pass more block/item information along to javascript
+XML - added entity type attribute (etype)
 
 v0.0.22 - 2016.06.03
 Added new blocks, items and mobs for MCPE v0.15 beta

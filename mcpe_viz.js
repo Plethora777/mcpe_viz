@@ -1007,6 +1007,7 @@ function doFeaturePopover(features, id, coordinate) {
 	    i !== 'player' &&
 	    i !== 'Name' &&
 	    i !== 'id' &&
+	    i !== 'etype' &&
 	    i !== 'Dimension'
 	   ) {
 	    if (typeof(props[i]) === 'object') {
@@ -1274,7 +1275,7 @@ var getText = function(feature, resolution) {
     return text;
 };
 
-var createTextStyle = function(feature, resolution) {
+var createTextStyle = function(feature, resolution, textColor) {
     var align = 'left';
     var baseline = 'bottom';
     var size = '14pt';
@@ -1293,7 +1294,7 @@ var createTextStyle = function(feature, resolution) {
     }
     
     var font = weight + ' ' + size + ' Calibri,sans-serif';
-    var fillColor = '#ffffff';
+    var fillColor = textColor;
     var outlineColor = '#000000';
     var outlineWidth = 3;
 
@@ -1303,7 +1304,7 @@ var createTextStyle = function(feature, resolution) {
 	textAlign: align,
 	textBaseline: baseline,
 	font: font,
-	color: '#ffffff',
+	color: textColor,
 	text: txt,
 	fill: new ol.style.Fill({color: fillColor}),
 	stroke: new ol.style.Stroke({color: outlineColor, width: outlineWidth}),
@@ -1788,8 +1789,8 @@ function doChunkGrid(enableFlag) {
 function doSlimeChunks(enabled) {
     if ( enabled ) {
 	if ( !globalWarnSlimeChunks ) {
-	    doModal('Slime Chunks',
-		    '<i>Warning:</i> MCPE Viz uses the Minecraft PC (MCPC) slime chunk calculation.  It is not clear if MCPE uses the same calculation method...');
+	    // doModal('Slime Chunks',
+	    //'<i>Warning:</i> MCPE Viz uses the Minecraft PC (MCPC) slime chunk calculation.  It is not clear if MCPE uses the same calculation method...');
 	    globalWarnSlimeChunks = true;
 	}
 	var fn = dimensionInfo[globalDimensionId].fnLayerSlimeChunks;
@@ -1944,10 +1945,14 @@ function setLayer(fn, extraHelp) {
 		    var cval = (pixelData[0] << 16) | (pixelData[1] << 8) | pixelData[2];
 		    if (globalLayerMode === 0 && globalLayerId === 1) {
 			pre = 'Biome';
-			pixelDataName = biomeColorLUT['' + cval];
+			if ( biomeColorLUT['' + cval] !== undefined ) {
+			    pixelDataName = biomeColorLUT['' + cval].name;
+			}
 		    } else {
 			pre = 'Block';
-			pixelDataName = blockColorLUT['' + cval];
+			if ( blockColorLUT['' + cval] !== undefined ) {
+			    pixelDataName = blockColorLUT['' + cval].name;
+			}
 		    }
 		    if (pixelDataName === undefined || pixelDataName === '') {
 			if (pixelData[0] === 0 && pixelData[1] === 0 && pixelData[2] === 0) {
@@ -2237,6 +2242,20 @@ function checkPlayerDistance(feature) {
     return false;
 }
 
+
+// color feature labels according to entity type (etype)
+function etypeToTextColor(feature) {
+    var etype = feature.get('etype');
+    if ( etype === 'H' ) {
+	return '#ffc0c0';
+    }
+    if ( etype === 'P' ) {
+	return '#a0ffa0';
+    }
+    return '#ffffff';
+}
+
+
 var createPointStyleFunction = function() {
     return function(feature, resolution) {
 	var style;
@@ -2246,7 +2265,8 @@ var createPointStyleFunction = function() {
 	// todobig - instead of a prop for 'spawnable' just check the name prop? (save big on geojson filesize)
 	var spawnable = feature.get('Spawnable');
 	var dimId = feature.get('Dimension');
-
+	var textColor = '#ffffff';
+	
 	// hack for pre-0.12 worlds
 	if (dimId === undefined) {
 	    dimId = 0;
@@ -2258,14 +2278,15 @@ var createPointStyleFunction = function() {
 	    if (dimId === globalDimensionId) {
 		var id = +feature.get('id');
 		if (listEntityToggle[id] !== undefined) {
-		    if (listEntityToggle[id] && checkPlayerDistance(feature)) { 
+		    if (listEntityToggle[id] && checkPlayerDistance(feature)) {
+			textColor = etypeToTextColor(feature);
 			style = new ol.style.Style({
 			    image: new ol.style.Circle({
 				radius: 4,
 				fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 1.0)'}),
 				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 1.0)', width: 2})
 			    }),
-			    text: createTextStyle(feature, resolution)
+			    text: createTextStyle(feature, resolution, textColor)
 			});
 			return [style];
 		    }
@@ -2283,7 +2304,7 @@ var createPointStyleFunction = function() {
 				fill: new ol.style.Fill({color: 'rgba(255, 255, 255, 1.0)'}),
 				stroke: new ol.style.Stroke({color: 'rgba(0, 0, 0, 1.0)', width: 2})
 			    }),
-			    text: createTextStyle(feature, resolution)
+			    text: createTextStyle(feature, resolution, textColor)
 			});
 			return [style];
 		    }

@@ -8,6 +8,7 @@
 */
 
 #include <stdio.h>
+#include <fstream>
 #include <algorithm>
 #include "mcpe_viz.util.h"
 #include "mcpe_viz.h"
@@ -814,6 +815,8 @@ namespace mcpe_viz {
       if ( has_key(entityInfoList, id) ) {
 	sprintf(tmpstring,"\"Name\":\"%s\"", entityInfoList[id]->name.c_str());
 	list.push_back(std::string(tmpstring));
+	sprintf(tmpstring,"\"etype\":\"%s\"", entityInfoList[id]->etype.c_str());
+	list.push_back(std::string(tmpstring));
       } else {
 	sprintf(tmpstring,"\"Name\":\"*UNKNOWN: id=%d 0x%x\"", id,id);
 	list.push_back(std::string(tmpstring));
@@ -1276,8 +1279,8 @@ namespace mcpe_viz {
 
     
   int32_t parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
-		      bool playerLocalFlag, bool playerRemoteFlag,
-		      const std::string &playerType, const std::string &playerId) {
+			  bool playerLocalFlag, bool playerRemoteFlag,
+			  const std::string &playerType, const std::string &playerId) {
     ParsedEntityList entityList;
     entityList.clear();
 
@@ -2222,8 +2225,10 @@ namespace mcpe_viz {
 	    s += ",";
 	  }
 	}
-	sprintf(tmpstring, "\"Doors\":[%s]", s.c_str());
-	list.push_back(std::string(tmpstring));
+	//sprintf(tmpstring, "\"Doors\":[%s]", s.c_str());
+	//list.push_back(std::string(tmpstring));
+	std::string sout = "\"Doors\":[" + s + "]";
+	list.push_back(sout);
       } else {
 	sprintf(tmpstring, "\"Doors\":[]");
 	list.push_back(std::string(tmpstring));
@@ -2348,6 +2353,56 @@ namespace mcpe_viz {
       }
     }
       
+    return 0;
+  }
+
+
+  int32_t writeSchematicFile(const std::string& fn, int32_t sizex, int32_t sizey, int32_t sizez,
+			     nbt::tag_byte_array& blockArray, nbt::tag_byte_array& blockDataArray) {
+
+    std::ofstream os(fn, std::ofstream::out);
+    // todozzz - error checking here (chmod?)
+
+    nbt::io::stream_writer writer(os);
+    // todozzz - zlib?
+
+    // create schematic file nbt tag and populate it
+    nbt::tag_compound tag;
+    tag.emplace<nbt::tag_short>("Width", sizex);
+    tag.emplace<nbt::tag_short>("Height", sizey);
+    tag.emplace<nbt::tag_short>("Length", sizez);
+    tag.emplace<nbt::tag_string>("Materials", "Alpha");
+    tag.emplace<nbt::tag_byte_array>("Blocks", blockArray);
+    tag.emplace<nbt::tag_byte_array>("Data", blockDataArray);
+    // todozzz - entity list
+    //tag.emplace<nbt::tag_list>("Entities", NULL);
+    // todozzz - tileentity list
+    //tag.emplace<nbt::tag_list>("TileEntities", NULL);
+
+    // write the nbt file
+    writer.write_tag("Schematic",tag);
+
+    os.close();
+    
+    /*
+      schematic file format
+      from: http://minecraft.gamepedia.com/Schematic_file_formathttp://minecraft.gamepedia.com/Schematic_file_format
+	
+      COMPOUND Schematic: Schematic data.
+      SHORT Width: Size along the X axis.
+      SHORT Height: Size along the Y axis.
+      SHORT Length: Size along the Z axis.
+      STRING Materials: This will be "Classic" for schematics exported from Minecraft Classic levels, and "Alpha" for those from Minecraft Alpha and newer levels.
+      BYTE_ARRAY Blocks: Block IDs defining the terrain. 8 bits per block. Sorted by height (bottom to top) then length then width -- the index of the block at X,Y,Z is (Y*length + Z)*width + X.
+      BYTE_ARRAY Data: Block data additionally defining parts of the terrain. Only the lower 4 bits of each byte are used. (Unlike in the chunk format, the block data in the schematic format occupies a full byte per block.)
+      LIST Entities: List of Compound tags.
+      -- COMPOUND A single entity in the schematic.
+      -- See the Chunk Format -> Entity Format.
+      LIST TileEntities: List of Compound tags.
+      -- COMPOUND A single tile entity in the schematic.
+      -- See Chunk Format -> Tile Entity Format.
+    */
+    
     return 0;
   }
   

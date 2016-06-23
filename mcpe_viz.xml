@@ -1015,42 +1015,43 @@
       entitylist: mcpe entities
       id - mcpe entity id (hex)
       name - name of entity
+      etype - entity type (P=Peaceful; H=Hostile; O=Object)
   -->
   <entitylist>
-    <entity id="0x0A" name="Chicken" />
-    <entity id="0x0B" name="Cow" />
-    <entity id="0x0C" name="Pig" />
-    <entity id="0x0D" name="Sheep" />
-    <entity id="0x0E" name="Wolf" />
-    <entity id="0x0F" name="Villager" />
-    <entity id="0x10" name="Mooshroom" />
-    <entity id="0x11" name="Squid" />
-    <entity id="0x12" name="Rabbit" />  <!-- 0.13 todo correct? -->
-    <entity id="0x13" name="Bat" />
-    <entity id="0x14" name="Iron Golem" />
-    <entity id="0x15" name="Snow Golem" />
-    <entity id="0x16" name="Ocelot" />
-    <entity id="0x17" name="Horse" /> <!-- 0.15 -->
-    <entity id="0x18" name="Donkey" /> <!-- 0.15 -->
-    <entity id="0x19" name="Mule" /> <!-- 0.15 -->
-    <entity id="0x1a" name="Horse, Skeleton" /> <!-- 0.15 -->
-    <entity id="0x1b" name="Horse, Zombie" /> <!-- 0.15 -->
-    <entity id="0x20" name="Zombie" />
-    <entity id="0x21" name="Creeper" />
-    <entity id="0x22" name="Skeleton" />
-    <entity id="0x23" name="Spider" />
-    <entity id="0x24" name="Zombie Pigman" />
-    <entity id="0x25" name="Slime" />
-    <entity id="0x26" name="Enderman" />
-    <entity id="0x27" name="Silverfish" />
-    <entity id="0x28" name="Cave Spider" />
-    <entity id="0x29" name="Ghast" />
-    <entity id="0x2A" name="Magma Cube" />
-    <entity id="0x2B" name="Blaze" />
-    <entity id="0x2C" name="Zombie Villager" />
-    <entity id="0x2D" name="Witch" />
-    <entity id="0x2E" name="Stray" /> <!-- 0.15 -->
-    <entity id="0x2F" name="Husk" /> <!-- 0.15 -->
+    <entity id="0x0A" name="Chicken" etype="P" />
+    <entity id="0x0B" name="Cow" etype="P" />
+    <entity id="0x0C" name="Pig" etype="P" />
+    <entity id="0x0D" name="Sheep" etype="P" />
+    <entity id="0x0E" name="Wolf" etype="P" />
+    <entity id="0x0F" name="Villager" etype="P" />
+    <entity id="0x10" name="Mooshroom" etype="P" />
+    <entity id="0x11" name="Squid" etype="P" />
+    <entity id="0x12" name="Rabbit" etype="P" />  <!-- 0.13 todo correct? -->
+    <entity id="0x13" name="Bat" etype="P" />
+    <entity id="0x14" name="Iron Golem" etype="P" />
+    <entity id="0x15" name="Snow Golem" etype="P" />
+    <entity id="0x16" name="Ocelot" etype="P" />
+    <entity id="0x17" name="Horse" etype="P" /> <!-- 0.15 -->
+    <entity id="0x18" name="Donkey" etype="P" /> <!-- 0.15 -->
+    <entity id="0x19" name="Mule" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1a" name="Horse, Skeleton" etype="H" /> <!-- 0.15 -->
+    <entity id="0x1b" name="Horse, Zombie" etype="H" /> <!-- 0.15 -->
+    <entity id="0x20" name="Zombie" etype="H" />
+    <entity id="0x21" name="Creeper" etype="H" />
+    <entity id="0x22" name="Skeleton" etype="H" />
+    <entity id="0x23" name="Spider" etype="H" />
+    <entity id="0x24" name="Zombie Pigman" etype="H" />
+    <entity id="0x25" name="Slime" etype="H" />
+    <entity id="0x26" name="Enderman" etype="H" />
+    <entity id="0x27" name="Silverfish" etype="H" />
+    <entity id="0x28" name="Cave Spider" etype="H" />
+    <entity id="0x29" name="Ghast" etype="H" />
+    <entity id="0x2A" name="Magma Cube" etype="H" />
+    <entity id="0x2B" name="Blaze" etype="H" />
+    <entity id="0x2C" name="Zombie Villager" etype="H" />
+    <entity id="0x2D" name="Witch" etype="H" />
+    <entity id="0x2E" name="Stray" etype="H" /> <!-- 0.15 -->
+    <entity id="0x2F" name="Husk" etype="H" /> <!-- 0.15 -->
     <entity id="0x3F" name="The Player" />
     <entity id="0x40" name="Dropped item" />
     <entity id="0x41" name="Primed TNT" />

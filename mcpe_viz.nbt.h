@@ -42,7 +42,10 @@ namespace mcpe_viz {
   int32_t parseNbt_portals(MyNbtTagList &tagList);
 
   int32_t parseNbt_mVillages(MyNbtTagList &tagList);
-    
+
+  int32_t writeSchematicFile(const std::string& fn, int32_t sizex, int32_t sizey, int32_t sizez,
+			     nbt::tag_byte_array& blockArray, nbt::tag_byte_array& blockDataArray);
+  
 } // namespace mcpe_viz
 
 #endif // __MCPE_VIZ_NBT_H__

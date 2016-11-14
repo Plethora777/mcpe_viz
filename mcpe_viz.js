@@ -1706,7 +1706,7 @@ function makeChunkGrid(inputs, data) {
     
     var cy = data.extent[3];
     for (var pixelY = 0; pixelY < height; ++pixelY, cy -= dy) {
-	var icy = truncate(((data.worldHeight - 1) - cy) + data.globalOffsetY);
+	var icy = truncate((data.worldHeight - cy) + data.globalOffsetY);
 	var chunkY = (icy / 16) | 0;
 	var cx = data.extent[0];
 	for (var pixelX = 0; pixelX < width; ++pixelX, cx += dx) {

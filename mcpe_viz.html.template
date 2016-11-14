@@ -93,6 +93,7 @@
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="25">Mule</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="22">Ocelot</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="12">Pig</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="28">Polar Bear</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="18">Rabbit</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="13">Sheep</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="21">Snow Golem</a></li>
@@ -115,13 +116,18 @@
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="40">Cave Spider</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="33">Creeper</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="38">Enderman</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="49">Guardian</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="50">Guardian, Elder</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="47">Husk</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="51">NPC</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="39">Silverfish</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="34">Skeleton</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="48">Skeleton, Wither</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="37">Slime</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="35">Spider</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="46">Stray</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="45">Witch</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="52">Wither</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="32">Zombie</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="44">Zombie Villager</a></li>
 	    <li role="separator" class="divider"></li>
@@ -129,6 +135,10 @@
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="41">Ghast</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="42">Magma Cube</a></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="36">Zombie Pigman</a></li>
+	    <li role="separator" class="divider"></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="53">Ender Dragon</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="55">Endermite</a></li>
+	    <li><a href="#" class="entityToggle" data-type="H" data-id="54">Shulker</a></li>
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="entityToggle" data-type="H" data-id="63">Player</a></li>
 	    <li role="separator" class="divider"></li>

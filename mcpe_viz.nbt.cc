@@ -662,7 +662,8 @@ namespace mcpe_viz {
     Point3d<int> spawn;
     Point3d<double> pos;
     Point2d<double> rotation;
-    int32_t id;
+    int32_t idShort;
+    int32_t idFull;
     int32_t tileId;
     int32_t dimensionId;
     bool playerLocalFlag;
@@ -685,7 +686,8 @@ namespace mcpe_viz {
       spawn.clear();
       pos.clear();
       rotation.clear();
-      id = 0;
+      idShort = 0;
+      idFull = 0;
       tileId = -1;
       dimensionId = -1;
       playerLocalFlag = false;
@@ -812,19 +814,22 @@ namespace mcpe_viz {
       worldPointToGeoJSONPoint(forceDimensionId, pos.x,pos.z, ix,iy);
       s += makeGeojsonHeader(ix,iy);
 
-      if ( has_key(entityInfoList, id) ) {
-	sprintf(tmpstring,"\"Name\":\"%s\"", entityInfoList[id]->name.c_str());
+      if ( has_key(entityInfoList, idShort) ) {
+	sprintf(tmpstring,"\"Name\":\"%s\"", entityInfoList[idShort]->name.c_str());
 	list.push_back(std::string(tmpstring));
-	sprintf(tmpstring,"\"etype\":\"%s\"", entityInfoList[id]->etype.c_str());
+	sprintf(tmpstring,"\"etype\":\"%s\"", entityInfoList[idShort]->etype.c_str());
 	list.push_back(std::string(tmpstring));
       } else {
-	sprintf(tmpstring,"\"Name\":\"*UNKNOWN: id=%d 0x%x\"", id,id);
+	sprintf(tmpstring,"\"Name\":\"*UNKNOWN: id=%d 0x%x\"", idShort,idShort);
 	list.push_back(std::string(tmpstring));
       }
 
-      sprintf(tmpstring,"\"id\":\"%d\"", id);
+      sprintf(tmpstring,"\"id\":\"%d\"", idShort);
       list.push_back(std::string(tmpstring));
-	
+
+      sprintf(tmpstring,"\"idFull\":\"%d\"", idFull);
+      list.push_back(std::string(tmpstring));
+
       // todo - needed?
       if ( playerLocalFlag || playerRemoteFlag ) {
 	list.push_back(std::string("\"player\":\"true\""));
@@ -959,10 +964,10 @@ namespace mcpe_viz {
 	s += "Mob";
       }
 
-      if ( has_key(entityInfoList, id) ) {
-	s += " Name=" + entityInfoList[id]->name;
+      if ( has_key(entityInfoList, idShort) ) {
+	s += " Name=" + entityInfoList[idShort]->name;
       } else {
-	sprintf(tmpstring," Name=(UNKNOWN: id=%d 0x%x)",id,id);
+	sprintf(tmpstring," Name=(UNKNOWN: id=%d 0x%x)",idShort,idShort);
 	s += tmpstring;
       }
 
@@ -1383,7 +1388,10 @@ namespace mcpe_viz {
       }
       
       if ( tc.has_key("id", nbt::tag_type::Int) ) {
-	entity->id = tc["id"].as<nbt::tag_int>().get();
+	// in v0.16 entity id's went weird -- adding extra digits above 0xff -- could be flags of some sort?
+	// todonow - let's figure out what these are - keep a list a print a summary at end
+	entity->idFull = tc["id"].as<nbt::tag_int>().get();
+	entity->idShort = entity->idFull & 0xFF;
       }
 
       // todo - diff entities have other fields:

@@ -4,7 +4,16 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added proper slime chunk finding (algorithm credit: MCPE slime-chunk checker; reverse engineered by @protolambda and @jocopa3)
+Highlight: Added new blocks, items and mobs for MCPE v0.16 and v0.17 beta -- special thanks to @Jocopa3 for his block/item/entity list
+
+v0.0.24 - 2016.11.14
+Added new blocks, items and mobs for MCPE v0.16 and v0.17 beta -- special thanks to @Jocopa3 for his block/item/entity list
+Work around new oddness with entity id's (appear to be flags in the upper bytes of entity id's)
+XML - Partially sync'ed our list with Jocopa3's
+XML - Cleaned up a bit
+Web - Fixed "off-by-one" in chunk grid display on the z-axis
+Web - Updated to OpenLayers 3.19.1
+Web - Updated to Bootstrap 3.3.7
 
 v0.0.23 - 2016.06.23
 Added proper slime chunk finding (algorithm credit: MCPE slime-chunk checker; reverse engineered by @protolambda and @jocopa3)

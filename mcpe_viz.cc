@@ -11,6 +11,13 @@
 
   todohere
 
+  * check 0.17 re 256 build height handling
+
+  * as of 0.16 entity id's have extra data in the high bytes -- collect these and see if we can figure out what they are -- see mcpe.nbt.cc
+  
+  * update inventory images for 0.16 and 0.17
+
+
   * web - tool to extract schematics for a 3d cube of space -- produce a layer-by-layer depiction of the blocks in the cube
   -- see: http://minecraft.gamepedia.com/Schematic_file_format  (NBT file format for schematics)
   -- https://irath96.github.io/webNBT/ = web nbt viewer/editor

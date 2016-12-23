@@ -9,9 +9,9 @@
 
   To build it, use cmake
 
-  todohere
 
-  * check 0.17 re 256 build height handling
+
+  todohere
 
   * as of 0.16 entity id's have extra data in the high bytes -- collect these and see if we can figure out what they are -- see mcpe.nbt.cc
   
@@ -212,10 +212,13 @@
 
 
 namespace mcpe_viz {
-  // todobig - removed anonymous namespace here
+  // todo - removed anonymous namespace here
 
   // maximum build height -- as of MCPE 0.13 it is 127
-  const int32_t MAX_BLOCK_HEIGHT = 127;
+  const int32_t MAX_BLOCK_HEIGHT_127 = 127;
+  const int32_t MAX_BLOCK_HEIGHT = 255;
+
+  const int32_t MAX_CUBIC_Y = (MAX_BLOCK_HEIGHT + 1) / 16;
   
   std::string dirExec;
 
@@ -252,28 +255,28 @@ namespace mcpe_viz {
 
   enum OutputType : int32_t {
     kDoOutputNone = -2,
-      kDoOutputAll = -1
-      };
+    kDoOutputAll = -1
+  };
 
   enum HeightMode : int32_t {
     kHeightModeTop = 0,
-      kHeightModeLevelDB = 1
-      };
+    kHeightModeLevelDB = 1
+  };
 
   // output image types
   enum ImageModeType : int32_t {
     kImageModeTerrain = 0,
-      kImageModeBiome = 1,
-      kImageModeGrass = 2,
-      kImageModeHeightCol = 3,
-      kImageModeHeightColGrayscale = 4,
-      kImageModeBlockLight = 5,
-      kImageModeSkyLight = 6,
-      kImageModeSlimeChunksMCPC = 7,
-      kImageModeHeightColAlpha = 8,
-      kImageModeShadedRelief = 9,
-      kImageModeSlimeChunksMCPE = 10
-      };
+    kImageModeBiome = 1,
+    kImageModeGrass = 2,
+    kImageModeHeightCol = 3,
+    kImageModeHeightColGrayscale = 4,
+    kImageModeBlockLight = 5,
+    kImageModeSkyLight = 6,
+    kImageModeSlimeChunksMCPC = 7,
+    kImageModeHeightColAlpha = 8,
+    kImageModeShadedRelief = 9,
+    kImageModeSlimeChunksMCPE = 10
+  };
 
 
     
@@ -341,6 +344,8 @@ namespace mcpe_viz {
     int32_t leveldbFilter = 10;
     // this is the block_size used by leveldb
     int32_t leveldbBlockSize = 4096;
+
+    bool warnedSpawnableFlag;
     
     Control() {
       init();
@@ -401,7 +406,9 @@ namespace mcpe_viz {
 
       // todo - cmdline option for this?
       heightMode = kHeightModeTop;
-	
+
+      warnedSpawnableFlag = false;
+      
       for (int32_t did=0; did < kDimIdCount; did++) {
 	fnLayerTop[did] = "";
 	fnLayerBiome[did] = "";
@@ -481,22 +488,22 @@ namespace mcpe_viz {
   // todolib - these funcs should be in a class?
   
   // calculate an offset into mcpe chunk data for block data
-  inline int32_t _calcOffsetBlock_LevelDB(int32_t x, int32_t z, int32_t y) {
-    return (((x*16) + z)*(MAX_BLOCK_HEIGHT+1)) + y;
+  inline int32_t _calcOffsetBlock_LevelDB_v2(int32_t x, int32_t z, int32_t y) {
+    return (((x*16) + z)*(MAX_BLOCK_HEIGHT_127+1)) + y;
   }
 
   // calculate an offset into mcpe chunk data for column data
-  inline int32_t _calcOffsetColumn_LevelDB(int32_t x, int32_t z) {
+  inline int32_t _calcOffsetColumn_LevelDB_v2(int32_t x, int32_t z) {
     // NOTE! this is the OPPOSITE of block data (oy)
     return (z*16) + x;
   }
 
-  inline uint8_t getBlockId_LevelDB(const char* p, int32_t x, int32_t z, int32_t y) {
-    return (p[_calcOffsetBlock_LevelDB(x,z,y)] & 0xff);
+  inline uint8_t getBlockId_LevelDB_v2(const char* p, int32_t x, int32_t z, int32_t y) {
+    return (p[_calcOffsetBlock_LevelDB_v2(x,z,y)] & 0xff);
   }
 
-  uint8_t getBlockData_LevelDB(const char* p, int32_t x, int32_t z, int32_t y) {
-    int32_t off =  _calcOffsetBlock_LevelDB(x,z,y);
+  uint8_t getBlockData_LevelDB_v2(const char* p, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v2(x,z,y);
     int32_t off2 = off / 2;
     int32_t mod2 = off % 2;
     int32_t v = p[32768 + off2];
@@ -508,8 +515,8 @@ namespace mcpe_viz {
   }
 
   // a block opacity value? (e.g. glass is 0xf, water is semi (0xc) and an opaque block is 0x0)
-  uint8_t getBlockSkyLight_LevelDB(const char* p, int32_t x, int32_t z, int32_t y) {
-    int32_t off =  _calcOffsetBlock_LevelDB(x,z,y);
+  uint8_t getBlockSkyLight_LevelDB_v2(const char* p, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v2(x,z,y);
     int32_t off2 = off / 2;
     int32_t mod2 = off % 2;
     int32_t v = p[32768 + 16384 + off2];
@@ -521,8 +528,8 @@ namespace mcpe_viz {
   }
 
   // block light is light value from torches et al -- super cool looking as an image, but it looks like block light is probably stored in air blocks which are above top block
-  uint8_t getBlockBlockLight_LevelDB(const char* p, int32_t x, int32_t z, int32_t y) {
-    int32_t off =  _calcOffsetBlock_LevelDB(x,z,y);
+  uint8_t getBlockBlockLight_LevelDB_v2(const char* p, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v2(x,z,y);
     int32_t off2 = off / 2;
     int32_t mod2 = off % 2;
     int32_t v = p[32768 + 16384 + 16384 + off2];
@@ -534,21 +541,111 @@ namespace mcpe_viz {
   }
 
   // height of top *solid* block? (e.g. a glass block will NOT be the top block here)
-  uint8_t getColData_Height_LevelDB(const char *buf, int32_t x, int32_t z) {
-    int32_t off = _calcOffsetColumn_LevelDB(x,z);
+  uint8_t getColData_Height_LevelDB_v2(const char *buf, int32_t x, int32_t z) {
+    int32_t off = _calcOffsetColumn_LevelDB_v2(x,z);
     int8_t v = buf[32768 + 16384 + 16384 + 16384 + off];
     return v;
   }
 
   // this is 4-bytes: lsb is biome, the high 3-bytes are RGB grass color
-  uint32_t getColData_GrassAndBiome_LevelDB(const char *buf, int32_t x, int32_t z) {
-    int32_t off = _calcOffsetColumn_LevelDB(x,z) * 4;
+  uint32_t getColData_GrassAndBiome_LevelDB_v2(const char *buf, int32_t x, int32_t z) {
+    int32_t off = _calcOffsetColumn_LevelDB_v2(x,z) * 4;
     int32_t v;
     memcpy(&v,&buf[32768 + 16384 + 16384 + 16384 + 256 + off],4);
     return v;
   }
+
+
+
+
+
+
+  // calculate an offset into mcpe chunk data for block data
+  inline int32_t _calcOffsetBlock_LevelDB_v3(int32_t x, int32_t z, int32_t y) {
+    return (((x*16) + z) * 16) + y;
+  }
+  
+  inline uint8_t getBlockId_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+    return (p[_calcOffsetBlock_LevelDB_v3(x,z,y)+1] & 0xff);
+  }
+  
+  uint8_t getBlockData_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
+    int32_t off2 = off / 2;
+    int32_t mod2 = off % 2;
+    int32_t v = p[(16*16*16) + 1 + off2];
+    if ( mod2 == 0 ) {
+      return v & 0x0f;
+    } else {
+      return (v & 0xf0) >> 4;
+    }
+  }
+
+  // a block opacity value? (e.g. glass is 0xf, water is semi (0xc) and an opaque block is 0x0)
+  uint8_t getBlockSkyLight_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
+    int32_t off2 = off / 2;
+    int32_t mod2 = off % 2;
+    int32_t v = p[(16*16*16) + 1 + (16*16*8) + off2];
+    if ( mod2 == 0 ) {
+      return v & 0x0f;
+    } else {
+      return (v & 0xf0) >> 4;
+    }
+  }
+
+  // block light is light value from torches et al -- super cool looking as an image, but it looks like block light is probably stored in air blocks which are above top block
+  uint8_t getBlockBlockLight_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
+    int32_t off2 = off / 2;
+    int32_t mod2 = off % 2;
+    int32_t v = p[(16*16*16) + 1 + (16*16*8) + (16*16*8) + off2];
+    if ( mod2 == 0 ) {
+      return v & 0x0f;
+    } else {
+      return (v & 0xf0) >> 4;
+    }
+  }
+
+
+
+  // calculate an offset into mcpe chunk data for column data
+  inline int32_t _calcOffsetColumn_LevelDB_v3(int32_t x, int32_t z) {
+    // NOTE! this is the OPPOSITE of block data (oy)
+    return (z*16) + x;
+  }
+
+  // height appears to be stored as a 2-byte int
+  // height of top *solid* block? (e.g. a glass block will NOT be the top block here)
+  uint8_t getColData_Height_LevelDB_v3(const char *buf, int32_t x, int32_t z) {
+    int32_t off = _calcOffsetColumn_LevelDB_v3(x,z) * 2;
+    int8_t v = buf[off];
+    return v;
+  }
+
+  // this is 3-bytes: lsb is biome?, the high 2-bytes are RGB grass color?
+  uint32_t getColData_GrassAndBiome_LevelDB_v3(const char *buf, int32_t buflen, int32_t x, int32_t z) {
+    // format appears to be:
+    // 16x16 of 2-byte ints for HEIGHT OF TOP BLOCK
+    // 16x16 of 4-byte ints for BIOME and GRASS COLOR
+    // todo -- there was a bug in early 0.17 that really messed this data up
+    // tood -- grass colors are pretty weird (some are 01 01 01)
+    // as of, v0.17.01 we'll just roll with it and adjust as necessary
+
+    int32_t off = _calcOffsetColumn_LevelDB_v3(x,z) * 4;
+    int32_t v = 0;
+
+    // HACK! to work around MCPE bug (biome data is not complete in this record as of v0.17.01
+    if ( (512+off+4) <= buflen ) {
+      memcpy(&v,&buf[512 + off],4);
+    } else {
+      // nothing - this is deals with the bug in early 0.17
+    }
     
-    
+    return v;
+  }
+
+  
   // todolib - move to util?
   
   int32_t myParseInt32(const char* p, int32_t startByte) {
@@ -740,12 +837,58 @@ namespace mcpe_viz {
     uint8_t topLight[16][16];
 
     // we parse the block (et al) data in a chunk from leveldb
-    ChunkData_LevelDB(int32_t tchunkX, int32_t tchunkZ, const char* cdata,
-		      int32_t dimensionId, const std::string& dimName,
-		      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
-		      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
-		      const bool* fastBlockToGeoJSON,
-		      const CheckSpawnList& listCheckSpawn) {
+    ChunkData_LevelDB() {
+      // clear the data we track
+      memset(blocks, 0, sizeof(blocks));
+      
+      // todobig - clears are redundant?
+      memset(data, 0, sizeof(data));
+      //memset(grassAndBiome, 0, 16*16*sizeof(uint32_t));
+      memset(topBlockY, 0, sizeof(topBlockY));
+      //memset(heightCol,0, 16*16*sizeof(uint8_t));
+      memset(topLight, 0, sizeof(topLight));
+    }
+
+    /*
+      obsolete_ChunkData_LevelDB(int32_t chunkFormatVersion, int32_t tchunkX, int32_t tchunkY, int32_t tchunkZ, const char* cdata,
+      int32_t dimensionId, const std::string& dimName,
+      Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
+      const bool* fastBlockHideList, const bool* fastBlockForceTopList,
+      const bool* fastBlockToGeoJSON,
+      const CheckSpawnList& listCheckSpawn) {
+
+      switch ( chunkFormatVersion ) {
+      case 2:
+      // pre-v0.17
+      _do_chunk_v2 ( tchunkX, tchunkY, tchunkZ, cdata,
+      dimensionId, dimName,
+      histogramGlobalBlock, histogramGlobalBiome,
+      fastBlockHideList, fastBlockForceTopList,
+      fastBlockToGeoJSON,
+      listCheckSpawn );
+      return;
+      case 3:
+      // 0.17 and after?
+      _do_chunk_v3 ( tchunkX, tchunkY, tchunkZ, cdata,
+      dimensionId, dimName,
+      histogramGlobalBlock, histogramGlobalBiome,
+      fastBlockHideList, fastBlockForceTopList,
+      fastBlockToGeoJSON,
+      listCheckSpawn );
+      return;
+      }
+
+      slogger.msg(kLogError, "Unknown chunk format version (%d).  Cannot add chunk.\n", chunkFormatVersion);
+      return;
+      }
+    */
+    
+    int32_t _do_chunk_v2 ( int32_t tchunkX, int32_t tchunkZ, const char* cdata,
+			   int32_t dimensionId, const std::string& dimName,
+			   Histogram& histogramGlobalBlock, Histogram& histogramGlobalBiome,
+			   const bool* fastBlockHideList, const bool* fastBlockForceTopList,
+			   const bool* fastBlockToGeoJSON,
+			   const CheckSpawnList& listCheckSpawn ) {
       chunkX = tchunkX;
       chunkZ = tchunkZ;
 
@@ -753,16 +896,6 @@ namespace mcpe_viz {
       int16_t histogramBiome[256];
       memset(histogramBlock, 0, sizeof(histogramBlock));
       memset(histogramBiome, 0, sizeof(histogramBiome));
-
-      // clear the data we track
-      memset(blocks, 0, sizeof(blocks));
-
-      // todobig - clears are redundant?
-      memset(data, 0, sizeof(data));
-      //memset(grassAndBiome, 0, 16*16*sizeof(uint32_t));
-      memset(topBlockY, 0, sizeof(topBlockY));
-      //memset(heightCol,0, 16*16*sizeof(uint8_t));
-      memset(topLight, 0, sizeof(topLight));
 
       // see if we need to check any columns in this chunk for spawnable
       bool checkSpawnFlag = false;
@@ -786,10 +919,10 @@ namespace mcpe_viz {
       
       // iterate over chunk space
       uint8_t blockId, biomeId;
-      for (int32_t cy=MAX_BLOCK_HEIGHT; cy >= 0; cy--) {
+      for (int32_t cy=MAX_BLOCK_HEIGHT_127; cy >= 0; cy--) {
 	for ( int32_t cx=0; cx < 16; cx++) {
 	  for ( int32_t cz=0; cz < 16; cz++ ) {
-	    blockId = getBlockId_LevelDB(cdata, cx,cz,cy);
+	    blockId = getBlockId_LevelDB_v2(cdata, cx,cz,cy);
 	    histogramBlock[blockId]++;
 	    histogramGlobalBlock.add(blockId);
 	    
@@ -818,7 +951,7 @@ namespace mcpe_viz {
 	    }
 
 	    // check spawnable -- cannot check spawn at 0 or MAX_BLOCK_HEIGHT because we need above/below blocks
-	    if ( checkSpawnFlag && ( cy > 0 && cy < MAX_BLOCK_HEIGHT ) ) {
+	    if ( checkSpawnFlag && ( cy > 0 && cy < MAX_BLOCK_HEIGHT_127 ) ) {
 	      bool continueCheckSpawnFlag = false;
 	      for ( const auto& it : listCheckSpawn ) {
 		if ( it->contains(wx+cx, wz+cz) ) {
@@ -840,20 +973,20 @@ namespace mcpe_viz {
 
 		  // "the block directly above it must be non-opaque"
 
-		  uint8_t aboveBlockId = getBlockId_LevelDB(cdata, cx,cz,cy+1);
+		  uint8_t aboveBlockId = getBlockId_LevelDB_v2(cdata, cx,cz,cy+1);
 		  if ( ! blockInfoList[aboveBlockId].isOpaque() ) {
 
 		    // "the block directly below it must have a solid top surface (opaque, upside down slabs / stairs and others)"
 		    // "the block directly below it may not be bedrock or barrier" -- take care of with 'spawnable'
 
-		    uint8_t belowBlockId = getBlockId_LevelDB(cdata, cx,cz,cy-1);
-		    uint8_t belowBlockData = getBlockData_LevelDB(cdata, cx,cz,cy-1);
+		    uint8_t belowBlockId = getBlockId_LevelDB_v2(cdata, cx,cz,cy-1);
+		    uint8_t belowBlockData = getBlockData_LevelDB_v2(cdata, cx,cz,cy-1);
 		      
 		    //if ( blockInfoList[belowBlockId].isOpaque() && blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
 		    if ( blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
 
 		      // check the light level
-		      uint8_t bl = getBlockBlockLight_LevelDB(cdata, cx,cz,cy);
+		      uint8_t bl = getBlockBlockLight_LevelDB_v2(cdata, cx,cz,cy);
 		      if ( bl <= 7 ) {
 			// spwawnable! add it to the list
 			double ix, iy;
@@ -892,7 +1025,7 @@ namespace mcpe_viz {
 		   fastBlockForceTopList[blockId] ) {
 		
 		blocks[cx][cz] = blockId;
-		data[cx][cz] = getBlockData_LevelDB(cdata, cx,cz,cy);
+		data[cx][cz] = getBlockData_LevelDB_v2(cdata, cx,cz,cy);
 		topBlockY[cx][cz] = cy;
 		
 #if 1
@@ -902,12 +1035,12 @@ namespace mcpe_viz {
 		if ( blockInfoList[blockId].isSolid() ) {
 		  // move to block above this block
 		  cy2++;
-		  if ( cy2 > MAX_BLOCK_HEIGHT ) { cy2 = MAX_BLOCK_HEIGHT; }
+		  if ( cy2 > MAX_BLOCK_HEIGHT_127 ) { cy2 = MAX_BLOCK_HEIGHT_127; }
 		} else {
 		  // if not solid, don't adjust
 		}
-		uint8_t sl = getBlockSkyLight_LevelDB(cdata, cx,cz,cy2);
-		uint8_t bl = getBlockBlockLight_LevelDB(cdata, cx,cz,cy2);	
+		uint8_t sl = getBlockSkyLight_LevelDB_v2(cdata, cx,cz,cy2);
+		uint8_t bl = getBlockBlockLight_LevelDB_v2(cdata, cx,cz,cy2);	
 		// we combine the light nibbles into a byte
 		topLight[cx][cz] = (sl << 4) | bl;
 #endif
@@ -920,8 +1053,8 @@ namespace mcpe_viz {
       // get per-column data
       for (int32_t cx=0; cx < 16; cx++) {
 	for (int32_t cz=0; cz < 16; cz++) {
-	  heightCol[cx][cz] = getColData_Height_LevelDB(cdata, cx,cz);
-	  grassAndBiome[cx][cz] = getColData_GrassAndBiome_LevelDB(cdata, cx,cz);
+	  heightCol[cx][cz] = getColData_Height_LevelDB_v2(cdata, cx,cz);
+	  grassAndBiome[cx][cz] = getColData_GrassAndBiome_LevelDB_v2(cdata, cx,cz);
 	  
 	  biomeId = (uint8_t)(grassAndBiome[cx][cz] & 0xFF);
 	  histogramBiome[biomeId]++;
@@ -930,16 +1063,16 @@ namespace mcpe_viz {
 #if 0
 	  // todo - testing idea about lighting - get lighting from top solid block - result is part good, part crazy
 	  int32_t ty = heightCol[cx][cz] + 1;
-	  if ( ty > MAX_BLOCK_HEIGHT ) { ty=MAX_BLOCK_HEIGHT; }
-	  uint8_t sl = getBlockSkyLight_LevelDB(cdata, cx,cz,ty);
-	  uint8_t bl = getBlockBlockLight_LevelDB(cdata, cx,cz,ty);
+	  if ( ty > MAX_BLOCK_HEIGHT_127 ) { ty=MAX_BLOCK_HEIGHT_127; }
+	  uint8_t sl = getBlockSkyLight_LevelDB_v2(cdata, cx,cz,ty);
+	  uint8_t bl = getBlockBlockLight_LevelDB_v2(cdata, cx,cz,ty);
 	  topLight[cx][cz] = (sl << 4) | bl;
 #endif
 	}
       }
 
       if ( control.quietFlag ) {
-	return;
+	return 0;
       }
 	
       // print chunk info
@@ -974,7 +1107,275 @@ namespace mcpe_viz {
 	}
 	logger.msg(kLogInfo1,"\n");
       }
+      
+      return 0;
     }
+
+
+    int32_t _do_chunk_v3 ( int32_t tchunkX, int32_t tchunkY, int32_t tchunkZ, const char* cdata,
+			   int32_t dimensionId, const std::string& dimName,
+			   Histogram& histogramGlobalBlock, 
+			   const bool* fastBlockHideList, const bool* fastBlockForceTopList,
+			   const bool* fastBlockToGeoJSON,
+			   const CheckSpawnList& listCheckSpawn ) {
+      chunkX = tchunkX;
+      int32_t chunkY = tchunkY;
+      chunkZ = tchunkZ;
+
+      // todonow todostopper - this is problematic for cubic chunks
+      int16_t histogramBlock[256];
+      int16_t histogramBiome[256];
+      memset(histogramBlock, 0, sizeof(histogramBlock));
+      memset(histogramBiome, 0, sizeof(histogramBiome));
+
+      // see if we need to check any columns in this chunk for spawnable
+      bool checkSpawnFlag = false;
+      int32_t wx = chunkX * 16;
+      int32_t wz = chunkZ * 16;
+      for ( const auto& it : listCheckSpawn ) {
+	if ( it->contains(wx, wz) ) {
+	  checkSpawnFlag = true;
+	  break;
+	} else if ( it->contains(wx, wz+15) ) {
+	  checkSpawnFlag = true;
+	  break;
+	} else if ( it->contains(wx+15, wz+15) ) {
+	  checkSpawnFlag = true;
+	  break;
+	} else if ( it->contains(wx+15, wz) ) {
+	  checkSpawnFlag = true;
+	  break;
+	}
+      }
+      
+      // iterate over chunk space
+      uint8_t blockId, biomeId;
+      for (int32_t cy=0; cy < 16; cy++) {
+	for ( int32_t cx=0; cx < 16; cx++) {
+	  for ( int32_t cz=0; cz < 16; cz++ ) {
+	    blockId = getBlockId_LevelDB_v3(cdata, cx,cz,cy);
+	    histogramBlock[blockId]++;
+	    histogramGlobalBlock.add(blockId);
+	    
+	    // todobig - handle block variant?
+	    if ( fastBlockToGeoJSON[blockId] ) {
+	      double ix, iy;
+	      char tmpstring[512];
+	      worldPointToGeoJSONPoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
+	      sprintf(tmpstring, ""
+		      "\"Name\": \"%s\", "
+		      "\"Block\": true, "
+		      "\"Dimension\": \"%d\", "
+		      "\"Pos\": [%d, %d, %d]"
+		      "} }"
+		      , blockInfoList[blockId].name.c_str()
+		      , dimensionId
+		      , chunkX*16 + cx
+		      , chunkY*16 + cy
+		      , chunkZ*16 + cz
+		      );
+	      std::string json = ""
+		+ makeGeojsonHeader(ix,iy)
+		+ tmpstring
+		;
+	      listGeoJSON.push_back( json );
+	    }
+
+	    // todonow todostopper - this is a problem for cubic chunks, we'd need to construct the entire chunk before doing this
+	    // todobig todostopper - the answer is to check spawnable AFTER we go through all the chunks
+
+	    if ( checkSpawnFlag ) {
+	      if ( ! control.warnedSpawnableFlag ) {
+		slogger.msg(kLogWarning, "spawnable checking for cubic chunks is NOT implemented yet.\n");
+		control.warnedSpawnableFlag=true;
+	      }
+	    }
+	    
+	    if ( false ) {
+	      // check spawnable -- cannot check spawn at 0 or MAX_BLOCK_HEIGHT because we need above/below blocks
+	      if ( checkSpawnFlag && ( cy > 0 && cy < MAX_BLOCK_HEIGHT ) ) {
+		bool continueCheckSpawnFlag = false;
+		for ( const auto& it : listCheckSpawn ) {
+		  if ( it->contains(wx+cx, wz+cz) ) {
+		    continueCheckSpawnFlag = true;
+		    break;
+		  }
+		}
+		if ( continueCheckSpawnFlag ) {
+
+		  // note: rules adapted from: http://minecraft.gamepedia.com/Spawn
+
+		  // todobig - is this missing some spawnable blocks?
+		
+		  // "the spawning block itself must be non-opaque and non-liquid"
+		  // we add: non-solid
+		  if ( ! blockInfoList[blockId].isOpaque() &&
+		       ! blockInfoList[blockId].isLiquid() &&
+		       ! blockInfoList[blockId].isSolid() ) { 
+
+		    // "the block directly above it must be non-opaque"
+
+		    uint8_t aboveBlockId = getBlockId_LevelDB_v3(cdata, cx,cz,cy+1);
+		    if ( ! blockInfoList[aboveBlockId].isOpaque() ) {
+
+		      // "the block directly below it must have a solid top surface (opaque, upside down slabs / stairs and others)"
+		      // "the block directly below it may not be bedrock or barrier" -- take care of with 'spawnable'
+
+		      uint8_t belowBlockId = getBlockId_LevelDB_v3(cdata, cx,cz,cy-1);
+		      uint8_t belowBlockData = getBlockData_LevelDB_v3(cdata, cx,cz,cy-1);
+		      
+		      //if ( blockInfoList[belowBlockId].isOpaque() && blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
+		      if ( blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
+
+			// check the light level
+			uint8_t bl = getBlockBlockLight_LevelDB_v3(cdata, cx,cz,cy);
+			if ( bl <= 7 ) {
+			  // spwawnable! add it to the list
+			  double ix, iy;
+			  char tmpstring[512];
+			  worldPointToGeoJSONPoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
+			  sprintf(tmpstring, ""
+				  "\"Spawnable\":true,"
+				  "\"Name\":\"Spawnable\","
+				  "\"LightLevel\":\"%d\","
+				  "\"Dimension\":\"%d\","
+				  "\"Pos\":[%d,%d,%d]"
+				  "}}"
+				  , (int)bl
+				  , dimensionId
+				  , chunkX*16 + cx
+				  , cy
+				  , chunkZ*16 + cz
+				  );
+			  std::string json = ""
+			    + makeGeojsonHeader(ix,iy)
+			    + tmpstring
+			    ;
+			  listGeoJSON.push_back( json );
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	    
+	    // todo - check for isSolid?
+
+	    int32_t realy = chunkY*16 + cy;
+	    if ( blockId != 0 ) {  // current block is NOT air
+	      // todonow - this will break forcetop!
+	      if ( ( realy >= topBlockY[cx][cz] &&
+		     // blocks[cx][cz] == 0 &&  // top block is not already set
+		     !fastBlockHideList[blockId] ) ||
+		   fastBlockForceTopList[blockId] ) {
+		
+		blocks[cx][cz] = blockId;
+		data[cx][cz] = getBlockData_LevelDB_v3(cdata, cx,cz,cy);
+		topBlockY[cx][cz] = realy;
+
+		int32_t cy2 = cy;
+
+		// todonow todohere todobig todostopper - can't do this until we have the whole chunk
+#if 1
+		// todo - we are getting the block light ABOVE this block (correct?)
+		// todo - this will break if we are using force-top stuff
+		if ( blockInfoList[blockId].isSolid() ) {
+		  // move to block above this block
+		  cy2++;
+		  if ( cy2 > MAX_BLOCK_HEIGHT ) { cy2 = MAX_BLOCK_HEIGHT; }
+		} else {
+		  // if not solid, don't adjust
+		}
+#endif
+		uint8_t sl = getBlockSkyLight_LevelDB_v3(cdata, cx,cz,cy2);
+		uint8_t bl = getBlockBlockLight_LevelDB_v3(cdata, cx,cz,cy2);	
+		// we combine the light nibbles into a byte
+		topLight[cx][cz] = (sl << 4) | bl;
+	      }
+	    }
+	  }
+	}
+      }
+
+      if ( control.quietFlag ) {
+	return 0;
+      }
+
+      // todonow todobig todohere todostopper - this is not valid until we have the whole chunk
+
+      if ( false ) {
+	// print chunk info
+	logger.msg(kLogInfo1,"Top Blocks (block-id:block-data:biome-id):\n");
+	// note the different use of cx/cz here
+	uint32_t rawData;
+	for (int32_t cz=0; cz<16; cz++) {
+	  for (int32_t cx=0; cx<16; cx++) {
+	    rawData = grassAndBiome[cx][cz];
+	    biomeId = (uint8_t)(rawData & 0xFF);
+	    logger.msg(kLogInfo1,"%02x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
+	  }
+	  logger.msg(kLogInfo1,"\n");
+	}
+	logger.msg(kLogInfo1,"Block Histogram:\n");
+	for (int32_t i=0; i < 256; i++) {
+	  if ( histogramBlock[i] > 0 ) {
+	    logger.msg(kLogInfo1,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBlock[i], blockInfoList[i].name.c_str());
+	  }
+	}
+	logger.msg(kLogInfo1,"Biome Histogram:\n");
+	for (int32_t i=0; i < 256; i++) {
+	  if ( histogramBiome[i] > 0 ) {
+	    std::string biomeName( getBiomeName(i) );
+	    logger.msg(kLogInfo1,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBiome[i], biomeName.c_str());
+	  }
+	}
+	logger.msg(kLogInfo1,"Block Light (skylight:blocklight:heightcol):\n");
+	for (int32_t cz=0; cz<16; cz++) {
+	  for (int32_t cx=0; cx<16; cx++) {
+	    logger.msg(kLogInfo1,"%x:%x:%02x ", (int)((topLight[cx][cz] >> 4) & 0xf), (int)(topLight[cx][cz] & 0xf), (int)heightCol[cx][cz]);
+	  }
+	  logger.msg(kLogInfo1,"\n");
+	}
+      }
+      
+      return 0;
+    }
+
+    int32_t _do_chunk_biome_v3 ( int32_t tchunkX, int32_t tchunkZ, const char* cdata, int32_t cdatalen, 
+				 Histogram& histogramGlobalBiome ) {
+      chunkX = tchunkX;
+      chunkZ = tchunkZ;
+
+      int16_t histogramBiome[256];
+      memset(histogramBiome, 0, sizeof(histogramBiome));
+
+      // get per-column data
+      uint8_t biomeId = 0;
+      for (int32_t cx=0; cx < 16; cx++) {
+	for (int32_t cz=0; cz < 16; cz++) {
+	  heightCol[cx][cz] = getColData_Height_LevelDB_v3(cdata, cx,cz);
+	  grassAndBiome[cx][cz] = getColData_GrassAndBiome_LevelDB_v3(cdata, cdatalen, cx,cz);
+	  
+	  biomeId = (uint8_t)(grassAndBiome[cx][cz] & 0xFF);
+	  histogramBiome[biomeId]++;
+	  histogramGlobalBiome.add(biomeId);
+	  
+#if 0
+	  // todo - testing idea about lighting - get lighting from top solid block - result is part good, part crazy
+	  int32_t ty = heightCol[cx][cz] + 1;
+	  if ( ty > MAX_BLOCK_HEIGHT ) { ty=MAX_BLOCK_HEIGHT; }
+	  uint8_t sl = getBlockSkyLight_LevelDB_v3(cdata, cx,cz,ty);
+	  uint8_t bl = getBlockBlockLight_LevelDB_v3(cdata, cx,cz,ty);
+	  topLight[cx][cz] = (sl << 4) | bl;
+#endif
+	}
+      }
+
+
+      return 0;
+    }
+    
   };
 
   
@@ -1109,16 +1510,56 @@ namespace mcpe_viz {
     int32_t getMinChunkZ() { return minChunkZ; }
     int32_t getMaxChunkZ() { return maxChunkZ; }
 
-    int32_t addChunk ( int32_t chunkX, int32_t chunkZ, const char* cdata) {
-      chunks[std::make_pair(chunkX, chunkZ)] =
-	std::unique_ptr<ChunkData_LevelDB>
-	( new ChunkData_LevelDB(chunkX, chunkZ, cdata, dimId, name,
-				histogramGlobalBlock, histogramGlobalBiome,
-				fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
-				listCheckSpawn) );
-      return 0;
-    }
+    int32_t addChunk ( int32_t chunkFormatVersion, int32_t chunkX, int32_t chunkY, int32_t chunkZ, const char* cdata) {
+      ChunkKey chunkKey(chunkX, chunkZ);
+      switch ( chunkFormatVersion ) {
+      case 2:
+	// pre-0.17
+	chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
+	return chunks[chunkKey]->_do_chunk_v2(chunkX, chunkZ, cdata, dimId, name,
+					      histogramGlobalBlock, histogramGlobalBiome,
+					      fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
+					      listCheckSpawn);
+	return 0;
+      case 3:
+	// 0.17 and later?
+	// we need to process all sub-chunks, not just blindy add them
 
+	if ( !chunks_has_key(chunks, chunkKey) ) {
+	  chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
+	}
+	
+	return chunks[chunkKey]->_do_chunk_v3(chunkX, chunkY, chunkZ, cdata, dimId, name,
+					      histogramGlobalBlock, 
+					      fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
+					      listCheckSpawn);
+	return 0;
+      }
+      slogger.msg(kLogError, "UNKNOWN CHUNK FORMAT (%d)\n", chunkFormatVersion);
+      return -1;
+    }
+    
+    int32_t addChunkColumnData ( int32_t chunkFormatVersion, int32_t chunkX, int32_t chunkZ, const char* cdata, int32_t cdatalen) {
+      switch ( chunkFormatVersion ) {
+      case 2:
+	// pre-0.17
+	// column data is in the main record
+	break;
+      case 3:
+	// 0.17 and later?
+	// we need to process all sub-chunks, not just blindy add them
+
+	ChunkKey chunkKey(chunkX, chunkZ);
+	if ( !chunks_has_key(chunks, chunkKey) ) {
+	  chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
+	}
+
+	return chunks[chunkKey]->_do_chunk_biome_v3(chunkX, chunkZ, cdata, cdatalen, histogramGlobalBiome);
+      }
+      slogger.msg(kLogError, "UNKNOWN CHUNK FORMAT (%d)\n", chunkFormatVersion);
+      return -1;
+    }
+    
     //todolib - move this out?
     bool checkDoForDim(int32_t v) {
       if ( v == kDoOutputAll ) {
@@ -1214,7 +1655,8 @@ namespace mcpe_viz {
 	int32_t k = it.first;
 	int32_t v = it.second;
 	double pct = ((double)v / htotal) * 100.0;
-	logger.msg(kLogInfo1,"hg-globalbiome: 0x%02x %10d %7.3lf%% %s\n", k, v, pct, biomeInfoList[k]->name.c_str());
+	//	logger.msg(kLogInfo1,"hg-globalbiome: 0x%02x %10d %7.3lf%% %s\n", k, v, pct, biomeInfoList[k]->name.c_str());
+	logger.msg(kLogInfo1,"hg-globalbiome: 0x%02x %10d %7.3lf%%\n", k, v, pct);
       }
     }
 
@@ -1322,7 +1764,7 @@ namespace mcpe_viz {
 
     
     
-    void generateImage(const std::string& fname, const ImageModeType imageMode) {
+    int32_t generateImage(const std::string& fname, const ImageModeType imageMode) {
       const int32_t chunkOffsetX = -minChunkX;
       const int32_t chunkOffsetZ = -minChunkZ;
 	
@@ -1352,7 +1794,7 @@ namespace mcpe_viz {
 
       // todohere -- reddit user silvergoat77 has a 1gb (!) world and it is approx 33k x 26k -- alloc chokes on this.
       // the solution is to write a chunk of rows at a time instead of the whole image...
-      // but -- the code belows is optimized to just iterate through the list and do it's thing instead of searching for each chunk
+      // but -- the code below is optimized to just iterate through the list and do it's thing instead of searching for each chunk
       // so --- we need to test before / after changing this to step thru in Z/X order
       
       // note RGB pixels
@@ -1373,7 +1815,10 @@ namespace mcpe_viz {
       }
 
       PngWriter png;
-      outputPNG_init(png, fname, makeImageDescription(imageMode,0), imageW, imageH, rgbaFlag);
+      if ( outputPNG_init(png, fname, makeImageDescription(imageMode,0), imageW, imageH, rgbaFlag) != 0 ) {
+	delete [] buf;
+	return -1;
+      }
 
       for (int32_t iz=0, chunkZ=minChunkZ; iz < imageH; iz+=16, chunkZ++) {
 
@@ -1477,7 +1922,7 @@ namespace mcpe_viz {
 		  }
 		  if ( ! vfound ) {
 		    // todo - warn once per id/blockdata or the output volume could get ridiculous
-		    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+		    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG1\n"
 				, blockInfoList[blockid].name.c_str()
 				, blockdata
 				, blockdata
@@ -1546,6 +1991,7 @@ namespace mcpe_viz {
 	  }
 	}
       }
+      return 0;
     }
     
 
@@ -1579,7 +2025,7 @@ namespace mcpe_viz {
       // Java adaption source: http://dybfin.wustl.edu/teaching/compufinj/MTwister.java
       //MTwister random = new MTwister();
       std::mt19937 random;
-	//random.init_genrand(seed);
+      //random.init_genrand(seed);
       random.seed(seed);
 
       // The output of the random function, first operand of the asm umull instruction
@@ -1611,7 +2057,7 @@ namespace mcpe_viz {
     }
 
     
-    void generateImageSpecial(const std::string& fname, const ImageModeType imageMode) {
+    int32_t generateImageSpecial(const std::string& fname, const ImageModeType imageMode) {
       const int32_t chunkW = (maxChunkX-minChunkX+1);
       const int32_t chunkH = (maxChunkZ-minChunkZ+1);
       const int32_t imageW = chunkW * 16;
@@ -1637,7 +2083,10 @@ namespace mcpe_viz {
       }
       
       PngWriter png;
-      outputPNG_init(png, fname, makeImageDescription(imageMode,0), imageW, imageH, rgbaFlag);
+      if ( outputPNG_init(png, fname, makeImageDescription(imageMode,0), imageW, imageH, rgbaFlag) != 0 ) {
+	delete [] buf;
+	return -1;
+      }
       
       int32_t color;
       for (int32_t iz=0, chunkZ=minChunkZ; iz < imageH; iz+=16, chunkZ++) {
@@ -1703,6 +2152,8 @@ namespace mcpe_viz {
       outputPNG_close(png);
 
       delete [] buf;
+
+      return 0;
     }
     
     // originally from: http://openlayers.org/en/v3.10.0/examples/shaded-relief.html
@@ -1745,7 +2196,12 @@ namespace mcpe_viz {
       uint8_t *buf = new uint8_t[ destW * bppDest ];
     
       PngWriter pngOut;
-      outputPNG_init(pngOut, fnDest, makeImageDescription(kImageModeShadedRelief,0), destW, destH, true);
+      if ( outputPNG_init(pngOut, fnDest, makeImageDescription(kImageModeShadedRelief,0), destW, destH, true) != 0 ) {
+	delete [] buf;
+	pngSrc.close();
+	delete [] sbuf;
+	return -1;
+      }
     
       /*
 	uint8_t lut[256];
@@ -1817,7 +2273,8 @@ namespace mcpe_viz {
 	if ( y1 > 0 ) {
 	  // todo - this is slower than it needs to be, we could be clever about where we put the new row and not have to move stuff
 	  // move data up
-	  memcpy(&sbuf[0], &sbuf[srcStride], srcStride * 2);
+	  memcpy(&sbuf[0], &sbuf[srcStride], srcStride);
+	  memcpy(&sbuf[srcStride], &sbuf[srcStride*2], srcStride);
 	  if (  y1 < maxY ) {
 	    // read new row
 	    png_read_row(pngSrc.png, &sbuf[srcStride * 2], NULL);
@@ -1980,6 +2437,7 @@ namespace mcpe_viz {
       int32_t keybuflen;
       int32_t kw = dimId;
       uint8_t kt = 0x30;
+      uint8_t kt_v3 = 0x2f;
       leveldb::Status dstatus;
 	
       slogger.msg(kLogInfo1,"    Writing all images in one pass\n");
@@ -2006,7 +2464,9 @@ namespace mcpe_viz {
 
 	control.fnLayerRaw[dimId][cy] = fnameTmp;
 	  
-	png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16, false, true);
+	if ( png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16, false, true) != 0 ) {
+	  return -1;
+	}
       }
 	
       // create row buffers
@@ -2046,6 +2506,8 @@ namespace mcpe_viz {
 	    
 	for (int32_t imageX=0, chunkX=minChunkX; imageX < imageW; imageX += 16, chunkX++) {
 
+	  // FIRST - we try pre-0.17 chunks
+	  
 	  // construct key to get the chunk
 	  if ( dimId == kDimIdOverworld ) {
 	    //overworld
@@ -2063,81 +2525,230 @@ namespace mcpe_viz {
 	  }
 
 	  dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
-	  if ( ! dstatus.ok() ) {
-	    notFoundCt2++;
-	    // slogger.msg(kLogInfo1,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
-	    // we need to clear this area
-	    for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+	  if ( dstatus.ok() ) {
+
+	    // we got a pre-0.17 chunk
+	    pchunk = svalue.data();
+	    ochunk = pchunk;
+	    foundCt++;
+	    
+	    // we step through the chunk in the natural order to speed things up
+	    for (int32_t cx=0; cx < 16; cx++) {
 	      for (int32_t cz=0; cz < 16; cz++) {
-		memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
-	      }
-	    }
-	    continue;
-	  }
+		currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX + cx];
+		for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT_127; cy++) {
 
-	  pchunk = svalue.data();
-	  ochunk = pchunk;
-	  foundCt++;
-	      
-	  // we step through the chunk in the natural order to speed things up
-	  for (int32_t cx=0; cx < 16; cx++) {
-	    for (int32_t cz=0; cz < 16; cz++) {
-	      currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX+cx];
-	      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
-		blockid = *(pchunk++);
-
-		if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
-
-		  // special handling for air -- keep existing value if we are above top block
-		  // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
-		  // however, we do NOT do this for the nether. because: the nether
-
-		  // we need to copy this pixel from another layer
-		  memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
-			 &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
-			 3);
-		      
-		} else {
+		  // todo - if we use this, we get blockdata errors... somethings not right
+		  //blockid = *(pchunk++);
+		  blockid = getBlockId_LevelDB_v2(ochunk, cx,cz,cy);
+		  
+		  if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
 		    
-		  if ( blockInfoList[blockid].hasVariants() ) {
-		    // we need to get blockdata
-		    blockdata = getBlockData_LevelDB(ochunk, cx,cz,cy);
-		    bool vfound = false;
-		    for (const auto& itbv : blockInfoList[blockid].variantList) {
-		      if ( itbv->blockdata == blockdata ) {
-			vfound = true;
-			color = itbv->color;
-			break;
+		    // special handling for air -- keep existing value if we are above top block
+		    // the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
+		    // however, we do NOT do this for the nether. because: the nether
+		    
+		    // we need to copy this pixel from another layer
+		    memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
+			   &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
+			   3);
+		    
+		  } else {
+		    
+		    if ( blockInfoList[blockid].hasVariants() ) {
+		      // we need to get blockdata
+
+		      blockdata = getBlockData_LevelDB_v2(ochunk, cx,cz,cy);
+		      
+		      bool vfound = false;
+		      for (const auto& itbv : blockInfoList[blockid].variantList) {
+			if ( itbv->blockdata == blockdata ) {
+			  vfound = true;
+			  color = itbv->color;
+			  break;
+			}
 		      }
-		    }
-		    if ( ! vfound ) {
-		      // todo - warn once per id/blockdata or the output volume could get ridiculous
-		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
-				  , blockInfoList[blockid].name.c_str()
-				  , blockdata
-				  , blockdata
-				  );
-		      // since we did not find the variant, use the parent block's color
+		      if ( ! vfound ) {
+			// todo - warn once per id/blockdata or the output volume could get ridiculous
+			slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG2\n"
+				    , blockInfoList[blockid].name.c_str()
+				    , blockdata
+				    , blockdata
+				    );
+			// since we did not find the variant, use the parent block's color
+			color = blockInfoList[blockid].color;
+		      }
+		    } else {
 		      color = blockInfoList[blockid].color;
 		    }
-		  } else {
-		    color = blockInfoList[blockid].color;
-		  }
 		    
 #ifdef PIXEL_COPY_MEMCPY
-		  memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
+		    memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
 #else
-		  // todo - any use in optimizing the offset calc?
-		  rbuf[cy][((cz*imageW) + imageX + cx)*3] = pcolor[1];
-		  rbuf[cy][((cz*imageW) + imageX + cx)*3 + 1] = pcolor[2];
-		  rbuf[cy][((cz*imageW) + imageX + cx)*3 + 2] = pcolor[3];
+		    // todo - any use in optimizing the offset calc?
+		    rbuf[cy][((cz*imageW) + imageX + cx)*3] = pcolor[1];
+		    rbuf[cy][((cz*imageW) + imageX + cx)*3 + 1] = pcolor[2];
+		    rbuf[cy][((cz*imageW) + imageX + cx)*3 + 2] = pcolor[3];
 #endif
+		  }
+		}
+
+		// to support 256h worlds, for v2 chunks, we need to make 128..255 the same as 127
+		// todo - could optimize this
+		for (int cy=128; cy <= MAX_BLOCK_HEIGHT; cy++) {
+		  memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &rbuf[127][((cz*imageW) + imageX + cx)*3], 3);
+		}
+		
+	      }
+	    }
+	  } else {
+
+	    // we did NOT find a pre-0.17 chunk...
+	    
+	    // SECOND -- we try post 0.17 chunks
+
+	    // we need to iterate over all possible y cubic chunks here...
+	    int32_t cubicFoundCount = 0;
+	    for (int8_t cubicy = 0; cubicy < MAX_CUBIC_Y; cubicy++) {
+
+	      // todobug - this fails around level 112? on another1 -- weird -- run a valgrind to see where we're messing up
+	      //check valgrind output
+		
+	      // construct key to get the chunk
+	      if ( dimId == kDimIdOverworld ) {
+		//overworld
+		memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+		memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+		memcpy(&keybuf[8],&kt_v3,sizeof(uint8_t));
+		memcpy(&keybuf[9],&cubicy,sizeof(uint8_t));
+		keybuflen=10;
+	      } else {
+		// nether (and probably any others that are added)
+		memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+		memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+		memcpy(&keybuf[8],&kw,sizeof(int32_t));
+		memcpy(&keybuf[12],&kt_v3,sizeof(uint8_t));
+		memcpy(&keybuf[13],&cubicy,sizeof(uint8_t));
+		keybuflen=14;
+	      }
+	      
+	      dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+	      if ( dstatus.ok() ) {
+		cubicFoundCount++;
+
+		// we got a post-0.17 cubic chunk
+		pchunk = svalue.data();
+		ochunk = pchunk;
+		foundCt++;
+		
+		// we step through the chunk in the natural order to speed things up
+		for (int32_t cx=0; cx < 16; cx++) {
+		  for (int32_t cz=0; cz < 16; cz++) {
+		    currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX + cx];
+		    for (int32_t ccy=0; ccy < 16; ccy++) {
+		      int32_t cy = cubicy*16 + ccy;
+
+		      // todo - if we use this, we get blockdata errors... somethings not right
+		      //blockid = *(pchunk++);
+		      blockid = getBlockId_LevelDB_v3(ochunk, cx,cz,ccy);
+		      
+		      if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
+			
+			// special handling for air -- keep existing value if we are above top block
+			// the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
+			// however, we do NOT do this for the nether. because: the nether
+			
+			// we need to copy this pixel from another layer
+			memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
+			       &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
+			       3);
+			
+		      } else {
+			
+			if ( blockInfoList[blockid].hasVariants() ) {
+			  // we need to get blockdata
+
+			  blockdata = getBlockData_LevelDB_v3(ochunk, cx,cz,ccy);
+			  
+			  bool vfound = false;
+			  for (const auto& itbv : blockInfoList[blockid].variantList) {
+			    if ( itbv->blockdata == blockdata ) {
+			      vfound = true;
+			      color = itbv->color;
+			      break;
+			    }
+			  }
+			  if ( ! vfound ) {
+			    // todo - warn once per id/blockdata or the output volume could get ridiculous
+			    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG3\n"
+					, blockInfoList[blockid].name.c_str()
+					, blockdata
+					, blockdata
+					);
+			    // since we did not find the variant, use the parent block's color
+			    color = blockInfoList[blockid].color;
+			  }
+			} else {
+			  color = blockInfoList[blockid].color;
+			}
+			
+#ifdef PIXEL_COPY_MEMCPY
+			memcpy(&rbuf[cy][((cz*imageW) + imageX + cx)*3], &pcolor[1], 3);
+#else
+			// todo - any use in optimizing the offset calc?
+			rbuf[cy][((cz*imageW) + imageX + cx)*3] = pcolor[1];
+			rbuf[cy][((cz*imageW) + imageX + cx)*3 + 1] = pcolor[2];
+			rbuf[cy][((cz*imageW) + imageX + cx)*3 + 2] = pcolor[3];
+#endif
+		      }
+		    }
+		  }
+		}
+	      } else {
+		// we did NOT find the cubic chunk, which means that it is 100% air
+		
+		for (int32_t cx=0; cx < 16; cx++) {
+		  for (int32_t cz=0; cz < 16; cz++) {
+		    currTopBlockY = tbuf[(imageZ+cz)*imageW + imageX + cx];
+		    for (int32_t ccy=0; ccy < 16; ccy++) {
+		      int32_t cy = cubicy*16 + ccy;
+		      if ( (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
+			// special handling for air -- keep existing value if we are above top block
+			// the idea is to show air underground, but hide it above so that the map is not all black pixels @ y=MAX_BLOCK_HEIGHT
+			// however, we do NOT do this for the nether. because: the nether
+			
+			// we need to copy this pixel from another layer
+			memcpy(&rbuf[ cy            ][((cz*imageW) + imageX + cx)*3],
+			       &rbuf[ currTopBlockY ][((cz*imageW) + imageX + cx)*3],
+			       3);
+		      } else {
+			memset(&rbuf[cy][((cz*imageW) + imageX + cx)*3], 0, 3);
+		      }
+		    }
+		  }
 		}
 	      }
 	    }
+	    
+	    if ( cubicFoundCount <= 0 ) {
+	    
+	      // FINALLY -- we did not find the chunk at all
+	      notFoundCt2++;
+	      // slogger.msg(kLogInfo1,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
+	      
+	      // we need to clear this area
+	      for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
+		for (int32_t cz=0; cz < 16; cz++) {
+		  memset(&rbuf[cy][((cz*imageW)+imageX)*3], 0, 16*3);
+		}
+	      }
+	      // todonow - need this?
+	      //continue;
+	    }
 	  }
-	}
 	  
+	}
+	
 	// put the png rows
 	// todo - png lib is SLOW - worth it to alloc a larger window (16-row increments) and write in batches?
 	for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
@@ -2224,6 +2835,7 @@ namespace mcpe_viz {
 		  char keybuf[20];
 		  int32_t keybuflen;
 		  int32_t kx = it.second->chunkX, kz=it.second->chunkZ, kw=dimId;
+		  //todohere todostopper - needs attention for 256h
 		  uint8_t kt=0x30;
 		  switch (dimId) {
 		  case kDimIdOverworld:
@@ -2252,7 +2864,7 @@ namespace mcpe_viz {
 		  pchunkZ = it.second->chunkZ;
 		}
 		 
-		uint8_t blockid = getBlockId_LevelDB(pchunk, cx,cz,cy);
+		uint8_t blockid = getBlockId_LevelDB_v2(pchunk, cx,cz,cy);
 
 		if ( blockid == 0 && ( cy > it.second->topBlockY[cx][cz] ) && (dimId != kDimIdNether) ) {
 		  // special handling for air -- keep existing value if we are above top block
@@ -2273,7 +2885,7 @@ namespace mcpe_viz {
 		    }
 		    if ( ! vfound ) {
 		      // todo - warn once per id/blockdata or the output volume could get ridiculous
-		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x)\n"
+		      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG4\n"
 				  , blockInfoList[blockid].name.c_str()
 				  , blockdata
 				  , blockdata
@@ -2394,6 +3006,7 @@ namespace mcpe_viz {
 	char keybuf[128];
 	int32_t keybuflen;
 	int32_t kw = dimId;
+	//todohere todostopper - needs attention for 256h
 	uint8_t kt = 0x30;
 	leveldb::Status dstatus;
 	
@@ -2468,8 +3081,8 @@ namespace mcpe_viz {
 		foundCt++;
 	      }
 	  
-	      blockid = getBlockId_LevelDB(pchunk, cox,coz,imageY);
-	      blockdata = getBlockData_LevelDB(pchunk, cox,coz,imageY);
+	      blockid = getBlockId_LevelDB_v2(pchunk, cox,coz,imageY);
+	      blockdata = getBlockData_LevelDB_v2(pchunk, cox,coz,imageY);
 
 	      blockArray.push_back(blockid);
 	      blockDataArray.push_back(blockdata);
@@ -2847,12 +3460,27 @@ namespace mcpe_viz {
 	    
 	  // sanity checks
 	  if ( chunkType == 0x30 ) {
+	    // pre-0.17 chunk block data
+	    if ( legalChunkPos(chunkX,chunkZ) ) {
+	      dimDataList[0]->addToChunkBounds(chunkX, chunkZ);
+	    }
+	  }
+	}
+	if ( key_size == 10 ) {
+	  // post-0.17 chunk block data
+	  chunkX = myParseInt32(key, 0);
+	  chunkZ = myParseInt32(key, 4);
+	  chunkType = myParseInt8(key, 8);
+	  
+	  // sanity checks
+	  if ( chunkType == 0x2f ) {
 	    if ( legalChunkPos(chunkX,chunkZ) ) {
 	      dimDataList[0]->addToChunkBounds(chunkX, chunkZ);
 	    }
 	  }
 	}
 	else if ( key_size == 13 ) {
+	  // pre-0.17 chunk block data
 	  chunkX = myParseInt32(key, 0);
 	  chunkZ = myParseInt32(key, 4);
 	  chunkDimId = myParseInt32(key, 8);
@@ -2860,6 +3488,20 @@ namespace mcpe_viz {
 	    
 	  // sanity checks
 	  if ( chunkType == 0x30 ) {
+	    if ( legalChunkPos(chunkX,chunkZ) ) {
+	      dimDataList[chunkDimId]->addToChunkBounds(chunkX, chunkZ);
+	    }
+	  }
+	}
+	else if ( key_size == 14 ) {
+	  // post-0.17 chunk block data
+	  chunkX = myParseInt32(key, 0);
+	  chunkZ = myParseInt32(key, 4);
+	  chunkDimId = myParseInt32(key, 8);
+	  chunkType = myParseInt8(key, 12);
+	    
+	  // sanity checks
+	  if ( chunkType == 0x2f ) {
 	    if ( legalChunkPos(chunkX,chunkZ) ) {
 	      dimDataList[chunkDimId]->addToChunkBounds(chunkX, chunkZ);
 	    }
@@ -2889,7 +3531,9 @@ namespace mcpe_viz {
 
       char tmpstring[256];
 
-      int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1;
+      int32_t chunkX=-1, chunkZ=-1, chunkDimId=-1, chunkType=-1, chunkTypeSub=-1;
+      int32_t chunkFormatVersion = 2; //todonow - get properly
+
 
       // we make sure that we know the chunk bounds before we start so that we can translate world coords to image coords
       calcChunkBounds();
@@ -3035,8 +3679,36 @@ namespace mcpe_viz {
 	    parseNbt_portals(tagList);
 	  }
 	}
-			 
-	else if ( key_size == 9 || key_size == 13 ) {
+
+	// todohere todonow -- new record like "dimension0" - presumably for other dims too
+	//           looks like it could be partially text? nbt?
+	/*
+	  WARNING: Unparsed Record: 
+	  key_size=10 
+	  key_string=[dimension0^AC<93><9A>] 
+	  key_hex=[64 69 6d 65 6e 73 69 6f 6e 30] 
+	  value_size=65 
+	  value_hex=[0a 00 00 0a 09 00 6d 69 6e 65 73 68 61 66 74 00 0a 06 00 6f 63 65 61 6e 73 00 0a 09 00 73 63 61 74 74 65 72 65 64 00 0a 0a 00 73 74 72 6f 6e 67 68 6f 6c 64 00 0a 07 00 76 69 6c 6c 61 67 65 00 00]
+
+
+	   UNK: NBT Decode Start
+	   UNK: [] COMPOUND-1 {
+      UNK:   [mineshaft] COMPOUND-2 {
+      UNK:   } COMPOUND-2
+		 UNK:   [oceans] COMPOUND-3 {
+      UNK:   } COMPOUND-3
+		 UNK:   [scattered] COMPOUND-4 {
+      UNK:   } COMPOUND-4
+		 UNK:   [stronghold] COMPOUND-5 {
+      UNK:   } COMPOUND-5
+		 UNK:   [village] COMPOUND-6 {
+      UNK:   } COMPOUND-6
+		 UNK: } COMPOUND-1
+			  UNK: NBT Decode End (1 tags)
+	  
+			  */
+	
+	else if ( key_size == 9 || key_size == 10 || key_size == 13 || key_size == 14 ) {
 
 	  // these are probably chunk records, we parse the key and determine what we've got
 
@@ -3047,6 +3719,17 @@ namespace mcpe_viz {
 	    chunkDimId = kDimIdOverworld;
 	    chunkType = myParseInt8(key, 8);
 	    dimName = "overworld";
+	    chunkFormatVersion = 2; //todonow - get properly
+	  }
+	  else if ( key_size == 10 ) {
+	    // overworld chunk
+	    chunkX = myParseInt32(key, 0);
+	    chunkZ = myParseInt32(key, 4);
+	    chunkDimId = kDimIdOverworld;
+	    chunkType = myParseInt8(key, 8);
+	    chunkTypeSub = myParseInt8(key, 9); // todonow - rename
+	    dimName = "overworld";
+	    chunkFormatVersion = 3; //todonow - get properly
 	  }
 	  else if ( key_size == 13 ) {
 	    // non-overworld chunk
@@ -3055,10 +3738,27 @@ namespace mcpe_viz {
 	    chunkDimId = myParseInt32(key, 8);
 	    chunkType = myParseInt8(key, 12);
 	    dimName = "nether";
+	    chunkFormatVersion = 2; //todonow - get properly
 
 	    // check for new dim id's
 	    if ( chunkDimId != kDimIdNether ) {
-	      slogger.msg(kLogInfo1, "HEY! Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
+	      slogger.msg(kLogInfo1, "WARNING: UNKNOWN -- Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
+	      continue;
+	    }
+	  }
+	  else if ( key_size == 14 ) {
+	    // non-overworld chunk
+	    chunkX = myParseInt32(key, 0);
+	    chunkZ = myParseInt32(key, 4);
+	    chunkDimId = myParseInt32(key, 8);
+	    chunkType = myParseInt8(key, 12);
+	    chunkTypeSub = myParseInt8(key, 13); // todonow - rename
+	    dimName = "nether";
+	    chunkFormatVersion = 3; //todonow - get properly
+
+	    // check for new dim id's
+	    if ( chunkDimId != kDimIdNether ) {
+	      slogger.msg(kLogInfo1, "WARNING: UNKNOWN -- Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
 	      continue;
 	    }
 	  }
@@ -3088,14 +3788,19 @@ namespace mcpe_viz {
 	  logger.msg(kLogInfo1, "%s", chunkstr.c_str());
 
 	  // see what kind of chunk we have
+	  // tommo posted useful info about the various record types here (around 0.17 beta):
+	  //   https://www.reddit.com/r/MCPE/comments/5cw2tm/level_format_changes_in_mcpe_0171_100/
 	  switch ( chunkType ) {
 	  case 0x30:
+	    // "LegacyTerrain"
 	    // chunk block data
 	    // we do the parsing in the destination object to save memcpy's
-	    dimDataList[chunkDimId]->addChunk(chunkX,chunkZ,cdata);
+	    // todonow - would be better to get the version # from the proper chunk record (0x76)
+	    dimDataList[chunkDimId]->addChunk(2, chunkX, 0, chunkZ,cdata);
 	    break;
 
 	  case 0x31:
+	    // "BlockEntity"
 	    // tile entity record (e.g. a chest)
 	    logger.msg(kLogInfo1,"%s 0x31 chunk (tile entity data):\n", dimName.c_str());
 	    ret = parseNbt("0x31-te: ", cdata, cdata_size, tagList);
@@ -3105,6 +3810,7 @@ namespace mcpe_viz {
 	    break;
 
 	  case 0x32:
+	    // "Entity"
 	    // entity record (e.g. a mob)
 	    logger.msg(kLogInfo1,"%s 0x32 chunk (entity data):\n", dimName.c_str());
 	    ret = parseNbt("0x32-e: ", cdata, cdata_size, tagList);
@@ -3114,6 +3820,7 @@ namespace mcpe_viz {
 	    break;
 
 	  case 0x33:
+	    // "PendingTicks"
 	    // todo - this appears to be info on blocks that can move: water + lava + fire + sand + gravel
 	    logger.msg(kLogInfo1,"%s 0x33 chunk (tick-list):\n", dimName.c_str());
 	    parseNbt("0x33-tick: ", cdata, cdata_size, tagList);
@@ -3122,44 +3829,126 @@ namespace mcpe_viz {
 	    break;
 
 	  case 0x34:
+	    // "BlockExtraData"
 	    logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
 	    printKeyValue(key,key_size,cdata,cdata_size,false);
+	    // according to tommo (https://www.reddit.com/r/MCPE/comments/5cw2tm/level_format_changes_in_mcpe_0171_100/)
+	    // "BlockExtraData"
 	    /* 
 	       0x34 ?? does not appear to be NBT data -- overworld only? -- perhaps: b0..3 (count); for each: (int32_t) (int16_t) 
 	       -- there are 206 of these in "another1" world
 	       -- something to do with snow?
 	       -- to examine data:
-	       cat xee | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
+	       cat (logfile) | grep "WARNING: Unknown key size" | grep " 34\]" | cut -b75- | sort | nl
 	    */
 	    break;
 
 	  case 0x35:
+	    // "BiomeState"
 	    logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
 	    printKeyValue(key,key_size,cdata,cdata_size,false);
+	    // according to tommo (https://www.reddit.com/r/MCPE/comments/5cw2tm/level_format_changes_in_mcpe_0171_100/)
+	    // "BiomeState"
 	    /*
-	      0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
-	      -- there are 2907 in "another1"
-	      -- to examine data:
-	      cat xee | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
+	       0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
+	       -- there are 2907 in "another1"
+	       -- to examine data:
+	      cat (logfile) | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
 	    */
 	    break;
 
 	  case 0x76:
+	    // "Version"
 	    // todo - this is chunk version information?
 	    {
 	      // this record is not very interesting, we usually hide it
 	      // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
 	      if ( control.verboseFlag || (cdata[0] != 2) ) { 
-		logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
+		if ( cdata[0] != 2 ) { 
+		  logger.msg(kLogInfo1,"WARNING: UNKNOWN CHUNK VERSION!  %s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
+		} else {
+		  logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
+		}
 	      }
 	    }
 	    break;
 
+	  case 0x2f:
+	    // "SubchunkPrefix"
+	    // chunk block data - 10241 bytes
+	    // we do the parsing in the destination object to save memcpy's
+	    // todonow - would be better to get the version # from the proper chunk record (0x76)
+	    {
+	      int32_t chunkY = chunkTypeSub;
+	      // check the first byte to see if anything interesting is in it
+	      if ( cdata[0] != 0 ) {
+		logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
+	      }
+	      dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata);
+	    }
+	    break;
+
+	  case 0x2d:
+	    // "Data2D"
+	    // chunk column data - 768 bytes
+	    // format appears to be:
+	    // 16x16 of 2-byte ints for HEIGHT OF TOP BLOCK
+	    // 8x8 of 4-byte ints for BIOME and GRASS COLOR
+	    // todonow todobig todohere -- this appears to be an MCPE bug, it should be 16x16, right?
+	    // also - grass colors are pretty weird (some are 01 01 01)
+	    
+	    // todonow - would be better to get the version # from the proper chunk record (0x76)
+	    {
+	      dimDataList[chunkDimId]->addChunkColumnData(3, chunkX, chunkZ, cdata, cdata_size);
+	    }
+	    break;
+
+	    
+	    /* 
+	       todohere todonow
+	       new chunk types in 0.17
+	       0x2d] - size=768
+	       0x2f 0x00] - size 10241
+	       ...
+	       0x2f 0x07] - size 10241
+
+
+	       per chunk data: 2.5 bytes / block
+	       block id = 1 byte
+	       block data = 4-bits
+	       skylight = 4-bits
+	       blocklight = 4-bits
+
+	       16x16x16 of this = 10,240!!
+	       what is the one extra byte... hmmmm
+
+
+	       per column data: 5-bytes per column
+	       height of top block = 1 byte
+	       grass-and-biome = 4-bytes = lsb bome, high 3-bytes are RGB grass color
+
+	       0x2d chunks are 768 bytes which could be column data
+	       16 x 16 x 3 = 768
+	       so 3 bytes per column = grass/biome + height + top block
+	       could this be grass color only?
+
+
+	       0x2f N] chunks are 10241
+	       this could be 16x16 for 16 vertical blocks
+	       16 of these would cover 256 build height
+
+	       if blocks are 8-bits, that would be 8,192 of the size
+	       which leaves 2049
+	       we'd still need block data which is 4-bits per block
+	       which is: 4,096 bytes.... what's going on here?!
+	    */
+
 	  default:
-	    logger.msg(kLogInfo1,"WARNING: %s unknown chunk - size=%d type=0x%x length=%d\n", dimName.c_str(),
+	    logger.msg(kLogInfo1,"WARNING: %s unknown chunk - key_size=%d type=0x%x length=%d\n", dimName.c_str(),
 		       key_size, chunkType, cdata_size);
 	    printKeyValue(key,key_size,cdata,cdata_size,true);
-	    if ( false ) {
+	    //todonow -- if ( false ) {
+	    if ( chunkType == 0x6e ) {
 	      if ( cdata_size > 10 ) {
 		parseNbt("UNK: ", cdata, cdata_size, tagList);
 	      }
@@ -3646,6 +4435,9 @@ namespace mcpe_viz {
 
     int32_t doOutput() {
       calcChunkBounds();
+
+      // todonow todobig todostopper -- how to handle worlds that are larger than png dimensional limits (see midgard world file)
+      
       for (int32_t i=0; i < kDimIdCount; i++) {
 	dimDataList[i]->doOutput(db);
       }
@@ -4138,6 +4930,7 @@ namespace mcpe_viz {
 		"  --html-most              Create html, javascript, and most image files to use as a fancy viewer\n"
 		"  --html-all               Create html, javascript, and *all* image files to use as a fancy viewer\n"
 		//"  --dir-temp dir           Directory for temp files (useful for --slices, use a fast, local directory)\n"
+		"  --auto-tile              Automatically tile the images if they are very large\n"
 		"  --tiles[=tilew,tileh]    Create tiles in subdirectory tiles/ (useful for LARGE worlds)\n"
 		"\n"
 		"  --hide-top=did,bid       Hide a block from top block (did=dimension id, bid=block id)\n"

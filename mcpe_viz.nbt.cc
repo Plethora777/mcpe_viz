@@ -30,7 +30,7 @@ namespace mcpe_viz {
       // adjust position so that items are in the center of pixels
       // todobig - play with this to see if we can make it better
       if ( adjustCoordFlag ) {
-	ix += 0.5; //todobig todohere - plus or minus here? hmm
+	ix += 0.5; //todobig - plus or minus here? hmm
 	iy += 0.5;
       }
       sprintf(tmpstring,"%.1lf,%.1lf",ix,iy);
@@ -1166,7 +1166,7 @@ namespace mcpe_viz {
 	int32_t t=1;
 	for ( const auto& it: text ) {
 	  // todo - think about how to handle weird chars people put in signs
-	  sprintf(tmpstring,"\"Text%d\":\"%s\"", t++, escapeString(it,"\"").c_str());
+	  sprintf(tmpstring,"\"Text%d\":\"%s\"", t++, escapeString(it,"\"\\").c_str());
 	  ts += tmpstring;
 	  if ( --i > 0 ) {
 	    ts += ",";
@@ -1389,7 +1389,7 @@ namespace mcpe_viz {
       
       if ( tc.has_key("id", nbt::tag_type::Int) ) {
 	// in v0.16 entity id's went weird -- adding extra digits above 0xff -- could be flags of some sort?
-	// todonow - let's figure out what these are - keep a list a print a summary at end
+	// todonow - let's figure out what these are - keep a list and print a summary at end
 	entity->idFull = tc["id"].as<nbt::tag_int>().get();
 	entity->idShort = entity->idFull & 0xFF;
       }
@@ -2021,7 +2021,7 @@ namespace mcpe_viz {
 
   class ParsedVillagePlayer {
   public:
-    // todobig todohere - don't know what this is yet
+    // todobig - don't know what this is yet
     ParsedVillagePlayer() {
       clear();
     }
@@ -2114,7 +2114,7 @@ namespace mcpe_viz {
       int32_t acy = tc["ACY"].as<nbt::tag_int>().get();
       int32_t acz = tc["ACZ"].as<nbt::tag_int>().get();
       apos.set(acx,acy,acz);
-      // todobig todohere - correct this to a true floating point number?
+      // todobig - correct this to a true floating point number?
       
       int32_t cx = tc["CX"].as<nbt::tag_int>().get();
       int32_t cy = tc["CY"].as<nbt::tag_int>().get();
@@ -2168,7 +2168,7 @@ namespace mcpe_viz {
     std::string toGeoJSON() {
       std::vector<std::string> list;
       std::vector<std::string> templist;
-      //todobig todohere - something better than this :)
+      //todobig - something better than this :)
       char tmpstring[8192];
 
       // note: we fake this as a tile entity so that it is easy to deal with in js
@@ -2268,7 +2268,7 @@ namespace mcpe_viz {
 	sprintf(tmpstring,"\"Dimension\":\"%d\"", 0);
 	list.push_back(std::string(tmpstring));
 
-	// todobig todohere - just a test
+	// todobig - just a test
 #if 1
 	// point style
 	double ix, iy;

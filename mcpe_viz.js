@@ -2566,7 +2566,7 @@ function layerMove(delta) {
     //this_.getMap().getView().setRotation(0);
     layerRawIndex += delta;
     if (layerRawIndex < 0) { layerRawIndex = 0; }
-    if (layerRawIndex > 127) { layerRawIndex = 127; }
+    if (layerRawIndex > 255) { layerRawIndex = 255; }
     layerGoto(layerRawIndex);
 }
 
@@ -2574,7 +2574,7 @@ function layerGoto(layer) {
     // we make sure that layer is an integer (mob positions can have decimal points)
     layer = Math.floor(layer);
     if (layer < 0) { layer = 0; }
-    if (layer > 127) { layer = 127; }
+    if (layer > 255) { layer = 255; }
     if (setLayer(dimensionInfo[globalDimensionId].listLayers[layer], 'You need to run mcpe_viz with --html-all') === 0) {
 	globalLayerMode = 1;
 	layerRawIndex = layer;

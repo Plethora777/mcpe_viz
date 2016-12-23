@@ -514,22 +514,22 @@
       <blockvariant blockdata="0xf" color="0x191616" dcolor="0" name="Stained Clay, Black" />
     </block>
     <block id="0xA0" name="Stained Glass Pane"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
-      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="0" name="Stained Glass Pane, White" />
-      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="0" name="Stained Glass Pane, Orange" />
-      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="0" name="Stained Glass Pane, Magenta" />
-      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="0" name="Stained Glass Pane, Light Blue" />
-      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="0" name="Stained Glass Pane, Yellow" />
-      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="0" name="Stained Glass Pane, Lime" />
-      <blockvariant blockdata="0x6" color="0xD08499" dcolor="0" name="Stained Glass Pane, Pink" />
-      <blockvariant blockdata="0x7" color="0x404040" dcolor="0" name="Stained Glass Pane, Gray" />
-      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="0" name="Stained Glass Pane, Light Gray" />
-      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="0" name="Stained Glass Pane, Cyan" />
-      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="0" name="Stained Glass Pane, Purple" />
-      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="0" name="Stained Glass Pane, Blue" />
-      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="0" name="Stained Glass Pane, Brown" />
-      <blockvariant blockdata="0xd" color="0x35461B" dcolor="0" name="Stained Glass Pane, Green" />
-      <blockvariant blockdata="0xe" color="0x963430" dcolor="0" name="Stained Glass Pane, Red" />
-      <blockvariant blockdata="0xf" color="0x191616" dcolor="0" name="Stained Glass Pane, Black" />
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="2" name="Stained Glass Pane, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="2" name="Stained Glass Pane, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="2" name="Stained Glass Pane, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="2" name="Stained Glass Pane, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="2" name="Stained Glass Pane, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="2" name="Stained Glass Pane, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="2" name="Stained Glass Pane, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="2" name="Stained Glass Pane, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="2" name="Stained Glass Pane, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="2" name="Stained Glass Pane, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="2" name="Stained Glass Pane, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="2" name="Stained Glass Pane, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="2" name="Stained Glass Pane, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="2" name="Stained Glass Pane, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="2" name="Stained Glass Pane, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="2" name="Stained Glass Pane, Black" />
     </block>
     <block id="0xA1" name="Leaves (Acacia/Dark Oak)" color="0x88b486" opaque="0" spawnable="0"> <!-- *B -->
       <blockvariant blockdata="0x0" name="Leaves, Acacia" />
@@ -677,22 +677,22 @@
     <block id="0xD1" name="End Gateway" color="0x545454" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xF0" name="Chorus Plant" color="0x591062" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xF1" name="Stained Glass"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
-      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="0" name="Stained Glass, White" />
-      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="0" name="Stained Glass, Orange" />
-      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="0" name="Stained Glass, Magenta" />
-      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="0" name="Stained Glass, Light Blue" />
-      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="0" name="Stained Glass, Yellow" />
-      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="0" name="Stained Glass, Lime" />
-      <blockvariant blockdata="0x6" color="0xD08499" dcolor="0" name="Stained Glass, Pink" />
-      <blockvariant blockdata="0x7" color="0x404040" dcolor="0" name="Stained Glass, Gray" />
-      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="0" name="Stained Glass, Light Gray" />
-      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="0" name="Stained Glass, Cyan" />
-      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="0" name="Stained Glass, Purple" />
-      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="0" name="Stained Glass, Blue" />
-      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="0" name="Stained Glass, Brown" />
-      <blockvariant blockdata="0xd" color="0x35461B" dcolor="0" name="Stained Glass, Green" />
-      <blockvariant blockdata="0xe" color="0x963430" dcolor="0" name="Stained Glass, Red" />
-      <blockvariant blockdata="0xf" color="0x191616" dcolor="0" name="Stained Glass, Black" />
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Stained Glass, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="3" name="Stained Glass, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="3" name="Stained Glass, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="3" name="Stained Glass, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="3" name="Stained Glass, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="3" name="Stained Glass, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="3" name="Stained Glass, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="3" name="Stained Glass, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="3" name="Stained Glass, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="3" name="Stained Glass, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="3" name="Stained Glass, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="3" name="Stained Glass, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="3" name="Stained Glass, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="3" name="Stained Glass, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Stained Glass, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Stained Glass, Black" />
     </block>
     
     <block id="0xF3" name="Podzol" color="0x45390a" />

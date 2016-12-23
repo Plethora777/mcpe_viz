@@ -474,7 +474,13 @@ namespace mcpe_viz {
     memset(buf, 0, destW * destH * bppDest);
 
     PngWriter pngOut;
-    pngOut.init(fnDest, "MCPE Viz Oversampled Image", destW, destH, destH, true, true);
+    if ( pngOut.init(fnDest, "MCPE Viz Oversampled Image", destW, destH, destH, true, true) != 0 ) {
+      slogger.msg(kLogInfo1, "ERROR: Failed to create dest png");
+      delete [] buf;
+      pngSrc.close();
+      return -2;
+    }
+    
     for (int32_t ty=0; ty < destH; ty++) {
       pngOut.row_pointers[ty] = &buf[ty * destW * bppDest];
     }

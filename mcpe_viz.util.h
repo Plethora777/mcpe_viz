@@ -222,8 +222,16 @@ namespace mcpe_viz {
 	return -2;
       }
 	
-      // todobig - can we do something more clever here?
-      if (setjmp(png_jmpbuf(png))) abort();
+      // todo - can we do something more clever here?
+      if (setjmp(png_jmpbuf(png))) {
+	slogger.msg(kLogInfo1,"ERROR: PngWriter setjmp triggered -- image might be too large (%d x %d)\n", width, height);
+	png_destroy_write_struct(&png, &info);
+	fclose(fp);
+	//return -5;
+	// if we've failed here, there is not much chance that we can continue
+	slogger.msg(kLogInfo1, "ERROR: Cannot continue.\n");
+	exit(-1);
+      }
 	
       png_init_io(png, fp);
 	
@@ -328,9 +336,14 @@ namespace mcpe_viz {
     }
 
     int32_t open() {
+      if ( fn.length() <= 0 ) {
+	slogger.msg(kLogInfo1,"ERROR: Empty input filename (fn=%s)\n", fn.c_str());
+	return -1;
+      }
+
       fp = fopen(fn.c_str(), "rb");
       if(!fp) {
-	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+	slogger.msg(kLogInfo1,"ERROR: Failed to open input file (%s)\n", fn.c_str());
 	return -1;
       }
 	
@@ -366,11 +379,11 @@ namespace mcpe_viz {
 	return -4;
       }
       
-      // todobig - can we do something more clever here?
+      // todo - can we do something more clever here?
       if (setjmp(png_jmpbuf(png))) {
-	slogger.msg(kLogInfo1,"ERROR: PngReader setjmp triggered\n");
-	png_destroy_read_struct(&png, &info, &end_info);
-	fclose(fp);
+	slogger.msg(kLogInfo1,"ERROR: PngReader setjmp triggered (fn=%s)\n", fn.c_str());
+	//png_destroy_read_struct(&png, &info, &end_info);
+	//fclose(fp);
 	return -5;
       }
 	

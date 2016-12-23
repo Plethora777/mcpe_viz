@@ -10,18 +10,10 @@
 #ifndef __MCPE_VIZ_NBT_H__
 #define __MCPE_VIZ_NBT_H__
 
-// todobig - del
-//#include "io/stream_reader.h"
-
 // hide innocuous warnings here
 #pragma GCC diagnostic ignored "-Wshadow"
 #include "nbt_tags.h"
 #pragma GCC diagnostic pop
-
-//todobig - del
-//#include <iostream>
-//#include <fstream>
-//#include <sstream>
 
 namespace mcpe_viz {
 

@@ -4,7 +4,13 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added new blocks, items and mobs for MCPE v0.16 and v0.17 beta -- special thanks to @Jocopa3 for his block/item/entity list
+Highlight: Added support for 1.0 (cubic chunks); note: --check-spawnable is not yet supported for cubic chunks
+
+v0.0.25 - 2016.12.23
+Added support for MCPE v1.0 -- cubic chunks, 256 build height, etc
+Note: --check-spawnable is not yet supported for cubic chunks
+Fixed issue with escaping special characters in sign text
+XML - Fixed issue with stained clay being identified as stained glass
 
 v0.0.24 - 2016.11.14
 Added new blocks, items and mobs for MCPE v0.16 and v0.17 beta -- special thanks to @Jocopa3 for his block/item/entity list

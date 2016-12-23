@@ -42,7 +42,20 @@
 	      <span id="layerNumber">Go to Layer</span>
 	      <span class="caret"></span></button>
 	    <ul class="dropdown-menu">
-	      <li><a href="#" class="layerGoto" data-id="127" href="#">Layer 127 (Build Limit)</a></li>
+	      <li><a href="#" class="layerGoto" data-id="255" href="#">Layer 255 (Build Limit)</a></li>
+	      <li><a href="#" class="layerGoto" data-id="250" href="#">Layer 250</a></li>
+	      <li><a href="#" class="layerGoto" data-id="240" href="#">Layer 240</a></li>
+	      <li><a href="#" class="layerGoto" data-id="230" href="#">Layer 230</a></li>
+	      <li><a href="#" class="layerGoto" data-id="220" href="#">Layer 220</a></li>
+	      <li><a href="#" class="layerGoto" data-id="210" href="#">Layer 210</a></li>
+	      <li><a href="#" class="layerGoto" data-id="200" href="#">Layer 200</a></li>
+	      <li><a href="#" class="layerGoto" data-id="190" href="#">Layer 190</a></li>
+	      <li><a href="#" class="layerGoto" data-id="180" href="#">Layer 180</a></li>
+	      <li><a href="#" class="layerGoto" data-id="170" href="#">Layer 170</a></li>
+	      <li><a href="#" class="layerGoto" data-id="160" href="#">Layer 160</a></li>
+	      <li><a href="#" class="layerGoto" data-id="150" href="#">Layer 150</a></li>
+	      <li><a href="#" class="layerGoto" data-id="140" href="#">Layer 140</a></li>
+	      <li><a href="#" class="layerGoto" data-id="130" href="#">Layer 130</a></li>
 	      <li><a href="#" class="layerGoto" data-id="120" href="#">Layer 120</a></li>
 	      <li><a href="#" class="layerGoto" data-id="110" href="#">Layer 110</a></li>
 	      <li><a href="#" class="layerGoto" data-id="100" href="#">Layer 100</a></li>

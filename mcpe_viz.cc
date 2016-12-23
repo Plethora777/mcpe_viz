@@ -1266,6 +1266,7 @@ namespace mcpe_viz {
 	    if ( blockId != 0 ) {  // current block is NOT air
 	      // todonow - this will break forcetop!
 	      if ( ( realy >= topBlockY[cx][cz] &&
+		     !fastBlockForceTopList[ blocks[cx][cz] ] &&
 		     // blocks[cx][cz] == 0 &&  // top block is not already set
 		     !fastBlockHideList[blockId] ) ||
 		   fastBlockForceTopList[blockId] ) {

@@ -29,7 +29,9 @@ namespace mcpe_viz {
   enum DimensionType : int32_t {
     kDimIdOverworld = 0,
       kDimIdNether = 1,
-      kDimIdCount = 2
+      kDimIdTheEnd = 2,
+      // todobig - this is very brittle - consider that add-ons may one day add custome dimensions
+      kDimIdCount = 3
       };
 
   

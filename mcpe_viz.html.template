@@ -32,6 +32,7 @@
 	  <ul class="dropdown-menu">
 	    <li><a href="#" class="dimensionSelect" data-id="0">Overworld</a></li>
 	    <li><a href="#" class="dimensionSelect" data-id="1">Nether</a></li>
+	    <li><a href="#" class="dimensionSelect" data-id="2">The End</a></li>
 	  </ul>
 	</div>
 

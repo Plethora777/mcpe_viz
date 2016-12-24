@@ -2214,6 +2214,10 @@ function setDimensionById(id) {
 	globalDimensionId = id;
 	$('#dimensionSelectName').html('Nether');
     }
+    else if (id === 2) {
+	globalDimensionId = id;
+	$('#dimensionSelectName').html('The End');
+    }
     else {
 	// default to overworld
 	globalDimensionId = id;

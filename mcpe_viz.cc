@@ -13,6 +13,9 @@
 
   todohere
 
+  * as of 0.17 - grass color appears to no longer be a thing that is stored in the data files?  remove related code here and in js?
+
+
   * as of 0.16 entity id's have extra data in the high bytes -- collect these and see if we can figure out what they are -- see mcpe.nbt.cc
   
   * update inventory images for 0.16 and 0.17
@@ -632,12 +635,14 @@ namespace mcpe_viz {
     // tood -- grass colors are pretty weird (some are 01 01 01)
     // as of, v0.17.01 we'll just roll with it and adjust as necessary
 
-    int32_t off = _calcOffsetColumn_LevelDB_v3(x,z) * 4;
+    //int32_t off = _calcOffsetColumn_LevelDB_v3(x,z) * 4;
+    int32_t off = _calcOffsetColumn_LevelDB_v3(x,z);
     int32_t v = 0;
 
     // HACK! to work around MCPE bug (biome data is not complete in this record as of v0.17.01
-    if ( (512+off+4) <= buflen ) {
-      memcpy(&v,&buf[512 + off],4);
+    if ( (512+off+1) <= buflen ) {
+      // memcpy(&v,&buf[512 + off],1);
+      v = buf[512 + off];
     } else {
       // nothing - this is deals with the bug in early 0.17
     }
@@ -1348,6 +1353,23 @@ namespace mcpe_viz {
       chunkX = tchunkX;
       chunkZ = tchunkZ;
 
+      // debug
+      if ( false ) {
+	logger.msg(kLogInfo1, "biome_v3: x=%d z=%d datalen=%d -- data:", tchunkX, tchunkZ, cdatalen);
+	bool newlineStart = true;
+	for (int i=0; i < cdatalen; i++) {
+	  if ( newlineStart ){
+	    logger.msg(kLogInfo1, "\nbiome_v3_data:");
+	    newlineStart = false;
+	  }
+	  logger.msg(kLogInfo1, " %02x", cdata[i]);
+	  if ( ((i+1) % 16) == 0 ) {
+	    newlineStart = true;
+	  }
+	}
+	logger.msg(kLogInfo1, "\n");
+      }
+      
       int16_t histogramBiome[256];
       memset(histogramBiome, 0, sizeof(histogramBiome));
 
@@ -3296,6 +3318,7 @@ namespace mcpe_viz {
       }
       dimDataList[kDimIdOverworld]->setName("overworld");
       dimDataList[kDimIdNether]->setName("nether");
+      dimDataList[kDimIdTheEnd]->setName("the-end");
     }
     ~MinecraftWorld_LevelDB() {
       dbClose();
@@ -3742,7 +3765,7 @@ namespace mcpe_viz {
 	    chunkFormatVersion = 2; //todonow - get properly
 
 	    // check for new dim id's
-	    if ( chunkDimId != kDimIdNether ) {
+	    if ( chunkDimId != kDimIdNether && chunkDimId != kDimIdTheEnd ) {
 	      slogger.msg(kLogInfo1, "WARNING: UNKNOWN -- Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
 	      continue;
 	    }
@@ -3758,7 +3781,7 @@ namespace mcpe_viz {
 	    chunkFormatVersion = 3; //todonow - get properly
 
 	    // check for new dim id's
-	    if ( chunkDimId != kDimIdNether ) {
+	    if ( chunkDimId != kDimIdNether && chunkDimId != kDimIdTheEnd ) {
 	      slogger.msg(kLogInfo1, "WARNING: UNKNOWN -- Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
 	      continue;
 	    }

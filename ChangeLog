@@ -4,7 +4,10 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added support for 1.0 (cubic chunks); note: --check-spawnable is not yet supported for cubic chunks; quick fix for force-top; quick fix for The End + Biomes
+Highlight: Added support for 1.0 (cubic chunks); quick fix for force-top; quick fix for The End + Biomes; Fixed --check-spawnable for cubic chunks
+
+v0.0.28 - 2016.12.25
+Fixed check spawnable for cubic chunks
 
 v0.0.27 - 2016.12.24
 Quick fix for The End -- fix crash

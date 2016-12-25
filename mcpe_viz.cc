@@ -348,8 +348,6 @@ namespace mcpe_viz {
     // this is the block_size used by leveldb
     int32_t leveldbBlockSize = 4096;
 
-    bool warnedSpawnableFlag;
-    
     Control() {
       init();
     }
@@ -410,8 +408,6 @@ namespace mcpe_viz {
       // todo - cmdline option for this?
       heightMode = kHeightModeTop;
 
-      warnedSpawnableFlag = false;
-      
       for (int32_t did=0; did < kDimIdCount; did++) {
 	fnLayerTop[did] = "";
 	fnLayerBiome[did] = "";
@@ -650,6 +646,19 @@ namespace mcpe_viz {
     return v;
   }
 
+
+
+  // todobig - this (XXX_v3_fullchunk) needs to be cleaner/simpler
+
+  // calculate an offset into mcpe chunk data for block data
+  inline int32_t _calcOffsetBlock_LevelDB_v3_fullchunk(int32_t x, int32_t z, int32_t y) {
+    return (((x*16) + z) * MAX_BLOCK_HEIGHT) + y;
+  }
+  
+  inline uint8_t getData_LevelDB_v3_fullchunk(const char* p, int32_t x, int32_t z, int32_t y) {
+    return p[_calcOffsetBlock_LevelDB_v3_fullchunk(x,z,y)];
+  }
+
   
   // todolib - move to util?
   
@@ -840,6 +849,8 @@ namespace mcpe_viz {
     uint8_t topBlockY[16][16];
     uint8_t heightCol[16][16];
     uint8_t topLight[16][16];
+    bool checkSpawnFlag;
+    int32_t chunkFormatVersion;
 
     // we parse the block (et al) data in a chunk from leveldb
     ChunkData_LevelDB() {
@@ -852,6 +863,9 @@ namespace mcpe_viz {
       memset(topBlockY, 0, sizeof(topBlockY));
       //memset(heightCol,0, 16*16*sizeof(uint8_t));
       memset(topLight, 0, sizeof(topLight));
+
+      checkSpawnFlag = false;
+      chunkFormatVersion = -1;
     }
 
     /*
@@ -896,14 +910,14 @@ namespace mcpe_viz {
 			   const CheckSpawnList& listCheckSpawn ) {
       chunkX = tchunkX;
       chunkZ = tchunkZ;
-
+      chunkFormatVersion = 2;
+      
       int16_t histogramBlock[256];
       int16_t histogramBiome[256];
       memset(histogramBlock, 0, sizeof(histogramBlock));
       memset(histogramBiome, 0, sizeof(histogramBiome));
 
       // see if we need to check any columns in this chunk for spawnable
-      bool checkSpawnFlag = false;
       int32_t wx = chunkX * 16;
       int32_t wz = chunkZ * 16;
       for ( const auto& it : listCheckSpawn ) {
@@ -1126,7 +1140,8 @@ namespace mcpe_viz {
       chunkX = tchunkX;
       int32_t chunkY = tchunkY;
       chunkZ = tchunkZ;
-
+      chunkFormatVersion = 3;
+      
       // todonow todostopper - this is problematic for cubic chunks
       int16_t histogramBlock[256];
       int16_t histogramBiome[256];
@@ -1134,7 +1149,6 @@ namespace mcpe_viz {
       memset(histogramBiome, 0, sizeof(histogramBiome));
 
       // see if we need to check any columns in this chunk for spawnable
-      bool checkSpawnFlag = false;
       int32_t wx = chunkX * 16;
       int32_t wz = chunkZ * 16;
       for ( const auto& it : listCheckSpawn ) {
@@ -1186,84 +1200,7 @@ namespace mcpe_viz {
 	      listGeoJSON.push_back( json );
 	    }
 
-	    // todonow todostopper - this is a problem for cubic chunks, we'd need to construct the entire chunk before doing this
-	    // todobig todostopper - the answer is to check spawnable AFTER we go through all the chunks
-
-	    if ( checkSpawnFlag ) {
-	      if ( ! control.warnedSpawnableFlag ) {
-		slogger.msg(kLogWarning, "spawnable checking for cubic chunks is NOT implemented yet.\n");
-		control.warnedSpawnableFlag=true;
-	      }
-	    }
-	    
-	    if ( false ) {
-	      // check spawnable -- cannot check spawn at 0 or MAX_BLOCK_HEIGHT because we need above/below blocks
-	      if ( checkSpawnFlag && ( cy > 0 && cy < MAX_BLOCK_HEIGHT ) ) {
-		bool continueCheckSpawnFlag = false;
-		for ( const auto& it : listCheckSpawn ) {
-		  if ( it->contains(wx+cx, wz+cz) ) {
-		    continueCheckSpawnFlag = true;
-		    break;
-		  }
-		}
-		if ( continueCheckSpawnFlag ) {
-
-		  // note: rules adapted from: http://minecraft.gamepedia.com/Spawn
-
-		  // todobig - is this missing some spawnable blocks?
-		
-		  // "the spawning block itself must be non-opaque and non-liquid"
-		  // we add: non-solid
-		  if ( ! blockInfoList[blockId].isOpaque() &&
-		       ! blockInfoList[blockId].isLiquid() &&
-		       ! blockInfoList[blockId].isSolid() ) { 
-
-		    // "the block directly above it must be non-opaque"
-
-		    uint8_t aboveBlockId = getBlockId_LevelDB_v3(cdata, cx,cz,cy+1);
-		    if ( ! blockInfoList[aboveBlockId].isOpaque() ) {
-
-		      // "the block directly below it must have a solid top surface (opaque, upside down slabs / stairs and others)"
-		      // "the block directly below it may not be bedrock or barrier" -- take care of with 'spawnable'
-
-		      uint8_t belowBlockId = getBlockId_LevelDB_v3(cdata, cx,cz,cy-1);
-		      uint8_t belowBlockData = getBlockData_LevelDB_v3(cdata, cx,cz,cy-1);
-		      
-		      //if ( blockInfoList[belowBlockId].isOpaque() && blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
-		      if ( blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
-
-			// check the light level
-			uint8_t bl = getBlockBlockLight_LevelDB_v3(cdata, cx,cz,cy);
-			if ( bl <= 7 ) {
-			  // spwawnable! add it to the list
-			  double ix, iy;
-			  char tmpstring[512];
-			  worldPointToGeoJSONPoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
-			  sprintf(tmpstring, ""
-				  "\"Spawnable\":true,"
-				  "\"Name\":\"Spawnable\","
-				  "\"LightLevel\":\"%d\","
-				  "\"Dimension\":\"%d\","
-				  "\"Pos\":[%d,%d,%d]"
-				  "}}"
-				  , (int)bl
-				  , dimensionId
-				  , chunkX*16 + cx
-				  , cy
-				  , chunkZ*16 + cz
-				  );
-			  std::string json = ""
-			    + makeGeojsonHeader(ix,iy)
-			    + tmpstring
-			    ;
-			  listGeoJSON.push_back( json );
-			}
-		      }
-		    }
-		  }
-		}
-	      }
-	    }
+	    // note: we check spawnable later
 	    
 	    // todo - check for isSolid?
 
@@ -1398,7 +1335,170 @@ namespace mcpe_viz {
 
       return 0;
     }
-    
+
+    int32_t checkSpawnable ( leveldb::DB* db, int32_t dimId, const CheckSpawnList& listCheckSpawn ) {
+
+      if ( chunkFormatVersion != 3 || !checkSpawnFlag ) {
+	// we do not need to check this chunk
+	return 0;
+      }
+
+      // we have a chunk that is v3 and contains at least some pixels which need to be checked
+      // we need to collect all available cubic chunks
+      
+      const int32_t blockDataMaxSize = 16 * 16 * MAX_BLOCK_HEIGHT;
+      //      const int32_t blockidSubchunkSize = 16 * 16 * 16;
+      //      const int32_t blockdataSubchunkSize = 16 * 16 * 8;
+      //      const int32_t blocklightSubchunkSize = 16 * 16 * 8;
+      char* blockidData = new char[blockDataMaxSize];
+      char* blockdataData = new char[blockDataMaxSize];
+      char* blocklightData = new char[blockDataMaxSize];
+
+      memset(blockidData, 0, blockDataMaxSize);
+      memset(blockdataData, 0, blockDataMaxSize);
+      memset(blocklightData, 0, blockDataMaxSize);
+
+      // get the data
+      char keybuf[128];
+      int32_t keybuflen;
+      int32_t kw = dimId;
+      uint8_t kt_v3 = 0x2f;
+      leveldb::Status dstatus;
+      leveldb::ReadOptions readOptions;
+      readOptions.fill_cache=false; // may improve performance?
+      std::string svalue;
+      const char* pchunk = nullptr;
+      for (int8_t cubicy = 0; cubicy < MAX_CUBIC_Y; cubicy++) {
+	
+	// todobug - this fails around level 112? on another1 -- weird -- run a valgrind to see where we're messing up
+	//check valgrind output
+	
+	// construct key to get the chunk
+	if ( dimId == kDimIdOverworld ) {
+	  //overworld
+	  memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	  memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	  memcpy(&keybuf[8],&kt_v3,sizeof(uint8_t));
+	  memcpy(&keybuf[9],&cubicy,sizeof(uint8_t));
+	  keybuflen=10;
+	} else {
+	  // nether (and probably any others that are added)
+	  memcpy(&keybuf[0],&chunkX,sizeof(int32_t));
+	  memcpy(&keybuf[4],&chunkZ,sizeof(int32_t));
+	  memcpy(&keybuf[8],&kw,sizeof(int32_t));
+	  memcpy(&keybuf[12],&kt_v3,sizeof(uint8_t));
+	  memcpy(&keybuf[13],&cubicy,sizeof(uint8_t));
+	  keybuflen=14;
+	}
+	
+	dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+	if ( dstatus.ok() ) {
+	  pchunk = svalue.data();
+
+	  // copy data
+	  // todobig - make this faster with memcpy's -- it is important to consider the way we'll extract the data later :)
+	  for ( int32_t cx=0; cx < 16; cx++ ) {
+	    for ( int32_t cz=0; cz < 16; cz++ ) {
+	      for ( int32_t cy=0; cy < 16; cy++ ) {
+		int32_t off = _calcOffsetBlock_LevelDB_v3_fullchunk(cx,cz,cy);
+		blockidData[ off ] = getBlockId_LevelDB_v3(pchunk, cx,cz,cy);
+		blockdataData[ off ] = getBlockData_LevelDB_v3(pchunk, cx,cz,cy);
+		blocklightData[ off ] = getBlockBlockLight_LevelDB_v3(pchunk, cx,cz,cy);
+	      }
+	    }
+	  }
+	  
+	  //	  memcpy(&blockidData[cubicy * blockidSubchunkSize], &pchunk[1], blockidSubchunkSize);
+	  //	  memcpy(&blockdataData[cubicy * blockdataSubchunkSize], &pchunk[(16*16*16)+1], blockdataSubchunkSize);
+	  //	  memcpy(&blocklightData[cubicy * blocklightSubchunkSize], &pchunk[(16*16*16) + (16*16*8) + (16*16*8) + 1], blocklightSubchunkSize);
+	}
+      }
+
+      // we have all the data, now we check spawnable
+      int32_t wx = chunkX * 16;
+      int32_t wz = chunkZ * 16;
+      for ( int32_t cy=MAX_BLOCK_HEIGHT; cy >=0; cy-- ) {
+	for ( int32_t cx=0; cx < 16; cx++ ) {
+	  for ( int32_t cz=0; cz < 16; cz++ ) {
+
+	    uint8_t blockId = getData_LevelDB_v3_fullchunk(blockidData, cx,cz,cy);
+	    
+	    // check spawnable -- cannot check spawn at 0 or MAX_BLOCK_HEIGHT because we need above/below blocks
+	    if ( cy > 0 && cy < MAX_BLOCK_HEIGHT ) {
+	      bool continueCheckSpawnFlag = false;
+	      for ( const auto& it : listCheckSpawn ) {
+		if ( it->contains(wx+cx, wz+cz) ) {
+		  continueCheckSpawnFlag = true;
+		  break;
+		}
+	      }
+	      if ( continueCheckSpawnFlag ) {
+		
+		// note: rules adapted from: http://minecraft.gamepedia.com/Spawn
+		
+		// todobig - is this missing some spawnable blocks?
+		
+		// "the spawning block itself must be non-opaque and non-liquid"
+		// we add: non-solid
+		if ( ! blockInfoList[blockId].isOpaque() &&
+		     ! blockInfoList[blockId].isLiquid() &&
+		     ! blockInfoList[blockId].isSolid() ) { 
+		  
+		  // "the block directly above it must be non-opaque"
+		  
+		  uint8_t aboveBlockId = getData_LevelDB_v3_fullchunk(blockidData, cx,cz,cy+1);
+		  if ( ! blockInfoList[aboveBlockId].isOpaque() ) {
+		    
+		    // "the block directly below it must have a solid top surface (opaque, upside down slabs / stairs and others)"
+		    // "the block directly below it may not be bedrock or barrier" -- take care of with 'spawnable'
+		    
+		    uint8_t belowBlockId = getData_LevelDB_v3_fullchunk(blockidData, cx,cz,cy-1);
+		    uint8_t belowBlockData = getData_LevelDB_v3_fullchunk(blockdataData, cx,cz,cy-1);
+		    
+		    //if ( blockInfoList[belowBlockId].isOpaque() && blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
+		    if ( blockInfoList[belowBlockId].isSpawnable(belowBlockData) ) {
+		      
+		      // check the light level
+		      uint8_t bl = getData_LevelDB_v3_fullchunk(blocklightData, cx,cz,cy);
+		      if ( bl <= 7 ) {
+			// spwawnable! add it to the list
+			double ix, iy;
+			char tmpstring[512];
+			worldPointToGeoJSONPoint(dimId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
+			sprintf(tmpstring, ""
+				"\"Spawnable\":true,"
+				"\"Name\":\"Spawnable\","
+				"\"LightLevel\":\"%d\","
+				"\"Dimension\":\"%d\","
+				"\"Pos\":[%d,%d,%d]"
+				"}}"
+				, (int)bl
+				, dimId
+				, chunkX*16 + cx
+				, cy
+				, chunkZ*16 + cz
+				);
+			std::string json = ""
+			  + makeGeojsonHeader(ix,iy)
+			  + tmpstring
+			  ;
+			listGeoJSON.push_back( json );
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+
+      delete [] blockidData;
+      delete [] blockdataData;
+      delete [] blocklightData;
+      
+      return 0;
+    }
   };
 
   
@@ -1533,9 +1633,9 @@ namespace mcpe_viz {
     int32_t getMinChunkZ() { return minChunkZ; }
     int32_t getMaxChunkZ() { return maxChunkZ; }
 
-    int32_t addChunk ( int32_t chunkFormatVersion, int32_t chunkX, int32_t chunkY, int32_t chunkZ, const char* cdata) {
+    int32_t addChunk ( int32_t tchunkFormatVersion, int32_t chunkX, int32_t chunkY, int32_t chunkZ, const char* cdata) {
       ChunkKey chunkKey(chunkX, chunkZ);
-      switch ( chunkFormatVersion ) {
+      switch ( tchunkFormatVersion ) {
       case 2:
 	// pre-0.17
 	chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
@@ -1558,12 +1658,12 @@ namespace mcpe_viz {
 					      listCheckSpawn);
 	return 0;
       }
-      slogger.msg(kLogError, "UNKNOWN CHUNK FORMAT (%d)\n", chunkFormatVersion);
+      slogger.msg(kLogError, "UNKNOWN CHUNK FORMAT (%d)\n", tchunkFormatVersion);
       return -1;
     }
     
-    int32_t addChunkColumnData ( int32_t chunkFormatVersion, int32_t chunkX, int32_t chunkZ, const char* cdata, int32_t cdatalen) {
-      switch ( chunkFormatVersion ) {
+    int32_t addChunkColumnData ( int32_t tchunkFormatVersion, int32_t chunkX, int32_t chunkZ, const char* cdata, int32_t cdatalen) {
+      switch ( tchunkFormatVersion ) {
       case 2:
 	// pre-0.17
 	// column data is in the main record
@@ -1579,10 +1679,17 @@ namespace mcpe_viz {
 
 	return chunks[chunkKey]->_do_chunk_biome_v3(chunkX, chunkZ, cdata, cdatalen, histogramGlobalBiome);
       }
-      slogger.msg(kLogError, "UNKNOWN CHUNK FORMAT (%d)\n", chunkFormatVersion);
+      slogger.msg(kLogError, "UNKNOWN CHUNK FORMAT (%d)\n", tchunkFormatVersion);
       return -1;
     }
     
+    int32_t checkSpawnable ( leveldb::DB* db ) {
+      for (const auto& it : chunks) {
+	it.second->checkSpawnable(db, dimId, listCheckSpawn);
+      }
+      return 0;
+    }
+
     //todolib - move this out?
     bool checkDoForDim(int32_t v) {
       if ( v == kDoOutputAll ) {
@@ -2663,6 +2770,9 @@ namespace mcpe_viz {
 		pchunk = svalue.data();
 		ochunk = pchunk;
 		foundCt++;
+
+		// the first byte is not interesting to us (it is version #?)
+		pchunk++;
 		
 		// we step through the chunk in the natural order to speed things up
 		for (int32_t cx=0; cx < 16; cx++) {
@@ -2672,8 +2782,8 @@ namespace mcpe_viz {
 		      int32_t cy = cubicy*16 + ccy;
 
 		      // todo - if we use this, we get blockdata errors... somethings not right
-		      //blockid = *(pchunk++);
-		      blockid = getBlockId_LevelDB_v3(ochunk, cx,cz,ccy);
+		      blockid = *(pchunk++);
+		      // blockid = getBlockId_LevelDB_v3(ochunk, cx,cz,ccy);
 		      
 		      if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
 			
@@ -3715,22 +3825,22 @@ namespace mcpe_viz {
 	  value_hex=[0a 00 00 0a 09 00 6d 69 6e 65 73 68 61 66 74 00 0a 06 00 6f 63 65 61 6e 73 00 0a 09 00 73 63 61 74 74 65 72 65 64 00 0a 0a 00 73 74 72 6f 6e 67 68 6f 6c 64 00 0a 07 00 76 69 6c 6c 61 67 65 00 00]
 
 
-	   UNK: NBT Decode Start
-	   UNK: [] COMPOUND-1 {
-      UNK:   [mineshaft] COMPOUND-2 {
-      UNK:   } COMPOUND-2
-		 UNK:   [oceans] COMPOUND-3 {
-      UNK:   } COMPOUND-3
-		 UNK:   [scattered] COMPOUND-4 {
-      UNK:   } COMPOUND-4
-		 UNK:   [stronghold] COMPOUND-5 {
-      UNK:   } COMPOUND-5
-		 UNK:   [village] COMPOUND-6 {
-      UNK:   } COMPOUND-6
-		 UNK: } COMPOUND-1
-			  UNK: NBT Decode End (1 tags)
+	  UNK: NBT Decode Start
+	  UNK: [] COMPOUND-1 {
+	  UNK:   [mineshaft] COMPOUND-2 {
+	  UNK:   } COMPOUND-2
+	  UNK:   [oceans] COMPOUND-3 {
+	  UNK:   } COMPOUND-3
+	  UNK:   [scattered] COMPOUND-4 {
+	  UNK:   } COMPOUND-4
+	  UNK:   [stronghold] COMPOUND-5 {
+	  UNK:   } COMPOUND-5
+	  UNK:   [village] COMPOUND-6 {
+	  UNK:   } COMPOUND-6
+	  UNK: } COMPOUND-1
+	  UNK: NBT Decode End (1 tags)
 	  
-			  */
+	*/
 	
 	else if ( key_size == 9 || key_size == 10 || key_size == 13 || key_size == 14 ) {
 
@@ -3874,9 +3984,9 @@ namespace mcpe_viz {
 	    // according to tommo (https://www.reddit.com/r/MCPE/comments/5cw2tm/level_format_changes_in_mcpe_0171_100/)
 	    // "BiomeState"
 	    /*
-	       0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
-	       -- there are 2907 in "another1"
-	       -- to examine data:
+	      0x35 ?? -- both dimensions -- length 3,5,7,9,11 -- appears to be: b0 (count of items) b1..bn (2-byte ints) 
+	      -- there are 2907 in "another1"
+	      -- to examine data:
 	      cat (logfile) | grep "WARNING: Unknown key size" | grep " 35\]" | cut -b75- | sort | nl
 	    */
 	    break;
@@ -3997,6 +4107,18 @@ namespace mcpe_viz {
 	slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",iter->status().ToString().c_str());
       }
       delete iter;
+
+      return 0;
+    }
+
+    int32_t checkSpawnable() {
+      // for cubic chunks we need to first know that a chunk needs to be checked for spawnable,
+      // then we collect all of that chunk's data and do the spawn checking
+
+      for (int did=0; did < kDimIdCount; did++) {
+	slogger.msg(kLogInfo1,"Check Spawnable: Dimension '%s' (%d)\n", dimDataList[did]->getName().c_str(), did);
+	dimDataList[did]->checkSpawnable(db);
+      }
 
       return 0;
     }
@@ -5479,6 +5601,7 @@ int main ( int argc, char **argv ) {
   // todobig - we could call this deepParseDb() and only do it if the user wanted it
   if ( true || mcpe_viz::control.doDetailParseFlag ) {
     mcpe_viz::world->dbParse();
+    mcpe_viz::world->checkSpawnable();
   }
 
   mcpe_viz::world->doOutput();

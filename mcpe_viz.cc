@@ -1399,11 +1399,13 @@ namespace mcpe_viz {
 	  // todobig - make this faster with memcpy's -- it is important to consider the way we'll extract the data later :)
 	  for ( int32_t cx=0; cx < 16; cx++ ) {
 	    for ( int32_t cz=0; cz < 16; cz++ ) {
-	      for ( int32_t cy=0; cy < 16; cy++ ) {
+	      for ( int32_t ccy=0; ccy < 16; ccy++ ) {
+		int32_t cy = cubicy*16 + ccy;
+		
 		int32_t off = _calcOffsetBlock_LevelDB_v3_fullchunk(cx,cz,cy);
-		blockidData[ off ] = getBlockId_LevelDB_v3(pchunk, cx,cz,cy);
-		blockdataData[ off ] = getBlockData_LevelDB_v3(pchunk, cx,cz,cy);
-		blocklightData[ off ] = getBlockBlockLight_LevelDB_v3(pchunk, cx,cz,cy);
+		blockidData[ off ] = getBlockId_LevelDB_v3(pchunk, cx,cz,ccy);
+		blockdataData[ off ] = getBlockData_LevelDB_v3(pchunk, cx,cz,ccy);
+		blocklightData[ off ] = getBlockBlockLight_LevelDB_v3(pchunk, cx,cz,ccy);
 	      }
 	    }
 	  }

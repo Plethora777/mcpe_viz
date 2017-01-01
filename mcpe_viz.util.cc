@@ -17,6 +17,9 @@
 // ugliness to support fast file copies :)
 #if defined(__APPLE__) || defined(__FreeBSD__)
 #include <copyfile.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #else
 #if defined(WIN32)
 #include <windows.h>
@@ -220,7 +223,11 @@ namespace mcpe_viz {
       int resDest = stat(fnDest.c_str(), &sDest);
       if( resSrc == 0 && resDest == 0 ) {
 	if ( sSrc.st_size == sDest.st_size ) {
+#if defined(__APPLE__) || defined(__FreeBSD__)
+	  if ( sSrc.st_mtimespec.tv_sec <= sDest.st_mtimespec.tv_sec ) {
+#else
 	  if ( sSrc.st_mtim.tv_sec <= sDest.st_mtim.tv_sec ) {
+#endif
 	    // file already exists, is the same size and has a good timestamp
 	    //slogger.msg(kLogInfo1,"INFO! Skipping existing file (%s) (%s)\n", fnSrc.c_str(), fnDest.c_str());
 	    return 0;

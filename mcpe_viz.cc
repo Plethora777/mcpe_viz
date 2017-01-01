@@ -3999,7 +3999,7 @@ namespace mcpe_viz {
 	    {
 	      // this record is not very interesting, we usually hide it
 	      // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
-	      if ( control.verboseFlag || (cdata[0] != 2) ) { 
+	      if ( control.verboseFlag || ((cdata[0] != 2) && (cdata[0] != 3)) ) { 
 		if ( cdata[0] != 2 ) { 
 		  logger.msg(kLogInfo1,"WARNING: UNKNOWN CHUNK VERSION!  %s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
 		} else {

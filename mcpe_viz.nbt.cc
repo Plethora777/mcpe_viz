@@ -1376,6 +1376,7 @@ namespace mcpe_viz {
 
       if ( tc.has_key("Pos", nbt::tag_type::List) ) {
 	nbt::tag_list pos = tc["Pos"].as<nbt::tag_list>();
+	// todostopper -- crash here on xmas world -- bad cast -- pos not float?!
 	entity->pos.set( pos[0].as<nbt::tag_float>().get(),
 			 pos[1].as<nbt::tag_float>().get(),
 			 pos[2].as<nbt::tag_float>().get() );

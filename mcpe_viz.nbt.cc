@@ -10,6 +10,11 @@
 #include <stdio.h>
 #include <fstream>
 #include <algorithm>
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <cmath>
+#endif
+
 #include "mcpe_viz.util.h"
 #include "mcpe_viz.h"
 #include "mcpe_viz.nbt.h"
@@ -1376,6 +1381,7 @@ namespace mcpe_viz {
 
       if ( tc.has_key("Pos", nbt::tag_type::List) ) {
 	nbt::tag_list pos = tc["Pos"].as<nbt::tag_list>();
+	// todostopper -- crash here on xmas world -- bad cast -- pos not float?!
 	entity->pos.set( pos[0].as<nbt::tag_float>().get(),
 			 pos[1].as<nbt::tag_float>().get(),
 			 pos[2].as<nbt::tag_float>().get() );

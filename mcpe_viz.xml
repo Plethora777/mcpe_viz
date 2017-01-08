@@ -1191,10 +1191,10 @@
     <entity id="0x31" name="Guardian" etype="H" /> <!-- 0.16 -->
     <entity id="0x32" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
     <entity id="0x32" name="NPC" etype="P" /> <!-- 0.16? --> <!-- todo what is this? -->
-    <entity id="0x33" name="Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x34" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
-    <entity id="0x35" name="Shulker" etype="H" /> <!-- 0.17 -->
-    <entity id="0x36" name="Endermite" etype="H" /> <!-- 0.17 -->
+    <entity id="0x34" name="Wither" etype="H" /> <!-- 0.16 -->
+    <entity id="0x35" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
+    <entity id="0x36" name="Shulker" etype="H" /> <!-- 0.17 -->
+    <entity id="0x37" name="Endermite" etype="H" /> <!-- 0.17 -->
     <entity id="0x3F" name="The Player" />
     <entity id="0x40" name="Dropped item" />
     <entity id="0x41" name="Primed TNT" />

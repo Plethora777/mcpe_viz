@@ -226,7 +226,14 @@
     <block id="0x2F" name="Bookshelf" color="0xa27826" />
     <block id="0x30" name="Mossy Cobblestone" color="0x8a9e90" />
     <block id="0x31" name="Obsidian" color="0xc2a6c1" />
-    <block id="0x32" name="Torch" color="0xffff00" solid="0" opaque="0" spawnable="0" />
+    <block id="0x32" name="Torch" color="0xffff00" solid="0" opaque="0" spawnable="0">
+      <blockvariant blockdata="0x0" name="Torch" />
+      <blockvariant blockdata="0x1" name="Torch, Facing East" />
+      <blockvariant blockdata="0x2" name="Torch, Facing West" />
+      <blockvariant blockdata="0x3" name="Torch, Facing South" />
+      <blockvariant blockdata="0x4" name="Torch, Facing North" />
+      <blockvariant blockdata="0x5" name="Torch, Facing Up" />
+    </block>
     <block id="0x33" name="Fire" color="0xff1d32" solid="0" opaque="0" spawnable="0" />
     <block id="0x34" name="Mob Spawner" color="0x930a91" /> <!-- *E -->
     <block id="0x35" name="Stairs, Oak Wood" color="0x696b2d" spawnable="0"> <!-- *S -->
@@ -298,7 +305,7 @@
     <block id="0x5E" name="Redstone Repeater, Active" color="0xea5c5c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
     <block id="0x5F" name="TBD - MCPE=Invisible Bedrock / MCPC=Stained Glass" color="0x282828" />
     <block id="0x60" name="Trapdoor" color="0x9e9678" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x61" name="Monster Egg">
+    <block id="0x61" name="Monster Egg" color="0xe6e6fa">
       <blockvariant blockdata="0x0" name="Monster Egg, Stone" />
       <blockvariant blockdata="0x1" name="Monster Egg, Cobblestone" />
       <blockvariant blockdata="0x2" name="Monster Egg, Stone Brick" />
@@ -437,12 +444,31 @@
     <block id="0x8D" name="Carrot" color="0xe8a03a" solid="0" opaque="0" spawnable="0" />  <!-- *S *I -->
     <block id="0x8E" name="Potato" color="0xb4af1c" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
     <block id="0x8F" name="Button, Wooden" color="0xcfbe7a" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x90" name="Mob Head" color="0xe030e0" solid="0" /> <!-- *I *S *E 0.13 todo - parse type and direction etc -->
-    <!-- todo - note: on the MCPE page anvil is listed as 0x90; in the data files (and the MC page) it is 0x91 -->
+    <block id="0x90" name="Mob Head" color="0xe030e0" solid="0"> <!-- *I *S *E 0.13 todo - parse type and direction etc -->
+      <blockvariant blockdata="0x01" name="Mob Head, On the floor" />
+      <blockvariant blockdata="0x02" name="Mob Head, On a wall, facing North" />
+      <blockvariant blockdata="0x03" name="Mob Head, On a wall, facing South" />
+      <blockvariant blockdata="0x04" name="Mob Head, On a wall, facing East" />
+      <blockvariant blockdata="0x05" name="Mob Head, On a wall, facing West" />
+      <!-- Item variant Skeleton -->
+      <!-- Item variant Wither Skeleton -->
+      <!-- Item variant Zombie -->
+      <!-- Item variant Player -->
+      <!-- Item variant Creeper -->
+    </block>
     <block id="0x91" name="Anvil" color="0x606060" opaque="0" spawnable="0"> <!-- *S *B -->
       <blockvariant blockdata="0x0" name="Anvil, Intact" />
+      <blockvariant blockdata="0x1" name="Anvil, Intact" />
+      <blockvariant blockdata="0x2" name="Anvil, Intact" />
+      <blockvariant blockdata="0x3" name="Anvil, Intact" />
       <blockvariant blockdata="0x4" name="Anvil, Slightly Damaged" />
+      <blockvariant blockdata="0x5" name="Anvil, Slightly Damaged" />
+      <blockvariant blockdata="0x6" name="Anvil, Slightly Damaged" />
+      <blockvariant blockdata="0x7" name="Anvil, Slightly Damaged" />
       <blockvariant blockdata="0x8" name="Anvil, Very Damaged" />
+      <blockvariant blockdata="0x9" name="Anvil, Very Damaged" />
+      <blockvariant blockdata="0xA" name="Anvil, Very Damaged" />
+      <blockvariant blockdata="0xB" name="Anvil, Very Damaged" />
     </block>
     <block id="0x92" name="Trapped Chest" color="0xb37c4f" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
     <block id="0x93" name="Pressure Plate, Weighted Light" color="0xd3d526" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
@@ -573,12 +599,12 @@
     </block>
     <block id="0xA5" name="Slime Block" color="0x34e734" opaque="0" spawnable="1" /> <!-- 0.14 -->
     <block id="0xA7" name="Trapdoor, Iron" color="0xcfcccc" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0xA8" name="Prismarine" color="0xccccfc" opaque="1" spawnable="1"> <!-- *S 0.16 --> <!-- todo color -->
-      <blockvariant blockdata="0x0" name="Prismarine, Rough" />
-      <blockvariant blockdata="0x1" name="Prismarine, Dark" />
-      <blockvariant blockdata="0x2" name="Prismarine, Bricks" />
+    <block id="0xA8" name="Prismarine" color="0x008080" opaque="1" spawnable="1"> <!-- *S 0.16 --> <!-- todo color -->
+      <blockvariant blockdata="0x0" color="0x008080" name="Prismarine, Rough" /> <!-- 0.16 -->
+      <blockvariant blockdata="0x1" color="0x004040" name="Prismarine, Dark" /> <!-- 0.16 -->
+      <blockvariant blockdata="0x2" color="0x006060" name="Prismarine, Bricks" /> <!-- 0.16 -->
     </block>
-    <block id="0xA9" name="Sea Lantern" color="0xdcdcfc" opaque="1" spawnable="1" /> <!-- *S 0.16 --> <!-- todo color -->
+    <block id="0xA9" name="Sea Lantern" color="0x00cccc" opaque="1" spawnable="1" /> <!-- *S 0.16 --> <!-- todo color -->
     <block id="0xAA" name="Hay Bale" color="0xd8d385" /> 
     <block id="0xAB" name="Carpet" solid="0" opaque="0" spawnable="0"> <!-- *S *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="2" name="Carpet, White" />
@@ -602,18 +628,19 @@
     <block id="0xAD" name="Block of Coal" color="0x585858" />
     <block id="0xAE" name="Packed Ice" color="0x02cffd" opaque="0" />
     <block id="0xAF" name="Large Flowers" color="0xe4208a" solid="0" opaque="0" spawnable="0"> <!-- *B -->
-      <blockvariant blockdata="0x0" name="Sunflower" />
-      <blockvariant blockdata="0x1" name="Lilac" />
-      <blockvariant blockdata="0x2" name="Double Tallgrass" />
-      <blockvariant blockdata="0x3" name="Large Fern" />
-      <blockvariant blockdata="0x4" name="Rose Bush" />
-      <blockvariant blockdata="0x5" name="Peony" />
-      <blockvariant blockdata="0x8" name="Sunflower (top)" />
-      <blockvariant blockdata="0x9" name="Lilac (top)" />
-      <blockvariant blockdata="0xa" name="Double Tallgrass (top)" />
-      <blockvariant blockdata="0xb" name="Large Fern (top)" />
-      <blockvariant blockdata="0xc" name="Rose Bush (top)" />
-      <blockvariant blockdata="0xd" name="Peony (top)" />
+      <blockvariant blockdata="0x0" color="0x57d657" name="Sunflower" />
+      <blockvariant blockdata="0x1" color="0x1f821f" name="Lilac" />
+      <blockvariant blockdata="0x2" color="0x5f9ea0" name="Double Tallgrass" />
+      <blockvariant blockdata="0x3" color="0x5f9ea0" name="Large Fern" />
+      <blockvariant blockdata="0x4" color="0xbc8f8f" name="Rose Bush" />
+      <blockvariant blockdata="0x5" color="0x2dba2d" name="Peony" />
+      <blockvariant blockdata="0x8" color="0xffff00" name="Sunflower (top)" />
+      <blockvariant blockdata="0x9" color="0xee82ee" name="Lilac (top)" />
+      <blockvariant blockdata="0xA" color="0x5f9ea0" name="Double Tallgrass (top)" />
+      <blockvariant blockdata="0xB" color="0x5f9ea0" name="Large Fern (top)" />
+      <blockvariant blockdata="0xC" color="0xdc143c" name="Rose Bush (top)" />
+      <blockvariant blockdata="0xD" color="0xd87093" name="Peony (top)" />
+      <blockvariant blockdata="0xE" color="0xff00ff" name="Unknown Tall Flower" />
     </block>
     <block id="0xB2" name="Daylight Sensor, Inverted" color="0x989897" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
     <block id="0xB3" name="Red Sandstone" color="0xd0be86"> <!-- *B -->
@@ -675,6 +702,10 @@
     <block id="0xCE" name="End Bricks" color="0xded99e" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xD0" name="End Rod" color="0xf7f7f6" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xD1" name="End Gateway" color="0x545454" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
+    <block id="0xD2" name="Allow Block" spawnable="0" /> <!-- EDU -->
+    <block id="0xD3" name="Deny Block" spawnable="0" /> <!-- EDU -->
+    <block id="0xD4" name="Border Block" spawnable="0" /> <!-- EDU -->
+    <block id="0xE6" name="Chalkboard" spawnable="0" /> <!-- EDU -->
     <block id="0xF0" name="Chorus Plant" color="0x591062" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xF1" name="Stained Glass"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Stained Glass, White" />
@@ -694,12 +725,16 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Stained Glass, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Stained Glass, Black" />
     </block>
-    
+    <block id="0xF2" name="Camera" spawnable="0" /> <!-- EDU -->
     <block id="0xF3" name="Podzol" color="0x45390a" />
     <block id="0xF4" name="Beetroot" color="0xd03388" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
     <block id="0xF5" name="Stone Cutter" color="0xb2aea5" />
-    <block id="0xF6" name="Glowing Obsidian" /> <!-- todo -->
-    <block id="0xF7" name="Nether Reactor Core" color="0xbaf5f2" />
+    <block id="0xF6" name="Glowing Obsidian" color="0x8b0000" /> <!-- todo -->
+    <block id="0xF7" name="Nether Reactor Core" color="0xbaf5f2" > <!-- Obsolete -->
+      <blockvariant blockdata="0x0" name="Nether Reactor Core (Default)" />
+      <blockvariant blockdata="0x1" name="Nether Reactor Core (Active)" />
+      <blockvariant blockdata="0x2" name="Nether Reactor Core (Cooled)" />
+    </block>
     <block id="0xF8" name="Update Game Block (update!) [note 1]" /> <!-- todo -->
     <block id="0xF9" name="Update Game Block (ate!upd)" /> <!-- todo -->
     <block id="0xFA" name="TBD - Moving Block" opaque="0" spawnable="0" /> <!-- *S *E 0.16? -->
@@ -834,9 +869,9 @@
     <item id="0x144" name="Door, Oak" />
     <item id="0x145" name="Bucket">
       <itemvariant extradata="0x0" name="Bucket, Empty" />
+      <itemvariant extradata="0x1" name="Bucket, Milk" />
       <itemvariant extradata="0x8" name="Bucket, Water" />
       <itemvariant extradata="0xa" name="Bucket, Lava" />
-      <!-- todo - milk -->
     </item>
     <item id="0x146" name="TBD - Water Bucket" />
     <item id="0x147" name="TBD - Lava Bucket" />
@@ -845,7 +880,14 @@
     <item id="0x14A" name="Door, Iron" />
     <item id="0x14B" name="Redstone" />
     <item id="0x14C" name="Snowball" />
-    <item id="0x14D" name="Boat" />
+    <item id="0x14D" name="Boat" >
+      <itemvariant extradata="0x0" name="Boat, Oak Wood" />
+      <itemvariant extradata="0x1" name="Boat, Spruce Wood" />
+      <itemvariant extradata="0x2" name="Boat, Birch Wood" />
+      <itemvariant extradata="0x3" name="Boat, Jungle Wood" />
+      <itemvariant extradata="0x4" name="Boat, Acacia Wood" />
+      <itemvariant extradata="0x5" name="Boat, Dark Oak aWood" />
+    </item>
     <item id="0x14E" name="Leather" />
     <item id="0x14F" name="TBD - Milk" />
     <item id="0x150" name="Brick" />
@@ -962,41 +1004,50 @@
     <item id="0x17E" name="Glistering Melon" />
     <item id="0x17F" name="Spawn Egg"> <!-- *B -->
       <!-- todo jocopa3 has a lot more here - sync up -->
-      <itemvariant extradata="23" name="Spawn Egg, Horse" />
-      <itemvariant extradata="24" name="Spawn Egg, Donkey" />
-      <itemvariant extradata="25" name="Spawn Egg, Mule" />
-      <itemvariant extradata="26" name="Spawn Egg, Skeleton Horse" />
-      <itemvariant extradata="27" name="Spawn Egg, Zombie Horse" />
-      <itemvariant extradata="46" name="Spawn Egg, Stray" />
-      <itemvariant extradata="47" name="Spawn Egg, Husk" />
-      <itemvariant extradata="50" name="Spawn Egg, Creeper" />
-      <itemvariant extradata="51" name="Spawn Egg, Skeleton" />
-      <itemvariant extradata="52" name="Spawn Egg, Spider" />
-      <itemvariant extradata="54" name="Spawn Egg, Zombie " />
-      <itemvariant extradata="55" name="Spawn Egg, Slime" />
-      <itemvariant extradata="56" name="Spawn Egg, Ghast" />
-      <itemvariant extradata="57" name="Spawn Egg, Zombie Pigman" />
-      <itemvariant extradata="58" name="Spawn Egg, Enderman" />
-      <itemvariant extradata="59" name="Spawn Egg, Cave Spider" />
-      <itemvariant extradata="60" name="Spawn Egg, Silverfish" />
-      <itemvariant extradata="61" name="Spawn Egg, Blaze" />
-      <itemvariant extradata="62" name="Spawn Egg, Magma Cube" />
-      <itemvariant extradata="65" name="Spawn Egg, Bat" />
-      <itemvariant extradata="66" name="Spawn Egg, Witch" />
-      <itemvariant extradata="67" name="Spawn Egg, Endermite" />
-      <itemvariant extradata="68" name="Spawn Egg, Guardian" />
-      <itemvariant extradata="69" name="Spawn Egg, Shulker" />
-      <itemvariant extradata="90" name="Spawn Egg, Pig" />
-      <itemvariant extradata="91" name="Spawn Egg, Sheep" />
-      <itemvariant extradata="92" name="Spawn Egg, Cow" />
-      <itemvariant extradata="93" name="Spawn Egg, Chicken" />
-      <itemvariant extradata="94" name="Spawn Egg, Squid" />
-      <itemvariant extradata="95" name="Spawn Egg, Wolf" />
-      <itemvariant extradata="96" name="Spawn Egg, Mooshroom" />
-      <itemvariant extradata="98" name="Spawn Egg, Ocelot" />
-      <itemvariant extradata="100" name="Spawn Egg, Horse" />
-      <itemvariant extradata="101" name="Spawn Egg, Rabbit" />
-      <itemvariant extradata="120" name="Spawn Egg, Villager" />
+      <itemvariant extradata="0x0A" name="Spawn Egg, Chicken" />
+      <itemvariant extradata="0x0B" name="Spawn Egg, Cow" />
+      <itemvariant extradata="0x0C" name="Spawn Egg, Pig" />
+      <itemvariant extradata="0x0D" name="Spawn Egg, Sheep" />
+      <itemvariant extradata="0x0E" name="Spawn Egg, Wolf" />
+      <itemvariant extradata="0x0F" name="Spawn Egg, Villager" />
+      <itemvariant extradata="0x10" name="Spawn Egg, Mooshroom" />
+      <itemvariant extradata="0x11" name="Spawn Egg, Squid" />
+      <itemvariant extradata="0x12" name="Spawn Egg, Rabbit" />
+      <itemvariant extradata="0x13" name="Spawn Egg, Bat" />
+      <itemvariant extradata="0x14" name="Spawn Egg, Iron Golem" /> <!-- Empty Egg -->
+      <itemvariant extradata="0x15" name="Spawn Egg, Snow Golem" /> <!-- Empty Egg -->
+      <itemvariant extradata="0x16" name="Spawn Egg, Ocelot" />
+      <itemvariant extradata="0x17" name="Spawn Egg, Horse" />
+      <itemvariant extradata="0x18" name="Spawn Egg, Donkey" />
+      <itemvariant extradata="0x19" name="Spawn Egg, Mule" />
+      <itemvariant extradata="0x1A" name="Spawn Egg, Skeleton Horse" />
+      <itemvariant extradata="0x1B" name="Spawn Egg, Zombie Horse" />
+      <itemvariant extradata="0x1C" name="Spawn Egg, Polarbear" />
+      <itemvariant extradata="0x20" name="Spawn Egg, Zombie " />
+      <itemvariant extradata="0x21" name="Spawn Egg, Creeper" />
+      <itemvariant extradata="0x22" name="Spawn Egg, Skeleton" />
+      <itemvariant extradata="0x23" name="Spawn Egg, Spider" />
+      <itemvariant extradata="0x24" name="Spawn Egg, Zombie Pigman" />
+      <itemvariant extradata="0x25" name="Spawn Egg, Slime" />
+      <itemvariant extradata="0x26" name="Spawn Egg, Enderman" />
+      <itemvariant extradata="0x27" name="Spawn Egg, Silverfish" />
+      <itemvariant extradata="0x28" name="Spawn Egg, Cave Spider" />
+      <itemvariant extradata="0x29" name="Spawn Egg, Ghast" />
+      <itemvariant extradata="0x2A" name="Spawn Egg, Magma Cube" />
+      <itemvariant extradata="0x2B" name="Spawn Egg, Blaze" />
+      <itemvariant extradata="0x2C" name="Spawn Egg, Zombie Villager" />
+      <itemvariant extradata="0x2D" name="Spawn Egg, Witch" />
+      <itemvariant extradata="0x2E" name="Spawn Egg, Stray" />
+      <itemvariant extradata="0x2F" name="Spawn Egg, Husk" />
+      <itemvariant extradata="0x30" name="Spawn Egg, Wither Skeleton" />
+      <itemvariant extradata="0x31" name="Spawn Egg, Guardian" />
+      <itemvariant extradata="0x32" name="Spawn Egg, Elder Guardian" />
+      <itemvariant extradata="0x33" name="Spawn Egg, NPC" /> <!-- EDU -->
+      <itemvariant extradata="0x34" name="Spawn Egg, Wither" /> <!-- Invalid Item -->
+      <itemvariant extradata="0x35" name="Spawn Egg, Dragon" /> <!-- Invalid Item -->
+      <itemvariant extradata="0x36" name="Spawn Egg, Shulker" />
+      <itemvariant extradata="0x37" name="Spawn Egg, Endermite" />
+      <itemvariant extradata="0x38" name="Spawn Egg, Learn to Code Mascot" /> <!-- EDU -->
     </item>
     <item id="0x180" name="Bottle o' Enchanting" />
     <item id="0x181" name="Fire Charge" /> <!-- 0.15 -->
@@ -1133,14 +1184,21 @@
       <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
     </item>    
     <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
-    <item id="0x1C9" name="TBD - Beetroot (MCPE)" />
+    <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
+      <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->
+      <itemvariant extradata="0x1" name="2x1 Chalkboard" /> <!-- EDU -->
+      <itemvariant extradata="0x2" name="3x1 Chalkboard" /> <!-- EDU -->
+    </item> 
+    <item id="0x1C8" name="Portfolio" /> <!-- EDU -->
+    <item id="0x1C9" name="Beetroot" />
     <item id="0x1CA" name="Beetroot Seeds" />
-    <item id="0x1CB" name="TBD - Beetroot Soup (MCPE)" />
+    <item id="0x1CB" name="Beetroot Soup" />
     <item id="0x1CC" name="Salmon, Raw" /> <!-- *B -->
     <item id="0x1CD" name="Clownfish, Raw" /> <!-- *B -->
     <item id="0x1CE" name="Pufferfish, Raw" /> <!-- *B -->
     <item id="0x1CF" name="Salmon, Cooked" /> <!-- *B -->
-    <item id="0x1D2" name="TBD - Apple, Enchanted" />
+    <item id="0x1D2" name="Apple, Enchanted" />
+    <item id="0x1F2" name="Camera" /> <!-- EDU -->
   </itemlist>
 
   <!--
@@ -1152,6 +1210,7 @@
       etype - entity type (P=Peaceful; H=Hostile; O=Object)
   -->
   <entitylist>
+    <entity id="0x01" name="Empty" />
     <entity id="0x0A" name="Chicken" etype="P" />
     <entity id="0x0B" name="Cow" etype="P" />
     <entity id="0x0C" name="Pig" etype="P" />
@@ -1168,8 +1227,8 @@
     <entity id="0x17" name="Horse" etype="P" /> <!-- 0.15 -->
     <entity id="0x18" name="Donkey" etype="P" /> <!-- 0.15 -->
     <entity id="0x19" name="Mule" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1a" name="Horse, Skeleton" etype="H" /> <!-- 0.15 -->
-    <entity id="0x1b" name="Horse, Zombie" etype="H" /> <!-- 0.15 -->
+    <entity id="0x1a" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1b" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
     <entity id="0x1c" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
     <entity id="0x20" name="Zombie" etype="H" />
     <entity id="0x21" name="Creeper" etype="H" />
@@ -1190,12 +1249,14 @@
     <entity id="0x30" name="Skeleton, Wither" etype="H" /> <!-- 0.16 -->
     <entity id="0x31" name="Guardian" etype="H" /> <!-- 0.16 -->
     <entity id="0x32" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
-    <entity id="0x32" name="NPC" etype="P" /> <!-- 0.16? --> <!-- todo what is this? -->
+    <entity id="0x33" name="NPC" etype="P" /> <!-- EDU -->
     <entity id="0x34" name="Wither" etype="H" /> <!-- 0.16 -->
     <entity id="0x35" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
     <entity id="0x36" name="Shulker" etype="H" /> <!-- 0.17 -->
     <entity id="0x37" name="Endermite" etype="H" /> <!-- 0.17 -->
-    <entity id="0x3F" name="The Player" />
+    <entity id="0x38" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
+    <entity id="0x3E" name="TripodCamera" /> <!-- EDU -->
+    <entity id="0x3F" name="The Player" etype="P" />
     <entity id="0x40" name="Dropped item" />
     <entity id="0x41" name="Primed TNT" />
     <entity id="0x42" name="Falling block" />
@@ -1203,25 +1264,28 @@
     <entity id="0x45" name="Experience Orb" />    <!-- note: reverse engineered by me -->
     <entity id="0x46" name="Eye of Ender" /> 
     <entity id="0x47" name="Ender Crystal" /> 
-    <entity id="0x4C" name="Shulker Projectile" />
+    <entity id="0x4C" name="Shulker Bullet" />
     <entity id="0x4D" name="Fishing Rod hook" />
+    <entity id="0x4e" name="Chalkboard" /> <!-- EDU -->
     <entity id="0x4F" name="Dragon Fireball" />
     <entity id="0x50" name="Shot arrow" />
     <entity id="0x51" name="Thrown snowball" />
     <entity id="0x52" name="Thrown egg" />
     <entity id="0x53" name="Painting" />
     <entity id="0x54" name="Minecart" />
-    <entity id="0x55" name="Ghast fireball" />
+    <entity id="0x55" name="Ghast firecharge" />
     <entity id="0x56" name="Thrown Potion" />
     <entity id="0x57" name="Thrown Ender Pearl" />
     <entity id="0x58" name="Leash Fence Knot" />
     <entity id="0x59" name="Wither Skull" />
-    <entity id="0x5A" name="Boat" />
+    <entity id="0x5a" name="Boat" />
     <entity id="0x5d" name="Lightning Bolt" />
     <entity id="0x5e" name="Blaze fireball" />    <!-- note: reverse engineered by me -->
+    <entity id="0x5f" name="Area Effect Cloud" /> 
     <entity id="0x60" name="Minecart with Hopper" />    <!-- note: reverse engineered by me -->
     <entity id="0x61" name="Minecart with TNT" />    <!-- note: reverse engineered by me -->
     <entity id="0x62" name="Minecart with Chest" />    <!-- note: reverse engineered by me -->
+    <entity id="0x65" name="Lingering Potion" /> 
   </entitylist>
 
   <!--
@@ -1273,7 +1337,7 @@
     <biome id="0x25" name="Mesa" color="0xb75252" />
     <biome id="0x26" name="Mesa Plateau F" color="0xb76666" />
     <biome id="0x27" name="Mesa Plateau" color="0xb87474" />
-    <biome id="0x7f" name="The Void[upcoming]" color="0x202020" />
+    <biome id="0x7f" name="The Void" color="0x202020" />
     <biome id="0x80" name="Plains M" color="0x2faf51" />
     <biome id="0x81" name="Sunflower Plains" color="0xf8f12c" />
     <biome id="0x82" name="Desert M" color="0xb8b270" />
@@ -1331,7 +1395,6 @@
     <enchantment id="0x18" name="Lure" officialName="lure" />
   </enchantmentlist>
 
-
   <!--
       mapping of MCPC block id's to MCPE block id's
       there are (unfortunately) some differences between MCPE and MCPC block id's.
@@ -1351,7 +1414,7 @@
     <!-- armor stand -->
     <item mcpcId="0x1a0" mcpeId="-1" />
     <!-- prismarine -->
-    <item mcpcId="0x19a" mcpeId="-1" />
+    <item mcpcId="0x19a" mcpeId="0xA8" />
     <!-- hopper -->
     <!-- todobig - MCPC does NOT have a separate item for the hopper, but MCPE does? -->
   </mcpcToMcpeList>

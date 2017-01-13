@@ -27,7 +27,7 @@ namespace mcpe_viz {
   int32_t parseNbt( const char* hdr, const char* buf, int32_t bufLen, MyNbtTagList& tagList );
     
   int32_t parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
-		      bool playerLocalFlag, bool playerRemoteFlag, const std::string& playerType, const std::string& playerId);
+                      bool playerLocalFlag, bool playerRemoteFlag, const std::string& playerType, const std::string& playerId);
     
   int32_t parseNbt_tileEntity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList);
     
@@ -36,7 +36,7 @@ namespace mcpe_viz {
   int32_t parseNbt_mVillages(MyNbtTagList &tagList);
 
   int32_t writeSchematicFile(const std::string& fn, int32_t sizex, int32_t sizey, int32_t sizez,
-			     nbt::tag_byte_array& blockArray, nbt::tag_byte_array& blockDataArray);
+                             nbt::tag_byte_array& blockArray, nbt::tag_byte_array& blockDataArray);
   
 } // namespace mcpe_viz
 

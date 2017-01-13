@@ -640,7 +640,8 @@
       <blockvariant blockdata="0xB" color="0x5f9ea0" name="Large Fern (top)" />
       <blockvariant blockdata="0xC" color="0xdc143c" name="Rose Bush (top)" />
       <blockvariant blockdata="0xD" color="0xd87093" name="Peony (top)" />
-      <blockvariant blockdata="0xE" color="0xff00ff" name="Unknown Tall Flower" />
+      <blockvariant blockdata="0xE" color="0xff00ff" name="Unknown Tall Flower (0xE)" />
+      <blockvariant blockdata="0xF" color="0xfd00fc" name="Unknown Tall Flower (0xF)" />
     </block>
     <block id="0xB2" name="Daylight Sensor, Inverted" color="0x989897" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
     <block id="0xB3" name="Red Sandstone" color="0xd0be86"> <!-- *B -->

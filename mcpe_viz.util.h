@@ -50,7 +50,7 @@ namespace mcpe_viz {
   
   typedef std::vector< std::pair<std::string, std::string> > StringReplacementList;
   int32_t copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
-				      const StringReplacementList& replaceStrings );
+                                      const StringReplacementList& replaceStrings );
   
   int32_t copyFile ( const std::string& fnSrc, const std::string& fnDest, bool checkExistingFlag );
 
@@ -122,18 +122,18 @@ namespace mcpe_viz {
       int32_t msg (int32_t levelMask, const char *fmt, ...) {
       // check if we care about this message
       if ( (levelMask & logLevelMask) || (levelMask & kLogFatalError) ) {
-	// we care
+        // we care
       } else {
-	// we don't care
-	return -1;
+        // we don't care
+        return -1;
       }
       
       // todobig - be more clever about logging - if very important or interesting, we might want to print to log AND to stderr
       FILE *fp = fpStdout;
 
       if ( fp == nullptr ) {
-	// todobig - output to screen?
-	return -1;
+        // todobig - output to screen?
+        return -1;
       }
       
       if (levelMask & kLogFatalError)   { fprintf(fp,"** FATAL ERROR: "); }
@@ -148,13 +148,13 @@ namespace mcpe_viz {
       va_end(argptr);
       
       if (levelMask & kLogFatalError) {
-	fprintf(fp,"** Exiting on FATAL ERROR\n");
-	fflush(fp);
-	exit(-1);
+        fprintf(fp,"** Exiting on FATAL ERROR\n");
+        fflush(fp);
+        exit(-1);
       }
 
       if ( doFlushFlag ) {
-	fflush(fp);
+        fflush(fp);
       }
       
       return 0;
@@ -196,60 +196,60 @@ namespace mcpe_viz {
     int32_t open(const std::string& imageDescription, int32_t width, int32_t height, int32_t numRowPointers, bool rgbaFlag, bool wholeImageFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
-	slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
-	return -1;
+        slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+        return -1;
       }
-	
+        
       // todo - add handlers for warn/err etc?
       /*
-	png_structp   png_create_write_struct   (
-	png_const_charp   user_png_ver,  
-	png_voidp  error_ptr,  
-	png_error_ptr  error_fn, 
-	png_error_ptr warn_fn);
+        png_structp   png_create_write_struct   (
+        png_const_charp   user_png_ver,  
+        png_voidp  error_ptr,  
+        png_error_ptr  error_fn, 
+        png_error_ptr warn_fn);
       */
       png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
       if (!png) {
-	slogger.msg(kLogInfo1,"ERROR: Failed png_create_write_struct\n");
-	fclose(fp);
-	return -2;
+        slogger.msg(kLogInfo1,"ERROR: Failed png_create_write_struct\n");
+        fclose(fp);
+        return -2;
       }
-	
+        
       info = png_create_info_struct(png);
       if (!info) {
-	slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct\n");
-	fclose(fp);
-	return -2;
+        slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct\n");
+        fclose(fp);
+        return -2;
       }
-	
+        
       // todo - can we do something more clever here?
       if (setjmp(png_jmpbuf(png))) {
-	slogger.msg(kLogInfo1,"ERROR: PngWriter setjmp triggered -- image might be too large (%d x %d)\n", width, height);
-	png_destroy_write_struct(&png, &info);
-	fclose(fp);
-	//return -5;
-	// if we've failed here, there is not much chance that we can continue
-	slogger.msg(kLogInfo1, "ERROR: Cannot continue.\n");
-	exit(-1);
+        slogger.msg(kLogInfo1,"ERROR: PngWriter setjmp triggered -- image might be too large (%d x %d)\n", width, height);
+        png_destroy_write_struct(&png, &info);
+        fclose(fp);
+        //return -5;
+        // if we've failed here, there is not much chance that we can continue
+        slogger.msg(kLogInfo1, "ERROR: Cannot continue.\n");
+        exit(-1);
       }
-	
+        
       png_init_io(png, fp);
-	
+        
       // Output is 8bit depth, RGB format.
       int32_t color_type = PNG_COLOR_TYPE_RGB;
       if ( rgbaFlag ) {
-	color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+        color_type = PNG_COLOR_TYPE_RGB_ALPHA;
       }
       png_set_IHDR(
-		   png,
-		   info,
-		   width, height,
-		   8,
-		   color_type,
-		   PNG_INTERLACE_NONE,
-		   PNG_COMPRESSION_TYPE_DEFAULT,
-		   PNG_FILTER_TYPE_DEFAULT
-		   );
+                   png,
+                   info,
+                   width, height,
+                   8,
+                   color_type,
+                   PNG_INTERLACE_NONE,
+                   PNG_COMPRESSION_TYPE_DEFAULT,
+                   PNG_FILTER_TYPE_DEFAULT
+                   );
 
       // note: the following two options have a *significant* impact on speed with a minimal cost in filesize
       //png_set_compression_level(png, Z_BEST_COMPRESSION);
@@ -265,7 +265,7 @@ namespace mcpe_viz {
       png_write_info(png, info);
 
       if ( wholeImageFlag ) {
-	row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
+        row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * numRowPointers);
       }
       
       openFlag = true;
@@ -274,14 +274,14 @@ namespace mcpe_viz {
 
     int32_t close() {
       if ( fp != nullptr && openFlag ) {
-	png_write_end(png, info);
-	png_destroy_write_struct(&png, &info);
-	if ( row_pointers != nullptr ) {
-	  free(row_pointers);
-	  row_pointers = nullptr;
-	}
-	fclose(fp);
-	fp = nullptr;
+        png_write_end(png, info);
+        png_destroy_write_struct(&png, &info);
+        if ( row_pointers != nullptr ) {
+          free(row_pointers);
+          row_pointers = nullptr;
+        }
+        fclose(fp);
+        fp = nullptr;
       }
       openFlag = false;
       return 0;
@@ -337,58 +337,58 @@ namespace mcpe_viz {
 
     int32_t open() {
       if ( fn.length() <= 0 ) {
-	slogger.msg(kLogInfo1,"ERROR: Empty input filename (fn=%s)\n", fn.c_str());
-	return -1;
+        slogger.msg(kLogInfo1,"ERROR: Empty input filename (fn=%s)\n", fn.c_str());
+        return -1;
       }
 
       fp = fopen(fn.c_str(), "rb");
       if(!fp) {
-	slogger.msg(kLogInfo1,"ERROR: Failed to open input file (%s)\n", fn.c_str());
-	return -1;
+        slogger.msg(kLogInfo1,"ERROR: Failed to open input file (%s)\n", fn.c_str());
+        return -1;
       }
-	
+        
       // todo - add handlers for warn/err etc?
       /*
-	png_structp   png_create_write_struct   (
-	png_const_charp   user_png_ver,  
-	png_voidp  error_ptr,  
-	png_error_ptr  error_fn, 
-	png_error_ptr warn_fn);
+        png_structp   png_create_write_struct   (
+        png_const_charp   user_png_ver,  
+        png_voidp  error_ptr,  
+        png_error_ptr  error_fn, 
+        png_error_ptr warn_fn);
       */
       png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
       if (!png) {
-	slogger.msg(kLogInfo1,"ERROR: Failed png_create_write_struct\n");
-	fclose(fp);
-	return -2;
+        slogger.msg(kLogInfo1,"ERROR: Failed png_create_write_struct\n");
+        fclose(fp);
+        return -2;
       }
 
       info = png_create_info_struct(png);
       if (!info) {
-	slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct (info)\n");
-	fclose(fp);
-	png_destroy_read_struct(&png,
-				(png_infopp)NULL, (png_infopp)NULL);
-	return -3;
+        slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct (info)\n");
+        fclose(fp);
+        png_destroy_read_struct(&png,
+                                (png_infopp)NULL, (png_infopp)NULL);
+        return -3;
       }
       
       end_info = png_create_info_struct(png);
       if (!end_info) {
-	slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct (end_info)\n");
-	fclose(fp);
-	png_destroy_read_struct(&png, &info,(png_infopp)NULL);
-	return -4;
+        slogger.msg(kLogInfo1,"ERROR: Failed png_create_info_struct (end_info)\n");
+        fclose(fp);
+        png_destroy_read_struct(&png, &info,(png_infopp)NULL);
+        return -4;
       }
       
       // todo - can we do something more clever here?
       if (setjmp(png_jmpbuf(png))) {
-	slogger.msg(kLogInfo1,"ERROR: PngReader setjmp triggered (fn=%s)\n", fn.c_str());
-	//png_destroy_read_struct(&png, &info, &end_info);
-	//fclose(fp);
-	return -5;
+        slogger.msg(kLogInfo1,"ERROR: PngReader setjmp triggered (fn=%s)\n", fn.c_str());
+        //png_destroy_read_struct(&png, &info, &end_info);
+        //fclose(fp);
+        return -5;
       }
-	
+        
       png_init_io(png, fp);
-	
+        
       openFlag = true;
       return 0;
     }
@@ -417,10 +417,10 @@ namespace mcpe_viz {
 
     int32_t close() {
       if ( fp != nullptr && openFlag ) {
-	// png_read_end(png, end_info);
-	png_destroy_read_struct(&png, &info, &end_info);
-	fclose(fp);
-	fp = nullptr;
+        // png_read_end(png, end_info);
+        png_destroy_read_struct(&png, &info, &end_info);
+        fclose(fp);
+        fp = nullptr;
       }
       openFlag = false;
       return 0;
@@ -435,7 +435,7 @@ namespace mcpe_viz {
     int32_t tileWidth;
     int32_t tileHeight;
     std::string dirOutput;
-	
+        
     PngTiler(const std::string& fn, int32_t tileW, int32_t tileH, const std::string& dirOut) {
       filename = fn;
       tileWidth = tileW;
@@ -459,8 +459,8 @@ namespace mcpe_viz {
       bool rgbaFlag = false;
       int32_t bpp = 3;
       if ( colorType == PNG_COLOR_TYPE_RGB_ALPHA ) {
-	bpp = 4;
-	rgbaFlag = true;
+        bpp = 4;
+        rgbaFlag = true;
       }
       int32_t numPngW = (int)ceil((double)srcW / (double)tileWidth);
 
@@ -471,69 +471,69 @@ namespace mcpe_viz {
       uint8_t **buf;
       buf = new uint8_t*[numPngW];
       for (int32_t i=0; i < numPngW; i++) {
-	buf[i] = new uint8_t[tileWidth * tileHeight * bpp];
+        buf[i] = new uint8_t[tileWidth * tileHeight * bpp];
       }
-	
+        
       bool initPngFlag = false;
       int32_t tileCounterY=0;
 
       for (int32_t sy=0; sy < srcH; sy++) {
 
-	// initialize png helpers
-	if ( ! initPngFlag ) {
-	  initPngFlag = true;
-	  for (int32_t i=0; i < numPngW; i++) {
-	    sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
-		    tileCounterY, i);
-	    std::string fname = tmpstring;
-	    pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag, true);
+        // initialize png helpers
+        if ( ! initPngFlag ) {
+          initPngFlag = true;
+          for (int32_t i=0; i < numPngW; i++) {
+            sprintf(tmpstring,"%s/%s.%d.%d.png", dirOutput.c_str(), mybasename(filename).c_str(),
+                    tileCounterY, i);
+            std::string fname = tmpstring;
+            pngOut[i].init(fname, "MCPE Viz Image Tile", tileWidth, tileHeight, tileHeight, rgbaFlag, true);
 
-	    // clear buffer
-	    memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
-	      
-	    // setup row_pointers
-	    for (int32_t ty=0; ty < tileHeight; ty++) {
-	      pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * bpp];
-	    }
-	  }
-	  tileCounterY++;
-	}
+            // clear buffer
+            memset(&buf[i][0], 0, tileWidth * tileHeight * bpp);
+              
+            // setup row_pointers
+            for (int32_t ty=0; ty < tileHeight; ty++) {
+              pngOut[i].row_pointers[ty] = &buf[i][ty*tileWidth * bpp];
+            }
+          }
+          tileCounterY++;
+        }
 
-	png_read_row(pngSrc.png, sbuf, NULL);
+        png_read_row(pngSrc.png, sbuf, NULL);
 
-	int32_t tileOffsetY = sy % tileHeight;
-	  
-	// todobig - step in tileWidth and memcpy as we go - need to check the last one for out of bounds
-	for (int32_t sx=0; sx < srcW; sx++) {
-	  int32_t tileCounterX = sx / tileWidth;
-	  int32_t tileOffsetX = sx % tileWidth;
-	  memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &sbuf[sx*bpp], bpp);
-	}
-	  
-	// write tile png files when they are ready
-	if ( ((sy+1) % tileHeight) == 0 ) {
-	  // write pngs
-	  for (int32_t i=0; i < numPngW; i++) {
-	    png_write_image(pngOut[i].png, pngOut[i].row_pointers);
-	    pngOut[i].close();
-	  }
-	  initPngFlag = false;
-	}
+        int32_t tileOffsetY = sy % tileHeight;
+          
+        // todobig - step in tileWidth and memcpy as we go - need to check the last one for out of bounds
+        for (int32_t sx=0; sx < srcW; sx++) {
+          int32_t tileCounterX = sx / tileWidth;
+          int32_t tileOffsetX = sx % tileWidth;
+          memcpy(&buf[tileCounterX][((tileOffsetY * tileWidth) + tileOffsetX) * bpp], &sbuf[sx*bpp], bpp);
+        }
+          
+        // write tile png files when they are ready
+        if ( ((sy+1) % tileHeight) == 0 ) {
+          // write pngs
+          for (int32_t i=0; i < numPngW; i++) {
+            png_write_image(pngOut[i].png, pngOut[i].row_pointers);
+            pngOut[i].close();
+          }
+          initPngFlag = false;
+        }
       }
 
       // close final tiles
       if ( initPngFlag ) {
-	// write pngs
-	for (int32_t i=0; i < numPngW; i++) {
-	  png_write_image(pngOut[i].png, pngOut[i].row_pointers);
-	  pngOut[i].close();
-	}
+        // write pngs
+        for (int32_t i=0; i < numPngW; i++) {
+          png_write_image(pngOut[i].png, pngOut[i].row_pointers);
+          pngOut[i].close();
+        }
       }
 
       delete [] pngOut;
 
       for (int32_t i=0; i < numPngW; i++) {
-	delete [] buf[i];
+        delete [] buf[i];
       }
       delete [] buf;
 
@@ -583,7 +583,7 @@ namespace mcpe_viz {
 
       // todo - we could adjust some items to help with the sort
       //if ( s < 0.2 ) { s=0.0; }
-	
+        
       return 0;
     }
 
@@ -591,7 +591,7 @@ namespace mcpe_viz {
       char tmpstring[256];
       std::string ret = "<div class=\"colorBlock";
       if ( l < 0.2 ) {
-	ret += " darkBlock";
+        ret += " darkBlock";
       }
       ret += "\" style=\"background-color:";
       sprintf(tmpstring,"#%02x%02x%02x",r,g,b);
@@ -634,12 +634,12 @@ namespace mcpe_viz {
     
     int32_t nextInt(int64_t bound) {
       if ((bound & -bound) == bound)  // i.e., bound is a power of 2
-	return ((bound * this->next(31)) >> 31);
+        return ((bound * this->next(31)) >> 31);
       
       int32_t bits, val;
       do {
-	bits = this->next(31);
-	val = bits % bound;
+        bits = this->next(31);
+        val = bits % bound;
       } while (bits - val + (bound - 1) < 0);
       
       return val;
@@ -662,16 +662,16 @@ namespace mcpe_viz {
     
     void add(int32_t k) {
       if ( has_key(k) ) {
-	map[k]++;
+        map[k]++;
       } else {
-	map[k] = 1;
+        map[k] = 1;
       }
     }
 
     int32_t getTotal() {
       int32_t total=0;
       for (auto& it : map) {
-	total += it.second;
+        total += it.second;
       }
       return total;
     }
@@ -680,9 +680,9 @@ namespace mcpe_viz {
       HistogramVector vector(map.begin(), map.end());
       
       if ( order <= 0 ) {
-	std::sort(vector.begin(), vector.end(), compare_less_());
+        std::sort(vector.begin(), vector.end(), compare_less_());
       } else {
-	std::sort(vector.begin(), vector.end(), compare_more_());
+        std::sort(vector.begin(), vector.end(), compare_more_());
       }
 
       return vector;
@@ -693,22 +693,22 @@ namespace mcpe_viz {
       : std::binary_function<HistogramItem,HistogramItem,bool>
     {
       inline bool operator()(const HistogramItem& lhs, const HistogramItem& rhs) {
-	if ( lhs.second == rhs.second ) {
-	  // if counts are equal, compare the id
-	  return lhs.first < rhs.first;
-	}
-	return lhs.second < rhs.second;
+        if ( lhs.second == rhs.second ) {
+          // if counts are equal, compare the id
+          return lhs.first < rhs.first;
+        }
+        return lhs.second < rhs.second;
       }
     };
     struct compare_more_
       : std::binary_function<HistogramItem,HistogramItem,bool>
     {
       inline bool operator()(const HistogramItem& lhs, const HistogramItem& rhs) {
-	if ( lhs.second == rhs.second ) {
-	  // if counts are equal, compare the id
-	  return lhs.first > rhs.first;
-	}
-	return lhs.second > rhs.second;
+        if ( lhs.second == rhs.second ) {
+          // if counts are equal, compare the id
+          return lhs.first > rhs.first;
+        }
+        return lhs.second > rhs.second;
       }
     };
   };

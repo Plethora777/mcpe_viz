@@ -116,12 +116,12 @@ namespace mcpe_viz {
     }
     bool isSpawnable(int32_t bd) {
       if (hasVariants()) {
-	for (const auto& itbv : variantList) {
-	  if ( itbv->blockdata == bd ) {
-	    return itbv->spawnableFlag;
-	  }
-	}
-	fprintf(stderr, "WARNING: did not find bd=%d (0x%x) for block='%s'\n", bd, bd, name.c_str());
+        for (const auto& itbv : variantList) {
+          if ( itbv->blockdata == bd ) {
+            return itbv->spawnableFlag;
+          }
+        }
+        fprintf(stderr, "WARNING: did not find bd=%d (0x%x) for block='%s'\n", bd, bd, name.c_str());
       }
       return spawnableFlag;
     }
@@ -145,13 +145,13 @@ namespace mcpe_viz {
     std::string toString() {
       char tmpstring[1024];
       sprintf(tmpstring,"Block: name=%s color=0x%06x solid=%d opaque=%d liquid=%d spawnable=%d"
-	      , name.c_str()
-	      , color
-	      , (int)solidFlag
-	      , (int)opaqueFlag
-	      , (int)liquidFlag
-	      , (int)spawnableFlag
-	      );
+              , name.c_str()
+              , color
+              , (int)solidFlag
+              , (int)opaqueFlag
+              , (int)liquidFlag
+              , (int)spawnableFlag
+              );
       // todo variants?
       return std::string(tmpstring);
     }

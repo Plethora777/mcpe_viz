@@ -4,7 +4,14 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Added support for 1.0 (cubic chunks); quick fix for force-top; quick fix for The End + Biomes; Fixed --check-spawnable for cubic chunks (again); Fix a few entity id's off-by-one
+Highlight: Added support for Ender Chest contents (viewable in 'Player' entities); Big XML cleanup (thanks to @Shkyrockett)
+
+v0.0.31 - 2017.01.13
+Added support for Ender Chest contents (viewable in 'Player' entities)
+Big XML cleanup (thanks to @Shkyrockett)
+Tabs be gone! (thanks to @shellbj)
+Minor README updates - notably, @shellbj reports that mcpe_viz will compile & work on Mac OS X
+Added parsing for a few new chunk types (AutonomousEntities, dimension)
 
 v0.0.30 - 2016.12.28
 Fixed a few entity id's off-by-one (Thanks to Shkyrockett & Jocopa3)

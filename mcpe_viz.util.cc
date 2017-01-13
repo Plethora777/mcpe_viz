@@ -97,15 +97,15 @@ namespace mcpe_viz {
     for ( const auto& ch : s ) {
       bool replaced = false;
       for ( const auto& escape : escapeChars ) {
-	if ( ch == escape ) {
-	  ret += "\\";
-	  ret += escape;
-	  replaced = true;
-	  break;
-	}
+        if ( ch == escape ) {
+          ret += "\\";
+          ret += escape;
+          replaced = true;
+          break;
+        }
       }
       if (!replaced) {
-	ret += ch;
+        ret += ch;
       }
     }
     return ret;
@@ -115,7 +115,7 @@ namespace mcpe_viz {
   // hacky file copying funcs
   typedef std::vector< std::pair<std::string, std::string> > StringReplacementList;
   int32_t copyFileWithStringReplacement ( const std::string& fnSrc, const std::string& fnDest,
-				      const StringReplacementList& replaceStrings ) {
+                                      const StringReplacementList& replaceStrings ) {
     char buf[1025];
 
     //slogger.msg(kLogInfo1,"  copyFileWithStringReplacement src=%s dest=%s\n", fnSrc.c_str(), fnDest.c_str());
@@ -136,27 +136,27 @@ namespace mcpe_viz {
       memset(buf,0,1025);
       if ( fgets(buf, 1024, fpsrc) ) { 
 
-	// look for replacement string
-	bool doneFlag = false;
-	for ( const auto& it : replaceStrings ) {
-	  char* p = strstr(buf,it.first.c_str());
-	  if ( p ) {
-	    std::string sbefore(buf,(p-buf));
-	    std::string safter(&p[it.first.size()]);
-	    if ( sbefore.size() > 0 ) {
-	      fputs(sbefore.c_str(), fpdest);
-	    }
-	    fputs(it.second.c_str(), fpdest);
-	    if ( safter.size() > 0 ) {
-	      fputs(safter.c_str(),fpdest);
-	    }
-	    doneFlag = true;
-	    break;
-	  }
-	}
-	if ( ! doneFlag ) {
-	  fputs(buf,fpdest);
-	}
+        // look for replacement string
+        bool doneFlag = false;
+        for ( const auto& it : replaceStrings ) {
+          char* p = strstr(buf,it.first.c_str());
+          if ( p ) {
+            std::string sbefore(buf,(p-buf));
+            std::string safter(&p[it.first.size()]);
+            if ( sbefore.size() > 0 ) {
+              fputs(sbefore.c_str(), fpdest);
+            }
+            fputs(it.second.c_str(), fpdest);
+            if ( safter.size() > 0 ) {
+              fputs(safter.c_str(),fpdest);
+            }
+            doneFlag = true;
+            break;
+          }
+        }
+        if ( ! doneFlag ) {
+          fputs(buf,fpdest);
+        }
       }
     }
     fclose(fpsrc);
@@ -188,11 +188,11 @@ namespace mcpe_viz {
     while ( ! feof(fpsrc) ) {
       size_t ct = fread(buf, 1, 1024, fpsrc);
       if ( ct > 0 ) {
-	fwrite(buf, 1, ct, fpdest);
+        fwrite(buf, 1, ct, fpdest);
       }
       /*
       if ( fgets(buf, 1024, fpsrc) ) {
-	fputs(buf,fpdest);
+        fputs(buf,fpdest);
       }
       */
     }
@@ -222,17 +222,17 @@ namespace mcpe_viz {
       int resSrc = stat(fnSrc.c_str(), &sSrc);
       int resDest = stat(fnDest.c_str(), &sDest);
       if( resSrc == 0 && resDest == 0 ) {
-	if ( sSrc.st_size == sDest.st_size ) {
+        if ( sSrc.st_size == sDest.st_size ) {
 #if defined(__APPLE__) || defined(__FreeBSD__)
-	  if ( sSrc.st_mtimespec.tv_sec <= sDest.st_mtimespec.tv_sec ) {
+          if ( sSrc.st_mtimespec.tv_sec <= sDest.st_mtimespec.tv_sec ) {
 #else
-	  if ( sSrc.st_mtim.tv_sec <= sDest.st_mtim.tv_sec ) {
+          if ( sSrc.st_mtim.tv_sec <= sDest.st_mtim.tv_sec ) {
 #endif
-	    // file already exists, is the same size and has a good timestamp
-	    //slogger.msg(kLogInfo1,"INFO! Skipping existing file (%s) (%s)\n", fnSrc.c_str(), fnDest.c_str());
-	    return 0;
-	  }
-	}
+            // file already exists, is the same size and has a good timestamp
+            //slogger.msg(kLogInfo1,"INFO! Skipping existing file (%s) (%s)\n", fnSrc.c_str(), fnDest.c_str());
+            return 0;
+          }
+        }
       }
     }
     
@@ -283,13 +283,13 @@ namespace mcpe_viz {
     DIR *dfd = opendir(dirSrc.c_str());
     if (dfd != NULL) {
       while ((dp = readdir(dfd)) != NULL) {
-	if ( strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0 ) {
-	  // skip
-	} else {
-	  std::string fnSrc = dirSrc + "/" + dp->d_name;
-	  std::string fnDest = dirDest + "/" + mybasename(dp->d_name);
-	  copyFile(fnSrc, fnDest, checkExistingFlag);
-	}
+        if ( strcmp(dp->d_name,".") == 0 || strcmp(dp->d_name,"..") == 0 ) {
+          // skip
+        } else {
+          std::string fnSrc = dirSrc + "/" + dp->d_name;
+          std::string fnDest = dirDest + "/" + mybasename(dp->d_name);
+          copyFile(fnSrc, fnDest, checkExistingFlag);
+        }
       }
       closedir(dfd);
       return 0;
@@ -317,13 +317,13 @@ namespace mcpe_viz {
       
     if (delta != 0.0) {
       if (r == vmax) {
-	hue = (g - b) / delta;
+        hue = (g - b) / delta;
       } else {
-	if (g == vmax) {
-	  hue = 2 + (b - r) / delta;
-	} else {
-	  hue = 4 + (r - g) / delta;
-	}
+        if (g == vmax) {
+          hue = 2 + (b - r) / delta;
+        } else {
+          hue = 4 + (r - g) / delta;
+        }
       }
       hue *= 60.0;
       if (hue < 0.0) hue += 360.0;
@@ -346,9 +346,9 @@ namespace mcpe_viz {
     delta = max - min;
     if (delta < 0.00001)
       {
-	out_s = 0;
-	out_h = 0; // undefined, maybe nan?
-	return 0;
+        out_s = 0;
+        out_h = 0; // undefined, maybe nan?
+        return 0;
       }
     if( max > 0.0 ) { // NOTE: if Max is == 0, this divide would cause a crash
       out_s = (delta / max);                  // s
@@ -364,10 +364,10 @@ namespace mcpe_viz {
     }
     else {
       if( in_g >= max ) {
-	out_h = 2.0 + ( in_b - in_r ) / delta;  // between cyan & yellow
+        out_h = 2.0 + ( in_b - in_r ) / delta;  // between cyan & yellow
       }
       else {
-	out_h = 4.0 + ( in_r - in_g ) / delta;  // between magenta & cyan
+        out_h = 4.0 + ( in_r - in_g ) / delta;  // between magenta & cyan
       }
     }
       
@@ -494,18 +494,18 @@ namespace mcpe_viz {
 
     for (int32_t sy=0; sy < srcH; sy++) {
       uint8_t *srcbuf = pngSrc.row_pointers[sy];
-	
+        
       for (int32_t sx=0; sx < srcW; sx++) {
 
-	for (int32_t oy=0; oy < oversample; oy++) {
-	  int32_t dy = sy * oversample + oy;
-	  for (int32_t ox=0; ox < oversample; ox++) {
-	    int32_t dx = sx * oversample + ox;
-	    // todo - optimize srcbuf val outside loops
-	    memcpy(&buf[ (dy * destW + dx) * bppDest ], &srcbuf[ sx * bppSrc ], bppDest);
-	  }
-	}
-	  
+        for (int32_t oy=0; oy < oversample; oy++) {
+          int32_t dy = sy * oversample + oy;
+          for (int32_t ox=0; ox < oversample; ox++) {
+            int32_t dx = sx * oversample + ox;
+            // todo - optimize srcbuf val outside loops
+            memcpy(&buf[ (dy * destW + dx) * bppDest ], &srcbuf[ sx * bppSrc ], bppDest);
+          }
+        }
+          
       }
     }
 
@@ -523,7 +523,7 @@ namespace mcpe_viz {
   bool vectorContains( const std::vector<int> &v, int32_t i ) {
     for ( const auto& iter: v ) {
       if ( iter == i ) {
-	return true;
+        return true;
       }
     }
     return false;
@@ -571,13 +571,13 @@ namespace mcpe_viz {
     if ( ss >> playerId ) {
       int32_t i=0;
       while ( ss >> buf ) {
-	if (i++ > 0) { playerName += " "; }
-	playerName += buf;
+        if (i++ > 0) { playerName += " "; }
+        playerName += buf;
       }
 
       if (playerId.size() > 0 && playerName.size() > 0 ) {
-	// slogger.msg(kLogInfo1, "INFO: parsePlayerIdToName -- found valid playerId (%s) and playerName (%s) in passed string (%s)\n", playerId.c_str(), playerName.c_str(), s);
-	return addPlayerIdToName(playerId, playerName);
+        // slogger.msg(kLogInfo1, "INFO: parsePlayerIdToName -- found valid playerId (%s) and playerName (%s) in passed string (%s)\n", playerId.c_str(), playerName.c_str(), s);
+        return addPlayerIdToName(playerId, playerName);
       }
       slogger.msg(kLogInfo1, "ERROR: Failed parsePlayerIdToName -- did not find valid playerId (%s) and playerName (%s) in passed string (%s)\n", playerId.c_str(), playerName.c_str(), s);
       return -1;

@@ -8,11 +8,11 @@ It can also create a powerful Google Maps-like Web App for viewing your world.
 Additional Features:
 
 * Create a powerful Google Maps-like web app viewer for your world.
-  * Browse through all 128 layers of your world (Overworld and Nether) from bedrock to build limit.
+  * Browse through all 256 layers of your world (Overworld and Nether) from bedrock to build limit.
   * Examine the location and details of mobs and items in your world.
   * Show blocks where mobs can spawn.
   * Visualize chunk boundaries -- consider it an extremely cumbersome F3/debug mode!
-  * Find slime chunks -- well, maybe... slime chunk finding code not confirmed to work on MCPE yet :)
+  * Find slime chunks -- well, probably... slime chunk finding code is currently a bit weird in MCPE, it appears to work, but please be sure to confirm slimes are spawning in a chunk before you do a ton of work :)
   * Explore the biomes of your world.
   * Shaded-relief elevation overlay -- get a sense of the topography of your world.
   * Measure distances in your world
@@ -166,7 +166,7 @@ You can copy mcpe_viz.xml to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to
 
 ## Compiling from source
 
-If you just want to run the software on windows, see above :)  If you would like to compile it for Linux (or Windows), read on.
+If you just want to run the software on windows, see above :)  If you would like to compile it for Linux (or Windows, or OS X), read on.
 
 ### Requirements
 

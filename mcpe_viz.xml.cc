@@ -22,15 +22,15 @@ namespace mcpe_viz {
     if ( prop ) {
       // see if it is hexadecimal
       if ( sscanf((char*)prop,"0x%x",&ret) == 1 ) {
-	xmlFree(prop);
-	valid=true;
-	return ret;
+        xmlFree(prop);
+        valid=true;
+        return ret;
       }
       // try decimal
       if ( sscanf((char*)prop,"%d",&ret) == 1 ) {
-	xmlFree(prop);
-	valid=true;
-	return ret;
+        xmlFree(prop);
+        valid=true;
+        return ret;
       }
       xmlFree(prop);
     }
@@ -45,24 +45,24 @@ namespace mcpe_viz {
     xmlChar* prop = xmlGetProp(cur,p);
     if ( prop ) {
       if ( strcasecmp((char*)prop,"true") == 0 ) {
-	valid = true;
-	xmlFree(prop);
-	return true;
+        valid = true;
+        xmlFree(prop);
+        return true;
       }
       if ( strcasecmp((char*)prop,"1") == 0 ) {
-	valid = true;
-	xmlFree(prop);
-	return true;
+        valid = true;
+        xmlFree(prop);
+        return true;
       }
       if ( strcasecmp((char*)prop,"false") == 0 ) {
-	valid = true;
-	xmlFree(prop);
-	return false;
+        valid = true;
+        xmlFree(prop);
+        return false;
       }
       if ( strcasecmp((char*)prop,"0") == 0 ) {
-	valid = true;
-	xmlFree(prop);
-	return false;
+        valid = true;
+        xmlFree(prop);
+        return false;
       }
       xmlFree(prop);
     }
@@ -91,11 +91,11 @@ namespace mcpe_viz {
     }
     else {
       fprintf(stderr, "WARNING: Unrecognized XML element: (parent=%s) name=(%s) type=(%d) content=(%s)\n"
-	      , cur->parent ? (char*)cur->parent->name : "(NONE)"
-	      , (char*)cur->name
-	      , (int)cur->type
-	      , cur->content ? (char*)cur->content : "(NULL)"
-	      );
+              , cur->parent ? (char*)cur->parent->name : "(NONE)"
+              , (char*)cur->name
+              , (int)cur->type
+              , cur->content ? (char*)cur->content : "(NULL)"
+              );
     }
     return 0;
   }
@@ -105,48 +105,48 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"blockvariant") == 0 ) {
 
-	// example:
-	//   <blockvariant blockdata="0x0" name="Oak Leaves" />
+        // example:
+        //   <blockvariant blockdata="0x0" name="Oak Leaves" />
 
-	bool blockDataValid, nameValid, colorValid, dcolorValid, spawnableFlagValid;
-	  
-	int32_t blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
-	int32_t dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
-	bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
-	
-	// create data
-	if ( blockDataValid && nameValid ) {
-	  BlockInfo& bv = block.addVariant(blockdata,name);
-	  if ( colorValid ) {
-	    if ( dcolorValid ) {
-	      color += dcolor;
-	    }
-	    bv.setColor(color);
-	  } else {
-	    // no color specified, we increment the parent block's color w/ blockdata (to keep it unique)
-	    color = be32toh(block.color);
-	    color += blockdata;
-	    bv.setColor(color);
-	  }
+        bool blockDataValid, nameValid, colorValid, dcolorValid, spawnableFlagValid;
+          
+        int32_t blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+        int32_t dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
+        bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
+        
+        // create data
+        if ( blockDataValid && nameValid ) {
+          BlockInfo& bv = block.addVariant(blockdata,name);
+          if ( colorValid ) {
+            if ( dcolorValid ) {
+              color += dcolor;
+            }
+            bv.setColor(color);
+          } else {
+            // no color specified, we increment the parent block's color w/ blockdata (to keep it unique)
+            color = be32toh(block.color);
+            color += blockdata;
+            bv.setColor(color);
+          }
 
-	  if ( spawnableFlagValid ) {
-	    bv.setSpawnableFlag(spawnableFlag);
-	  } else {
-	    bv.setSpawnableFlag(block.spawnableFlag);
-	  }
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid blockdata and name for blockvariant of block: (%s)\n"
-		  , block.name.c_str()
-		  );
-	}
+          if ( spawnableFlagValid ) {
+            bv.setSpawnableFlag(spawnableFlag);
+          } else {
+            bv.setSpawnableFlag(block.spawnableFlag);
+          }
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid blockdata and name for blockvariant of block: (%s)\n"
+                  , block.name.c_str()
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
-	
+        
       cur = cur->next;
     }
     return 0;
@@ -156,44 +156,44 @@ namespace mcpe_viz {
     cur = cur->xmlChildrenNode;
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
-	  
-	bool idValid, nameValid, colorValid, solidFlagValid, opaqueFlagValid, liquidFlagValid, spawnableFlagValid;
-	  
-	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
-	bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
-	bool opaqueFlag = xmlGetBool(cur, (const xmlChar*)"opaque", true, opaqueFlagValid);
-	bool liquidFlag = xmlGetBool(cur, (const xmlChar*)"liquid", false, liquidFlagValid);
-	bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
+          
+        bool idValid, nameValid, colorValid, solidFlagValid, opaqueFlagValid, liquidFlagValid, spawnableFlagValid;
+          
+        int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+        bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
+        bool opaqueFlag = xmlGetBool(cur, (const xmlChar*)"opaque", true, opaqueFlagValid);
+        bool liquidFlag = xmlGetBool(cur, (const xmlChar*)"liquid", false, liquidFlagValid);
+        bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
 
-	// create data
-	if ( idValid && nameValid ) {
-	  BlockInfo& b = blockInfoList[id].setName(name);
-	  if ( colorValid ) {
-	    b.setColor(color);
-	  }
-	  
-	  b.setSolidFlag(solidFlag);
-	  b.setOpaqueFlag(opaqueFlag);
-	  b.setLiquidFlag(liquidFlag);
-	  b.setSpawnableFlag(spawnableFlag);
+        // create data
+        if ( idValid && nameValid ) {
+          BlockInfo& b = blockInfoList[id].setName(name);
+          if ( colorValid ) {
+            b.setColor(color);
+          }
+          
+          b.setSolidFlag(solidFlag);
+          b.setOpaqueFlag(opaqueFlag);
+          b.setLiquidFlag(liquidFlag);
+          b.setSpawnableFlag(spawnableFlag);
 
-	  // debug
-	  //fprintf(stderr, "DEBUG: block: %s\n", b.toString().c_str());
-	  
-	  doParseXML_blocklist_blockvariant(cur, b);
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid id and name for block: (0x%x) (%s) (0x%x)\n"
-		  , id
-		  , name.c_str()
-		  , color
-		  );
-	}
+          // debug
+          //fprintf(stderr, "DEBUG: block: %s\n", b.toString().c_str());
+          
+          doParseXML_blocklist_blockvariant(cur, b);
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid id and name for block: (0x%x) (%s) (0x%x)\n"
+                  , id
+                  , name.c_str()
+                  , color
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }
@@ -205,28 +205,28 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"itemvariant") == 0 ) {
 
-	// example:
-	//   <itemvariant extradata="0x0" name="Ink Sac" />
-	
-	bool extradataValid, nameValid;
-	  
-	int32_t extradata = xmlGetInt(cur, (const xmlChar*)"extradata", extradataValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	
-	// create data
-	if ( extradataValid && nameValid ) {
-	  itemInfoList[item_id]->addVariant(extradata,name);
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid extradata and name for blockvariant of block: (%s)\n"
-		  , itemInfoList[item_id]->name.c_str()
-		  );
-	}
+        // example:
+        //   <itemvariant extradata="0x0" name="Ink Sac" />
+        
+        bool extradataValid, nameValid;
+          
+        int32_t extradata = xmlGetInt(cur, (const xmlChar*)"extradata", extradataValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        
+        // create data
+        if ( extradataValid && nameValid ) {
+          itemInfoList[item_id]->addVariant(extradata,name);
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid extradata and name for blockvariant of block: (%s)\n"
+                  , itemInfoList[item_id]->name.c_str()
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
-	
+        
       cur = cur->next;
     }
     return 0;
@@ -237,26 +237,26 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"item") == 0 ) {
 
-	bool idValid, nameValid;
-	  
-	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        bool idValid, nameValid;
+          
+        int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
 
-	// create data
-	if ( idValid && nameValid ) {
-	  itemInfoList.insert( std::make_pair(id, std::unique_ptr<ItemInfo>(new ItemInfo(name.c_str()))) );
-	  
-	  doParseXML_itemlist_itemvariant(cur, id);
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid id and name for item: (0x%x) (%s)\n"
-		  , id
-		  , name.c_str()
-		  );
-	}
+        // create data
+        if ( idValid && nameValid ) {
+          itemInfoList.insert( std::make_pair(id, std::unique_ptr<ItemInfo>(new ItemInfo(name.c_str()))) );
+          
+          doParseXML_itemlist_itemvariant(cur, id);
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid id and name for item: (0x%x) (%s)\n"
+                  , id
+                  , name.c_str()
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }
@@ -268,28 +268,28 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"entity") == 0 ) {
 
-	bool idValid, nameValid, etypeValid;
-	  
-	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	std::string etype = xmlGetString(cur, (const xmlChar*)"etype", etypeValid);
-	if ( ! etypeValid ) {
-	  etype = "";
-	}
+        bool idValid, nameValid, etypeValid;
+          
+        int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        std::string etype = xmlGetString(cur, (const xmlChar*)"etype", etypeValid);
+        if ( ! etypeValid ) {
+          etype = "";
+        }
 
-	// create data
-	if ( idValid && nameValid ) {
-	  entityInfoList.insert( std::make_pair(id, std::unique_ptr<EntityInfo>(new EntityInfo(name, etype))) );
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid id and name for entity: (0x%x) (%s)\n"
-		  , id
-		  , name.c_str()
-		  );
-	}
+        // create data
+        if ( idValid && nameValid ) {
+          entityInfoList.insert( std::make_pair(id, std::unique_ptr<EntityInfo>(new EntityInfo(name, etype))) );
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid id and name for entity: (0x%x) (%s)\n"
+                  , id
+                  , name.c_str()
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }
@@ -301,29 +301,29 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantment") == 0 ) {
 
-	bool idValid, nameValid, officialNameValid;
-	  
-	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	std::string officialName = xmlGetString(cur, (const xmlChar*)"officialName", officialNameValid);
-	  
-	// create data
-	if ( idValid && nameValid ) {
-	  std::unique_ptr<EnchantmentInfo> b(new EnchantmentInfo(name.c_str()));
-	  if ( officialNameValid ) {
-	    b->setOfficialName(officialName);
-	  }
-	  enchantmentInfoList.insert( std::make_pair(id, std::move(b)) );
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid id and name for enchantment: (0x%x) (%s)\n"
-		  , id
-		  , name.c_str()
-		  );
-	}
+        bool idValid, nameValid, officialNameValid;
+          
+        int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        std::string officialName = xmlGetString(cur, (const xmlChar*)"officialName", officialNameValid);
+          
+        // create data
+        if ( idValid && nameValid ) {
+          std::unique_ptr<EnchantmentInfo> b(new EnchantmentInfo(name.c_str()));
+          if ( officialNameValid ) {
+            b->setOfficialName(officialName);
+          }
+          enchantmentInfoList.insert( std::make_pair(id, std::move(b)) );
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid id and name for enchantment: (0x%x) (%s)\n"
+                  , id
+                  , name.c_str()
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }
@@ -335,29 +335,29 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"biome") == 0 ) {
 
-	bool idValid, nameValid, colorValid;
-	  
-	int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
-	std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
-	int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
+        bool idValid, nameValid, colorValid;
+          
+        int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+        std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
 
-	// create data
-	if ( idValid && nameValid ) {
-	  std::unique_ptr<BiomeInfo> b(new BiomeInfo(name.c_str()));
-	  if ( colorValid ) {
-	    b->setColor(color);
-	  }
-	  biomeInfoList.insert( std::make_pair(id, std::move(b)) );
-	} else {
-	  // todo error
-	  fprintf(stderr,"WARNING: Did not find valid id and name for biome: (0x%x) (%s)\n"
-		  , id
-		  , name.c_str()
-		  );
-	}
+        // create data
+        if ( idValid && nameValid ) {
+          std::unique_ptr<BiomeInfo> b(new BiomeInfo(name.c_str()));
+          if ( colorValid ) {
+            b->setColor(color);
+          }
+          biomeInfoList.insert( std::make_pair(id, std::move(b)) );
+        } else {
+          // todo error
+          fprintf(stderr,"WARNING: Did not find valid id and name for biome: (0x%x) (%s)\n"
+                  , id
+                  , name.c_str()
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }
@@ -370,37 +370,37 @@ namespace mcpe_viz {
       int32_t mode = -1;
 
       if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
-	mode = 1;
+        mode = 1;
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"item") == 0 ) {
-	mode = 2;
+        mode = 2;
       }
 
       if ( mode > 0 ) {
 
-	bool mcpcIdValid, mcpeIdValid;
-	  
-	int32_t mcpcId = xmlGetInt(cur, (const xmlChar*)"mcpcId", mcpcIdValid);
-	int32_t mcpeId = xmlGetInt(cur, (const xmlChar*)"mcpeId", mcpeIdValid);
+        bool mcpcIdValid, mcpeIdValid;
+          
+        int32_t mcpcId = xmlGetInt(cur, (const xmlChar*)"mcpcId", mcpcIdValid);
+        int32_t mcpeId = xmlGetInt(cur, (const xmlChar*)"mcpeId", mcpeIdValid);
 
-	// create data
-	if ( mcpcIdValid && mcpeIdValid ) {
+        // create data
+        if ( mcpcIdValid && mcpeIdValid ) {
 
-	  if ( mode == 1) {
-	    mcpcToMcpeBlock.insert( std::make_pair( mcpcId, mcpeId ) );
-	    mcpeToMcpcBlock.insert( std::make_pair( mcpeId, mcpcId ) );
-	  } else {
-	    mcpcToMcpeItem.insert( std::make_pair( mcpcId, mcpeId ) );
-	    mcpeToMcpcItem.insert( std::make_pair( mcpeId, mcpcId ) );
-	  }
-	} else {
-	  // todo error - better detail
-	  fprintf(stderr,"WARNING: Did not find valid mcpc_id and mcpe_id for item!\n"
-		  );
-	}
+          if ( mode == 1) {
+            mcpcToMcpeBlock.insert( std::make_pair( mcpcId, mcpeId ) );
+            mcpeToMcpcBlock.insert( std::make_pair( mcpeId, mcpcId ) );
+          } else {
+            mcpcToMcpeItem.insert( std::make_pair( mcpcId, mcpeId ) );
+            mcpeToMcpcItem.insert( std::make_pair( mcpeId, mcpcId ) );
+          }
+        } else {
+          // todo error - better detail
+          fprintf(stderr,"WARNING: Did not find valid mcpc_id and mcpe_id for item!\n"
+                  );
+        }
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }
@@ -416,27 +416,27 @@ namespace mcpe_viz {
       if ( false ) {
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"blocklist") == 0 ) {
-	doParseXML_blocklist(cur);
+        doParseXML_blocklist(cur);
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"itemlist") == 0 ) {
-	doParseXML_itemlist(cur);
+        doParseXML_itemlist(cur);
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"entitylist") == 0 ) {
-	doParseXML_entitylist(cur);
+        doParseXML_entitylist(cur);
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"biomelist") == 0 ) {
-	doParseXML_biomelist(cur);
+        doParseXML_biomelist(cur);
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"enchantmentlist") == 0 ) {
-	doParseXML_enchantmentlist(cur);
+        doParseXML_enchantmentlist(cur);
       }
       else if ( xmlStrcmp(cur->name, (const xmlChar *)"mcpcToMcpeList") == 0 ) {
-	doParseXML_mcpcToMcpeList(cur);
+        doParseXML_mcpcToMcpeList(cur);
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
-	
+        
       cur = cur->next;
     }
     return 0;
@@ -463,10 +463,10 @@ namespace mcpe_viz {
     cur = xmlDocGetRootElement(doc);
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"xml") == 0 ) {
-	ret = doParseXML_xml(cur);
+        ret = doParseXML_xml(cur);
       }
       else {
-	doParseXml_Unknown(cur);
+        doParseXml_Unknown(cur);
       }
       cur = cur->next;
     }

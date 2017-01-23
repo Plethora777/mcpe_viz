@@ -438,7 +438,7 @@ namespace mcpe_viz {
         if ( fpLog ) {
           fpLogNeedCloseFlag = true;
         } else {
-          fprintf(stderr,"ERROR: Failed to create output log file (%s).  Reverting to stdout...\n", fnLog.c_str());
+          fprintf(stderr,"ERROR: Failed to create output log file (%s error=%s (%d)).  Reverting to stdout...\n", fnLog.c_str(), strerror(errno), errno);
           fpLog = stdout;
           fpLogNeedCloseFlag = false;
         }
@@ -3439,6 +3439,7 @@ namespace mcpe_viz {
     int32_t parseLevelFile(const std::string& fname) {
       FILE *fp = fopen(fname.c_str(), "rb");
       if(!fp) {
+        slogger.msg(kLogInfo1,"ERROR: Failed to open input file (fn=%s error=%s (%d))\n", fname.c_str(), strerror(errno), errno);
         return -1;
       }
 
@@ -3481,6 +3482,7 @@ namespace mcpe_viz {
     int32_t parseLevelName(const std::string& fname) {
       FILE *fp = fopen(fname.c_str(), "r");
       if(!fp) {
+        slogger.msg(kLogInfo1,"ERROR: Failed to open input file (fn=%s error=%s (%d))\n", fname.c_str(), strerror(errno), errno);
         return -1;
       }
 
@@ -4399,7 +4401,7 @@ namespace mcpe_viz {
         fclose(fp);
             
       } else {
-        slogger.msg(kLogInfo1,"ERROR: Failed to open javascript output file (fn=%s)\n", control.fnJs.c_str());
+        slogger.msg(kLogInfo1,"ERROR: Failed to open javascript output file (fn=%s error=%s (%d))\n", control.fnJs.c_str(), strerror(errno), errno);
       }
           
       // copy helper files to destination directory
@@ -4443,7 +4445,7 @@ namespace mcpe_viz {
       FILE *fp = fopen(fnOut.c_str(), "w");
         
       if ( !fp ) {
-        slogger.msg(kLogInfo1, "ERROR: failed to open output file (%s)\n", fnOut.c_str());
+        slogger.msg(kLogInfo1, "ERROR: failed to open output file (%s error=%s (%d))\n", fnOut.c_str(), strerror(errno), errno);
         return -1;
       } 
           
@@ -4560,7 +4562,7 @@ namespace mcpe_viz {
         
         FILE* fpGeoJSON = fopen(control.fnGeoJSON.c_str(), "w");
         if ( ! fpGeoJSON ) {
-          slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s).\n", control.fnGeoJSON.c_str());
+          slogger.msg(kLogInfo1,"ERROR: Failed to create GeoJSON output file (%s error=%s (%d)).\n", control.fnGeoJSON.c_str(), strerror(errno), errno);
           return -1;
         }
 
@@ -4672,7 +4674,7 @@ namespace mcpe_viz {
       
     FILE *fp = fopen(fn.c_str(), "r");
     if ( ! fp ) {
-      slogger.msg(kLogInfo1,"ERROR: Failed to open file (%s)\n", fn.c_str());
+      slogger.msg(kLogInfo1,"ERROR: Failed to open file (%s error=%s (%d)\n", fn.c_str(), strerror(errno), errno);
       return 1;
     }
 

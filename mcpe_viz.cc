@@ -568,11 +568,21 @@ namespace mcpe_viz {
     return (p[_calcOffsetBlock_LevelDB_v3(x,z,y)+1] & 0xff);
   }
   
-  uint8_t getBlockData_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+  uint8_t getBlockData_LevelDB_v3(const char* p, size_t plen, int32_t x, int32_t z, int32_t y) {
     int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
     int32_t off2 = off / 2;
     int32_t mod2 = off % 2;
-    int32_t v = p[(16*16*16) + 1 + off2];
+    // todonow - temp test to find bug
+    size_t tmp_offset = (16*16*16) + 1 + off2;
+    if ( tmp_offset >= plen ) {
+      if ( control.verboseFlag ) {
+        slogger.msg(kLogError,"getBlockData_LevelDB_v3 get data out of bounds! (%d >= %d) (%d %d %d)\n"
+                    , (int32_t)tmp_offset, (int32_t)plen, x,z,y);
+      }
+      return 0;
+    }
+    int32_t v = p[tmp_offset];
+    //int32_t v = p[(16*16*16) + 1 + off2];
     if ( mod2 == 0 ) {
       return v & 0x0f;
     } else {
@@ -581,11 +591,21 @@ namespace mcpe_viz {
   }
 
   // a block opacity value? (e.g. glass is 0xf, water is semi (0xc) and an opaque block is 0x0)
-  uint8_t getBlockSkyLight_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+  uint8_t getBlockSkyLight_LevelDB_v3(const char* p, size_t plen, int32_t x, int32_t z, int32_t y) {
     int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
     int32_t off2 = off / 2;
     int32_t mod2 = off % 2;
-    int32_t v = p[(16*16*16) + 1 + (16*16*8) + off2];
+    // todonow - temp test to find bug
+    size_t tmp_offset = (16*16*16) + 1 + (16*16*8) + off2;
+    if ( tmp_offset >= plen ) {
+      if ( control.verboseFlag ) {
+        slogger.msg(kLogError,"getBlockSkyLight_LevelDB_v3 get data out of bounds! (%d >= %d) (%d %d %d)\n"
+                    , (int32_t)tmp_offset, (int32_t)plen, x,z,y);
+      }
+      return 0;
+    }
+    int32_t v = p[tmp_offset];
+    // int32_t v = p[(16*16*16) + 1 + (16*16*8) + off2];
     if ( mod2 == 0 ) {
       return v & 0x0f;
     } else {
@@ -594,11 +614,21 @@ namespace mcpe_viz {
   }
 
   // block light is light value from torches et al -- super cool looking as an image, but it looks like block light is probably stored in air blocks which are above top block
-  uint8_t getBlockBlockLight_LevelDB_v3(const char* p, int32_t x, int32_t z, int32_t y) {
+  uint8_t getBlockBlockLight_LevelDB_v3(const char* p, size_t plen, int32_t x, int32_t z, int32_t y) {
     int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
     int32_t off2 = off / 2;
     int32_t mod2 = off % 2;
-    int32_t v = p[(16*16*16) + 1 + (16*16*8) + (16*16*8) + off2];
+    // todonow - temp test to find bug
+    size_t tmp_offset = (16*16*16) + 1 + (16*16*8) + (16*16*8) + off2;
+    if ( tmp_offset >= plen ) {
+      if ( control.verboseFlag ) {
+        slogger.msg(kLogError,"getBlockBlockLight_LevelDB_v3 get data out of bounds! (%d >= %d) (%d %d %d)\n"
+                    , (int32_t)tmp_offset, (int32_t)plen, x,z,y);
+      }
+      return 0;
+    }
+    int32_t v = p[tmp_offset];
+    //int32_t v = p[(16*16*16) + 1 + (16*16*8) + (16*16*8) + off2];
     if ( mod2 == 0 ) {
       return v & 0x0f;
     } else {
@@ -1131,7 +1161,7 @@ namespace mcpe_viz {
     }
 
 
-    int32_t _do_chunk_v3 ( int32_t tchunkX, int32_t tchunkY, int32_t tchunkZ, const char* cdata,
+    int32_t _do_chunk_v3 ( int32_t tchunkX, int32_t tchunkY, int32_t tchunkZ, const char* cdata, size_t cdata_size,
                            int32_t dimensionId, const std::string& dimName,
                            Histogram& histogramGlobalBlock, 
                            const bool* fastBlockHideList, const bool* fastBlockForceTopList,
@@ -1214,7 +1244,7 @@ namespace mcpe_viz {
                    fastBlockForceTopList[blockId] ) {
                 
                 blocks[cx][cz] = blockId;
-                data[cx][cz] = getBlockData_LevelDB_v3(cdata, cx,cz,cy);
+                data[cx][cz] = getBlockData_LevelDB_v3(cdata, cdata_size, cx,cz,cy);
                 topBlockY[cx][cz] = realy;
 
                 int32_t cy2 = cy;
@@ -1231,8 +1261,8 @@ namespace mcpe_viz {
                   // if not solid, don't adjust
                 }
 #endif
-                uint8_t sl = getBlockSkyLight_LevelDB_v3(cdata, cx,cz,cy2);
-                uint8_t bl = getBlockBlockLight_LevelDB_v3(cdata, cx,cz,cy2);   
+                uint8_t sl = getBlockSkyLight_LevelDB_v3(cdata, cdata_size, cx,cz,cy2);
+                uint8_t bl = getBlockBlockLight_LevelDB_v3(cdata, cdata_size, cx,cz,cy2);   
                 // we combine the light nibbles into a byte
                 topLight[cx][cz] = (sl << 4) | bl;
               }
@@ -1368,6 +1398,7 @@ namespace mcpe_viz {
       readOptions.fill_cache=false; // may improve performance?
       std::string svalue;
       const char* pchunk = nullptr;
+      size_t pchunk_size;
       for (int8_t cubicy = 0; cubicy < MAX_CUBIC_Y; cubicy++) {
         
         // todobug - this fails around level 112? on another1 -- weird -- run a valgrind to see where we're messing up
@@ -1394,6 +1425,7 @@ namespace mcpe_viz {
         dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
         if ( dstatus.ok() ) {
           pchunk = svalue.data();
+          pchunk_size = svalue.size();
 
           // copy data
           // todobig - make this faster with memcpy's -- it is important to consider the way we'll extract the data later :)
@@ -1404,8 +1436,8 @@ namespace mcpe_viz {
                 
                 int32_t off = _calcOffsetBlock_LevelDB_v3_fullchunk(cx,cz,cy);
                 blockidData[ off ] = getBlockId_LevelDB_v3(pchunk, cx,cz,ccy);
-                blockdataData[ off ] = getBlockData_LevelDB_v3(pchunk, cx,cz,ccy);
-                blocklightData[ off ] = getBlockBlockLight_LevelDB_v3(pchunk, cx,cz,ccy);
+                blockdataData[ off ] = getBlockData_LevelDB_v3(pchunk, pchunk_size, cx,cz,ccy);
+                blocklightData[ off ] = getBlockBlockLight_LevelDB_v3(pchunk, pchunk_size, cx,cz,ccy);
               }
             }
           }
@@ -1635,7 +1667,7 @@ namespace mcpe_viz {
     int32_t getMinChunkZ() { return minChunkZ; }
     int32_t getMaxChunkZ() { return maxChunkZ; }
 
-    int32_t addChunk ( int32_t tchunkFormatVersion, int32_t chunkX, int32_t chunkY, int32_t chunkZ, const char* cdata) {
+    int32_t addChunk ( int32_t tchunkFormatVersion, int32_t chunkX, int32_t chunkY, int32_t chunkZ, const char* cdata, size_t cdata_size) {
       ChunkKey chunkKey(chunkX, chunkZ);
       switch ( tchunkFormatVersion ) {
       case 2:
@@ -1654,7 +1686,7 @@ namespace mcpe_viz {
           chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
         }
         
-        return chunks[chunkKey]->_do_chunk_v3(chunkX, chunkY, chunkZ, cdata, dimId, name,
+        return chunks[chunkKey]->_do_chunk_v3(chunkX, chunkY, chunkZ, cdata, cdata_size, dimId, name,
                                               histogramGlobalBlock, 
                                               fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
                                               listCheckSpawn);
@@ -2580,7 +2612,8 @@ namespace mcpe_viz {
       std::string svalue;
       const char* ochunk = nullptr;
       const char* pchunk = nullptr;
-        
+      size_t ochunk_size;
+      
       int32_t color;
       const char *pcolor = (const char*)&color;
 
@@ -2662,6 +2695,7 @@ namespace mcpe_viz {
             // we got a pre-0.17 chunk
             pchunk = svalue.data();
             ochunk = pchunk;
+            ochunk_size = svalue.size();
             foundCt++;
             
             // we step through the chunk in the natural order to speed things up
@@ -2770,6 +2804,7 @@ namespace mcpe_viz {
 
                 // we got a post-0.17 cubic chunk
                 pchunk = svalue.data();
+                ochunk_size = svalue.size();
                 ochunk = pchunk;
                 foundCt++;
 
@@ -2803,7 +2838,7 @@ namespace mcpe_viz {
                         if ( blockInfoList[blockid].hasVariants() ) {
                           // we need to get blockdata
 
-                          blockdata = getBlockData_LevelDB_v3(ochunk, cx,cz,ccy);
+                          blockdata = getBlockData_LevelDB_v3(ochunk, ochunk_size, cx,cz,ccy);
                           
                           bool vfound = false;
                           for (const auto& itbv : blockInfoList[blockid].variantList) {
@@ -3712,7 +3747,8 @@ namespace mcpe_viz {
       int32_t recordCt = 0, ret;
 
       leveldb::Slice skey, svalue;
-      int32_t key_size, cdata_size;
+      size_t key_size;
+      size_t cdata_size;
       const char* key;
       const char* cdata;
       std::string dimName, chunkstr;
@@ -3929,7 +3965,7 @@ namespace mcpe_viz {
 
           // report info about the chunk
           chunkstr = dimName + "-chunk: ";
-          sprintf(tmpstring,"%d %d (type=0x%02x)", chunkX, chunkZ, chunkType);
+          sprintf(tmpstring,"%d %d (type=0x%02x) (size=%d)", chunkX, chunkZ, chunkType, (int32_t)cdata_size);
           chunkstr += tmpstring;
           if ( true ) {
             // show approximate image coordinates for chunk
@@ -3940,8 +3976,7 @@ namespace mcpe_viz {
             sprintf(tmpstring," (image %d %d)", (int32_t)imageX, (int32_t)imageZ);
             chunkstr+=tmpstring;
           }
-          chunkstr += "\n";
-          logger.msg(kLogInfo1, "%s", chunkstr.c_str());
+          logger.msg(kLogInfo1, "%s\n", chunkstr.c_str());
 
           // see what kind of chunk we have
           // tommo posted useful info about the various record types here (around 0.17 beta):
@@ -3952,7 +3987,7 @@ namespace mcpe_viz {
             // chunk block data
             // we do the parsing in the destination object to save memcpy's
             // todonow - would be better to get the version # from the proper chunk record (0x76)
-            dimDataList[chunkDimId]->addChunk(2, chunkX, 0, chunkZ,cdata);
+            dimDataList[chunkDimId]->addChunk(2, chunkX, 0, chunkZ,cdata,cdata_size);
             break;
 
           case 0x31:
@@ -4032,6 +4067,7 @@ namespace mcpe_viz {
           case 0x2f:
             // "SubchunkPrefix"
             // chunk block data - 10241 bytes
+            // todonow -- but have also seen 6145 on v1.1?
             // we do the parsing in the destination object to save memcpy's
             // todonow - would be better to get the version # from the proper chunk record (0x76)
             {
@@ -4040,7 +4076,7 @@ namespace mcpe_viz {
               if ( cdata[0] != 0 ) {
                 logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
               }
-              dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata);
+              dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata, cdata_size);
             }
             break;
 
@@ -4078,6 +4114,9 @@ namespace mcpe_viz {
                16x16x16 of this = 10,240!!
                what is the one extra byte... hmmmm
 
+               NOTE! as of at least v1.1.0 there are also records that are 6145 bytes - they appear 
+               to exclude the block/sky light parts
+
 
                per column data: 5-bytes per column
                height of top block = 1 byte
@@ -4101,7 +4140,7 @@ namespace mcpe_viz {
 
           default:
             logger.msg(kLogInfo1,"WARNING: %s unknown chunk - key_size=%d type=0x%x length=%d\n", dimName.c_str(),
-                       key_size, chunkType, cdata_size);
+                       (int32_t)key_size, chunkType, (int32_t)cdata_size);
             printKeyValue(key,key_size,cdata,cdata_size,true);
 
             if ( false ) {
@@ -4113,7 +4152,7 @@ namespace mcpe_viz {
           }
         }
         else {
-          logger.msg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d cdata_size=%d\n", key_size, cdata_size);
+          logger.msg(kLogInfo1,"WARNING: Unknown chunk - key_size=%d cdata_size=%d\n", (int32_t)key_size, (int32_t)cdata_size);
           printKeyValue(key,key_size,cdata,cdata_size,true);
           if ( false ) { 
             // try to nbt decode

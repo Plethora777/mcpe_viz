@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <libgen.h>
 #include <math.h>
+#include <cerrno>
 #include "mcpe_viz.version.h"
 
 namespace mcpe_viz {
@@ -196,7 +197,7 @@ namespace mcpe_viz {
     int32_t open(const std::string& imageDescription, int32_t width, int32_t height, int32_t numRowPointers, bool rgbaFlag, bool wholeImageFlag) {
       fp = fopen(fn.c_str(), "wb");
       if(!fp) {
-        slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s)\n", fn.c_str());
+        slogger.msg(kLogInfo1,"ERROR: Failed to open output file (%s) errno=%s(%d)\n", fn.c_str(), strerror(errno), errno);
         return -1;
       }
         
@@ -343,7 +344,7 @@ namespace mcpe_viz {
 
       fp = fopen(fn.c_str(), "rb");
       if(!fp) {
-        slogger.msg(kLogInfo1,"ERROR: Failed to open input file (%s)\n", fn.c_str());
+        slogger.msg(kLogInfo1,"ERROR: Failed to open input file (%s) errno=%s(%d)\n", fn.c_str(), strerror(errno), errno);
         return -1;
       }
         

@@ -164,6 +164,24 @@ You can copy mcpe_viz.cfg to ~/.mcpe_viz/mcpe_viz.cfg and then edit that file to
 You can copy mcpe_viz.xml to ~/.mcpe_viz/mcpe_viz.xml and then edit that file to set custom colors for blocks and biomes.
 
 
+## Error messages
+
+This program uses a lot of file handles and depending on your OS's defaults (OS X's are too low) you can have a failure that resembles the following:
+```
+  Generate full-size slices
+    Writing all images in one pass
+ERROR: Failed to open output file (../worlds/output/images/kYQJAGOeAQA=.mcpe_viz_slice.full.overworld.247.png) errno=Too many open files(24)
+libpng error: No IDATs written into file
+ERROR: PngWriter setjmp triggered -- image might be too large (2672 x 1600)
+zsh: segmentation fault  ../mcpe_viz/build/mcpe_viz --db ../worlds/kYQJAGOeAQA= --out  --html-all
+```
+
+You can check your limits and temporarily set file descriptors with the following:
+```
+ulimit -a
+ulimit -n 8192
+```
+
 ## Compiling from source
 
 If you just want to run the software on windows, see above :)  If you would like to compile it for Linux (or Windows, or OS X), read on.

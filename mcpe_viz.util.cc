@@ -122,12 +122,12 @@ namespace mcpe_viz {
 
     FILE *fpsrc = fopen(fnSrc.c_str(),"r");
     if ( ! fpsrc ) {
-      slogger.msg(kLogInfo1,"ERROR: copyFileWithStringReplacement failed to open src (%s)\n", fnSrc.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFileWithStringReplacement failed to open src (%s) errno=%s(%d)\n", fnSrc.c_str(), strerror(errno), errno);
       return -1;
     }
     FILE *fpdest = fopen(fnDest.c_str(),"w");
     if ( ! fpdest ){
-      slogger.msg(kLogInfo1,"ERROR: copyFileWithStringReplacement failed to open dest (%s)\n", fnDest.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFileWithStringReplacement failed to open dest (%s) errno=%s(%d)\n", fnDest.c_str(), strerror(errno), errno);
       fclose(fpsrc);
       return -1;
     }
@@ -175,12 +175,12 @@ namespace mcpe_viz {
 
     FILE *fpsrc = fopen(fnSrc.c_str(),"rb");
     if ( ! fpsrc ) {
-      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open src (%s)\n", fnSrc.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open src (%s) errno=%s(%d)\n", fnSrc.c_str(), strerror(errno), errno);
       return -1;
     }
     FILE *fpdest = fopen(fnDest.c_str(),"wb");
     if ( ! fpdest ){
-      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open dest (%s)\n", fnDest.c_str());
+      slogger.msg(kLogInfo1,"ERROR: copyFile failed to open dest (%s) errno=%s(%d)\n", fnDest.c_str(), strerror(errno), errno);
       fclose(fpsrc);
       return -1;
     }

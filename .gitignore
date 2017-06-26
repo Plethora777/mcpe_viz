@@ -2,8 +2,6 @@
 build/
 wbuild/
 wbuild64/
-leveldb-mcpe/
-libnbtplusplus/
 Backup/
 Research/
 openlayers

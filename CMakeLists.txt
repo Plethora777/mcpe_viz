@@ -130,7 +130,7 @@ configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap-tour.min.css js/bootstrap-tour
 configure_file(${PROJECT_SOURCE_DIR}/js/ol.css js/ol.css COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap.min.js js/bootstrap.min.js COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/js/bootstrap-tour.min.js js/bootstrap-tour.min.js COPYONLY)
-configure_file(${PROJECT_SOURCE_DIR}/js/jquery-1.11.2.min.js js/jquery-1.11.2.min.js COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/js/jquery-3.2.1.min.js js/jquery-3.2.1.min.js COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/js/ol.js js/ol.js COPYONLY)
 
 # zip win32 and win64 builds

@@ -1,0 +1,6 @@
+[submodule "leveldb-mcpe"]
+	path = leveldb-mcpe
+	url = https://github.com/Mojang/leveldb-mcpe.git
+[submodule "libnbtplusplus"]
+	path = libnbtplusplus
+	url = https://github.com/ljfa-ag/libnbtplusplus.git

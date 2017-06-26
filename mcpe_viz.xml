@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <xml>
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
@@ -39,7 +40,8 @@
       <blockvariant blockdata="0x6" name="Andesite, Polished" />
     </block>
     <block id="0x02" name="Grass Block" color="0x1f953e" />
-    <block id="0x03" name="Dirt" color="0x7c5a06" /> <!-- todo - dirt/coarse dirt/podzol? -->
+    <block id="0x03" name="Dirt" color="0x7c5a06" />
+    <!-- todo - dirt/coarse dirt/podzol? -->
     <block id="0x04" name="Cobblestone" color="0xc0c0c0" />
     <block id="0x05" name="Wooden Planks" color="0x696a2d">
       <blockvariant blockdata="0x0" name="Planks, Oak Wood" />
@@ -65,19 +67,25 @@
       <blockvariant blockdata="0xd" name="Sapling, Dark Oak" />
     </block>
     <block id="0x07" name="Bedrock" color="0x202020" spawnable="0" />
-    <block id="0x08" name="Water" color="0x616699" opaque="0" liquid="1" solid="0" spawnable="0" /> <!-- *S -->
-    <block id="0x09" name="Stationary Water" color="0x8b92dd" opaque="0" liquid="1" solid="0" spawnable="0" /> <!-- *S -->
-    <block id="0x0A" name="Lava" color="0xfc2a2a" opaque="0" liquid="1" solid="0" spawnable="0" /> <!-- *S -->
-    <block id="0x0B" name="Stationary Lava" color="0xfc2a2b" opaque="0" liquid="1" solid="0" spawnable="0" /> <!-- *S -->
+    <block id="0x08" name="Water" color="0x616699" opaque="0" liquid="1" solid="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x09" name="Stationary Water" color="0x8b92dd" opaque="0" liquid="1" solid="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x0A" name="Lava" color="0xfc2a2a" opaque="0" liquid="1" solid="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x0B" name="Stationary Lava" color="0xfc2a2b" opaque="0" liquid="1" solid="0" spawnable="0" />
+    <!-- *S -->
     <block id="0x0C" name="Sand" color="0xede586">
       <blockvariant blockdata="0x0" name="Sand" />
       <blockvariant blockdata="0x1" name="Sand, Red" color="0xedbe86" />
     </block>
     <block id="0x0D" name="Gravel" color="0x808080" />
-    <block id="0x0E" name="Gold Ore" color="0xf5f73b" /> <!-- todo - too close to torch color? -->
+    <block id="0x0E" name="Gold Ore" color="0xf5f73b" />
+    <!-- todo - too close to torch color? -->
     <block id="0x0F" name="Iron Ore" color="0xdbbe21" />
     <block id="0x10" name="Coal Ore" color="0x505050" />
-    <block id="0x11" name="Wood" color="0x916609"> <!-- *B -->
+    <block id="0x11" name="Wood" color="0x916609">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Wood, Oak (Up/Down)" />
       <blockvariant blockdata="0x1" name="Wood, Spruce (Up/Down)" />
       <blockvariant blockdata="0x2" name="Wood, Birch (Up/Down)" />
@@ -113,7 +121,8 @@
       <blockvariant blockdata="0xd" name="Leaves, Spruce (no + check decay)" />
       <blockvariant blockdata="0xe" name="Leaves, Birch (no + check decay)" />
       <blockvariant blockdata="0xf" name="Leaves, Jungle (no + check decay)" />
-    </block>    <!-- *B -->
+    </block>
+    <!-- *B -->
     <block id="0x13" name="Sponge" color="0xb3ae61">
       <blockvariant blockdata="0x0" name="Sponge, Dry" />
       <blockvariant blockdata="0x1" name="Sponge, Wet" />
@@ -121,17 +130,24 @@
     <block id="0x14" name="Glass" color="0xf0f0f0" opaque="0" spawnable="0" />
     <block id="0x15" name="Lapis Lazuli Ore" color="0xb5c2d6" />
     <block id="0x16" name="Lapis Lazuli Block" color="0x0547a9" />
-    <block id="0x17" name="Dispenser" color="0x929292" opaque="0" spawnable="0" /> <!-- *S *E 0.14 -->
-    <block id="0x18" name="Sandstone" color="0xfbf8b4"> <!-- *B -->
+    <block id="0x17" name="Dispenser" color="0x929292" opaque="0" spawnable="0" />
+    <!-- *S *E 0.14 -->
+    <block id="0x18" name="Sandstone" color="0xfbf8b4">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Sandstone" />
       <blockvariant blockdata="0x1" name="Sandstone, Chiseled" />
       <blockvariant blockdata="0x2" name="Sandstone, Smooth" />
     </block>
-    <block id="0x19" name="Note Block" color="0xb5830a" /> <!-- *E 0.13 -->
-    <block id="0x1A" name="Bed" color="0xff0000" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x1B" name="Powered Rail" color="0xfe4902" solid="0" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x1C" name="Detector Rail" color="0xce6841" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x1D" name="Piston, Sticky" color="0x74d48b" solid="0" opaque="0" spawnable="0"> <!-- *S 0.15 -->
+    <block id="0x19" name="Note Block" color="0xb5830a" />
+    <!-- *E 0.13 -->
+    <block id="0x1A" name="Bed" color="0xff0000" opaque="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x1B" name="Powered Rail" color="0xfe4902" solid="0" opaque="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x1C" name="Detector Rail" color="0xce6841" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x1D" name="Piston, Sticky" color="0x74d48b" solid="0" opaque="0" spawnable="0">
+      <!-- *S 0.15 -->
       <blockvariant blockdata="0x0" name="Piston, Sticky (Down)" />
       <blockvariant blockdata="0x1" name="Piston, Sticky (Up)" />
       <blockvariant blockdata="0x2" name="Piston, Sticky (South)" />
@@ -140,13 +156,15 @@
       <blockvariant blockdata="0x5" name="Piston, Sticky (West)" />
     </block>
     <block id="0x1E" name="Cobweb" color="0xe0e0e0" solid="0" />
-    <block id="0x1F" name="Grass" color="0x1f953f" solid="0" opaque="0" spawnable="0" > <!-- *B -->
+    <block id="0x1F" name="Grass" color="0x1f953f" solid="0" opaque="0" spawnable="0">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Shrub" />
       <blockvariant blockdata="0x1" name="Tall Grass" />
       <blockvariant blockdata="0x2" name="Fern" />
     </block>
     <block id="0x20" name="Dead Bush" color="0x47461e" solid="0" opaque="0" spawnable="0" />
-    <block id="0x21" name="Piston" color="0x669f73" solid="0" opaque="0" spawnable="0"> <!-- *S 0.15 -->
+    <block id="0x21" name="Piston" color="0x669f73" solid="0" opaque="0" spawnable="0">
+      <!-- *S 0.15 -->
       <blockvariant blockdata="0x0" name="Piston (Down)" />
       <blockvariant blockdata="0x1" name="Piston (Up)" />
       <blockvariant blockdata="0x2" name="Piston (South)" />
@@ -154,8 +172,10 @@
       <blockvariant blockdata="0x4" name="Piston (East)" />
       <blockvariant blockdata="0x5" name="Piston (West)" />
     </block>
-    <block id="0x22" name="Piston Head" color="0x8f8d4c" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.15 -->
-    <block id="0x23" name="Wool"> <!-- *B -->
+    <block id="0x22" name="Piston Head" color="0x8f8d4c" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.15 -->
+    <block id="0x23" name="Wool">
+      <!-- *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="1" name="Wool, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="1" name="Wool, Orange" />
       <blockvariant blockdata="0x2" color="0xB350BC" dcolor="1" name="Wool, Magenta" />
@@ -174,7 +194,8 @@
       <blockvariant blockdata="0xf" color="0x191616" dcolor="1" name="Wool, Black" />
     </block>
     <block id="0x25" name="Dandelion" color="0xcacc34" solid="0" opaque="0" spawnable="0"/>
-    <block id="0x26" name="Flower" color="0xe98b9a" solid="0" opaque="0" spawnable="0" > <!--  *B -->
+    <block id="0x26" name="Flower" color="0xe98b9a" solid="0" opaque="0" spawnable="0">
+      <!--  *B -->
       <!-- todo colors for these would be nice -->
       <blockvariant blockdata="0x0" name="Poppy" />
       <blockvariant blockdata="0x1" name="Blue Orchid" />
@@ -203,7 +224,8 @@
       <blockvariant blockdata="0x9" name="Double Slab, Smooth Sandstone" />
       <blockvariant blockdata="0xf" name="Double Slab, Tile Quartz" />
     </block>
-    <block id="0x2C" name="Stone Slab" color="0x909090" opaque="0" spawnable="0"> <!-- *B -->
+    <block id="0x2C" name="Stone Slab" color="0x909090" opaque="0" spawnable="0">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Slab, Stone" />
       <blockvariant blockdata="0x1" name="Slab, Sandstone" />
       <blockvariant blockdata="0x2" name="Slab, Wooden" />
@@ -235,8 +257,10 @@
       <blockvariant blockdata="0x5" name="Torch, Facing Up" />
     </block>
     <block id="0x33" name="Fire" color="0xff1d32" solid="0" opaque="0" spawnable="0" />
-    <block id="0x34" name="Mob Spawner" color="0x930a91" /> <!-- *E -->
-    <block id="0x35" name="Stairs, Oak Wood" color="0x696b2d" spawnable="0"> <!-- *S -->
+    <block id="0x34" name="Mob Spawner" color="0x930a91" />
+    <!-- *E -->
+    <block id="0x35" name="Stairs, Oak Wood" color="0x696b2d" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Oak Wood, East" />
       <blockvariant blockdata="0x1" name="Stairs, Oak Wood, West" />
       <blockvariant blockdata="0x2" name="Stairs, Oak Wood, South" />
@@ -246,20 +270,30 @@
       <blockvariant blockdata="0x6" name="Stairs, Oak Wood, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Oak Wood, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0x36" name="Chest" color="0xb3914f" opaque="0" spawnable="0" /> <!-- *E -->
-    <block id="0x37" name="Redstone Wire" color="0xea3c3c" solid="0" opaque="0" spawnable="0" /> <!-- *I *S 0.13 -->
+    <block id="0x36" name="Chest" color="0xb3914f" opaque="0" spawnable="0" />
+    <!-- *E -->
+    <block id="0x37" name="Redstone Wire" color="0xea3c3c" solid="0" opaque="0" spawnable="0" />
+    <!-- *I *S 0.13 -->
     <block id="0x38" name="Diamond Ore" color="0x77dcd8" />
     <block id="0x39" name="Block of Diamond" color="0x83f0ec" />
     <block id="0x3A" name="Crafting Table" color="0x895c26" />
-    <block id="0x3B" name="Wheat" color="0x3ebf59" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
-    <block id="0x3C" name="Farmland" color="0x646325" opaque="0" /> <!-- *D -->
-    <block id="0x3D" name="Furnace" color="0xe54e26" /> <!-- *S *E -->
-    <block id="0x3E" name="Furnace, Burning" color="0xfd572c" opaque="0" spawnable="0" /> <!-- *S *E -->
-    <block id="0x3F" name="Standing Sign" color="0x8d804a" solid="0" opaque="0" spawnable="0" /> <!-- *I *S *E -->
-    <block id="0x40" name="Door, Oak" color="0x77602e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
+    <block id="0x3B" name="Wheat" color="0x3ebf59" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I -->
+    <block id="0x3C" name="Farmland" color="0x646325" opaque="0" />
+    <!-- *D -->
+    <block id="0x3D" name="Furnace" color="0xe54e26" />
+    <!-- *S *E -->
+    <block id="0x3E" name="Furnace, Burning" color="0xfd572c" opaque="0" spawnable="0" />
+    <!-- *S *E -->
+    <block id="0x3F" name="Standing Sign" color="0x8d804a" solid="0" opaque="0" spawnable="0" />
+    <!-- *I *S *E -->
+    <block id="0x40" name="Door, Oak" color="0x77602e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I -->
     <block id="0x41" name="Ladder" solid="0" color="0xada170" opaque="0" spawnable="0" />
-    <block id="0x42" name="Rail" color="0x866e3b" solid="0" opaque="0" spawnable="0" /> <!-- todo - tough to choose a good color here, silver/gray is not enough contrast to stone etc -->
-    <block id="0x43" name="Stairs, Cobblestone" color="0xd0d0d0" spawnable="0"> <!-- *D -->
+    <block id="0x42" name="Rail" color="0x866e3b" solid="0" opaque="0" spawnable="0" />
+    <!-- todo - tough to choose a good color here, silver/gray is not enough contrast to stone etc -->
+    <block id="0x43" name="Stairs, Cobblestone" color="0xd0d0d0" spawnable="0">
+      <!-- *D -->
       <blockvariant blockdata="0x0" name="Stairs, Cobblestone, East" />
       <blockvariant blockdata="0x1" name="Stairs, Cobblestone, West" />
       <blockvariant blockdata="0x2" name="Stairs, Cobblestone, South" />
@@ -269,16 +303,24 @@
       <blockvariant blockdata="0x6" name="Stairs, Cobblestone, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Cobblestone, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0x44" name="Wall Sign" color="0x8d804b" solid="0" opaque="0" spawnable="0" /> <!-- *I *S *E -->
-    <block id="0x45" name="Lever" color="0xd7d7b8" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x46" name="Pressure Plate, Stone" color="0xccccc6" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x47" name="Door, Iron" color="0xc8cccc" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x48" name="Pressure Plate, Wooden" color="0xab9e57" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
+    <block id="0x44" name="Wall Sign" color="0x8d804b" solid="0" opaque="0" spawnable="0" />
+    <!-- *I *S *E -->
+    <block id="0x45" name="Lever" color="0xd7d7b8" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x46" name="Pressure Plate, Stone" color="0xccccc6" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x47" name="Door, Iron" color="0xc8cccc" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x48" name="Pressure Plate, Wooden" color="0xab9e57" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
     <block id="0x49" name="Redstone Ore" color="0xab2828" />
     <block id="0x4A" name="Glowing Redstone Ore" color="0xab2829" opaque="0" />
-    <block id="0x4B" name="Redstone Torch, Inactive" color="0xac2828" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x4C" name="Redstone Torch, Active" color="0xcc2828" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x4D" name="Button, Stone" color="0xc9c9c9" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
+    <block id="0x4B" name="Redstone Torch, Inactive" color="0xac2828" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x4C" name="Redstone Torch, Active" color="0xcc2828" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x4D" name="Button, Stone" color="0xc9c9c9" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
     <block id="0x4E" name="Snow (layer)" color="0xefefff" solid="0" opaque="0" spawnable="0" />
     <block id="0x4F" name="Ice" color="0x0cf5ed" opaque="0" />
     <block id="0x50" name="Snow" color="0xe0e0f0" opaque="0" />
@@ -294,17 +336,23 @@
       <blockvariant blockdata="0x4" name="Fence, Acacia Wood" />
       <blockvariant blockdata="0x5" name="Fence, Dark Oak Wood" />
     </block>
-    <block id="0x56" name="Pumpkin" color="0xfe9300" />  <!-- *S -->
+    <block id="0x56" name="Pumpkin" color="0xfe9300" />
+    <!-- *S -->
     <block id="0x57" name="Netherrack" color="0xc6475f" />
     <block id="0x58" name="Soul Sand" color="0x9f6969" />
     <block id="0x59" name="Glowstone" color="0xfafa9c" opaque="0" />
     <block id="0x5A" name="Nether Portal" color="0xffa0ff" solid="0" opaque="0" spawnable="0" />
-    <block id="0x5B" name="Jack o'Lantern" color="0xffb854" /> <!-- *S -->
-    <block id="0x5C" name="Cake" color="0xe4b8c4" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x5D" name="Redstone Repeater, Inactive" color="0xea4c4c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
-    <block id="0x5E" name="Redstone Repeater, Active" color="0xea5c5c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
+    <block id="0x5B" name="Jack o'Lantern" color="0xffb854" />
+    <!-- *S -->
+    <block id="0x5C" name="Cake" color="0xe4b8c4" opaque="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x5D" name="Redstone Repeater, Inactive" color="0xea4c4c" opaque="0" spawnable="0" />
+    <!-- *I *S 0.14 -->
+    <block id="0x5E" name="Redstone Repeater, Active" color="0xea5c5c" opaque="0" spawnable="0" />
+    <!-- *I *S 0.14 -->
     <block id="0x5F" name="TBD - MCPE=Invisible Bedrock / MCPC=Stained Glass" color="0x282828" />
-    <block id="0x60" name="Trapdoor" color="0x9e9678" opaque="0" spawnable="0" /> <!-- *S -->
+    <block id="0x60" name="Trapdoor" color="0x9e9678" opaque="0" spawnable="0" />
+    <!-- *S -->
     <block id="0x61" name="Monster Egg" color="0xe6e6fa">
       <blockvariant blockdata="0x0" name="Monster Egg, Stone" />
       <blockvariant blockdata="0x1" name="Monster Egg, Cobblestone" />
@@ -313,7 +361,8 @@
       <blockvariant blockdata="0x4" name="Monster Egg, Cracked Stone Brick" />
       <blockvariant blockdata="0x5" name="Monster Egg, Chiseled Stone Brick" />
     </block>
-    <block id="0x62" name="Stone Brick" color="0xb6b6b0"> <!-- *D *B -->
+    <block id="0x62" name="Stone Brick" color="0xb6b6b0">
+      <!-- *D *B -->
       <blockvariant blockdata="0x0" name="Brick, Stone" />
       <blockvariant blockdata="0x1" name="Brick, Mossy Stone" />
       <blockvariant blockdata="0x2" name="Brick, Cracked Stone" />
@@ -324,11 +373,16 @@
     <block id="0x65" name="Iron Bars" color="0xd6d5d3" opaque="0" spawnable="0" />
     <block id="0x66" name="Glass Pane" color="0xf8f8f8" opaque="0" spawnable="0" />
     <block id="0x67" name="Melon" color="0x73d86c" />
-    <block id="0x68" name="Pumpkin Stem" color="0xa6a96f" solid="0" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x69" name="Melon Stem" color="0xa6a96e" solid="0" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x6A" name="Vines" color="0x265e2c" solid="0" opaque="0" spawnable="0" /> <!-- *D -->
-    <block id="0x6B" name="Fence Gate, Oak" color="0x57553b" solid="0" opaque="0" spawnable="0" /> <!-- *S -->
-    <block id="0x6C" name="Stairs, Brick" color="0xa41e2a" spawnable="0"> <!-- *S -->
+    <block id="0x68" name="Pumpkin Stem" color="0xa6a96f" solid="0" opaque="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x69" name="Melon Stem" color="0xa6a96e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x6A" name="Vines" color="0x265e2c" solid="0" opaque="0" spawnable="0" />
+    <!-- *D -->
+    <block id="0x6B" name="Fence Gate, Oak" color="0x57553b" solid="0" opaque="0" spawnable="0" />
+    <!-- *S -->
+    <block id="0x6C" name="Stairs, Brick" color="0xa41e2a" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Brick, East" />
       <blockvariant blockdata="0x1" name="Stairs, Brick, West" />
       <blockvariant blockdata="0x2" name="Stairs, Brick, South" />
@@ -338,7 +392,8 @@
       <blockvariant blockdata="0x6" name="Stairs, Brick, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Brick, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0x6D" name="Stairs, Stone Brick" color="0xa0a19a" spawnable="0"> <!-- *S -->
+    <block id="0x6D" name="Stairs, Stone Brick" color="0xa0a19a" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Stone Brick, East" />
       <blockvariant blockdata="0x1" name="Stairs, Stone Brick, West" />
       <blockvariant blockdata="0x2" name="Stairs, Stone Brick, South" />
@@ -352,7 +407,8 @@
     <block id="0x6F" name="Lily Pad" color="0x66a16a" solid="0" opaque="0" spawnable="0" />
     <block id="0x70" name="Nether Brick" color="0x712e2e" />
     <block id="0x71" name="Fence, Nether Brick" color="0x8c3939" opaque="0" spawnable="0" />
-    <block id="0x72" name="Stairs, Nether Brick" color="0xa74949" spawnable="0"> <!-- *S -->
+    <block id="0x72" name="Stairs, Nether Brick" color="0xa74949" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Nether Brick, East" />
       <blockvariant blockdata="0x1" name="Stairs, Nether Brick, West" />
       <blockvariant blockdata="0x2" name="Stairs, Nether Brick, South" />
@@ -363,19 +419,31 @@
       <blockvariant blockdata="0x7" name="Stairs, Nether Brick, North (Upside-down)" spawnable="1" />
     </block>
     <block id="0x73" name="Nether Wart" color="0xa81031" solid="0" opaque="0" spawnable="0" />
-    <block id="0x74" name="Enchantment Table" color="0xc28a8a" opaque="0" spawnable="0" /> <!-- *E -->
-    <block id="0x75" name="Brewing Stand" color="0xe8e6a9" opaque="0" spawnable="0" /> <!-- *I *S *E -->
-    <block id="0x76" name="Cauldron" color="0x939393" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
+    <block id="0x74" name="Enchantment Table" color="0xc28a8a" opaque="0" spawnable="0" />
+    <!-- *E -->
+    <block id="0x75" name="Brewing Stand" color="0xe8e6a9" opaque="0" spawnable="0" />
+    <!-- *I *S *E -->
+    <block id="0x76" name="Cauldron" color="0x939393" opaque="0" spawnable="0" />
+    <!-- *I *S 0.14 -->
     <block id="0x77" name="End Portal" color="0x7f9f81" opaque="0" spawnable="0" />
     <block id="0x78" name="End Portal Frame" color="0x8faf91" opaque="0" spawnable="0" />
-    <block id="0x79" name="End Stone" color="0xefe9a5" /> <!-- todo --> <!-- 0.17 -->
-    <block id="0x7A" name="Dragon Egg" color="0x373737"/> <!-- 0.17 -->
-    <block id="0x7B" name="Redstone Lamp, Inactive" color="0xa03030" opaque="0" spawnable="0" /> <!-- 0.13 -->
-    <block id="0x7C" name="Redstone Lamp, Active" color="0xc03030" opaque="0" spawnable="0" /> <!-- 0.13 -->
-    <block id="0x7D" name="Dropper" color="0x949494" opaque="0" spawnable="0" /> <!-- *S *E 0.14 -->
-    <block id="0x7E" name="Activator Rail" color="0xe76b3b" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x7F" name="Cocoa" solid="0" color="0xb58e17" opaque="0" spawnable="0" /> <!-- *S *I -->
-    <block id="0x80" name="Stairs, Sandstone" color="0xcecb89" spawnable="0"> <!-- *S -->
+    <block id="0x79" name="End Stone" color="0xefe9a5" />
+    <!-- todo -->
+    <!-- 0.17 -->
+    <block id="0x7A" name="Dragon Egg" color="0x373737"/>
+    <!-- 0.17 -->
+    <block id="0x7B" name="Redstone Lamp, Inactive" color="0xa03030" opaque="0" spawnable="0" />
+    <!-- 0.13 -->
+    <block id="0x7C" name="Redstone Lamp, Active" color="0xc03030" opaque="0" spawnable="0" />
+    <!-- 0.13 -->
+    <block id="0x7D" name="Dropper" color="0x949494" opaque="0" spawnable="0" />
+    <!-- *S *E 0.14 -->
+    <block id="0x7E" name="Activator Rail" color="0xe76b3b" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x7F" name="Cocoa" solid="0" color="0xb58e17" opaque="0" spawnable="0" />
+    <!-- *S *I -->
+    <block id="0x80" name="Stairs, Sandstone" color="0xcecb89" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Sandstone, East" />
       <blockvariant blockdata="0x1" name="Stairs, Sandstone, West" />
       <blockvariant blockdata="0x2" name="Stairs, Sandstone, South" />
@@ -386,11 +454,15 @@
       <blockvariant blockdata="0x7" name="Stairs, Sandstone, North (Upside-down)" spawnable="1" />
     </block>
     <block id="0x81" name="Emerald Ore" color="0x77d17d" />
-    <block id="0x82" name="Ender Chest" color="0x484848" /> <!-- 0.17 -->
-    <block id="0x83" name="Tripwire Hook" color="0x454545" solid="0" /> <!-- *S 0.13 -->
-    <block id="0x84" name="Tripwire" color="0xa7a7a7" solid="0" /> <!-- *I *S 0.13 -->
+    <block id="0x82" name="Ender Chest" color="0x484848" />
+    <!-- 0.17 -->
+    <block id="0x83" name="Tripwire Hook" color="0x454545" solid="0" />
+    <!-- *S 0.13 -->
+    <block id="0x84" name="Tripwire" color="0xa7a7a7" solid="0" />
+    <!-- *I *S 0.13 -->
     <block id="0x85" name="Block of Emerald" color="0x6dbc73" />
-    <block id="0x86" name="Stairs, Spruce Wood" color="0x696c2d" spawnable="0"> <!-- *S -->
+    <block id="0x86" name="Stairs, Spruce Wood" color="0x696c2d" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Spruce Wood, East" />
       <blockvariant blockdata="0x1" name="Stairs, Spruce Wood, West" />
       <blockvariant blockdata="0x2" name="Stairs, Spruce Wood, South" />
@@ -400,7 +472,8 @@
       <blockvariant blockdata="0x6" name="Stairs, Spruce Wood, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Spruce Wood, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0x87" name="Stairs, Birch Wood" color="0x696d2d" spawnable="0"> <!-- *S -->
+    <block id="0x87" name="Stairs, Birch Wood" color="0x696d2d" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Birch Wood, East" />
       <blockvariant blockdata="0x1" name="Stairs, Birch Wood, West" />
       <blockvariant blockdata="0x2" name="Stairs, Birch Wood, South" />
@@ -410,7 +483,8 @@
       <blockvariant blockdata="0x6" name="Stairs, Birch Wood, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Birch Wood, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0x88" name="Stairs, Jungle Wood" color="0x696e2d" spawnable="0"> <!-- *S -->
+    <block id="0x88" name="Stairs, Jungle Wood" color="0x696e2d" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Jungle Wood, East" />
       <blockvariant blockdata="0x1" name="Stairs, Jungle Wood, West" />
       <blockvariant blockdata="0x2" name="Stairs, Jungle Wood, South" />
@@ -420,12 +494,15 @@
       <blockvariant blockdata="0x6" name="Stairs, Jungle Wood, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Jungle Wood, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0x8a" name="Beacon" color="0x8989ca" opaque="0" spawnable="0" /> <!-- 0.17 --> <!-- todo check opaque / spawn -->
+    <block id="0x8a" name="Beacon" color="0x8989ca" opaque="0" spawnable="0" />
+    <!-- 0.17 -->
+    <!-- todo check opaque / spawn -->
     <block id="0x8B" name="Cobblestone Wall" color="0xb0b0b0" opaque="0" spawnable="0">
       <blockvariant blockdata="0x0" name="Cobblestone Wall" />
       <blockvariant blockdata="0x1" name="Cobblestone Wall, Mossy" />
     </block>
-    <block id="0x8C" name="Flower Pot" color="0xdd9924" solid="0" opaque="0" spawnable="0"> <!-- *I *E -->
+    <block id="0x8C" name="Flower Pot" color="0xdd9924" solid="0" opaque="0" spawnable="0">
+      <!-- *I *E -->
       <blockvariant blockdata="0x0" name="Flower Pot, Empty" />
       <blockvariant blockdata="0x1" name="Flower Pot, Poppy" />
       <blockvariant blockdata="0x2" name="Flower Pot, Dandelion" />
@@ -441,10 +518,14 @@
       <blockvariant blockdata="0xc" name="Flower Pot, Acacia Sapling" />
       <blockvariant blockdata="0xd" name="Flower Pot, Dark Oak Sapling" />
     </block>
-    <block id="0x8D" name="Carrot" color="0xe8a03a" solid="0" opaque="0" spawnable="0" />  <!-- *S *I -->
-    <block id="0x8E" name="Potato" color="0xb4af1c" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
-    <block id="0x8F" name="Button, Wooden" color="0xcfbe7a" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x90" name="Mob Head" color="0xe030e0" solid="0"> <!-- *I *S *E 0.13 todo - parse type and direction etc -->
+    <block id="0x8D" name="Carrot" color="0xe8a03a" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I -->
+    <block id="0x8E" name="Potato" color="0xb4af1c" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I -->
+    <block id="0x8F" name="Button, Wooden" color="0xcfbe7a" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x90" name="Mob Head" color="0xe030e0" solid="0">
+      <!-- *I *S *E 0.13 todo - parse type and direction etc -->
       <blockvariant blockdata="0x01" name="Mob Head, On the floor" />
       <blockvariant blockdata="0x02" name="Mob Head, On a wall, facing North" />
       <blockvariant blockdata="0x03" name="Mob Head, On a wall, facing South" />
@@ -456,7 +537,8 @@
       <!-- Item variant Player -->
       <!-- Item variant Creeper -->
     </block>
-    <block id="0x91" name="Anvil" color="0x606060" opaque="0" spawnable="0"> <!-- *S *B -->
+    <block id="0x91" name="Anvil" color="0x606060" opaque="0" spawnable="0">
+      <!-- *S *B -->
       <blockvariant blockdata="0x0" name="Anvil, Intact" />
       <blockvariant blockdata="0x1" name="Anvil, Intact" />
       <blockvariant blockdata="0x2" name="Anvil, Intact" />
@@ -470,24 +552,33 @@
       <blockvariant blockdata="0xA" name="Anvil, Very Damaged" />
       <blockvariant blockdata="0xB" name="Anvil, Very Damaged" />
     </block>
-    <block id="0x92" name="Trapped Chest" color="0xb37c4f" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
-    <block id="0x93" name="Pressure Plate, Weighted Light" color="0xd3d526" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x94" name="Pressure Plate, Weighted Heavy" color="0x575757" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x95" name="Redstone Comparator, Inactive" color="0xef4c4c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
+    <block id="0x92" name="Trapped Chest" color="0xb37c4f" opaque="0" spawnable="0" />
+    <!-- *E 0.13 -->
+    <block id="0x93" name="Pressure Plate, Weighted Light" color="0xd3d526" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x94" name="Pressure Plate, Weighted Heavy" color="0x575757" solid="0" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0x95" name="Redstone Comparator, Inactive" color="0xef4c4c" opaque="0" spawnable="0" />
+    <!-- *I *S 0.14 -->
     <!-- todo: wiki sez that this is deprecated: -->
-    <block id="0x96" name="Redstone Comparator, Active" color="0xef5c5c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
-    <block id="0x97" name="Daylight Sensor" color="0x989898" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
+    <block id="0x96" name="Redstone Comparator, Active" color="0xef5c5c" opaque="0" spawnable="0" />
+    <!-- *I *S 0.14 -->
+    <block id="0x97" name="Daylight Sensor" color="0x989898" opaque="0" spawnable="0" />
+    <!-- *E 0.13 -->
     <block id="0x98" name="Block of Redstone" color="0xcd5c5c" opaque="0" />
     <block id="0x99" name="Nether Quartz Ore" color="0xd6cdcd" />
-    <block id="0x9A" name="Hopper" color="0xa5a5a5" opaque="0" spawnable="0" /> <!-- *S *E 0.14 -->
-    <block id="0x9B" name="Block of Quartz" color="0xfffff1"> <!-- *B -->
+    <block id="0x9A" name="Hopper" color="0xa5a5a5" opaque="0" spawnable="0" />
+    <!-- *S *E 0.14 -->
+    <block id="0x9B" name="Block of Quartz" color="0xfffff1">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Quartz" />
       <blockvariant blockdata="0x1" name="Quartz, Chiseled" />
       <blockvariant blockdata="0x2" name="Quartz, Pillar (Vertical)" />
       <blockvariant blockdata="0x6" name="Quartz, Pillar (East/West)" />
       <blockvariant blockdata="0xa" name="Quartz, Pillar (North/South)" />
     </block>
-    <block id="0x9C" name="Stairs, Quartz" color="0xe8e7e7" spawnable="0"> <!-- *S -->
+    <block id="0x9C" name="Stairs, Quartz" color="0xe8e7e7" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Quartz, East" />
       <blockvariant blockdata="0x1" name="Stairs, Quartz, West" />
       <blockvariant blockdata="0x2" name="Stairs, Quartz, South" />
@@ -507,7 +598,8 @@
       <blockvariant blockdata="0x5" name="Double Slab, Dark Oak aWood" />
     </block>
     <!-- note: on MCPC 0x9e is "Dropper S E" -->
-    <block id="0x9E" name="Wooden Slab" color="0x69732c" opaque="0" spawnable="0"> <!-- *B -->
+    <block id="0x9E" name="Wooden Slab" color="0x69732c" opaque="0" spawnable="0">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Slab, Oak Wood" />
       <blockvariant blockdata="0x1" name="Slab, Spruce Wood" />
       <blockvariant blockdata="0x2" name="Slab, Birch Wood" />
@@ -521,7 +613,8 @@
       <blockvariant blockdata="0xc" name="Upper Slab, Acacia Wood" spawnable="1" />
       <blockvariant blockdata="0xd" name="Upper Slab, Dark Oak Wood" spawnable="1" />
     </block>
-    <block id="0x9F" name="Stained Clay"> <!-- *B -->
+    <block id="0x9F" name="Stained Clay">
+      <!-- *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="0" name="Stained Clay, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="0" name="Stained Clay, Orange" />
       <blockvariant blockdata="0x2" color="0xB350BC" dcolor="0" name="Stained Clay, Magenta" />
@@ -539,7 +632,10 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="0" name="Stained Clay, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="0" name="Stained Clay, Black" />
     </block>
-    <block id="0xA0" name="Stained Glass Pane"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
+    <block id="0xA0" name="Stained Glass Pane">
+      <!-- *B -->
+      <!-- 0.17 -->
+      <!-- todo colors -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="2" name="Stained Glass Pane, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="2" name="Stained Glass Pane, Orange" />
       <blockvariant blockdata="0x2" color="0xB350BC" dcolor="2" name="Stained Glass Pane, Magenta" />
@@ -557,7 +653,8 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="2" name="Stained Glass Pane, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="2" name="Stained Glass Pane, Black" />
     </block>
-    <block id="0xA1" name="Leaves (Acacia/Dark Oak)" color="0x88b486" opaque="0" spawnable="0"> <!-- *B -->
+    <block id="0xA1" name="Leaves (Acacia/Dark Oak)" color="0x88b486" opaque="0" spawnable="0">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Leaves, Acacia" />
       <blockvariant blockdata="0x1" name="Leaves, Dark Oak" />
       <blockvariant blockdata="0x4" name="Leaves, Acacia (no decay)" />
@@ -567,7 +664,8 @@
       <blockvariant blockdata="0xc" name="Leaves, Acacia (no + check decay)" />
       <blockvariant blockdata="0xd" name="Leaves, Dark Oak (no + check decay)" />
     </block>
-    <block id="0xA2" name="Wood (Acacia/Dark Oak)" color="0x69702c"> <!-- *B -->
+    <block id="0xA2" name="Wood (Acacia/Dark Oak)" color="0x69702c">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Wood, Acacia (Up/Down)" />
       <blockvariant blockdata="0x1" name="Wood, Dark Oak (Up/Down)" />
       <blockvariant blockdata="0x4" name="Wood, Acacia (East/West)" />
@@ -577,7 +675,8 @@
       <blockvariant blockdata="0xc" name="Wood, Acacia (Bark Only)" />
       <blockvariant blockdata="0xd" name="Wood, Dark Oak (Bark Only)" />
     </block>
-    <block id="0xA3" name="Stairs, Acacia Wood" color="0x69712c" spawnable="0"> <!-- *S -->
+    <block id="0xA3" name="Stairs, Acacia Wood" color="0x69712c" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Acacia Wood, East" />
       <blockvariant blockdata="0x1" name="Stairs, Acacia Wood, West" />
       <blockvariant blockdata="0x2" name="Stairs, Acacia Wood, South" />
@@ -587,7 +686,8 @@
       <blockvariant blockdata="0x6" name="Stairs, Acacia Wood, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Acacia Wood, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0xA4" name="Stairs, Dark Oak Wood" color="0x69722c" spawnable="0"> <!-- *S -->
+    <block id="0xA4" name="Stairs, Dark Oak Wood" color="0x69722c" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Dark Oak Wood, East" />
       <blockvariant blockdata="0x1" name="Stairs, Dark Oak Wood, West" />
       <blockvariant blockdata="0x2" name="Stairs, Dark Oak Wood, South" />
@@ -597,16 +697,26 @@
       <blockvariant blockdata="0x6" name="Stairs, Dark Oak Wood, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Dark Oak Wood, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0xA5" name="Slime Block" color="0x34e734" opaque="0" spawnable="1" /> <!-- 0.14 -->
-    <block id="0xA7" name="Trapdoor, Iron" color="0xcfcccc" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0xA8" name="Prismarine" color="0x008080" opaque="1" spawnable="1"> <!-- *S 0.16 --> <!-- todo color -->
-      <blockvariant blockdata="0x0" color="0x008080" name="Prismarine, Rough" /> <!-- 0.16 -->
-      <blockvariant blockdata="0x1" color="0x004040" name="Prismarine, Dark" /> <!-- 0.16 -->
-      <blockvariant blockdata="0x2" color="0x006060" name="Prismarine, Bricks" /> <!-- 0.16 -->
+    <block id="0xA5" name="Slime Block" color="0x34e734" opaque="0" spawnable="1" />
+    <!-- 0.14 -->
+    <block id="0xA7" name="Trapdoor, Iron" color="0xcfcccc" opaque="0" spawnable="0" />
+    <!-- *S 0.13 -->
+    <block id="0xA8" name="Prismarine" color="0x008080" opaque="1" spawnable="1">
+      <!-- *S 0.16 -->
+      <!-- todo color -->
+      <blockvariant blockdata="0x0" color="0x008080" name="Prismarine, Rough" />
+      <!-- 0.16 -->
+      <blockvariant blockdata="0x1" color="0x004040" name="Prismarine, Dark" />
+      <!-- 0.16 -->
+      <blockvariant blockdata="0x2" color="0x006060" name="Prismarine, Bricks" />
+      <!-- 0.16 -->
     </block>
-    <block id="0xA9" name="Sea Lantern" color="0x00cccc" opaque="1" spawnable="1" /> <!-- *S 0.16 --> <!-- todo color -->
-    <block id="0xAA" name="Hay Bale" color="0xd8d385" /> 
-    <block id="0xAB" name="Carpet" solid="0" opaque="0" spawnable="0"> <!-- *S *B -->
+    <block id="0xA9" name="Sea Lantern" color="0x00cccc" opaque="1" spawnable="1" />
+    <!-- *S 0.16 -->
+    <!-- todo color -->
+    <block id="0xAA" name="Hay Bale" color="0xd8d385" />
+    <block id="0xAB" name="Carpet" solid="0" opaque="0" spawnable="0">
+      <!-- *S *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="2" name="Carpet, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="2" name="Carpet, Orange" />
       <blockvariant blockdata="0x2" color="0xB350BC" dcolor="2" name="Carpet, Magenta" />
@@ -624,10 +734,11 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="2" name="Carpet, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="2" name="Carpet, Black" />
     </block>
-    <block id="0xAC" name="Hardened Clay" color="0xb75252" /> 
+    <block id="0xAC" name="Hardened Clay" color="0xb75252" />
     <block id="0xAD" name="Block of Coal" color="0x585858" />
     <block id="0xAE" name="Packed Ice" color="0x02cffd" opaque="0" />
-    <block id="0xAF" name="Large Flowers" color="0xe4208a" solid="0" opaque="0" spawnable="0"> <!-- *B -->
+    <block id="0xAF" name="Large Flowers" color="0xe4208a" solid="0" opaque="0" spawnable="0">
+      <!-- *B -->
       <blockvariant blockdata="0x0" color="0x57d657" name="Sunflower" />
       <blockvariant blockdata="0x1" color="0x1f821f" name="Lilac" />
       <blockvariant blockdata="0x2" color="0x5f9ea0" name="Double Tallgrass" />
@@ -643,13 +754,16 @@
       <blockvariant blockdata="0xE" color="0xff00ff" name="Unknown Tall Flower (0xE)" />
       <blockvariant blockdata="0xF" color="0xfd00fc" name="Unknown Tall Flower (0xF)" />
     </block>
-    <block id="0xB2" name="Daylight Sensor, Inverted" color="0x989897" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
-    <block id="0xB3" name="Red Sandstone" color="0xd0be86"> <!-- *B -->
+    <block id="0xB2" name="Daylight Sensor, Inverted" color="0x989897" opaque="0" spawnable="0" />
+    <!-- *E 0.13 -->
+    <block id="0xB3" name="Red Sandstone" color="0xd0be86">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Red Sandstone" />
       <blockvariant blockdata="0x1" name="Red Sandstone, Chiseled" />
       <blockvariant blockdata="0x2" name="Red Sandstone, Smooth" />
     </block>
-    <block id="0xB4" name="Stairs, Red Sandstone" color="0xcdbe86" spawnable="0"> <!-- *S -->
+    <block id="0xB4" name="Stairs, Red Sandstone" color="0xcdbe86" spawnable="0">
+      <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Red Sandstone, East" />
       <blockvariant blockdata="0x1" name="Stairs, Red Sandstone, West" />
       <blockvariant blockdata="0x2" name="Stairs, Red Sandstone, South" />
@@ -664,7 +778,8 @@
       <blockvariant blockdata="0x1" name="Double Slab, Purpur" />
       <blockvariant blockdata="0x8" name="Double Slab, Smooth Red Sandstone" />
     </block>
-    <block id="0xB6" name="Red Sandstone Slab" color="0xcfbe86" opaque="0" spawnable="0"> <!-- *B -->
+    <block id="0xB6" name="Red Sandstone Slab" color="0xcfbe86" opaque="0" spawnable="0">
+      <!-- *B -->
       <blockvariant blockdata="0x0" name="Slab, Red Sandstone" />
       <blockvariant blockdata="0x1" name="Slab, Purpur" />
       <blockvariant blockdata="0x8" name="Upper Slab, Red Sandstone" spawnable="1" />
@@ -675,22 +790,36 @@
     <block id="0xB9" name="Fence Gate, Jungle" color="0xa77b12" solid="0" opaque="0" spawnable="0" />
     <block id="0xBA" name="Fence Gate, Dark Oak" color="0xa77b13" solid="0" opaque="0" spawnable="0" />
     <block id="0xBB" name="Fence Gate, Acacia" color="0xa77b14" solid="0" opaque="0" spawnable="0" />
-    <block id="0xC1" name="Door, Spruce" color="0x77612e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
-    <block id="0xC2" name="Door, Birch" color="0x77622e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
-    <block id="0xC3" name="Door, Jungle" color="0x77632e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
-    <block id="0xC4" name="Door, Acacia" color="0x77642e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
-    <block id="0xC5" name="Door, Dark Oak" color="0x77652e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
+    <block id="0xC1" name="Door, Spruce" color="0x77612e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I 0.13 -->
+    <block id="0xC2" name="Door, Birch" color="0x77622e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I 0.13 -->
+    <block id="0xC3" name="Door, Jungle" color="0x77632e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I 0.13 -->
+    <block id="0xC4" name="Door, Acacia" color="0x77642e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I 0.13 -->
+    <block id="0xC5" name="Door, Dark Oak" color="0x77652e" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I 0.13 -->
     <block id="0xC6" name="Grass Path" color="0xb86335" />
-    <block id="0xC7" name="Item Frame" color="0xe36731" solid="0" opaque="0" spawnable="0" /> <!-- 0.14 -->
-    <block id="0xC8" name="Chorus Flower" color="0xe36732" solid="0" opaque="0" spawnable="0" /> <!-- 0.17 --> <!-- todo color -->
-    <block id="0xC9" name="Purpur" color="0xf0c0f0"> <!-- *B --> <!-- 0.17 --> <!-- todo color -->
+    <block id="0xC7" name="Item Frame" color="0xe36731" solid="0" opaque="0" spawnable="0" />
+    <!-- 0.14 -->
+    <block id="0xC8" name="Chorus Flower" color="0xe36732" solid="0" opaque="0" spawnable="0" />
+    <!-- 0.17 -->
+    <!-- todo color -->
+    <block id="0xC9" name="Purpur" color="0xf0c0f0">
+      <!-- *B -->
+      <!-- 0.17 -->
+      <!-- todo color -->
       <blockvariant blockdata="0x0" name="Purpur" />
       <blockvariant blockdata="0x1" name="Purpur, Chiseled" />
       <blockvariant blockdata="0x2" name="Purpur, Pillar (Vertical)" />
       <blockvariant blockdata="0x6" name="Purpur, Pillar (East/West)" />
       <blockvariant blockdata="0xa" name="Purpur, Pillar (North/South)" />
     </block>
-    <block id="0xCB" name="Stairs, Purpur" color="0xf4c4f4" spawnable="0"> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
+    <block id="0xCB" name="Stairs, Purpur" color="0xf4c4f4" spawnable="0">
+      <!-- *S -->
+      <!-- 0.17 -->
+      <!-- todo color -->
       <blockvariant blockdata="0x0" name="Stairs, Purpur, East" />
       <blockvariant blockdata="0x1" name="Stairs, Purpur, West" />
       <blockvariant blockdata="0x2" name="Stairs, Purpur, South" />
@@ -700,15 +829,58 @@
       <blockvariant blockdata="0x6" name="Stairs, Purpur, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Purpur, North (Upside-down)" spawnable="1" />
     </block>
-    <block id="0xCE" name="End Bricks" color="0xded99e" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
-    <block id="0xD0" name="End Rod" color="0xf7f7f6" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
-    <block id="0xD1" name="End Gateway" color="0x545454" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
-    <block id="0xD2" name="Allow Block" spawnable="0" /> <!-- EDU -->
-    <block id="0xD3" name="Deny Block" spawnable="0" /> <!-- EDU -->
-    <block id="0xD4" name="Border Block" spawnable="0" /> <!-- EDU -->
-    <block id="0xE6" name="Chalkboard" spawnable="0" /> <!-- EDU -->
-    <block id="0xF0" name="Chorus Plant" color="0x591062" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
-    <block id="0xF1" name="Stained Glass"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
+    <block id="0xCE" name="End Bricks" color="0xded99e" spawnable="0" />
+    <!-- *S -->
+    <!-- 0.17 -->
+    <!-- todo color -->
+    <block id="0xD0" name="End Rod" color="0xf7f7f6" spawnable="0" />
+    <!-- *S -->
+    <!-- 0.17 -->
+    <!-- todo color -->
+    <block id="0xD1" name="End Gateway" color="0x545454" spawnable="0" />
+    <!-- *S -->
+    <!-- 0.17 -->
+    <!-- todo color -->
+    <block id="0xD2" name="Allow Block" spawnable="0" />
+    <!-- EDU -->
+    <block id="0xD3" name="Deny Block" spawnable="0" />
+    <!-- EDU -->
+    <block id="0xD4" name="Border Block" spawnable="0" />
+    <!-- EDU -->
+    
+    <block id="0xDA" name="Shulker Box" spawnable="0" />
+    
+    <block id="0xDB" name="Purple Glazed Terracotta" spawnable="0" />
+    <block id="0xDC" name="White Glazed Terracotta" spawnable="0" />
+    <block id="0xDD" name="Orange Glazed Terracotta" spawnable="0" />
+    <block id="0xDE" name="Magenta Glazed Terracotta" spawnable="0" />
+    <block id="0xDF" name="Light Blue Glazed Terracotta" spawnable="0" />
+    <block id="0xE0" name="Yellow Glazed Terracotta" spawnable="0" />
+    <block id="0xE1" name="Lime Glazed Terracotta" spawnable="0" />
+    <block id="0xE2" name="Pink Glazed Terracotta" spawnable="0" />
+    <block id="0xE3" name="Gray Glazed Terracotta" spawnable="0" />
+    <block id="0xE4" name="Light Gray Glazed Terracotta" spawnable="0" />
+    <block id="0xE5" name="Cyan Glazed Terracotta" spawnable="0" />
+
+    <block id="0xE6" name="Chalkboard" spawnable="0" />
+    
+    <block id="0xE7" name="Blue Glazed Terracotta" spawnable="0" />
+    <block id="0xE8" name="Brown Glazed Terracotta" spawnable="0" />
+    <block id="0xE9" name="Green Glazed Terracotta" spawnable="0" />
+    <block id="0xEA" name="Red Glazed Terracotta" spawnable="0" />
+    <block id="0xEB" name="Black Glazed Terracotta" spawnable="0" />
+    <block id="0xEC" name="Concrete" spawnable="0" />
+    <block id="0xED" name="Concrete Powder" spawnable="0" />
+
+    <!-- EDU -->
+    <block id="0xF0" name="Chorus Plant" color="0x591062" spawnable="0" />
+    <!-- *S -->
+    <!-- 0.17 -->
+    <!-- todo color -->
+    <block id="0xF1" name="Stained Glass">
+      <!-- *B -->
+      <!-- 0.17 -->
+      <!-- todo colors -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Stained Glass, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="3" name="Stained Glass, Orange" />
       <blockvariant blockdata="0x2" color="0xB350BC" dcolor="3" name="Stained Glass, Magenta" />
@@ -726,20 +898,28 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Stained Glass, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Stained Glass, Black" />
     </block>
-    <block id="0xF2" name="Camera" spawnable="0" /> <!-- EDU -->
+    <block id="0xF2" name="Camera" spawnable="0" />
+    <!-- EDU -->
     <block id="0xF3" name="Podzol" color="0x45390a" />
-    <block id="0xF4" name="Beetroot" color="0xd03388" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
+    <block id="0xF4" name="Beetroot" color="0xd03388" solid="0" opaque="0" spawnable="0" />
+    <!-- *S *I -->
     <block id="0xF5" name="Stone Cutter" color="0xb2aea5" />
-    <block id="0xF6" name="Glowing Obsidian" color="0x8b0000" /> <!-- todo -->
-    <block id="0xF7" name="Nether Reactor Core" color="0xbaf5f2" > <!-- Obsolete -->
+    <block id="0xF6" name="Glowing Obsidian" color="0x8b0000" />
+    <!-- todo -->
+    <block id="0xF7" name="Nether Reactor Core" color="0xbaf5f2">
+      <!-- Obsolete -->
       <blockvariant blockdata="0x0" name="Nether Reactor Core (Default)" />
       <blockvariant blockdata="0x1" name="Nether Reactor Core (Active)" />
       <blockvariant blockdata="0x2" name="Nether Reactor Core (Cooled)" />
     </block>
-    <block id="0xF8" name="Update Game Block (update!) [note 1]" /> <!-- todo -->
-    <block id="0xF9" name="Update Game Block (ate!upd)" /> <!-- todo -->
-    <block id="0xFA" name="TBD - Moving Block" opaque="0" spawnable="0" /> <!-- *S *E 0.16? -->
-    <block id="0xFB" name="Observer" color="0xa13d3d" opaque="0" spawnable="0"> <!-- *S *E 0.15 -->
+    <block id="0xF8" name="Update Game Block (update!) [note 1]" />
+    <!-- todo -->
+    <block id="0xF9" name="Update Game Block (ate!upd)" />
+    <!-- todo -->
+    <block id="0xFA" name="TBD - Moving Block" opaque="0" spawnable="0" />
+    <!-- *S *E 0.16? -->
+    <block id="0xFB" name="Observer" color="0xa13d3d" opaque="0" spawnable="0">
+      <!-- *S *E 0.15 -->
       <blockvariant blockdata="0x0" name="Observer (Down)" />
       <blockvariant blockdata="0x1" name="Observer (Up)" />
       <blockvariant blockdata="0x2" name="Observer (North)" />
@@ -747,9 +927,15 @@
       <blockvariant blockdata="0x4" name="Observer (East)" />
       <blockvariant blockdata="0x5" name="Observer (West)" />
     </block>
-    <block id="0xFF" name="info_reserved6" /> <!-- todo -->
+    <block id="0xFF" name="info_reserved6" />
+    
+    <!-- todo -->
+    <--block id="?" name="Red Nether Brick" />
+    <block id="?" name="Nether Wart Block" />
+    <block id="?" name="Magma Block" />
+    <block id="?" name="Bone Block" / -->
+    
   </blocklist>
-
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
       
@@ -760,12 +946,17 @@
       todo: some items use 'damage' field to store info
   -->
   <itemlist>
-    <item id="0x100" name="Iron Shovel" /> <!-- *D -->
-    <item id="0x101" name="Iron Pickaxe" /> <!-- *D -->
-    <item id="0x102" name="Iron Axe" /> <!-- *D -->
-    <item id="0x103" name="Flint and Steel" /> <!-- *D -->
+    <item id="0x100" name="Iron Shovel" />
+    <!-- *D -->
+    <item id="0x101" name="Iron Pickaxe" />
+    <!-- *D -->
+    <item id="0x102" name="Iron Axe" />
+    <!-- *D -->
+    <item id="0x103" name="Flint and Steel" />
+    <!-- *D -->
     <item id="0x104" name="Apple" />
-    <item id="0x105" name="Bow" /> <!-- *D -->
+    <item id="0x105" name="Bow" />
+    <!-- *D -->
     <item id="0x106" name="Arrow">
       <itemvariant extradata="0" name="Arrow" />
       <itemvariant extradata="6" name="Arrow of Night Vision (0:22)" />
@@ -800,69 +991,112 @@
       <itemvariant extradata="35" name="Arrow of Weakness (0:11)" />
       <itemvariant extradata="36" name="Arrow of Weakness (0:30)" />
     </item>
-    <item id="0x107" name="Coal"> <!-- *B -->
+    <item id="0x107" name="Coal">
+      <!-- *B -->
       <itemvariant extradata="0" name="Coal" />
       <itemvariant extradata="1" name="Charcoal" />
     </item>
     <item id="0x108" name="Diamond" />
     <item id="0x109" name="Iron Ingot" />
     <item id="0x10A" name="Gold Ingot" />
-    <item id="0x10B" name="Iron Sword" /> <!-- *D -->
-    <item id="0x10C" name="Wooden Sword" /> <!-- *D -->
-    <item id="0x10D" name="Wooden Shovel" /> <!-- *D -->
-    <item id="0x10E" name="Wooden Pickaxe" /> <!-- *D -->
-    <item id="0x10F" name="Wooden Axe" /> <!-- *D -->
-    <item id="0x110" name="Stone Sword" /> <!-- *D -->
-    <item id="0x111" name="Stone Shovel" /> <!-- *D -->
-    <item id="0x112" name="Stone Pickaxe" /> <!-- *D -->
-    <item id="0x113" name="Stone Axe" /> <!-- *D -->
-    <item id="0x114" name="Diamond Sword" /> <!-- *D -->
-    <item id="0x115" name="Diamond Shovel" /> <!-- *D -->
-    <item id="0x116" name="Diamond Pickaxe" /> <!-- *D -->
-    <item id="0x117" name="Diamond Axe" /> <!-- *D -->
+    <item id="0x10B" name="Iron Sword" />
+    <!-- *D -->
+    <item id="0x10C" name="Wooden Sword" />
+    <!-- *D -->
+    <item id="0x10D" name="Wooden Shovel" />
+    <!-- *D -->
+    <item id="0x10E" name="Wooden Pickaxe" />
+    <!-- *D -->
+    <item id="0x10F" name="Wooden Axe" />
+    <!-- *D -->
+    <item id="0x110" name="Stone Sword" />
+    <!-- *D -->
+    <item id="0x111" name="Stone Shovel" />
+    <!-- *D -->
+    <item id="0x112" name="Stone Pickaxe" />
+    <!-- *D -->
+    <item id="0x113" name="Stone Axe" />
+    <!-- *D -->
+    <item id="0x114" name="Diamond Sword" />
+    <!-- *D -->
+    <item id="0x115" name="Diamond Shovel" />
+    <!-- *D -->
+    <item id="0x116" name="Diamond Pickaxe" />
+    <!-- *D -->
+    <item id="0x117" name="Diamond Axe" />
+    <!-- *D -->
     <item id="0x118" name="Stick" />
     <item id="0x119" name="Bowl" />
     <item id="0x11A" name="Mushroom Stew" />
-    <item id="0x11B" name="Gold Sword" /> <!-- *D -->
-    <item id="0x11C" name="Gold Shovel" /> <!-- *D -->
-    <item id="0x11D" name="Gold Pickaxe" /> <!-- *D -->
-    <item id="0x11E" name="Gold Axe" /> <!-- *D -->
+    <item id="0x11B" name="Gold Sword" />
+    <!-- *D -->
+    <item id="0x11C" name="Gold Shovel" />
+    <!-- *D -->
+    <item id="0x11D" name="Gold Pickaxe" />
+    <!-- *D -->
+    <item id="0x11E" name="Gold Axe" />
+    <!-- *D -->
     <item id="0x11F" name="String" />
     <item id="0x120" name="Feather" />
     <item id="0x121" name="Gunpowder" />
-    <item id="0x122" name="Wooden Hoe" /> <!-- *D -->
-    <item id="0x123" name="Stone Hoe" /> <!-- *D -->
-    <item id="0x124" name="Iron Hoe" /> <!-- *D -->
-    <item id="0x125" name="Diamond Hoe" /> <!-- *D -->
+    <item id="0x122" name="Wooden Hoe" />
+    <!-- *D -->
+    <item id="0x123" name="Stone Hoe" />
+    <!-- *D -->
+    <item id="0x124" name="Iron Hoe" />
+    <!-- *D -->
+    <item id="0x125" name="Diamond Hoe" />
+    <!-- *D -->
     <item id="0x126" name="Gold Hoe" />
     <item id="0x127" name="Seeds" />
     <item id="0x128" name="Wheat" />
     <item id="0x129" name="Bread" />
-    <item id="0x12A" name="Leather Cap" /> <!-- *D -->
-    <item id="0x12B" name="Leather Tunic" /> <!-- *D -->
-    <item id="0x12C" name="Leather Pants" /> <!-- *D -->
-    <item id="0x12D" name="Leather Boots" /> <!-- *D -->
-    <item id="0x12E" name="Chain Helmet" /> <!-- *D -->
-    <item id="0x12F" name="Chain Chestplate" /> <!-- *D -->
-    <item id="0x130" name="Chain Leggings" /> <!-- *D -->
-    <item id="0x131" name="Chain Boots" /> <!-- *D -->
-    <item id="0x132" name="Iron Helmet" /> <!-- *D -->
-    <item id="0x133" name="Iron Chestplate" /> <!-- *D -->
-    <item id="0x134" name="Iron Leggings" /> <!-- *D -->
-    <item id="0x135" name="Iron Boots" /> <!-- *D -->
-    <item id="0x136" name="Diamond Helmet" /> <!-- *D -->
-    <item id="0x137" name="Diamond Chestplate" /> <!-- *D -->
-    <item id="0x138" name="Diamond Leggings" /> <!-- *D -->
-    <item id="0x139" name="Diamond Boots" /> <!-- *D -->
-    <item id="0x13A" name="Golden Helmet" /> <!-- *D -->
-    <item id="0x13B" name="Golden Chestplate" /> <!-- *D -->
-    <item id="0x13C" name="Golden Leggings" /> <!-- *D -->
-    <item id="0x13D" name="Golden Boots" /> <!-- *D -->
+    <item id="0x12A" name="Leather Cap" />
+    <!-- *D -->
+    <item id="0x12B" name="Leather Tunic" />
+    <!-- *D -->
+    <item id="0x12C" name="Leather Pants" />
+    <!-- *D -->
+    <item id="0x12D" name="Leather Boots" />
+    <!-- *D -->
+    <item id="0x12E" name="Chain Helmet" />
+    <!-- *D -->
+    <item id="0x12F" name="Chain Chestplate" />
+    <!-- *D -->
+    <item id="0x130" name="Chain Leggings" />
+    <!-- *D -->
+    <item id="0x131" name="Chain Boots" />
+    <!-- *D -->
+    <item id="0x132" name="Iron Helmet" />
+    <!-- *D -->
+    <item id="0x133" name="Iron Chestplate" />
+    <!-- *D -->
+    <item id="0x134" name="Iron Leggings" />
+    <!-- *D -->
+    <item id="0x135" name="Iron Boots" />
+    <!-- *D -->
+    <item id="0x136" name="Diamond Helmet" />
+    <!-- *D -->
+    <item id="0x137" name="Diamond Chestplate" />
+    <!-- *D -->
+    <item id="0x138" name="Diamond Leggings" />
+    <!-- *D -->
+    <item id="0x139" name="Diamond Boots" />
+    <!-- *D -->
+    <item id="0x13A" name="Golden Helmet" />
+    <!-- *D -->
+    <item id="0x13B" name="Golden Chestplate" />
+    <!-- *D -->
+    <item id="0x13C" name="Golden Leggings" />
+    <!-- *D -->
+    <item id="0x13D" name="Golden Boots" />
+    <!-- *D -->
     <item id="0x13E" name="Flint" />
     <item id="0x13F" name="Porkchop, Raw" />
     <item id="0x140" name="Porkchop, Cooked" />
     <item id="0x141" name="Painting" />
-    <item id="0x142" name="Golden Apple"> <!-- *B -->
+    <item id="0x142" name="Golden Apple">
+      <!-- *B -->
       <itemvariant extradata="0" name="Golden Apple" />
       <itemvariant extradata="1" name="Golden Apple, Enchanted" />
     </item>
@@ -881,7 +1115,7 @@
     <item id="0x14A" name="Door, Iron" />
     <item id="0x14B" name="Redstone" />
     <item id="0x14C" name="Snowball" />
-    <item id="0x14D" name="Boat" >
+    <item id="0x14D" name="Boat">
       <itemvariant extradata="0x0" name="Boat, Oak Wood" />
       <itemvariant extradata="0x1" name="Boat, Spruce Wood" />
       <itemvariant extradata="0x2" name="Boat, Birch Wood" />
@@ -903,20 +1137,23 @@
     <item id="0x15A" name="Fishing Rod" />
     <item id="0x15B" name="Clock" />
     <item id="0x15C" name="Glowstone Dust" />
-    <item id="0x15D" name="Fish, Raw"> <!-- *B -->
+    <item id="0x15D" name="Fish, Raw">
+      <!-- *B -->
       <itemvariant extradata="0" name="Fish, Raw" />
       <itemvariant extradata="1" name="Salmon, Raw" />
       <itemvariant extradata="2" name="Clownfish" />
       <itemvariant extradata="3" name="Pufferfish" />
     </item>
     <!-- todo - is this valid? -->
-    <item id="0x15E" name="Fish, Cooked"> <!-- *B -->
+    <item id="0x15E" name="Fish, Cooked">
+      <!-- *B -->
       <itemvariant extradata="0" name="Fish, Cooked" />
       <itemvariant extradata="1" name="Salmon, Cooked" />
       <itemvariant extradata="2" name="Clownfish, Cooked?" />
       <itemvariant extradata="3" name="Pufferfish, COoked?" />
     </item>
-    <item id="0x15F" name="Dye"> <!-- *B -->
+    <item id="0x15F" name="Dye">
+      <!-- *B -->
       <itemvariant extradata="0x0" name="Ink Sac" />
       <itemvariant extradata="0x1" name="Rose Red" />
       <itemvariant extradata="0x2" name="Cactus Green" />
@@ -940,8 +1177,10 @@
     <item id="0x163" name="Bed" />
     <item id="0x164" name="Redstone Repeater" />
     <item id="0x165" name="Cookie" />
-    <item id="0x166" name="Map, Filled" /> <!-- todo more data to harvest here? -->
-    <item id="0x167" name="Shears" /> <!-- *D -->
+    <item id="0x166" name="Map, Filled" />
+    <!-- todo more data to harvest here? -->
+    <item id="0x167" name="Shears" />
+    <!-- *D -->
     <item id="0x168" name="Melon" />
     <item id="0x169" name="Pumpkin Seeds" />
     <item id="0x16A" name="Melon Seeds" />
@@ -956,7 +1195,8 @@
     <item id="0x173" name="Gold Nugget" />
     <item id="0x174" name="Nether Wart" />
     <!-- todobig parse potions - is this complete? -->
-    <item id="0x175" name="Potion"> <!-- *B -->
+    <item id="0x175" name="Potion">
+      <!-- *B -->
       <itemvariant extradata="0x00" name="Water Bottle" />
       <itemvariant extradata="0x01" name="Mundane Potion" />
       <itemvariant extradata="0x02" name="Mundane Potion" />
@@ -1003,7 +1243,8 @@
     <item id="0x17C" name="Cauldron" />
     <item id="0x17D" name="Eye of Ender" />
     <item id="0x17E" name="Glistering Melon" />
-    <item id="0x17F" name="Spawn Egg"> <!-- *B -->
+    <item id="0x17F" name="Spawn Egg">
+      <!-- *B -->
       <!-- todo jocopa3 has a lot more here - sync up -->
       <itemvariant extradata="0x0A" name="Spawn Egg, Chicken" />
       <itemvariant extradata="0x0B" name="Spawn Egg, Cow" />
@@ -1015,8 +1256,10 @@
       <itemvariant extradata="0x11" name="Spawn Egg, Squid" />
       <itemvariant extradata="0x12" name="Spawn Egg, Rabbit" />
       <itemvariant extradata="0x13" name="Spawn Egg, Bat" />
-      <itemvariant extradata="0x14" name="Spawn Egg, Iron Golem" /> <!-- Empty Egg -->
-      <itemvariant extradata="0x15" name="Spawn Egg, Snow Golem" /> <!-- Empty Egg -->
+      <itemvariant extradata="0x14" name="Spawn Egg, Iron Golem" />
+      <!-- Empty Egg -->
+      <itemvariant extradata="0x15" name="Spawn Egg, Snow Golem" />
+      <!-- Empty Egg -->
       <itemvariant extradata="0x16" name="Spawn Egg, Ocelot" />
       <itemvariant extradata="0x17" name="Spawn Egg, Horse" />
       <itemvariant extradata="0x18" name="Spawn Egg, Donkey" />
@@ -1043,15 +1286,20 @@
       <itemvariant extradata="0x30" name="Spawn Egg, Wither Skeleton" />
       <itemvariant extradata="0x31" name="Spawn Egg, Guardian" />
       <itemvariant extradata="0x32" name="Spawn Egg, Elder Guardian" />
-      <itemvariant extradata="0x33" name="Spawn Egg, NPC" /> <!-- EDU -->
-      <itemvariant extradata="0x34" name="Spawn Egg, Wither" /> <!-- Invalid Item -->
-      <itemvariant extradata="0x35" name="Spawn Egg, Dragon" /> <!-- Invalid Item -->
+      <itemvariant extradata="0x33" name="Spawn Egg, NPC" />
+      <!-- EDU -->
+      <itemvariant extradata="0x34" name="Spawn Egg, Wither" />
+      <!-- Invalid Item -->
+      <itemvariant extradata="0x35" name="Spawn Egg, Dragon" />
+      <!-- Invalid Item -->
       <itemvariant extradata="0x36" name="Spawn Egg, Shulker" />
       <itemvariant extradata="0x37" name="Spawn Egg, Endermite" />
-      <itemvariant extradata="0x38" name="Spawn Egg, Learn to Code Mascot" /> <!-- EDU -->
+      <itemvariant extradata="0x38" name="Spawn Egg, Learn to Code Mascot" />
+      <!-- EDU -->
     </item>
     <item id="0x180" name="Bottle o' Enchanting" />
-    <item id="0x181" name="Fire Charge" /> <!-- 0.15 -->
+    <item id="0x181" name="Fire Charge" />
+    <!-- 0.15 -->
     <item id="0x184" name="Emerald" />
     <item id="0x185" name="Item Frame" />
     <item id="0x186" name="Flower Pot" />
@@ -1059,9 +1307,11 @@
     <item id="0x188" name="Potato" />
     <item id="0x189" name="Baked Potato" />
     <item id="0x18A" name="Poisonous Potato" />
-    <item id="0x18B" name="Map, Empty" /> <!-- *B? -->
+    <item id="0x18B" name="Map, Empty" />
+    <!-- *B? -->
     <item id="0x18C" name="Golden Carrot" />
-    <item id="0x18D" name="Mob Head"> <!-- *B -->
+    <item id="0x18D" name="Mob Head">
+      <!-- *B -->
       <itemvariant extradata="0" name="Mob Head, Skeleton" />
       <itemvariant extradata="1" name="Mob Head, Wither Skeleton" />
       <itemvariant extradata="2" name="Mob Head, Zombie" />
@@ -1069,8 +1319,10 @@
       <itemvariant extradata="4" name="Mob Head, Creeper" />
       <itemvariant extradata="5" name="Mob Head, Dragon" />
     </item>
-    <item id="0x18E" name="Carrot on a Stick" /> <!-- 0.15 -->
-    <item id="0x18F" name="Nether Star" /> <!-- 0.16 -->
+    <item id="0x18E" name="Carrot on a Stick" />
+    <!-- 0.15 -->
+    <item id="0x18F" name="Nether Star" />
+    <!-- 0.16 -->
     <item id="0x190" name="Pumpkin Pie" />
     <item id="0x193" name="Enchanted Book" />
     <item id="0x194" name="Redstone Comparator" />
@@ -1078,36 +1330,51 @@
     <item id="0x196" name="Nether Quartz" />
     <item id="0x197" name="Minecart, TNT" />
     <item id="0x198" name="Minecart, Hopper" />
-    <item id="0x199" name="Prismarine Shard" /> <!-- 0.16 -->
+    <item id="0x199" name="Prismarine Shard" />
+    <!-- 0.16 -->
     <item id="0x19A" name="Hopper" />
     <item id="0x19B" name="Rabbit, Raw" />
     <item id="0x19C" name="Rabbit, Cooked" />
     <item id="0x19D" name="Rabbit Stew" />
     <item id="0x19E" name="Rabbit's Foot" />
     <item id="0x19F" name="Rabbit Hide" />
-    <item id="0x1A0" name="Horse Armor, Leather" /> <!-- 0.15 -->
-    <item id="0x1A1" name="Horse Armor, Iron" /> <!-- 0.15 -->
-    <item id="0x1A2" name="Horse Armor, Gold" /> <!-- 0.15 -->
-    <item id="0x1A3" name="Horse Armor, Diamond" /> <!-- 0.15 -->
-    <item id="0x1A4" name="Lead" /> <!-- 0.15 -->
-    <item id="0x1A5" name="Name Tag" /> <!-- 0.15 -->
-    <item id="0x1A6" name="Prismarine Crystals" /> <!-- 0.16 -->
-    <item id="0x1A7" name="Mutton, Raw" /> <!-- 0.15 -->
-    <item id="0x1A8" name="Mutton, Cooked" /> <!-- 0.15 -->
-    <item id="0x1AA" name="End Crystal" /> <!-- 0.17 -->
+    <item id="0x1A0" name="Horse Armor, Leather" />
+    <!-- 0.15 -->
+    <item id="0x1A1" name="Horse Armor, Iron" />
+    <!-- 0.15 -->
+    <item id="0x1A2" name="Horse Armor, Gold" />
+    <!-- 0.15 -->
+    <item id="0x1A3" name="Horse Armor, Diamond" />
+    <!-- 0.15 -->
+    <item id="0x1A4" name="Lead" />
+    <!-- 0.15 -->
+    <item id="0x1A5" name="Name Tag" />
+    <!-- 0.15 -->
+    <item id="0x1A6" name="Prismarine Crystals" />
+    <!-- 0.16 -->
+    <item id="0x1A7" name="Mutton, Raw" />
+    <!-- 0.15 -->
+    <item id="0x1A8" name="Mutton, Cooked" />
+    <!-- 0.15 -->
+    <item id="0x1AA" name="End Crystal" />
+    <!-- 0.17 -->
     <item id="0x1AB" name="Door, Spruce" />
     <item id="0x1AC" name="Door, Birch" />
     <item id="0x1AD" name="Door, Jungle" />
     <item id="0x1AE" name="Door, Acacia" />
     <item id="0x1AF" name="Door, Dark Oak" />
-    <item id="0x1B0" name="Chorus Fruit" /> <!-- 0.17 -->
-    <item id="0x1B1" name="Chorus Fruit, Popped" /> <!-- 0.17 -->
+    <item id="0x1B0" name="Chorus Fruit" />
+    <!-- 0.17 -->
+    <item id="0x1B1" name="Chorus Fruit, Popped" />
+    <!-- 0.17 -->
     <item id="0x1B2" name="TBD - Beetroot (MCPC)" />
     <item id="0x1B3" name="TBD - Beetroot Seeds (MCPC)" />
     <item id="0x1B4" name="TBD - Beetroot Soup (MCPC)" />
-    <item id="0x1B5" name="Dragon Breath" /> <!-- 0.17 -->
+    <item id="0x1B5" name="Dragon Breath" />
+    <!-- 0.17 -->
     <!-- todo parse potions -->
-    <item id="0x1B6" name="Splash Potion"> <!-- *B -->
+    <item id="0x1B6" name="Splash Potion">
+      <!-- *B -->
       <itemvariant extradata="0x00" name="Splash Water Bottle" />
       <itemvariant extradata="0x01" name="Splash Mundane Potion" />
       <itemvariant extradata="0x02" name="Splash Mundane Potion" />
@@ -1144,8 +1411,10 @@
       <itemvariant extradata="0x21" name="Splash Potion of Strength II (1:07)" />
       <itemvariant extradata="0x22" name="Splash Potion of Weakness (1:07)" />
       <itemvariant extradata="0x23" name="Splash Potion of Weakness (3:00)" />
-    </item>    
-    <item id="0x1B9" name="Lingering Potion"> <!-- *B --> <!-- 0.17 -->
+    </item>
+    <item id="0x1B9" name="Lingering Potion">
+      <!-- *B -->
+      <!-- 0.17 -->
       <!-- todo these are copied from splash, not checked yet -->
       <itemvariant extradata="0x00" name="Lingering Water Bottle" />
       <itemvariant extradata="0x01" name="Lingering Mundane Potion" />
@@ -1183,25 +1452,36 @@
       <itemvariant extradata="0x21" name="Lingering Potion of Strength II (1:07)" />
       <itemvariant extradata="0x22" name="Lingering Potion of Weakness (1:07)" />
       <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
-    </item>    
-    <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
-    <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
-      <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->
-      <itemvariant extradata="0x1" name="2x1 Chalkboard" /> <!-- EDU -->
-      <itemvariant extradata="0x2" name="3x1 Chalkboard" /> <!-- EDU -->
-    </item> 
-    <item id="0x1C8" name="Portfolio" /> <!-- EDU -->
+    </item>
+    <item id="0x1BC" name="Elytra" />
+    <!-- *B -->
+    <!-- 0.17 -->
+    <item id="0x1C6" name="Chalkboard">
+      <!-- EDU -->
+      <itemvariant extradata="0x0" name="1x1 Chalkboard" />
+      <!-- EDU -->
+      <itemvariant extradata="0x1" name="2x1 Chalkboard" />
+      <!-- EDU -->
+      <itemvariant extradata="0x2" name="3x1 Chalkboard" />
+      <!-- EDU -->
+    </item>
+    <item id="0x1C8" name="Portfolio" />
+    <!-- EDU -->
     <item id="0x1C9" name="Beetroot" />
     <item id="0x1CA" name="Beetroot Seeds" />
     <item id="0x1CB" name="Beetroot Soup" />
-    <item id="0x1CC" name="Salmon, Raw" /> <!-- *B -->
-    <item id="0x1CD" name="Clownfish, Raw" /> <!-- *B -->
-    <item id="0x1CE" name="Pufferfish, Raw" /> <!-- *B -->
-    <item id="0x1CF" name="Salmon, Cooked" /> <!-- *B -->
+    <item id="0x1CC" name="Salmon, Raw" />
+    <!-- *B -->
+    <item id="0x1CD" name="Clownfish, Raw" />
+    <!-- *B -->
+    <item id="0x1CE" name="Pufferfish, Raw" />
+    <!-- *B -->
+    <item id="0x1CF" name="Salmon, Cooked" />
+    <!-- *B -->
     <item id="0x1D2" name="Apple, Enchanted" />
-    <item id="0x1F2" name="Camera" /> <!-- EDU -->
+    <item id="0x1F2" name="Camera" />
+    <!-- EDU -->
   </itemlist>
-
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
       
@@ -1220,17 +1500,25 @@
     <entity id="0x0F" name="Villager" etype="P" />
     <entity id="0x10" name="Mooshroom" etype="P" />
     <entity id="0x11" name="Squid" etype="P" />
-    <entity id="0x12" name="Rabbit" etype="P" />  <!-- 0.13 todo correct? -->
+    <entity id="0x12" name="Rabbit" etype="P" />
+    <!-- 0.13 todo correct? -->
     <entity id="0x13" name="Bat" etype="P" />
     <entity id="0x14" name="Iron Golem" etype="P" />
     <entity id="0x15" name="Snow Golem" etype="P" />
     <entity id="0x16" name="Ocelot" etype="P" />
-    <entity id="0x17" name="Horse" etype="P" /> <!-- 0.15 -->
-    <entity id="0x18" name="Donkey" etype="P" /> <!-- 0.15 -->
-    <entity id="0x19" name="Mule" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1a" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1b" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1c" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
+    <entity id="0x17" name="Horse" etype="P" />
+    <!-- 0.15 -->
+    <entity id="0x18" name="Donkey" etype="P" />
+    <!-- 0.15 -->
+    <entity id="0x19" name="Mule" etype="P" />
+    <!-- 0.15 -->
+    <entity id="0x1a" name="Horse, Skeleton" etype="P" />
+    <!-- 0.15 -->
+    <entity id="0x1b" name="Horse, Zombie" etype="P" />
+    <!-- 0.15 -->
+    <entity id="0x1c" name="Polar Bear" etype="P" />
+    <!-- 0.16 -->
+    <!-- todo not peaceful or hostile? -->
     <entity id="0x20" name="Zombie" etype="H" />
     <entity id="0x21" name="Creeper" etype="H" />
     <entity id="0x22" name="Skeleton" etype="H" />
@@ -1245,29 +1533,43 @@
     <entity id="0x2B" name="Blaze" etype="H" />
     <entity id="0x2C" name="Zombie Villager" etype="H" />
     <entity id="0x2D" name="Witch" etype="H" />
-    <entity id="0x2E" name="Stray" etype="H" /> <!-- 0.15 -->
-    <entity id="0x2F" name="Husk" etype="H" /> <!-- 0.15 -->
-    <entity id="0x30" name="Skeleton, Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x31" name="Guardian" etype="H" /> <!-- 0.16 -->
-    <entity id="0x32" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
-    <entity id="0x33" name="NPC" etype="P" /> <!-- EDU -->
-    <entity id="0x34" name="Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x35" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
-    <entity id="0x36" name="Shulker" etype="H" /> <!-- 0.17 -->
-    <entity id="0x37" name="Endermite" etype="H" /> <!-- 0.17 -->
-    <entity id="0x38" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
-    <entity id="0x3E" name="TripodCamera" /> <!-- EDU -->
+    <entity id="0x2E" name="Stray" etype="H" />
+    <!-- 0.15 -->
+    <entity id="0x2F" name="Husk" etype="H" />
+    <!-- 0.15 -->
+    <entity id="0x30" name="Skeleton, Wither" etype="H" />
+    <!-- 0.16 -->
+    <entity id="0x31" name="Guardian" etype="H" />
+    <!-- 0.16 -->
+    <entity id="0x32" name="Guardian, Elder" etype="H" />
+    <!-- 0.16 -->
+    <entity id="0x33" name="NPC" etype="P" />
+    <!-- EDU -->
+    <entity id="0x34" name="Wither" etype="H" />
+    <!-- 0.16 -->
+    <entity id="0x35" name="Ender Dragon" etype="H" />
+    <!-- 0.17 -->
+    <entity id="0x36" name="Shulker" etype="H" />
+    <!-- 0.17 -->
+    <entity id="0x37" name="Endermite" etype="H" />
+    <!-- 0.17 -->
+    <entity id="0x38" name="LearnToCodeMascot" etype="P" />
+    <!-- EDU -->
+    <entity id="0x3E" name="TripodCamera" />
+    <!-- EDU -->
     <entity id="0x3F" name="The Player" etype="P" />
     <entity id="0x40" name="Dropped item" />
     <entity id="0x41" name="Primed TNT" />
     <entity id="0x42" name="Falling block" />
     <entity id="0x44" name="Experience Potion" />
-    <entity id="0x45" name="Experience Orb" />    <!-- note: reverse engineered by me -->
-    <entity id="0x46" name="Eye of Ender" /> 
-    <entity id="0x47" name="Ender Crystal" /> 
+    <entity id="0x45" name="Experience Orb" />
+    <!-- note: reverse engineered by me -->
+    <entity id="0x46" name="Eye of Ender" />
+    <entity id="0x47" name="Ender Crystal" />
     <entity id="0x4C" name="Shulker Bullet" />
     <entity id="0x4D" name="Fishing Rod hook" />
-    <entity id="0x4e" name="Chalkboard" /> <!-- EDU -->
+    <entity id="0x4e" name="Chalkboard" />
+    <!-- EDU -->
     <entity id="0x4F" name="Dragon Fireball" />
     <entity id="0x50" name="Shot arrow" />
     <entity id="0x51" name="Thrown snowball" />
@@ -1281,14 +1583,17 @@
     <entity id="0x59" name="Wither Skull" />
     <entity id="0x5a" name="Boat" />
     <entity id="0x5d" name="Lightning Bolt" />
-    <entity id="0x5e" name="Blaze fireball" />    <!-- note: reverse engineered by me -->
-    <entity id="0x5f" name="Area Effect Cloud" /> 
-    <entity id="0x60" name="Minecart with Hopper" />    <!-- note: reverse engineered by me -->
-    <entity id="0x61" name="Minecart with TNT" />    <!-- note: reverse engineered by me -->
-    <entity id="0x62" name="Minecart with Chest" />    <!-- note: reverse engineered by me -->
-    <entity id="0x65" name="Lingering Potion" /> 
+    <entity id="0x5e" name="Blaze fireball" />
+    <!-- note: reverse engineered by me -->
+    <entity id="0x5f" name="Area Effect Cloud" />
+    <entity id="0x60" name="Minecart with Hopper" />
+    <!-- note: reverse engineered by me -->
+    <entity id="0x61" name="Minecart with TNT" />
+    <!-- note: reverse engineered by me -->
+    <entity id="0x62" name="Minecart with Chest" />
+    <!-- note: reverse engineered by me -->
+    <entity id="0x65" name="Lingering Potion" />
   </entitylist>
-
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values#Biome_IDs
       
@@ -1362,7 +1667,6 @@
     <biome id="0xa6" name="Mesa Plateau F M" color="0xd19292" />
     <biome id="0xa7" name="Mesa Plateau M" color="0xb87e7e" />
   </biomelist>
-
   <!--
       note that values do NOT match: http://minecraft.gamepedia.com/Data_values#Enchantment_IDs
       these values were reverse engineered by me from MCPE directly
@@ -1395,7 +1699,6 @@
     <enchantment id="0x17" name="Luck of the Sea" officialName="luck_of_the_sea" />
     <enchantment id="0x18" name="Lure" officialName="lure" />
   </enchantmentlist>
-
   <!--
       mapping of MCPC block id's to MCPE block id's
       there are (unfortunately) some differences between MCPE and MCPC block id's.
@@ -1411,7 +1714,6 @@
     <block mcpcId="0x9d" mcpeId="0x7e" />
     <!-- dropper -->
     <block mcpcId="0x9e" mcpeId="0x7d" />
-
     <!-- armor stand -->
     <item mcpcId="0x1a0" mcpeId="-1" />
     <!-- prismarine -->

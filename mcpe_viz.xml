@@ -1287,10 +1287,10 @@
     <entity id="0x1b" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
     <entity id="0x1c" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
     <entity id="0x1d" name="Llama" etype="P" >
-      <entityvariant extradata="0x0" name="Creamy Llama" />
-      <entityvariant extradata="0x1" name="White Llama" />
-      <entityvariant extradata="0x2" name="Brown Llama" />
-      <entityvariant extradata="0x3" name="Gray Llama" />
+      <entityvariant extradata="0x0" name="Llama, Creamy" />
+      <entityvariant extradata="0x1" name="Llama, White" />
+      <entityvariant extradata="0x2" name="Llama, Brown" />
+      <entityvariant extradata="0x3" name="Llama, Gray" />
     </entity>
     <entity id="0x20" name="Zombie" etype="H" />
     <entity id="0x21" name="Creeper" etype="H" />

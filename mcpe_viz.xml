@@ -1,6 +1,7 @@
 <xml>
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
+      and:         https://minecraft.gamepedia.com/Pocket_Edition_data_values (more up to date than previous link)
       and:         http://minecraft.gamepedia.com/Data_values#Block_IDs
       and:         http://minecraft.gamepedia.com/Opacity
       and:         https://gist.github.com/jocopa3/f8c9f9158ede0e9d057781188ba440f5
@@ -706,7 +707,61 @@
     <block id="0xD2" name="Allow Block" spawnable="0" /> <!-- EDU -->
     <block id="0xD3" name="Deny Block" spawnable="0" /> <!-- EDU -->
     <block id="0xD4" name="Border Block" spawnable="0" /> <!-- EDU -->
+    <block id="0xD5" name="Magma Block" color="0xd65c0c" />
+    <block id="0xD7" name="Red Nether Brick" color="0x230203" />
+    <block id="0xD8" name="Bone Block" color="0xdddddd" />
+    <block id="0xDB" name="Purple Glazed Terracotta" color="0x7E3DB5" />
+    <block id="0xDC" name="White Glazed Terracotta" color="0xDDDDDD" />
+    <block id="0xDD" name="Orange Glazed Terracotta" color="0xDB7D3E" />
+    <block id="0xDE" name="Magenta Glazed Terracotta" color="0xB350BC" />
+    <block id="0xDF" name="Light Blue Glazed Terracotta" color="0x6B8AC9" />
+    <block id="0xE0" name="Yellow Glazed Terracotta" color="0xB1A627" />
+    <block id="0xE1" name="Lime Glazed Terracotta" color="0x41AE38" />
+    <block id="0xE2" name="Pink Glazed Terracotta" color="0xD08499" />
+    <block id="0xE3" name="Gray Glazed Terracotta" color="0x404040" />
+    <block id="0xE4" name="Light Gray Glazed Terracotta" color="0x9AA1A1" />
+    <block id="0xE5" name="Cyan Glazed Terracotta" color="0x2E6E89" />
     <block id="0xE6" name="Chalkboard" spawnable="0" /> <!-- EDU -->
+    <block id="0xE8" name="Brown Glazed Terracotta" color="0x4F321F" />
+    <block id="0xE9" name="Green Glazed Terracotta" color="0x35461B" />
+    <block id="0xEA" name="Red Glazed Terracotta" color="0x963430" />
+    <block id="0xEB" name="Black Glazed Terracotta" color="0x191616" />
+    <block id="0xEC" name="Concrete">
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Concrete, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="3" name="Concrete, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="3" name="Concrete, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="3" name="Concrete, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="3" name="Concrete, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="3" name="Concrete, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="3" name="Concrete, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="3" name="Concrete, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="3" name="Concrete, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="3" name="Concrete, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="3" name="Concrete, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="3" name="Concrete, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="3" name="Concrete, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="3" name="Concrete, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Concrete, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Concrete, Black" />
+    </block>
+    <block id="0xED" name="Concrete Powder">
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Concrete Powder, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="3" name="Concrete Powder, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="3" name="Concrete Powder, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="3" name="Concrete Powder, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="3" name="Concrete Powder, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="3" name="Concrete Powder, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="3" name="Concrete Powder, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="3" name="Concrete Powder, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="3" name="Concrete Powder, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="3" name="Concrete Powder, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="3" name="Concrete Powder, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="3" name="Concrete Powder, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="3" name="Concrete Powder, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="3" name="Concrete Powder, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Concrete Powder, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Concrete Powder, Black" />
+    </block>
     <block id="0xF0" name="Chorus Plant" color="0x591062" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xF1" name="Stained Glass"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Stained Glass, White" />
@@ -1231,6 +1286,12 @@
     <entity id="0x1a" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
     <entity id="0x1b" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
     <entity id="0x1c" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
+    <entity id="0x1d" name="Llama" etype="P" >
+      <entityvariant extradata="0x0" name="Creamy Llama" />
+      <entityvariant extradata="0x1" name="White Llama" />
+      <entityvariant extradata="0x2" name="Brown Llama" />
+      <entityvariant extradata="0x3" name="Gray Llama" />
+    </entity>
     <entity id="0x20" name="Zombie" etype="H" />
     <entity id="0x21" name="Creeper" etype="H" />
     <entity id="0x22" name="Skeleton" etype="H" />

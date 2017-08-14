@@ -103,6 +103,7 @@
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="26">Horse, Skeleton</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="27">Horse, Zombie</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="20">Iron Golem</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="29">Llama</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="16">Mooshroom</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="25">Mule</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="22">Ocelot</a></li>

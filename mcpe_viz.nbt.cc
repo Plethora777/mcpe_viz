@@ -1142,10 +1142,41 @@ namespace mcpe_viz {
       return 0;
     }
     int32_t addSign ( nbt::tag_compound &tc ) {
-      text.push_back( tc["Text1"].as<nbt::tag_string>().get() );
-      text.push_back( tc["Text2"].as<nbt::tag_string>().get() );
-      text.push_back( tc["Text3"].as<nbt::tag_string>().get() );
-      text.push_back( tc["Text4"].as<nbt::tag_string>().get() );
+      char textStr[256];
+      std::string textKey;
+      int textCount = 0;
+      for (int i=1; i <= 4; i++) {
+        sprintf(textStr,"Text%d",i);
+        textKey = textStr;
+        if ( tc.has_key(textKey, nbt::tag_type::String) ) {
+          text.push_back( tc[textKey].as<nbt::tag_string>().get() ); 
+          textCount++;
+       } else {
+          //logger.msg(kLogInfo1,"WARNING: Did not find sign text for (%s)\n", textKey.c_str());
+        }
+      }
+      // newer signs (mcpe v1.2+?) have exactly one text item
+      textKey = "Text";
+      if ( tc.has_key(textKey, nbt::tag_type::String) ) {
+        std::string tempText = tc[textKey].as<nbt::tag_string>().get();
+        // lines are separated by 0x0a - remove that, geojson doesn't like it
+        std::stringstream ss;
+        ss.str(tempText);
+        std::string item;
+        char delim = '\n';
+        while ( std::getline(ss, item, delim) ) {
+          if ( textCount > 0 ) {
+            // hacky: remove first 3 characters (minecraft control characters) of all lines but the first
+            item.erase(0,3);
+          }
+          //fprintf(stderr,"sign text part [%s]\n", item.c_str());
+          text.push_back( item ); 
+          textCount++;
+        }
+      }
+      if ( textCount <= 0 ) {
+        //logger.msg(kLogInfo1,"WARNING: Did not find any text for a sign\n");
+      }
       signTotalStringLength=0;
       for ( const auto& it : text ) {
         // todo this should trim leading/trailing whitespace

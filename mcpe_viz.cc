@@ -1681,7 +1681,7 @@ namespace mcpe_viz {
       case 3:
         // 0.17 and later?
         // we need to process all sub-chunks, not just blindy add them
-
+        
         if ( !chunks_has_key(chunks, chunkKey) ) {
           chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
         }
@@ -2646,8 +2646,9 @@ namespace mcpe_viz {
 
       // create a helper buffer which contains topBlockY for the entire image
       uint8_t currTopBlockY = MAX_BLOCK_HEIGHT;
-      uint8_t* tbuf = new uint8_t[imageW * imageH];
-      memset(tbuf,MAX_BLOCK_HEIGHT,imageW*imageH);
+      size_t bsize = (size_t)imageW * (size_t)imageH;
+      uint8_t* tbuf = new uint8_t[bsize];
+      memset(tbuf,MAX_BLOCK_HEIGHT,bsize);
       for (const auto& it : chunks) {
         int32_t ix = (it.second->chunkX + chunkOffsetX) * 16;
         int32_t iz = (it.second->chunkZ + chunkOffsetZ) * 16;
@@ -4021,8 +4022,10 @@ namespace mcpe_viz {
 
           case 0x34:
             // "BlockExtraData"
-            logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
-            printKeyValue(key,key_size,cdata,cdata_size,false);
+            logger.msg(kLogInfo1,"%s 0x34 chunk (TODO - MYSTERY RECORD - BlockExtraData)\n", dimName.c_str());
+            if ( control.verboseFlag ) {
+              printKeyValue(key,key_size,cdata,cdata_size,false);
+            }
             // according to tommo (https://www.reddit.com/r/MCPE/comments/5cw2tm/level_format_changes_in_mcpe_0171_100/)
             // "BlockExtraData"
             /* 
@@ -4036,8 +4039,10 @@ namespace mcpe_viz {
 
           case 0x35:
             // "BiomeState"
-            logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD)\n", dimName.c_str());
-            printKeyValue(key,key_size,cdata,cdata_size,false);
+            logger.msg(kLogInfo1,"%s 0x35 chunk (TODO - MYSTERY RECORD - BiomeState)\n", dimName.c_str());
+            if ( control.verboseFlag ) {
+              printKeyValue(key,key_size,cdata,cdata_size,false);
+            }
             // according to tommo (https://www.reddit.com/r/MCPE/comments/5cw2tm/level_format_changes_in_mcpe_0171_100/)
             // "BiomeState"
             /*
@@ -4048,6 +4053,25 @@ namespace mcpe_viz {
             */
             break;
 
+          case 0x36:
+            // new for v1.2?
+            logger.msg(kLogInfo1,"%s 0x36 chunk (TODO - MYSTERY RECORD - TBD)\n", dimName.c_str());
+            if ( control.verboseFlag ) {
+              printKeyValue(key,key_size,cdata,cdata_size,false);
+            }
+            // todo - what is this?
+            // appears to be a single 4-byte integer?
+            break;
+
+          case 0x39:
+            // new for v1.2?
+            logger.msg(kLogInfo1,"%s 0x39 chunk (TODO - MYSTERY RECORD - TBD)\n", dimName.c_str());
+            if ( control.verboseFlag ) {
+              printKeyValue(key,key_size,cdata,cdata_size,false);
+            }
+            // todo - what is this?
+            break;
+            
           case 0x76:
             // "Version"
             // todo - this is chunk version information?
@@ -4076,6 +4100,9 @@ namespace mcpe_viz {
               if ( cdata[0] != 0 ) {
                 logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
               }
+              if ( cdata_size != 10241 ) {
+                logger.msg(kLogInfo1, "WARNING: UNKNOWN cdata_size=%d of 0x2f chunk\n", (int)cdata_size);
+              }                
               dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata, cdata_size);
             }
             break;
@@ -5582,6 +5609,8 @@ namespace mcpe_viz {
         /* Usage */
       default:
         slogger.msg(kLogInfo1,"ERROR: Unrecognized option: '%c'\n",optc);
+        return -1;
+
       case 'h':
         return -1;
       }

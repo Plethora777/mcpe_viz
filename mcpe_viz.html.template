@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>MCPE Viz Viewer</title>
+    <meta charset="utf-8" />
     <script src="js/jquery-1.11.2.min.js"></script>
     <link rel="stylesheet" href="js/bootstrap.min.css" />
     <script src="js/bootstrap.min.js"></script>
@@ -289,7 +290,7 @@
       </div>
     </div>
 
-    <div class="modal fade" style="display;none;">
+    <div class="modal fade" style="display:none;">
       <div class="modal-dialog">
 	<div class="modal-content">
 	  <div class="modal-header">

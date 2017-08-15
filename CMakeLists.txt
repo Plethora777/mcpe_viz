@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(mcpe_viz
-  VERSION 0.0.33)
+  VERSION 0.0.34)
 
 option(MCPE_VIZ_WIN32 "Build win32 using mingw" OFF)
 option(MCPE_VIZ_WIN64 "Build win64 using mingw" OFF)
@@ -113,7 +113,7 @@ elseif(MCPE_VIZ_WIN64)
 else()
   include_directories(libnbtplusplus/build .)
   target_link_libraries(mcpe_viz
-    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/libleveldb.a
+    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/out-static/libleveldb.a
     ${PROJECT_SOURCE_DIR}/libnbtplusplus/build/libnbt++.a
     ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
 endif()

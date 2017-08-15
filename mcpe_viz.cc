@@ -201,6 +201,9 @@
 #include <random>
 
 #include "leveldb/db.h"
+#include "leveldb/env.h"
+#include "leveldb/cache.h"
+#include "leveldb/decompress_allocator.h"
 // hide innocuous warnings here
 #pragma GCC diagnostic ignored "-Wshadow"
 #include "leveldb/zlib_compressor.h"
@@ -255,6 +258,7 @@ namespace mcpe_viz {
   
   PlayerIdToName playerIdToName;
 
+  leveldb::ReadOptions levelDbReadOptions;
 
   enum OutputType : int32_t {
     kDoOutputNone = -2,
@@ -282,6 +286,13 @@ namespace mcpe_viz {
   };
 
 
+  // suggestion from mcpe_sample_setup.cpp
+  class NullLogger : public leveldb::Logger {
+  public:
+    void Logv(const char*, va_list) override {
+    }
+  };
+  
     
   // all user options are stored here
   class Control {
@@ -1394,8 +1405,6 @@ namespace mcpe_viz {
       int32_t kw = dimId;
       uint8_t kt_v3 = 0x2f;
       leveldb::Status dstatus;
-      leveldb::ReadOptions readOptions;
-      readOptions.fill_cache=false; // may improve performance?
       std::string svalue;
       const char* pchunk = nullptr;
       size_t pchunk_size;
@@ -1422,7 +1431,7 @@ namespace mcpe_viz {
           keybuflen=14;
         }
         
-        dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+        dstatus = db->Get(levelDbReadOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
         if ( dstatus.ok() ) {
           pchunk = svalue.data();
           pchunk_size = svalue.size();
@@ -2606,9 +2615,6 @@ namespace mcpe_viz {
         
       slogger.msg(kLogInfo1,"    Writing all images in one pass\n");
           
-      leveldb::ReadOptions readOptions;
-      readOptions.fill_cache=false; // may improve performance?
-
       std::string svalue;
       const char* ochunk = nullptr;
       const char* pchunk = nullptr;
@@ -2690,7 +2696,7 @@ namespace mcpe_viz {
             keybuflen=13;
           }
 
-          dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+          dstatus = db->Get(levelDbReadOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
           if ( dstatus.ok() ) {
 
             // we got a pre-0.17 chunk
@@ -2799,7 +2805,7 @@ namespace mcpe_viz {
                 keybuflen=14;
               }
               
-              dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+              dstatus = db->Get(levelDbReadOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
               if ( dstatus.ok() ) {
                 cubicFoundCount++;
 
@@ -2975,9 +2981,6 @@ namespace mcpe_viz {
       // todobig - we *could* write image data to flat files during dbParse and then convert 
       //   these flat files into png here (but temp disk space requirements are *huge*); could try gzwrite etc
 
-      leveldb::ReadOptions readOptions;
-      readOptions.fill_cache=false; // may improve performance?
-
       std::string svalue;
       const char* pchunk = nullptr;
       int32_t pchunkX = 0;
@@ -3026,7 +3029,7 @@ namespace mcpe_viz {
                     break;
                   }
                   leveldb::Slice key(keybuf,keybuflen);
-                  leveldb::Status dstatus = db->Get(readOptions, key, &svalue);
+                  leveldb::Status dstatus = db->Get(levelDbReadOptions, key, &svalue);
                   if (!dstatus.ok()) {
                     slogger.msg(kLogInfo1,"WARNING: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
                   }
@@ -3183,9 +3186,6 @@ namespace mcpe_viz {
         
         slogger.msg(kLogInfo1,"  Processing Schematic: %s\n", schematic->toString().c_str());
         
-        leveldb::ReadOptions readOptions;
-        readOptions.fill_cache=false; // may improve performance?
-        
         std::string svalue;
         const char* pchunk = nullptr;
         
@@ -3235,7 +3235,7 @@ namespace mcpe_viz {
                   keybuflen=13;
                 }
             
-                dstatus = db->Get(readOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
+                dstatus = db->Get(levelDbReadOptions, leveldb::Slice(keybuf,keybuflen), &svalue);
                 if ( ! dstatus.ok() ) {
                   notFoundCt2++;
                   slogger.msg(kLogInfo1,"WARNING: Did not find chunk in leveldb x=%d z=%d status=%s\n", chunkX, chunkZ, dstatus.ToString().c_str());
@@ -3434,7 +3434,6 @@ namespace mcpe_viz {
   private:
     leveldb::DB* db;
     std::unique_ptr<leveldb::Options> dbOptions;
-    std::unique_ptr<leveldb::ReadOptions> dbReadOptions;
     int32_t totalRecordCt;
   
   public:
@@ -3444,12 +3443,13 @@ namespace mcpe_viz {
     MinecraftWorld_LevelDB() {
       db = nullptr;
       
-      dbReadOptions = std::unique_ptr<leveldb::ReadOptions>(new leveldb::ReadOptions());
-      dbReadOptions->fill_cache = false;
+      levelDbReadOptions.fill_cache = false;
+      // suggestion from leveldb/mcpe_sample_setup.cpp
+      levelDbReadOptions.decompress_allocator = new leveldb::DecompressAllocator();
 
 
       dbOptions = std::unique_ptr<leveldb::Options>(new leveldb::Options);
-      dbOptions->compressors[0] = new leveldb::ZlibCompressor();
+      //dbOptions->compressors[0] = new leveldb::ZlibCompressor();
       dbOptions->create_if_missing = false;
 
       // this filter is supposed to reduce disk reads - light testing indicates that it is faster when doing 'html-all'
@@ -3458,6 +3458,24 @@ namespace mcpe_viz {
       }
 
       dbOptions->block_size = control.leveldbBlockSize;
+
+      // start: suggestions from leveldb/mcpe_sample_setup.cpp
+      //create a 40 mb cache (we use this on ~1gb devices)
+      dbOptions->block_cache = leveldb::NewLRUCache(40 * 1024 * 1024);
+      
+	//create a 4mb write buffer, to improve compression and touch the disk less
+      dbOptions->write_buffer_size = 4 * 1024 * 1024;
+      
+      //disable internal logging. The default logger will still print out things to a file
+      dbOptions->info_log = new NullLogger();
+
+	//use the new raw-zip compressor to write (and read)
+      dbOptions->compressors[0] = new leveldb::ZlibCompressorRaw(-1);
+      
+      //also setup the old, slower compressor for backwards compatibility. This will only be used to read old compressed blocks.
+      dbOptions->compressors[1] = new leveldb::ZlibCompressor();
+      // end: suggestions from leveldb/mcpe_sample_setup.cpp
+      
       
       for (int32_t i=0; i < kDimIdCount; i++) {
         dimDataList[i] = std::unique_ptr<DimensionData_LevelDB>(new DimensionData_LevelDB());
@@ -3568,7 +3586,6 @@ namespace mcpe_viz {
         slogger.msg(kLogInfo1,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
         exit(-2);
       }
-      dbReadOptions->fill_cache=false; // may improve performance?
       return 0;
     }
 
@@ -3577,14 +3594,21 @@ namespace mcpe_viz {
         delete db;
         db = nullptr;
       }
-      if ( dbOptions != nullptr ) {
-        if ( dbOptions->compressors[0] ) {
-          delete dbOptions->compressors[0];
-          dbOptions->compressors[0] = nullptr;
-        }
-        if ( dbOptions->filter_policy != NULL ) {
-          delete dbOptions->filter_policy;
-          dbOptions->filter_policy = NULL;
+      // todonow - disabled for now - crashes
+      if ( false ) { 
+        if ( dbOptions != nullptr ) {
+          if ( dbOptions->compressors[1] ) {
+            delete dbOptions->compressors[1];
+            dbOptions->compressors[0] = nullptr;
+          }
+          if ( dbOptions->compressors[0] ) {
+            delete dbOptions->compressors[0];
+            dbOptions->compressors[0] = nullptr;
+          }
+          if ( dbOptions->filter_policy != NULL ) {
+            delete dbOptions->filter_policy;
+            dbOptions->filter_policy = NULL;
+          }
         }
       }
       return 0;
@@ -3613,7 +3637,7 @@ namespace mcpe_viz {
       int32_t recordCt = 0;
 
       // todobig - is there a faster way to enumerate the keys?
-      leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
+      leveldb::Iterator* iter = db->NewIterator(levelDbReadOptions);
       leveldb::Slice skey;
       int32_t key_size;
       const char* key;
@@ -3754,7 +3778,7 @@ namespace mcpe_viz {
       const char* cdata;
       std::string dimName, chunkstr;
 
-      leveldb::Iterator* iter = db->NewIterator(*dbReadOptions);
+      leveldb::Iterator* iter = db->NewIterator(levelDbReadOptions);
       for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
 
         // note: we get the raw buffer early to avoid overhead (maybe?)
@@ -4100,7 +4124,7 @@ namespace mcpe_viz {
               if ( cdata[0] != 0 ) {
                 logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
               }
-              if ( cdata_size != 10241 ) {
+              if ( cdata_size != 6145 ) {
                 logger.msg(kLogInfo1, "WARNING: UNKNOWN cdata_size=%d of 0x2f chunk\n", (int)cdata_size);
               }                
               dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata, cdata_size);

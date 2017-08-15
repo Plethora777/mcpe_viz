@@ -6,6 +6,9 @@ by Plethora777
 
 Highlight: Fix for MCPE v1.2.0
 
+v0.0.34 - 2017.08.15
+Fix for MCPE v1.2.0 (updated leveldb library)
+
 v0.0.33 - 2017.08.14
 Fix for MCPE v1.2.0 (sign text issue)
 

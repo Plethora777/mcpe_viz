@@ -644,6 +644,8 @@
       <blockvariant blockdata="0xE" color="0xff00ff" name="Unknown Tall Flower (0xE)" />
       <blockvariant blockdata="0xF" color="0xfd00fc" name="Unknown Tall Flower (0xF)" />
     </block>
+    <block id="0xB0" name="Standing Banner" color="0xe36731" solid="0" opaque="0" spawnable="0" />
+    <block id="0xB1" name="Wall Banner" color="0xe36731" solid="0" opaque="0" spawnable="0" />
     <block id="0xB2" name="Daylight Sensor, Inverted" color="0x989897" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
     <block id="0xB3" name="Red Sandstone" color="0xd0be86"> <!-- *B -->
       <blockvariant blockdata="0x0" name="Red Sandstone" />
@@ -702,6 +704,7 @@
       <blockvariant blockdata="0x7" name="Stairs, Purpur, North (Upside-down)" spawnable="1" />
     </block>
     <block id="0xCE" name="End Bricks" color="0xded99e" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
+    <block id="0xCF" name="Frosted Ice" color="0xe0e0f0" opaque="0" />
     <block id="0xD0" name="End Rod" color="0xf7f7f6" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xD1" name="End Gateway" color="0x545454" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xD2" name="Allow Block" spawnable="0" /> <!-- EDU -->
@@ -1107,6 +1110,8 @@
     </item>
     <item id="0x180" name="Bottle o' Enchanting" />
     <item id="0x181" name="Fire Charge" /> <!-- 0.15 -->
+    <item id="0x182" name="Book and Quill" />
+    <item id="0x183" name="Written Book" />
     <item id="0x184" name="Emerald" />
     <item id="0x185" name="Item Frame" />
     <item id="0x186" name="Flower Pot" />
@@ -1149,6 +1154,7 @@
     <item id="0x1A6" name="Prismarine Crystals" /> <!-- 0.16 -->
     <item id="0x1A7" name="Mutton, Raw" /> <!-- 0.15 -->
     <item id="0x1A8" name="Mutton, Cooked" /> <!-- 0.15 -->
+    <item id="0x1A9" name="Armor Stand" />
     <item id="0x1AA" name="End Crystal" /> <!-- 0.17 -->
     <item id="0x1AB" name="Door, Spruce" />
     <item id="0x1AC" name="Door, Birch" />
@@ -1240,6 +1246,7 @@
       <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
     </item>    
     <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
+    <item id="0x1BE" name="Banner" />
     <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
       <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->
       <itemvariant extradata="0x1" name="2x1 Chalkboard" /> <!-- EDU -->
@@ -1292,6 +1299,13 @@
       <entityvariant extradata="0x2" name="Llama, Brown" />
       <entityvariant extradata="0x3" name="Llama, Gray" />
     </entity>
+    <entity id="0x1E" name="Parrot" etype="P" >
+      <entityvariant extradata="0x0" name="Parrot, Red" />
+      <entityvariant extradata="0x1" name="Parrot, Blue" />
+      <entityvariant extradata="0x2" name="Parrot, Green" />
+      <entityvariant extradata="0x3" name="Parrot, Cyan" />
+      <entityvariant extradata="0x4" name="Parrot, Silver" />
+    </entity>
     <entity id="0x20" name="Zombie" etype="H" />
     <entity id="0x21" name="Creeper" etype="H" />
     <entity id="0x22" name="Skeleton" etype="H" />
@@ -1317,6 +1331,7 @@
     <entity id="0x36" name="Shulker" etype="H" /> <!-- 0.17 -->
     <entity id="0x37" name="Endermite" etype="H" /> <!-- 0.17 -->
     <entity id="0x38" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
+    <entity id="0x3D" name="Armor Stand" etype="P" />
     <entity id="0x3E" name="TripodCamera" /> <!-- EDU -->
     <entity id="0x3F" name="The Player" etype="P" />
     <entity id="0x40" name="Dropped item" />

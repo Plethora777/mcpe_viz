@@ -108,6 +108,7 @@
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="16">Mooshroom</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="25">Mule</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="22">Ocelot</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="30">Parrot</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="12">Pig</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="28">Polar Bear</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="18">Rabbit</a></li>
@@ -180,6 +181,7 @@
 	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="Dropper">Dropper</a></li>
 	    <li><a href="#" class="tileEntityToggle" data-type="O" data-id="Dispenser">Dispenser</a></li>
 	    <li role="separator" class="divider"></li>
+	    <li><a href="#" class="entityToggle" data-type="O" data-id="61">Armor Stand</a></li>
 	    <li><a href="#" class="entityToggle" data-type="O" data-id="90">Boat</a></li>
 	    <li><a href="#" class="entityToggle" data-type="O" data-id="64">Dropped Item</a></li>
 	    <li><a href="#" class="entityToggle" data-type="O" data-id="84">Minecart</a></li>

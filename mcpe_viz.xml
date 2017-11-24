@@ -1265,6 +1265,7 @@
       <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
     </item>    
     <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
+    <item id="0x1BD" name="Shulker Shell" />
     <item id="0x1BE" name="Banner" />
     <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
       <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->

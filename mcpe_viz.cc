@@ -733,6 +733,14 @@ namespace mcpe_viz {
     return  m.find(k) != m.end();
   }
 
+
+  int32_t findIdString(const EntityInfoList &m, std::string& ids) {
+    for (EntityInfoList::const_iterator it=m.begin(); it!=m.end(); ++it)
+      if ( it->second->idString == ids ) {
+        return it->first;
+      }
+    return -1;
+  }
   
 
   // todobig - it would be nice to do something like this, but unique_ptr stands in the way...
@@ -3957,6 +3965,14 @@ namespace mcpe_viz {
             dimName = "nether";
             chunkFormatVersion = 2; //todonow - get properly
 
+            // adjust weird dim id's
+            if ( chunkDimId == 0x32373639 ) {
+              chunkDimId = kDimIdTheEnd;
+            }
+            if ( chunkDimId == 0x33373639 ) {
+              chunkDimId = kDimIdNether;
+            }
+            
             // check for new dim id's
             if ( chunkDimId != kDimIdNether && chunkDimId != kDimIdTheEnd ) {
               slogger.msg(kLogInfo1, "WARNING: UNKNOWN -- Found new chunkDimId=0x%x -- we are not prepared for that -- skipping chunk\n", chunkDimId);
@@ -3972,6 +3988,14 @@ namespace mcpe_viz {
             chunkTypeSub = myParseInt8(key, 13); // todonow - rename
             dimName = "nether";
             chunkFormatVersion = 3; //todonow - get properly
+
+            // adjust weird dim id's
+            if ( chunkDimId == 0x32373639 ) {
+              chunkDimId = kDimIdTheEnd;
+            }
+            if ( chunkDimId == 0x33373639 ) {
+              chunkDimId = kDimIdNether;
+            }
 
             // check for new dim id's
             if ( chunkDimId != kDimIdNether && chunkDimId != kDimIdTheEnd ) {
@@ -5652,6 +5676,13 @@ namespace mcpe_viz {
       slogger.msg(kLogInfo1,"ERROR: Must specify --out\n");
     }
 
+    // make sure that output directory is NOT world data directory
+    std::string fnTest = mydirname(control.fnOutputBase) + "/level.dat";
+    if ( file_exists(fnTest.c_str()) ) {
+      errct++;
+      slogger.msg(kLogInfo1,"ERROR: You cannot send mcpe_viz output to a world file data directory\n");
+    }
+    
     if ( errct <= 0 ) {
       control.setupOutput();
     }

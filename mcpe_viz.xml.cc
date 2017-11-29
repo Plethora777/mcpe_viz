@@ -268,9 +268,10 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"entity") == 0 ) {
 
-        bool idValid, nameValid, etypeValid;
+        bool idValid, idsValid, nameValid, etypeValid;
           
         int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
+        std::string ids = xmlGetString(cur, (const xmlChar*)"ids", idsValid);
         std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
         std::string etype = xmlGetString(cur, (const xmlChar*)"etype", etypeValid);
         if ( ! etypeValid ) {
@@ -279,7 +280,7 @@ namespace mcpe_viz {
 
         // create data
         if ( idValid && nameValid ) {
-          entityInfoList.insert( std::make_pair(id, std::unique_ptr<EntityInfo>(new EntityInfo(name, etype))) );
+          entityInfoList.insert( std::make_pair(id, std::unique_ptr<EntityInfo>(new EntityInfo(name, ids, etype))) );
         } else {
           // todo error
           fprintf(stderr,"WARNING: Did not find valid id and name for entity: (0x%x) (%s)\n"

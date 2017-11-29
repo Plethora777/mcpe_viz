@@ -732,22 +732,23 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="4" name="Shulker Box, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="4" name="Shulker Box, Black" />
     </block>
-    <block id="0xDB" name="Purple Glazed Terracotta" color="0x7E3DB5" />
-    <block id="0xDC" name="White Glazed Terracotta" color="0xDDDDDD" />
-    <block id="0xDD" name="Orange Glazed Terracotta" color="0xDB7D3E" />
-    <block id="0xDE" name="Magenta Glazed Terracotta" color="0xB350BC" />
-    <block id="0xDF" name="Light Blue Glazed Terracotta" color="0x6B8AC9" />
-    <block id="0xE0" name="Yellow Glazed Terracotta" color="0xB1A627" />
-    <block id="0xE1" name="Lime Glazed Terracotta" color="0x41AE38" />
-    <block id="0xE2" name="Pink Glazed Terracotta" color="0xD08499" />
-    <block id="0xE3" name="Gray Glazed Terracotta" color="0x404040" />
-    <block id="0xE4" name="Light Gray Glazed Terracotta" color="0x9AA1A1" />
-    <block id="0xE5" name="Cyan Glazed Terracotta" color="0x2E6E89" />
-    <block id="0xE6" name="Chalkboard" spawnable="0" /> <!-- EDU -->
-    <block id="0xE8" name="Brown Glazed Terracotta" color="0x4F321F" />
-    <block id="0xE9" name="Green Glazed Terracotta" color="0x35461B" />
-    <block id="0xEA" name="Red Glazed Terracotta" color="0x963430" />
-    <block id="0xEB" name="Black Glazed Terracotta" color="0x191616" />
+    <block id="0xDB" name="Glazed Terracotta, Purple" color="0x7E3DB5" />
+    <block id="0xDC" name="Glazed Terracotta, White" color="0xDDDDDD" />
+    <block id="0xDD" name="Glazed Terracotta, Orange" color="0xDB7D3E" />
+    <block id="0xDE" name="Glazed Terracotta, Magenta" color="0xB350BC" />
+    <block id="0xDF" name="Glazed Terracotta, Light Blue" color="0x6B8AC9" />
+    <block id="0xE0" name="Glazed Terracotta, Yellow" color="0xB1A627" />
+    <block id="0xE1" name="Glazed Terracotta, Lime" color="0x41AE38" />
+    <block id="0xE2" name="Glazed Terracotta, Pink" color="0xD08499" />
+    <block id="0xE3" name="Glazed Terracotta, Gray" color="0x404040" />
+    <block id="0xE4" name="Glazed Terracotta, Light Gray" color="0x9AA1A1" />
+    <block id="0xE5" name="Glazed Terracotta, Cyan" color="0x2E6E89" />
+    <block id="0xE6" name="Glazed Terracotta, Chalkboard" spawnable="0" /> <!-- EDU -->
+    <block id="0xE7" name="Glazed Terracotta, Blue" color="0x2E388f" />
+    <block id="0xE8" name="Glazed Terracotta, Brown" color="0x4F321F" />
+    <block id="0xE9" name="Glazed Terracotta, Green" color="0x35461B" />
+    <block id="0xEA" name="Glazed Terracotta, Red" color="0x963430" />
+    <block id="0xEB" name="Glazed Terracotta, Black" color="0x191616" />
     <block id="0xEC" name="Concrete">
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="5" name="Concrete, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="5" name="Concrete, Orange" />
@@ -1151,6 +1152,8 @@
     <item id="0x18E" name="Carrot on a Stick" /> <!-- 0.15 -->
     <item id="0x18F" name="Nether Star" /> <!-- 0.16 -->
     <item id="0x190" name="Pumpkin Pie" />
+    <item id="0x191" name="Firework Rocket" />
+    <item id="0x192" name="Firework Star" />
     <item id="0x193" name="Enchanted Book" />
     <item id="0x194" name="Redstone Comparator" />
     <item id="0x195" name="Nether Brick" />
@@ -1264,9 +1267,12 @@
       <itemvariant extradata="0x22" name="Lingering Potion of Weakness (1:07)" />
       <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
     </item>    
+    <item id="0x1BB" name="Minecart with Command Block" />
     <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
     <item id="0x1BD" name="Shulker Shell" />
     <item id="0x1BE" name="Banner" />
+    <item id="0x1C2" name="Totem of Undying" />
+    <item id="0x1C4" name="Iron Nugget" />
     <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
       <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->
       <itemvariant extradata="0x1" name="2x1 Chalkboard" /> <!-- EDU -->
@@ -1282,6 +1288,18 @@
     <item id="0x1CF" name="Salmon, Cooked" /> <!-- *B -->
     <item id="0x1D2" name="Apple, Enchanted" />
     <item id="0x1F2" name="Camera" /> <!-- EDU -->
+    <item id="0x1F4" name="Record, 13" />
+    <item id="0x1F5" name="Record, Cat" />
+    <item id="0x1F6" name="Record, Blocks" />
+    <item id="0x1F7" name="Record, Chirp" />
+    <item id="0x1F8" name="Record, Far" />
+    <item id="0x1F9" name="Record, Mall" />
+    <item id="0x1FA" name="Record, Mellohi" />
+    <item id="0x1FB" name="Record, Stal" />
+    <item id="0x1FC" name="Record, Strad" />
+    <item id="0x1FD" name="Record, Ward" />
+    <item id="0x1FE" name="Record, 11" />
+    <item id="0x1FF" name="Record, Wait" />
   </itemlist>
 
   <!--
@@ -1289,100 +1307,106 @@
       
       entitylist: mcpe entities
       id - mcpe entity id (hex)
+      ids - mcpe entity id (string)
       name - name of entity
       etype - entity type (P=Peaceful; H=Hostile; O=Object)
   -->
   <entitylist>
     <entity id="0x01" name="Empty" />
-    <entity id="0x0A" name="Chicken" etype="P" />
-    <entity id="0x0B" name="Cow" etype="P" />
-    <entity id="0x0C" name="Pig" etype="P" />
-    <entity id="0x0D" name="Sheep" etype="P" />
-    <entity id="0x0E" name="Wolf" etype="P" />
-    <entity id="0x0F" name="Villager" etype="P" />
-    <entity id="0x10" name="Mooshroom" etype="P" />
-    <entity id="0x11" name="Squid" etype="P" />
-    <entity id="0x12" name="Rabbit" etype="P" />  <!-- 0.13 todo correct? -->
-    <entity id="0x13" name="Bat" etype="P" />
-    <entity id="0x14" name="Iron Golem" etype="P" />
-    <entity id="0x15" name="Snow Golem" etype="P" />
-    <entity id="0x16" name="Ocelot" etype="P" />
-    <entity id="0x17" name="Horse" etype="P" /> <!-- 0.15 -->
-    <entity id="0x18" name="Donkey" etype="P" /> <!-- 0.15 -->
-    <entity id="0x19" name="Mule" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1a" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1b" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1c" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
-    <entity id="0x1d" name="Llama" etype="P" >
+    <entity id="0x0A" ids="minecraft:chicken" name="Chicken" etype="P" />
+    <entity id="0x0B" ids="minecraft:cow" name="Cow" etype="P" />
+    <entity id="0x0C" ids="minecraft:pig" name="Pig" etype="P" />
+    <entity id="0x0D" ids="minecraft:sheep" name="Sheep" etype="P" />
+    <entity id="0x0E" ids="minecraft:wolf" name="Wolf" etype="P" />
+    <entity id="0x0F" ids="minecraft:villager" name="Villager" etype="P" />
+    <entity id="0x10" ids="minecraft:mooshroom" name="Mooshroom" etype="P" />
+    <entity id="0x11" ids="minecraft:squid" name="Squid" etype="P" />
+    <entity id="0x12" ids="minecraft:rabbit" name="Rabbit" etype="P" />  <!-- 0.13 todo correct? -->
+    <entity id="0x13" ids="minecraft:bat" name="Bat" etype="P" />
+    <entity id="0x14" ids="minecraft:iron_golem" name="Iron Golem" etype="P" />
+    <entity id="0x15" ids="minecraft:snow_golem" name="Snow Golem" etype="P" />
+    <entity id="0x16" ids="minecraft:ocelot" name="Ocelot" etype="P" />
+    <entity id="0x17" ids="minecraft:horse" name="Horse" etype="P" /> <!-- 0.15 -->
+    <entity id="0x18" ids="minecraft:donkey" name="Donkey" etype="P" /> <!-- 0.15 -->
+    <entity id="0x19" ids="minecraft:mule" name="Mule" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1a" ids="minecraft:skeleton_horse" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1b" ids="minecraft:zombie_horse" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1c" ids="minecraft:polar_bear" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
+    <entity id="0x1d" ids="minecraft:llama" name="Llama" etype="P" >
       <entityvariant extradata="0x0" name="Llama, Creamy" />
       <entityvariant extradata="0x1" name="Llama, White" />
       <entityvariant extradata="0x2" name="Llama, Brown" />
       <entityvariant extradata="0x3" name="Llama, Gray" />
     </entity>
-    <entity id="0x1E" name="Parrot" etype="P" >
+    <entity id="0x1E" ids="minecraft:parrot" name="Parrot" etype="P" >
       <entityvariant extradata="0x0" name="Parrot, Red" />
       <entityvariant extradata="0x1" name="Parrot, Blue" />
       <entityvariant extradata="0x2" name="Parrot, Green" />
       <entityvariant extradata="0x3" name="Parrot, Cyan" />
       <entityvariant extradata="0x4" name="Parrot, Silver" />
     </entity>
-    <entity id="0x20" name="Zombie" etype="H" />
-    <entity id="0x21" name="Creeper" etype="H" />
-    <entity id="0x22" name="Skeleton" etype="H" />
-    <entity id="0x23" name="Spider" etype="H" />
-    <entity id="0x24" name="Zombie Pigman" etype="H" />
-    <entity id="0x25" name="Slime" etype="H" />
-    <entity id="0x26" name="Enderman" etype="H" />
-    <entity id="0x27" name="Silverfish" etype="H" />
-    <entity id="0x28" name="Cave Spider" etype="H" />
-    <entity id="0x29" name="Ghast" etype="H" />
-    <entity id="0x2A" name="Magma Cube" etype="H" />
-    <entity id="0x2B" name="Blaze" etype="H" />
-    <entity id="0x2C" name="Zombie Villager" etype="H" />
-    <entity id="0x2D" name="Witch" etype="H" />
-    <entity id="0x2E" name="Stray" etype="H" /> <!-- 0.15 -->
-    <entity id="0x2F" name="Husk" etype="H" /> <!-- 0.15 -->
-    <entity id="0x30" name="Skeleton, Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x31" name="Guardian" etype="H" /> <!-- 0.16 -->
-    <entity id="0x32" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
-    <entity id="0x33" name="NPC" etype="P" /> <!-- EDU -->
-    <entity id="0x34" name="Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x35" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
-    <entity id="0x36" name="Shulker" etype="H" /> <!-- 0.17 -->
-    <entity id="0x37" name="Endermite" etype="H" /> <!-- 0.17 -->
-    <entity id="0x38" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
-    <entity id="0x3D" name="Armor Stand" etype="P" />
-    <entity id="0x3E" name="TripodCamera" /> <!-- EDU -->
-    <entity id="0x3F" name="The Player" etype="P" />
-    <entity id="0x40" name="Dropped item" />
-    <entity id="0x41" name="Primed TNT" />
-    <entity id="0x42" name="Falling block" />
-    <entity id="0x44" name="Experience Potion" />
-    <entity id="0x45" name="Experience Orb" />    <!-- note: reverse engineered by me -->
-    <entity id="0x46" name="Eye of Ender" /> 
-    <entity id="0x47" name="Ender Crystal" /> 
-    <entity id="0x4C" name="Shulker Bullet" />
-    <entity id="0x4D" name="Fishing Rod hook" />
-    <entity id="0x4e" name="Chalkboard" /> <!-- EDU -->
-    <entity id="0x4F" name="Dragon Fireball" />
-    <entity id="0x50" name="Shot arrow" />
-    <entity id="0x51" name="Thrown snowball" />
-    <entity id="0x52" name="Thrown egg" />
-    <entity id="0x53" name="Painting" />
-    <entity id="0x54" name="Minecart" />
-    <entity id="0x55" name="Ghast firecharge" />
-    <entity id="0x56" name="Thrown Potion" />
-    <entity id="0x57" name="Thrown Ender Pearl" />
-    <entity id="0x58" name="Leash Fence Knot" />
-    <entity id="0x59" name="Wither Skull" />
-    <entity id="0x5a" name="Boat" />
-    <entity id="0x5d" name="Lightning Bolt" />
-    <entity id="0x5e" name="Blaze fireball" />    <!-- note: reverse engineered by me -->
-    <entity id="0x5f" name="Area Effect Cloud" /> 
-    <entity id="0x60" name="Minecart with Hopper" />    <!-- note: reverse engineered by me -->
-    <entity id="0x61" name="Minecart with TNT" />    <!-- note: reverse engineered by me -->
-    <entity id="0x62" name="Minecart with Chest" />    <!-- note: reverse engineered by me -->
-    <entity id="0x65" name="Lingering Potion" /> 
+    <entity id="0x20" ids="minecraft:zombie" name="Zombie" etype="H" />
+    <entity id="0x21" ids="minecraft:creeper" name="Creeper" etype="H" />
+    <entity id="0x22" ids="minecraft:skeleton" name="Skeleton" etype="H" />
+    <entity id="0x23" ids="minecraft:spider" name="Spider" etype="H" />
+    <entity id="0x24" ids="minecraft:zombie_pigman" name="Zombie Pigman" etype="H" />
+    <entity id="0x25" ids="minecraft:slime" name="Slime" etype="H" />
+    <entity id="0x26" ids="minecraft:enderman" name="Enderman" etype="H" />
+    <entity id="0x27" ids="minecraft:silverfish" name="Silverfish" etype="H" />
+    <entity id="0x28" ids="minecraft:cave_spider" name="Cave Spider" etype="H" />
+    <entity id="0x29" ids="minecraft:ghast" name="Ghast" etype="H" />
+    <entity id="0x2A" ids="minecraft:magma_cube" name="Magma Cube" etype="H" />
+    <entity id="0x2B" ids="minecraft:blaze" name="Blaze" etype="H" />
+    <entity id="0x2C" ids="minecraft:zombie_villager" name="Zombie Villager" etype="H" />
+    <entity id="0x2D" ids="minecraft:witch" name="Witch" etype="H" />
+    <entity id="0x2E" ids="minecraft:stray" name="Stray" etype="H" /> <!-- 0.15 -->
+    <entity id="0x2F" ids="minecraft:husk" name="Husk" etype="H" /> <!-- 0.15 -->
+    <entity id="0x30" ids="minecraft:wither_skeleton" name="Skeleton, Wither" etype="H" /> <!-- 0.16 -->
+    <entity id="0x31" ids="minecraft:guardian" name="Guardian" etype="H" /> <!-- 0.16 -->
+    <entity id="0x32" ids="minecraft:elder_guardian" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
+    <entity id="0x33" ids="minecraft:npc" name="NPC" etype="P" /> <!-- EDU -->
+    <entity id="0x34" ids="minecraft:wither" name="Wither" etype="H" /> <!-- 0.16 -->
+    <entity id="0x35" ids="minecraft:ender_dragon" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
+    <entity id="0x36" ids="minecraft:shulker" name="Shulker" etype="H" /> <!-- 0.17 -->
+    <entity id="0x37" ids="minecraft:endermite" name="Endermite" etype="H" /> <!-- 0.17 -->
+    <entity id="0x38" ids="minecraft:learn_to_code_mascot" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
+    <entity id="0x3D" ids="minecraft:armor_stand" name="Armor Stand" etype="P" />
+    <entity id="0x3E" ids="minecraft:tripod_camera" name="TripodCamera" /> <!-- EDU -->
+    <entity id="0x3F" ids="minecraft:player" name="The Player" etype="P" />
+    <entity id="0x40" ids="minecraft:item" name="Dropped item" />
+    <entity id="0x41" ids="minecraft:tnt" name="Primed TNT" />
+    <entity id="0x42" ids="minecraft:falling_block" name="Falling block" />
+    <entity id="0x44" ids="minecraft:xp_bottle" name="Experience Potion" />
+    <entity id="0x45" ids="minecraft:xp_orb" name="Experience Orb" />    <!-- note: reverse engineered by me -->
+    <entity id="0x46" ids="minecraft:eye_of_ender_signal" name="Eye of Ender" /> 
+    <entity id="0x47" ids="minecraft:ender_crystal" name="Ender Crystal" /> 
+    <entity id="0x4C" ids="minecraft:shulker_bullet" name="Shulker Bullet" />
+    <entity id="0x4D" ids="minecraft:fishing_hook" name="Fishing Rod hook" />
+    <entity id="0x4e" ids="minecraft:chalkboard" name="Chalkboard" /> <!-- EDU -->
+    <entity id="0x4F" ids="minecraft:dragon_fireball" name="Dragon Fireball" />
+    <entity id="0x50" ids="minecraft:arrow" name="Shot arrow" />
+    <entity id="0x51" ids="minecraft:snowball" name="Thrown snowball" />
+    <entity id="0x52" ids="minecraft:egg" name="Thrown egg" />
+    <entity id="0x53" ids="minecraft:painting" name="Painting" />
+    <entity id="0x54" ids="minecraft:minecart" name="Minecart" />
+    <entity id="0x55" ids="minecraft:large_fireball" name="Ghast firecharge" />
+    <entity id="0x56" ids="minecraft:splash_potion" name="Thrown Potion" />
+    <entity id="0x57" ids="minecraft:ender_pearl" name="Thrown Ender Pearl" />
+    <entity id="0x58" ids="minecraft:leash_knot" name="Leash Fence Knot" />
+    <entity id="0x59" ids="minecraft:wither_skull" name="Wither Skull" />
+    <entity id="0x5a" ids="minecraft:boat" name="Boat" />
+    <entity id="0x5d" ids="minecraft:lightning_bolt" name="Lightning Bolt" />
+    <entity id="0x5e" ids="minecraft:small_fireball" name="Blaze fireball" />
+    <entity id="0x5f" ids="minecraft:area_effect_cloud" name="Area Effect Cloud" /> 
+    <entity id="0x60" ids="minecraft:hopper_minecart" name="Minecart with Hopper" />
+    <entity id="0x61" ids="minecraft:tnt_minecart" name="Minecart with TNT" />
+    <entity id="0x62" ids="minecraft:chest_minecart" name="Minecart with Chest" />
+    <entity id="0x64" ids="minecraft:command_block_minecart" name="Minecart with Command Block" />
+    <entity id="0x65" ids="minecraft:lingering_potion" name="Lingering Potion" /> 
+    <entity id="0x66" ids="minecraft:llama_spit" name="Llama Spit" /> 
+    <entity id="0x67" ids="minecraft:evocation_fang" name="Evocation Fangs" /> 
+    <entity id="0x68" ids="minecraft:evocation_illager" name="Evoker" etype="H" /> 
+    <entity id="0x69" ids="minecraft:vex" name="Vex" etype="H" /> 
   </entitylist>
 
   <!--

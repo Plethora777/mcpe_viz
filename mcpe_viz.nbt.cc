@@ -1500,7 +1500,23 @@ namespace mcpe_viz {
         entity->idFull = tc["id"].as<nbt::tag_int>().get();
         entity->idShort = entity->idFull & 0xFF;
       }
-
+      else if ( tc.has_key("id", nbt::tag_type::String) ) {
+        // as of (at least) v1.2.x some mobs have string id's... sigh
+        std::string ids = tc["id"].as<nbt::tag_string>().get();
+        // lookup ids in entityinfolist
+        int32_t idFind = findIdString(entityInfoList, ids);
+        if ( idFind >= 0 ) { 
+          entity->idFull = idFind;
+          entity->idShort = entity->idFull & 0xFF;
+        } else {
+          logger.msg(kLogInfo1,"WARNING: Did not find idString for entity id (%s)\n", ids.c_str());
+        }
+      }
+      else {
+        // todonow -this appears to happen for maps
+        logger.msg(kLogInfo1,"WARNING: Did not find id or idString for entity! Weird.\n");
+      }
+      
       // todo - diff entities have other fields:
       // see: http://minecraft.gamepedia.com/Chunk_format#Mobs
 
@@ -1799,6 +1815,35 @@ namespace mcpe_viz {
             parseFlag = true;
           }
           // todonow - other nbt tags: "id"; "isMovable"; "x","y","z"
+        }
+        else if ( tileEntity->id == "ShulkerBox" ) {
+          if ( tc.has_key("Items", nbt::tag_type::List) ) {
+            tileEntity->containerFlag = true;
+            nbt::tag_list items = tc["Items"].as<nbt::tag_list>();
+            for ( const auto& iter: items ) {
+              nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
+              tileEntity->addItem(iitem);
+            }
+            parseFlag = true;
+          }
+        }
+        else if ( tileEntity->id == "Bed" ) {
+          // todo - anything interesting?
+        }
+        else if ( tileEntity->id == "Banner" ) {
+          // todo - anything interesting?
+        }
+        else if ( tileEntity->id == "Beacon" ) {
+          // todo - anything interesting?
+        }
+        else if ( tileEntity->id == "EndGateway" ) {
+          // todo - anything interesting?
+        }
+        else if ( tileEntity->id == "EndPortal" ) {
+          // todo - anything interesting?
+        }
+        else if ( tileEntity->id == "Jukebox" ) {
+          // todo - anything interesting?
         }
         else if ( tileEntity->id == "BrewingStand" ) {
           // todo - anything interesting?

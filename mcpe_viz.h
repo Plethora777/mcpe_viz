@@ -216,16 +216,23 @@ namespace mcpe_viz {
   
   class EntityInfo {
   public:
+    std::string idString;
     std::string name;
     std::string etype;
     
-    EntityInfo(const std::string& n, const std::string& e ) {
+    EntityInfo(const std::string& n, const std::string& is, const std::string& e ) {
       setName(n);
+      setIdString(is);
       setEtype(e);
     }
 
     EntityInfo& setName (const std::string& s) {
       name = std::string(s);
+      return *this;
+    }
+
+    EntityInfo& setIdString (const std::string& s) {
+      idString = std::string(s);
       return *this;
     }
 
@@ -238,7 +245,7 @@ namespace mcpe_viz {
   typedef std::map<int, std::unique_ptr<EntityInfo> > EntityInfoList;
   extern EntityInfoList entityInfoList;
   bool has_key(const EntityInfoList &m, int32_t k);
-
+  int32_t findIdString(const EntityInfoList &m, std::string& ids);
 
 
   class BiomeInfo {

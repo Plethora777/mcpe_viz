@@ -4,7 +4,18 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Fix for MCPE v1.2.0
+Highlight: More everything for MCPE v1.2.x
+
+v0.0.35 - 2017.11.29
+Fix for weird dimension id from converted world (xbox to bedrock version)
+Added check to ensure users do not put output in world file directory
+Added entity lookup by string id (new to v1.2.x?)
+Added Shulker Box object
+Tweaked XML file for Glazed Terracotta
+Added a few missing items in XML file
+Added idstring for entities in XML file
+Added even more missing stuff from XML file (thanks to zetoken!)
+Updated OpenLayers to v4.5.0
 
 v0.0.34 - 2017.08.15
 Fix for MCPE v1.2.0 (updated leveldb library)

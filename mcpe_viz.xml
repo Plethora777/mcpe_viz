@@ -608,22 +608,22 @@
     <block id="0xA9" name="Sea Lantern" color="0x00cccc" opaque="1" spawnable="1" /> <!-- *S 0.16 --> <!-- todo color -->
     <block id="0xAA" name="Hay Bale" color="0xd8d385" /> 
     <block id="0xAB" name="Carpet" solid="0" opaque="0" spawnable="0"> <!-- *S *B -->
-      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="2" name="Carpet, White" />
-      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="2" name="Carpet, Orange" />
-      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="2" name="Carpet, Magenta" />
-      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="2" name="Carpet, Light Blue" />
-      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="2" name="Carpet, Yellow" />
-      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="2" name="Carpet, Lime" />
-      <blockvariant blockdata="0x6" color="0xD08499" dcolor="2" name="Carpet, Pink" />
-      <blockvariant blockdata="0x7" color="0x404040" dcolor="2" name="Carpet, Gray" />
-      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="2" name="Carpet, Light Gray" />
-      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="2" name="Carpet, Cyan" />
-      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="2" name="Carpet, Purple" />
-      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="2" name="Carpet, Blue" />
-      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="2" name="Carpet, Brown" />
-      <blockvariant blockdata="0xd" color="0x35461B" dcolor="2" name="Carpet, Green" />
-      <blockvariant blockdata="0xe" color="0x963430" dcolor="2" name="Carpet, Red" />
-      <blockvariant blockdata="0xf" color="0x191616" dcolor="2" name="Carpet, Black" />
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="7" name="Carpet, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="7" name="Carpet, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="7" name="Carpet, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="7" name="Carpet, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="7" name="Carpet, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="7" name="Carpet, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="7" name="Carpet, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="7" name="Carpet, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="7" name="Carpet, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="7" name="Carpet, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="7" name="Carpet, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="7" name="Carpet, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="7" name="Carpet, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="7" name="Carpet, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="7" name="Carpet, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="7" name="Carpet, Black" />
     </block>
     <block id="0xAC" name="Hardened Clay" color="0xb75252" /> 
     <block id="0xAD" name="Block of Coal" color="0x585858" />
@@ -644,6 +644,8 @@
       <blockvariant blockdata="0xE" color="0xff00ff" name="Unknown Tall Flower (0xE)" />
       <blockvariant blockdata="0xF" color="0xfd00fc" name="Unknown Tall Flower (0xF)" />
     </block>
+    <block id="0xB0" name="Standing Banner" color="0xe36731" solid="0" opaque="0" spawnable="0" />
+    <block id="0xB1" name="Wall Banner" color="0xe36731" solid="0" opaque="0" spawnable="0" />
     <block id="0xB2" name="Daylight Sensor, Inverted" color="0x989897" opaque="0" spawnable="0" /> <!-- *E 0.13 -->
     <block id="0xB3" name="Red Sandstone" color="0xd0be86"> <!-- *B -->
       <blockvariant blockdata="0x0" name="Red Sandstone" />
@@ -701,7 +703,9 @@
       <blockvariant blockdata="0x6" name="Stairs, Purpur, South (Upside-down)" spawnable="1" />
       <blockvariant blockdata="0x7" name="Stairs, Purpur, North (Upside-down)" spawnable="1" />
     </block>
+    <block id="0xCD" name="Shulker Box, Undyed" color="0xB482BA" />
     <block id="0xCE" name="End Bricks" color="0xded99e" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
+    <block id="0xCF" name="Frosted Ice" color="0xe0e0f0" opaque="0" />
     <block id="0xD0" name="End Rod" color="0xf7f7f6" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xD1" name="End Gateway" color="0x545454" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xD2" name="Allow Block" spawnable="0" /> <!-- EDU -->
@@ -710,6 +714,24 @@
     <block id="0xD5" name="Magma Block" color="0xd65c0c" />
     <block id="0xD7" name="Red Nether Brick" color="0x230203" />
     <block id="0xD8" name="Bone Block" color="0xdddddd" />
+    <block id="0xDA" name="Shulker Box">
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="4" name="Shulker Box, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="4" name="Shulker Box, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="4" name="Shulker Box, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="4" name="Shulker Box, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="4" name="Shulker Box, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="4" name="Shulker Box, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="4" name="Shulker Box, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="4" name="Shulker Box, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="4" name="Shulker Box, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="4" name="Shulker Box, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="4" name="Shulker Box, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="4" name="Shulker Box, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="4" name="Shulker Box, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="4" name="Shulker Box, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="4" name="Shulker Box, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="4" name="Shulker Box, Black" />
+    </block>
     <block id="0xDB" name="Purple Glazed Terracotta" color="0x7E3DB5" />
     <block id="0xDC" name="White Glazed Terracotta" color="0xDDDDDD" />
     <block id="0xDD" name="Orange Glazed Terracotta" color="0xDB7D3E" />
@@ -727,40 +749,40 @@
     <block id="0xEA" name="Red Glazed Terracotta" color="0x963430" />
     <block id="0xEB" name="Black Glazed Terracotta" color="0x191616" />
     <block id="0xEC" name="Concrete">
-      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Concrete, White" />
-      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="3" name="Concrete, Orange" />
-      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="3" name="Concrete, Magenta" />
-      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="3" name="Concrete, Light Blue" />
-      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="3" name="Concrete, Yellow" />
-      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="3" name="Concrete, Lime" />
-      <blockvariant blockdata="0x6" color="0xD08499" dcolor="3" name="Concrete, Pink" />
-      <blockvariant blockdata="0x7" color="0x404040" dcolor="3" name="Concrete, Gray" />
-      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="3" name="Concrete, Light Gray" />
-      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="3" name="Concrete, Cyan" />
-      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="3" name="Concrete, Purple" />
-      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="3" name="Concrete, Blue" />
-      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="3" name="Concrete, Brown" />
-      <blockvariant blockdata="0xd" color="0x35461B" dcolor="3" name="Concrete, Green" />
-      <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Concrete, Red" />
-      <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Concrete, Black" />
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="5" name="Concrete, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="5" name="Concrete, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="5" name="Concrete, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="5" name="Concrete, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="5" name="Concrete, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="5" name="Concrete, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="5" name="Concrete, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="5" name="Concrete, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="5" name="Concrete, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="5" name="Concrete, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="5" name="Concrete, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="5" name="Concrete, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="5" name="Concrete, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="5" name="Concrete, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="5" name="Concrete, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="5" name="Concrete, Black" />
     </block>
     <block id="0xED" name="Concrete Powder">
-      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="3" name="Concrete Powder, White" />
-      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="3" name="Concrete Powder, Orange" />
-      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="3" name="Concrete Powder, Magenta" />
-      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="3" name="Concrete Powder, Light Blue" />
-      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="3" name="Concrete Powder, Yellow" />
-      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="3" name="Concrete Powder, Lime" />
-      <blockvariant blockdata="0x6" color="0xD08499" dcolor="3" name="Concrete Powder, Pink" />
-      <blockvariant blockdata="0x7" color="0x404040" dcolor="3" name="Concrete Powder, Gray" />
-      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="3" name="Concrete Powder, Light Gray" />
-      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="3" name="Concrete Powder, Cyan" />
-      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="3" name="Concrete Powder, Purple" />
-      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="3" name="Concrete Powder, Blue" />
-      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="3" name="Concrete Powder, Brown" />
-      <blockvariant blockdata="0xd" color="0x35461B" dcolor="3" name="Concrete Powder, Green" />
-      <blockvariant blockdata="0xe" color="0x963430" dcolor="3" name="Concrete Powder, Red" />
-      <blockvariant blockdata="0xf" color="0x191616" dcolor="3" name="Concrete Powder, Black" />
+      <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="6" name="Concrete Powder, White" />
+      <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="6" name="Concrete Powder, Orange" />
+      <blockvariant blockdata="0x2" color="0xB350BC" dcolor="6" name="Concrete Powder, Magenta" />
+      <blockvariant blockdata="0x3" color="0x6B8AC9" dcolor="6" name="Concrete Powder, Light Blue" />
+      <blockvariant blockdata="0x4" color="0xB1A627" dcolor="6" name="Concrete Powder, Yellow" />
+      <blockvariant blockdata="0x5" color="0x41AE38" dcolor="6" name="Concrete Powder, Lime" />
+      <blockvariant blockdata="0x6" color="0xD08499" dcolor="6" name="Concrete Powder, Pink" />
+      <blockvariant blockdata="0x7" color="0x404040" dcolor="6" name="Concrete Powder, Gray" />
+      <blockvariant blockdata="0x8" color="0x9AA1A1" dcolor="6" name="Concrete Powder, Light Gray" />
+      <blockvariant blockdata="0x9" color="0x2E6E89" dcolor="6" name="Concrete Powder, Cyan" />
+      <blockvariant blockdata="0xa" color="0x7E3DB5" dcolor="6" name="Concrete Powder, Purple" />
+      <blockvariant blockdata="0xb" color="0x2E388D" dcolor="6" name="Concrete Powder, Blue" />
+      <blockvariant blockdata="0xc" color="0x4F321F" dcolor="6" name="Concrete Powder, Brown" />
+      <blockvariant blockdata="0xd" color="0x35461B" dcolor="6" name="Concrete Powder, Green" />
+      <blockvariant blockdata="0xe" color="0x963430" dcolor="6" name="Concrete Powder, Red" />
+      <blockvariant blockdata="0xf" color="0x191616" dcolor="6" name="Concrete Powder, Black" />
     </block>
     <block id="0xF0" name="Chorus Plant" color="0x591062" spawnable="0" /> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
     <block id="0xF1" name="Stained Glass"> <!-- *B --> <!-- 0.17 --> <!-- todo colors -->
@@ -1107,6 +1129,8 @@
     </item>
     <item id="0x180" name="Bottle o' Enchanting" />
     <item id="0x181" name="Fire Charge" /> <!-- 0.15 -->
+    <item id="0x182" name="Book and Quill" />
+    <item id="0x183" name="Written Book" />
     <item id="0x184" name="Emerald" />
     <item id="0x185" name="Item Frame" />
     <item id="0x186" name="Flower Pot" />
@@ -1149,6 +1173,7 @@
     <item id="0x1A6" name="Prismarine Crystals" /> <!-- 0.16 -->
     <item id="0x1A7" name="Mutton, Raw" /> <!-- 0.15 -->
     <item id="0x1A8" name="Mutton, Cooked" /> <!-- 0.15 -->
+    <item id="0x1A9" name="Armor Stand" />
     <item id="0x1AA" name="End Crystal" /> <!-- 0.17 -->
     <item id="0x1AB" name="Door, Spruce" />
     <item id="0x1AC" name="Door, Birch" />
@@ -1240,6 +1265,8 @@
       <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
     </item>    
     <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
+    <item id="0x1BD" name="Shulker Shell" />
+    <item id="0x1BE" name="Banner" />
     <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
       <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->
       <itemvariant extradata="0x1" name="2x1 Chalkboard" /> <!-- EDU -->
@@ -1292,6 +1319,13 @@
       <entityvariant extradata="0x2" name="Llama, Brown" />
       <entityvariant extradata="0x3" name="Llama, Gray" />
     </entity>
+    <entity id="0x1E" name="Parrot" etype="P" >
+      <entityvariant extradata="0x0" name="Parrot, Red" />
+      <entityvariant extradata="0x1" name="Parrot, Blue" />
+      <entityvariant extradata="0x2" name="Parrot, Green" />
+      <entityvariant extradata="0x3" name="Parrot, Cyan" />
+      <entityvariant extradata="0x4" name="Parrot, Silver" />
+    </entity>
     <entity id="0x20" name="Zombie" etype="H" />
     <entity id="0x21" name="Creeper" etype="H" />
     <entity id="0x22" name="Skeleton" etype="H" />
@@ -1317,6 +1351,7 @@
     <entity id="0x36" name="Shulker" etype="H" /> <!-- 0.17 -->
     <entity id="0x37" name="Endermite" etype="H" /> <!-- 0.17 -->
     <entity id="0x38" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
+    <entity id="0x3D" name="Armor Stand" etype="P" />
     <entity id="0x3E" name="TripodCamera" /> <!-- EDU -->
     <entity id="0x3F" name="The Player" etype="P" />
     <entity id="0x40" name="Dropped item" />

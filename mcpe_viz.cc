@@ -13,6 +13,12 @@
 
   todohere
 
+  * as of beta 1.2.x everything has gone quite mad:
+  - cubic chunks now have a palette instead of direct block-id's
+  - " " no longer have block light / sky light?! (therefore, can't do check spawnable anymore)
+
+
+
   * as of 0.17 - grass color appears to no longer be a thing that is stored in the data files?  remove related code here and in js?
 
 
@@ -225,6 +231,8 @@ namespace mcpe_viz {
   const int32_t MAX_BLOCK_HEIGHT = 255;
 
   const int32_t MAX_CUBIC_Y = (MAX_BLOCK_HEIGHT + 1) / 16;
+
+  const int32_t NUM_BYTES_CHUNK_V3 = 10241;
   
   std::string dirExec;
 
@@ -700,6 +708,161 @@ namespace mcpe_viz {
     return p[_calcOffsetBlock_LevelDB_v3_fullchunk(x,z,y)];
   }
 
+
+  inline uint8_t getBlockId_LevelDB_v7(const char* p, int blocksPerWord, int bitsPerBlock, int32_t x, int32_t z, int32_t y) {
+    //int bitstart = ( (((x*16) + z) * 16) + y ) * bitsPerBlock;
+    // int bitstart = ( (((y*16) + x) * 16) + z ) * bitsPerBlock;
+
+    int blockPos = (((x*16) + z) * 16) + y;
+    // we find which 4-byte word we want
+    int wordStart = blockPos / blocksPerWord;
+    // we find the bit offset within that 4-byte word
+    int bitOffset = (blockPos % blocksPerWord) * bitsPerBlock;
+    int bitStart = wordStart * 4 * 8 + bitOffset;
+    return getBitsFromBytes(&p[2], bitStart, bitsPerBlock);
+  }
+  
+
+  inline int32_t setupBlockVars_v7(int32_t v, int32_t& blocksPerWord, int32_t& bitsPerBlock, bool& paddingFlag, int32_t& offsetBlockInfoList) {
+    switch (v) {
+    case 0x02:
+        blocksPerWord = 32;
+        bitsPerBlock = 1;
+        offsetBlockInfoList = 512;
+        break;
+      case 0x04:
+        blocksPerWord = 16;
+        bitsPerBlock = 2;
+        offsetBlockInfoList = 1024;
+        break;
+      case 0x06:
+        blocksPerWord = 10;
+        bitsPerBlock = 3;
+        paddingFlag = true;
+        offsetBlockInfoList = 1640;
+        break;
+      case 0x08:
+        blocksPerWord = 8;
+        bitsPerBlock = 4;
+        offsetBlockInfoList = 2048;
+        break;
+      case 0x0a:
+        blocksPerWord = 6;
+        bitsPerBlock = 5;
+        paddingFlag = true;
+        offsetBlockInfoList = 2732;
+        break;
+      case 0x0c:
+        blocksPerWord = 5;
+        bitsPerBlock = 6;
+        paddingFlag = true;
+        offsetBlockInfoList = 3280;
+        break;
+      case 0x10:
+        blocksPerWord = 4;
+        bitsPerBlock = 8;
+        offsetBlockInfoList = (4096 / blocksPerWord) * 4;
+        break;
+      case 0x20:
+        blocksPerWord = 2;
+        bitsPerBlock = 16;
+        offsetBlockInfoList = (4096 / blocksPerWord) * 4;
+        break;
+      default:
+        logger.msg(kLogError, "Unknown chunk cdata[1] size = %d\n",(int)v);
+        return -1;
+    }
+    //    logger.msg(kLogInfo, "setupBlockVars_v7 v=%d bpw=%d bpb=%d pf=%d ob=%d\n", v, blocksPerWord, bitsPerBlock, (int)paddingFlag, offsetBlockInfoList);
+    return 0;
+  }  
+  
+  int32_t convertChunkV7toV3(const char* cdata, size_t cdata_size, char* emuchunk) {
+    // we have a v7 chunk and we want to unpack it into a v3-like chunk
+    // determine location of chunk palette
+    
+    // some details here: https://gist.github.com/Tomcc/a96af509e275b1af483b25c543cfbf37
+    
+    int32_t blocksPerWord = -1;
+    int32_t bitsPerBlock = -1;
+    bool paddingFlag = false;
+    int32_t offsetBlockInfoList = -1;
+    
+    if ( setupBlockVars_v7(cdata[1], blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList) != 0 ) {
+      return -1;
+    }
+
+    // read chunk palette and associate old-school block id's
+    MyNbtTagList tagList;
+    int xoff = offsetBlockInfoList + 6;
+    parseNbtQuiet(&cdata[xoff], cdata_size-xoff, tagList);
+    
+    std::vector<int32_t> chunkBlockPalette_BlockId(tagList.size());
+    std::vector<int32_t> chunkBlockPalette_BlockData(tagList.size());
+    
+    for ( size_t i=0; i < tagList.size(); i++ ) { 
+      // check tagList
+        if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+          nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+          std::string bname = tc["name"].as<nbt::tag_string>().get();
+          int bdata = tc["val"].as<nbt::tag_short>().get();
+
+          int32_t blockId, blockData;
+          if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+            chunkBlockPalette_BlockId[i] = blockId;
+            // todonow - correct?
+            chunkBlockPalette_BlockData[i] = bdata;
+          } else {
+            logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+            // todonow - reasonable?
+            chunkBlockPalette_BlockId[i] = 0;
+            chunkBlockPalette_BlockData[i] = 0;
+          }
+        } else {
+          logger.msg(kLogWarning,"Unexpected NBT format in _do_chunk_v7\n");
+        }
+      }
+          
+      memset(emuchunk,0,NUM_BYTES_CHUNK_V3);
+      
+      // iterate over chunk space
+      uint8_t paletteBlockId, blockId, blockData;
+      for (int32_t cy=0; cy < 16; cy++) {
+        for ( int32_t cx=0; cx < 16; cx++) {
+          for ( int32_t cz=0; cz < 16; cz++ ) {
+            paletteBlockId = getBlockId_LevelDB_v7(cdata, blocksPerWord, bitsPerBlock, cx,cz,cy);
+
+            // look up blockId
+            //todonow error checking
+            if ( paletteBlockId < chunkBlockPalette_BlockId.size() ) {
+              blockId = chunkBlockPalette_BlockId[paletteBlockId];
+              blockData = chunkBlockPalette_BlockData[paletteBlockId];
+            } else {
+              blockId = 0;
+              blockData = 0;
+              logger.msg(kLogWarning,"Found chunk palette id out of range %d (size=%d)\n", paletteBlockId, (int)chunkBlockPalette_BlockId.size());
+            }
+
+            int32_t bdoff = _calcOffsetBlock_LevelDB_v3(cx,cz,cy);
+
+            emuchunk[bdoff] = blockId;
+
+            // put block data
+            int32_t bdoff2 = bdoff / 2;
+            int32_t bdmod2 = bdoff % 2;
+            // todonow - temp test to find bug
+            size_t tmp_offset = (16*16*16) + 1 + bdoff2;
+            if ( bdmod2 == 0 ) {
+              emuchunk[tmp_offset] |= (blockData & 0x0f);
+            } else {
+              emuchunk[tmp_offset] |= (blockData & 0x0f) << 4;
+            }
+          }
+        }
+      }
+      return 0;
+    }
+    
+  
   
   // todolib - move to util?
   
@@ -767,6 +930,28 @@ namespace mcpe_viz {
   }
 #endif
 
+  int32_t getBlockByUname(const std::string& uname, int32_t& blockId, int32_t& blockData) {
+
+    for (const auto& it : blockInfoList ) {
+      if ( it.uname == uname ) {
+        blockId = it.id;
+        blockData = 0;
+        return 0;
+      }
+      
+      for (const auto& itbv : it.variantList) {
+        if ( itbv->uname == uname ) {
+          blockId = it.id;
+          blockData = itbv->blockdata;
+          return 0;
+        }
+      }
+    }
+
+    slogger.msg(kLogWarning, "getBlockByUname failed to find uname=%s\n", uname.c_str());
+    return -1;
+  }
+  
   std::string getBlockName(int32_t id, int32_t blockdata) {
     if ( blockInfoList[id].isValid() ) {
       if ( blockInfoList[id].hasVariants() ) {
@@ -1334,6 +1519,215 @@ namespace mcpe_viz {
       return 0;
     }
 
+
+    int32_t _do_chunk_v7 ( int32_t tchunkX, int32_t tchunkY, int32_t tchunkZ, const char* cdata, size_t cdata_size,
+                           int32_t dimensionId, const std::string& dimName,
+                           Histogram& histogramGlobalBlock, 
+                           const bool* fastBlockHideList, const bool* fastBlockForceTopList,
+                           const bool* fastBlockToGeoJSON,
+                           const CheckSpawnList& listCheckSpawn ) {
+      chunkX = tchunkX;
+      int32_t chunkY = tchunkY;
+      chunkZ = tchunkZ;
+      chunkFormatVersion = 7;
+      
+      // todonow todostopper - this is problematic for cubic chunks
+      int16_t histogramBlock[256];
+      int16_t histogramBiome[256];
+      memset(histogramBlock, 0, sizeof(histogramBlock));
+      memset(histogramBiome, 0, sizeof(histogramBiome));
+
+      // see if we need to check any columns in this chunk for spawnable
+      int32_t wx = chunkX * 16;
+      int32_t wz = chunkZ * 16;
+      for ( const auto& it : listCheckSpawn ) {
+        if ( it->contains(wx, wz) ) {
+          checkSpawnFlag = true;
+          break;
+        } else if ( it->contains(wx, wz+15) ) {
+          checkSpawnFlag = true;
+          break;
+        } else if ( it->contains(wx+15, wz+15) ) {
+          checkSpawnFlag = true;
+          break;
+        } else if ( it->contains(wx+15, wz) ) {
+          checkSpawnFlag = true;
+          break;
+        }
+      }
+
+      // determine location of chunk palette
+    int32_t blocksPerWord = -1;
+    int32_t bitsPerBlock = -1;
+    bool paddingFlag = false;
+    int32_t offsetBlockInfoList = -1;
+    
+    if ( setupBlockVars_v7(cdata[1], blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList) != 0 ) {
+      return -1;
+    }
+      
+      // read chunk palette and associate old-school block id's
+      MyNbtTagList tagList;
+      int xoff = offsetBlockInfoList + 6;
+      parseNbtQuiet(&cdata[xoff], cdata_size-xoff, tagList);
+
+      std::vector<int32_t> chunkBlockPalette_BlockId(tagList.size());
+      std::vector<int32_t> chunkBlockPalette_BlockData(tagList.size());
+      
+      for ( size_t i=0; i < tagList.size(); i++ ) { 
+        // check tagList
+        if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+          nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+          std::string bname = tc["name"].as<nbt::tag_string>().get();
+          int bdata = tc["val"].as<nbt::tag_short>().get();
+
+          int32_t blockId, blockData;
+          if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+            chunkBlockPalette_BlockId[i] = blockId;
+            // todonow - correct?
+            chunkBlockPalette_BlockData[i] = bdata;
+          } else {
+            logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+            // todonow - reasonable?
+            chunkBlockPalette_BlockId[i] = 0;
+            chunkBlockPalette_BlockData[i] = 0;
+          }
+        } else {
+          logger.msg(kLogWarning,"Unexpected NBT format in _do_chunk_v7\n");
+        }
+      }
+          
+      // iterate over chunk space
+      uint8_t paletteBlockId, blockId, blockData, biomeId;
+      for (int32_t cy=0; cy < 16; cy++) {
+        for ( int32_t cx=0; cx < 16; cx++) {
+          for ( int32_t cz=0; cz < 16; cz++ ) {
+            paletteBlockId = getBlockId_LevelDB_v7(cdata, blocksPerWord, bitsPerBlock, cx,cz,cy);
+
+            // look up blockId
+            //todonow error checking
+            if ( paletteBlockId < chunkBlockPalette_BlockId.size() ) {
+              blockId = chunkBlockPalette_BlockId[paletteBlockId];
+              blockData = chunkBlockPalette_BlockData[paletteBlockId];
+            } else {
+              blockId = 0;
+              blockData = 0;
+              logger.msg(kLogWarning,"Found chunk palette id out of range %d (size=%d)\n", paletteBlockId, (int)chunkBlockPalette_BlockId.size());
+            }
+            histogramBlock[blockId]++;
+            histogramGlobalBlock.add(blockId);
+            
+            // todobig - handle block variant?
+            if ( fastBlockToGeoJSON[blockId] ) {
+              double ix, iy;
+              char tmpstring[512];
+              worldPointToGeoJSONPoint(dimensionId, chunkX*16 + cx, chunkZ*16 + cz, ix,iy);
+              sprintf(tmpstring, ""
+                      "\"Name\": \"%s\", "
+                      "\"Block\": true, "
+                      "\"Dimension\": \"%d\", "
+                      "\"Pos\": [%d, %d, %d]"
+                      "} }"
+                      , blockInfoList[blockId].name.c_str()
+                      , dimensionId
+                      , chunkX*16 + cx
+                      , chunkY*16 + cy
+                      , chunkZ*16 + cz
+                      );
+              std::string json = ""
+                + makeGeojsonHeader(ix,iy)
+                + tmpstring
+                ;
+              listGeoJSON.push_back( json );
+            }
+
+            // note: we check spawnable later
+            
+            // todo - check for isSolid?
+
+            int32_t realy = chunkY*16 + cy;
+            if ( blockId != 0 ) {  // current block is NOT air
+              // todonow - this will break forcetop!
+              if ( ( realy >= topBlockY[cx][cz] &&
+                     !fastBlockForceTopList[ blocks[cx][cz] ] &&
+                     // blocks[cx][cz] == 0 &&  // top block is not already set
+                     !fastBlockHideList[blockId] ) ||
+                   fastBlockForceTopList[blockId] ) {
+                
+                blocks[cx][cz] = blockId;
+                data[cx][cz] = blockData; // getBlockData_LevelDB_v3(cdata, cdata_size, cx,cz,cy);
+                topBlockY[cx][cz] = realy;
+
+                int32_t cy2 = cy;
+
+                // todonow todohere todobig todostopper - can't do this until we have the whole chunk
+#if 1
+                // todo - we are getting the block light ABOVE this block (correct?)
+                // todo - this will break if we are using force-top stuff
+                if ( blockInfoList[blockId].isSolid() ) {
+                  // move to block above this block
+                  cy2++;
+                  if ( cy2 > MAX_BLOCK_HEIGHT ) { cy2 = MAX_BLOCK_HEIGHT; }
+                } else {
+                  // if not solid, don't adjust
+                }
+#endif
+                // todonow todohere -- no blocklight or skylight in v7 chunks?!
+                uint8_t sl = 0; // getBlockSkyLight_LevelDB_v3(cdata, cdata_size, cx,cz,cy2);
+                uint8_t bl = 0; // getBlockBlockLight_LevelDB_v3(cdata, cdata_size, cx,cz,cy2);   
+                // we combine the light nibbles into a byte
+                topLight[cx][cz] = (sl << 4) | bl;
+              }
+            }
+          }
+        }
+      }
+
+      if ( control.quietFlag ) {
+        return 0;
+      }
+
+      // todonow todobig todohere todostopper - this is not valid until we have the whole chunk
+
+      if ( false ) {
+        // print chunk info
+        logger.msg(kLogInfo1,"Top Blocks (block-id:block-data:biome-id):\n");
+        // note the different use of cx/cz here
+        uint32_t rawData;
+        for (int32_t cz=0; cz<16; cz++) {
+          for (int32_t cx=0; cx<16; cx++) {
+            rawData = grassAndBiome[cx][cz];
+            biomeId = (uint8_t)(rawData & 0xFF);
+            logger.msg(kLogInfo1,"%02x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
+          }
+          logger.msg(kLogInfo1,"\n");
+        }
+        logger.msg(kLogInfo1,"Block Histogram:\n");
+        for (int32_t i=0; i < 256; i++) {
+          if ( histogramBlock[i] > 0 ) {
+            logger.msg(kLogInfo1,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBlock[i], blockInfoList[i].name.c_str());
+          }
+        }
+        logger.msg(kLogInfo1,"Biome Histogram:\n");
+        for (int32_t i=0; i < 256; i++) {
+          if ( histogramBiome[i] > 0 ) {
+            std::string biomeName( getBiomeName(i) );
+            logger.msg(kLogInfo1,"%s-hg-biome: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBiome[i], biomeName.c_str());
+          }
+        }
+        logger.msg(kLogInfo1,"Block Light (skylight:blocklight:heightcol):\n");
+        for (int32_t cz=0; cz<16; cz++) {
+          for (int32_t cx=0; cx<16; cx++) {
+            logger.msg(kLogInfo1,"%x:%x:%02x ", (int)((topLight[cx][cz] >> 4) & 0xf), (int)(topLight[cx][cz] & 0xf), (int)heightCol[cx][cz]);
+          }
+          logger.msg(kLogInfo1,"\n");
+        }
+      }
+      
+      return 0;
+    }
+
+    
     int32_t _do_chunk_biome_v3 ( int32_t tchunkX, int32_t tchunkZ, const char* cdata, int32_t cdatalen, 
                                  Histogram& histogramGlobalBiome ) {
       chunkX = tchunkX;
@@ -1704,6 +2098,18 @@ namespace mcpe_viz {
         }
         
         return chunks[chunkKey]->_do_chunk_v3(chunkX, chunkY, chunkZ, cdata, cdata_size, dimId, name,
+                                              histogramGlobalBlock, 
+                                              fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
+                                              listCheckSpawn);
+      case 7:
+        // 1.2.x betas?
+        // we need to process all sub-chunks, not just blindy add them
+        
+        if ( !chunks_has_key(chunks, chunkKey) ) {
+          chunks[chunkKey] = std::unique_ptr<ChunkData_LevelDB>( new ChunkData_LevelDB() );
+        }
+        
+        return chunks[chunkKey]->_do_chunk_v7(chunkX, chunkY, chunkZ, cdata, cdata_size, dimId, name,
                                               histogramGlobalBlock, 
                                               fastBlockHideList, fastBlockForceTopList, fastBlockToGeoJSONList,
                                               listCheckSpawn);
@@ -2631,6 +3037,8 @@ namespace mcpe_viz {
       int32_t color;
       const char *pcolor = (const char*)&color;
 
+      char* emuchunk = new char[NUM_BYTES_CHUNK_V3];
+      
       // create png helpers
       PngWriter png[MAX_BLOCK_HEIGHT + 1];
       for (int32_t cy=0; cy <= MAX_BLOCK_HEIGHT; cy++) {
@@ -2644,6 +3052,7 @@ namespace mcpe_viz {
         control.fnLayerRaw[dimId][cy] = fnameTmp;
           
         if ( png[cy].init(fnameTmp, makeImageDescription(-1,cy), imageW, imageH, 16, false, true) != 0 ) {
+          delete[] emuchunk;
           return -1;
         }
       }
@@ -2823,6 +3232,15 @@ namespace mcpe_viz {
                 ochunk = pchunk;
                 foundCt++;
 
+                // determine if it is a v7 chunk and process accordingly
+                if ( pchunk[0] != 0x0 ) {
+                  // we have a v7 chunk - emulate v3
+                  convertChunkV7toV3(pchunk, ochunk_size, emuchunk);
+                  pchunk = emuchunk;
+                  ochunk = emuchunk;
+                  ochunk_size = NUM_BYTES_CHUNK_V3;
+                }
+                
                 // the first byte is not interesting to us (it is version #?)
                 pchunk++;
                 
@@ -2950,6 +3368,7 @@ namespace mcpe_viz {
         
       // slogger.msg(kLogInfo1,"    Chunk Info: Found = %d / Not Found (our list) = %d / Not Found (leveldb) = %d\n", foundCt, notFoundCt1, notFoundCt2);
         
+      delete[] emuchunk;
       return 0;
     }
 
@@ -3937,6 +4356,8 @@ namespace mcpe_viz {
 
           // these are probably chunk records, we parse the key and determine what we've got
 
+          chunkTypeSub = 0;
+          
           if ( key_size == 9 ) {
             // overworld chunk
             chunkX = myParseInt32(key, 0);
@@ -4014,7 +4435,7 @@ namespace mcpe_viz {
 
           // report info about the chunk
           chunkstr = dimName + "-chunk: ";
-          sprintf(tmpstring,"%d %d (type=0x%02x) (size=%d)", chunkX, chunkZ, chunkType, (int32_t)cdata_size);
+          sprintf(tmpstring,"%d %d (type=0x%02x) (subtype=0x%02x) (size=%d)", chunkX, chunkZ, chunkType, chunkTypeSub, (int32_t)cdata_size);
           chunkstr += tmpstring;
           if ( true ) {
             // show approximate image coordinates for chunk
@@ -4146,12 +4567,14 @@ namespace mcpe_viz {
               int32_t chunkY = chunkTypeSub;
               // check the first byte to see if anything interesting is in it
               if ( cdata[0] != 0 ) {
-                logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
+                //logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
+                dimDataList[chunkDimId]->addChunk(7, chunkX, chunkY, chunkZ, cdata, cdata_size);
+              } else {
+                if ( cdata_size != 6145 ) {
+                  logger.msg(kLogInfo1, "WARNING: UNKNOWN cdata_size=%d of 0x2f chunk\n", (int)cdata_size);
+                }                
+                dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata, cdata_size);
               }
-              if ( cdata_size != 6145 ) {
-                logger.msg(kLogInfo1, "WARNING: UNKNOWN cdata_size=%d of 0x2f chunk\n", (int)cdata_size);
-              }                
-              dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata, cdata_size);
             }
             break;
 
@@ -5465,6 +5888,9 @@ namespace mcpe_viz {
 
       case 'C':
         {
+          slogger.msg(kLogInfo1,"ERROR: --spawnable is no longer supported because the new chunk format (circa beta 1.2.x) no longer stores block light info\n");
+          errct++;
+          
           bool pass = false;
           int32_t dimId, checkX, checkZ, checkDistance;
           if ( sscanf(optarg,"%d,%d,%d,%d", &dimId, &checkX, &checkZ, &checkDistance) == 4 ) {

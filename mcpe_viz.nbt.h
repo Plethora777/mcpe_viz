@@ -25,6 +25,8 @@ namespace mcpe_viz {
   std::string makeGeojsonHeader(double ix, double iy, bool adjustCoordFlag = true);
   
   int32_t parseNbt( const char* hdr, const char* buf, int32_t bufLen, MyNbtTagList& tagList );
+
+  int32_t parseNbtQuiet( const char* buf, int32_t bufLen, MyNbtTagList& tagList );
     
   int32_t parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
                       bool playerLocalFlag, bool playerRemoteFlag, const std::string& playerType, const std::string& playerId);

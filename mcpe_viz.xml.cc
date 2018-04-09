@@ -108,10 +108,11 @@ namespace mcpe_viz {
         // example:
         //   <blockvariant blockdata="0x0" name="Oak Leaves" />
 
-        bool blockDataValid, nameValid, colorValid, dcolorValid, spawnableFlagValid;
+        bool blockDataValid, nameValid, unameValid, colorValid, dcolorValid, spawnableFlagValid;
           
         int32_t blockdata = xmlGetInt(cur, (const xmlChar*)"blockdata", blockDataValid);
         std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        std::string uname = xmlGetString(cur, (const xmlChar*)"uname", unameValid);
         int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
         int32_t dcolor = xmlGetInt(cur, (const xmlChar*)"dcolor", dcolorValid);
         bool spawnableFlag = xmlGetBool(cur, (const xmlChar*)"spawnable", true, spawnableFlagValid);
@@ -129,6 +130,10 @@ namespace mcpe_viz {
             color = be32toh(block.color);
             color += blockdata;
             bv.setColor(color);
+          }
+
+          if ( unameValid ) {
+            bv.setUname(uname);
           }
 
           if ( spawnableFlagValid ) {
@@ -157,10 +162,11 @@ namespace mcpe_viz {
     while (cur != NULL) {
       if ( xmlStrcmp(cur->name, (const xmlChar *)"block") == 0 ) {
           
-        bool idValid, nameValid, colorValid, solidFlagValid, opaqueFlagValid, liquidFlagValid, spawnableFlagValid;
+        bool idValid, nameValid, unameValid, colorValid, solidFlagValid, opaqueFlagValid, liquidFlagValid, spawnableFlagValid;
           
         int32_t id = xmlGetInt(cur, (const xmlChar*)"id", idValid);
         std::string name = xmlGetString(cur, (const xmlChar*)"name", nameValid);
+        std::string uname = xmlGetString(cur, (const xmlChar*)"uname", unameValid);
         int32_t color = xmlGetInt(cur, (const xmlChar*)"color", colorValid);
         bool solidFlag = xmlGetBool(cur, (const xmlChar*)"solid", true, solidFlagValid);
         bool opaqueFlag = xmlGetBool(cur, (const xmlChar*)"opaque", true, opaqueFlagValid);
@@ -170,8 +176,12 @@ namespace mcpe_viz {
         // create data
         if ( idValid && nameValid ) {
           BlockInfo& b = blockInfoList[id].setName(name);
+          b.setId(id);
           if ( colorValid ) {
             b.setColor(color);
+          }
+          if ( unameValid ) {
+            b.setUname(uname);
           }
           
           b.setSolidFlag(solidFlag);

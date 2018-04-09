@@ -198,6 +198,7 @@ namespace mcpe_viz {
     
   int32_t parseNbt( const char* hdr, const char* buf, int32_t bufLen, MyNbtTagList& tagList ) {
     int32_t indent=0;
+
     logger.msg(kLogInfo1,"%sNBT Decode Start\n",makeIndent(indent,hdr).c_str());
 
     // these help us look at dumped nbt data and match up LIST's and COMPOUND's
@@ -236,13 +237,45 @@ namespace mcpe_viz {
     for ( const auto& itt: tagList ) {
       parseNbtTag( hdr, indent, itt );
     }
-      
+
     logger.msg(kLogInfo1,"%sNBT Decode End (%d tags)\n",makeIndent(indent,hdr).c_str(), (int)tagList.size());
 
     return 0;
   }
 
 
+  int32_t parseNbtQuiet( const char* buf, int32_t bufLen, MyNbtTagList& tagList ) {
+    std::istringstream is(std::string(buf,bufLen));
+    nbt::io::stream_reader reader(is, endian::little);
+
+    // remove all elements from taglist
+    tagList.clear();
+      
+    // read all tags
+    MyNbtTag t;
+    bool done = false;
+    std::istream& pis = reader.get_istr();
+    while ( !done && (pis) && (!pis.eof()) ) {
+      try {
+        // todo emplace_back?
+        tagList.push_back(reader.read_tag());
+      }
+      catch (std::exception& e) {
+        // check for eof which means all is well
+        if ( ! pis.eof() ) {
+          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s)\n"
+                  , e.what()
+                  , pis.eof() ? "true" : "false"
+                  , (pis) ? "true" : "false"
+                  );
+        }
+        done = true;
+      }
+    }
+
+    return 0;
+  }
+  
   
   // todo - use this throughout parsing or is it madness? :)
   template<class T>

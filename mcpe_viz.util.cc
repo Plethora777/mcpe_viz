@@ -586,5 +586,26 @@ namespace mcpe_viz {
     slogger.msg(kLogInfo1, "ERROR: Failed parsePlayerIdToName -- did not find valid playerId and playerName in passed string (%s)\n", s);
     return -2;
   }
+
+  inline uint8_t _getBitFromByte(const char* cdata, int32_t bitnum) {
+    int byteStart = bitnum / 8;
+    int byteOffset = bitnum % 8;
+    return cdata[byteStart] & (1 << byteOffset);
+  }
+
+  // todo - this is probably quite slow
+  int32_t getBitsFromBytes(const char* cdata, int32_t bitstart, int32_t bitlen) {
+    int32_t ret = 0;
+    for (int b=0; b < bitlen; b++) {
+      uint8_t bit = _getBitFromByte(cdata, bitstart + b);
+      if ( bit ) {
+        ret |= 1 << b;
+        // ret |= 1 << (bitlen-1-b);
+      }
+    }
+    return ret;
+  }
   
 } // namespace mcpe_viz
+
+  

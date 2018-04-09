@@ -4,7 +4,13 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: More everything for MCPE v1.2.x
+Highlight: Fixes for beta MCPE v1.2.x
+
+v0.0.36 - 2018.4.9
+Added parsing code for (crazy) new paletted chunk format
+Deprecated --spawnable because the new chunk format does not store block light info
+Note that you will see many warnings about missing variants etc -- working on it :)
+Added "uname=" to XML for blocks to support new paletted chunk format
 
 v0.0.35 - 2017.11.29
 Fix for weird dimension id from converted world (xbox to bedrock version)

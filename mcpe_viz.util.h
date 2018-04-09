@@ -721,7 +721,9 @@ namespace mcpe_viz {
   extern PlayerIdToName playerIdToName;
   
   int32_t parsePlayerIdToName(const char* s);
-  
+
+  int32_t getBitsFromBytes(const char* cdata, int32_t bitstart, int32_t infolen);
+
 } // namespace mcpe_viz
 
 #endif // __MCPE_VIZ_UTIL_H__

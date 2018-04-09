@@ -37,10 +37,12 @@ namespace mcpe_viz {
   
   void worldPointToImagePoint(int32_t dimId, double wx, double wz, double &ix, double &iy, bool geoJsonFlag);
   void worldPointToGeoJSONPoint(int32_t dimId, double wx, double wz, double &ix, double &iy);
-  
+
   class BlockInfo {
   public:
+    int32_t id;
     std::string name;
+    std::string uname;
     int32_t color;
     bool colorSetFlag;
     bool solidFlag;
@@ -56,7 +58,9 @@ namespace mcpe_viz {
     std::string userString1;
     
     BlockInfo() {
+      id = -1;
       name = "(unknown)";
+      uname = "(unknown)";
       setColor(kColorDefault); // purple
       solidFlag = true;
       opaqueFlag = true;
@@ -70,9 +74,20 @@ namespace mcpe_viz {
       userString1 = "";
     }
 
+    BlockInfo& setId(int32_t i) {
+      id = i;
+      return *this;
+    }
+
     BlockInfo& setName(const std::string& s) {
       name = std::string(s);
       valid = true;
+      return *this;
+    }
+
+    BlockInfo& setUname(const std::string& s) {
+      uname = std::string(s);
+      // todonow - update a dictionary for unames?
       return *this;
     }
 
@@ -162,6 +177,8 @@ namespace mcpe_viz {
   //BlockInfo* getBlockInfo(int32_t id, int32_t blockData);
   std::string getBlockName(int32_t id, int32_t blockdata);
 
+  int32_t getBlockByUname(const std::string& uname, int32_t& blockId, int32_t& blockData);
+  
 
   class ItemInfo {
   public:

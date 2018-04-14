@@ -42,7 +42,7 @@ namespace mcpe_viz {
   public:
     int32_t id;
     std::string name;
-    std::string uname;
+    std::vector<std::string> unameList;
     int32_t color;
     bool colorSetFlag;
     bool solidFlag;
@@ -60,7 +60,7 @@ namespace mcpe_viz {
     BlockInfo() {
       id = -1;
       name = "(unknown)";
-      uname = "(unknown)";
+      unameList.clear();
       setColor(kColorDefault); // purple
       solidFlag = true;
       opaqueFlag = true;
@@ -86,7 +86,7 @@ namespace mcpe_viz {
     }
 
     BlockInfo& setUname(const std::string& s) {
-      uname = std::string(s);
+      unameList = mysplit(s,';');
       // todonow - update a dictionary for unames?
       return *this;
     }

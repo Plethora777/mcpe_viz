@@ -4,7 +4,12 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: Fixes for beta MCPE v1.2.x
+Highlight: More fixes for beta MCPE v1.2.x
+
+v0.0.37 - 2018.4.14
+Fixed issue with parsing new paletted chunk format (bedrock appearing on y=15 etc)
+Added ability to have multiple uname's for a block (use a semicolon to separate)
+XML - Added some uname's that were missing (there are likely TONS more)
 
 v0.0.36 - 2018.4.9
 Added parsing code for (crazy) new paletted chunk format

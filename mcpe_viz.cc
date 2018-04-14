@@ -844,7 +844,7 @@ namespace mcpe_viz {
 
             int32_t bdoff = _calcOffsetBlock_LevelDB_v3(cx,cz,cy);
 
-            emuchunk[bdoff] = blockId;
+            emuchunk[bdoff+1] = blockId;
 
             // put block data
             int32_t bdoff2 = bdoff / 2;
@@ -933,17 +933,21 @@ namespace mcpe_viz {
   int32_t getBlockByUname(const std::string& uname, int32_t& blockId, int32_t& blockData) {
 
     for (const auto& it : blockInfoList ) {
-      if ( it.uname == uname ) {
-        blockId = it.id;
-        blockData = 0;
-        return 0;
+      for ( const auto& u : it.unameList ) {
+        if ( u == uname ) {
+          blockId = it.id;
+          blockData = 0;
+          return 0;
+        }
       }
       
       for (const auto& itbv : it.variantList) {
-        if ( itbv->uname == uname ) {
-          blockId = it.id;
-          blockData = itbv->blockdata;
-          return 0;
+        for ( const auto& u : itbv->unameList ) {
+          if ( u == uname ) {
+            blockId = it.id;
+            blockData = itbv->blockdata;
+            return 0;
+          }
         }
       }
     }

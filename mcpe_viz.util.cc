@@ -605,6 +605,17 @@ namespace mcpe_viz {
     }
     return ret;
   }
+
+  // adapted from: http://ysonggit.github.io/coding/2014/12/16/split-a-string-using-c.html
+  std::vector<std::string> mysplit(const std::string &s, char delim) {
+    std::stringstream ss(s);
+    std::string item;
+    std::vector<std::string> tokens;
+    while (getline(ss, item, delim)) {
+      tokens.push_back(trim_copy(item));
+    }
+    return tokens;
+  }
   
 } // namespace mcpe_viz
 

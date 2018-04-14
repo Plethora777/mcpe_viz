@@ -156,7 +156,7 @@
       <blockvariant blockdata="0x4" name="Piston (East)" />
       <blockvariant blockdata="0x5" name="Piston (West)" />
     </block>
-    <block id="0x22" name="Piston Head" uname="minecraft:pistonarmcollision" color="0x8f8d4c" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.15 -->
+    <block id="0x22" name="Piston Head" uname="minecraft:pistonarmcollision;minecraft:pistonArmCollision" color="0x8f8d4c" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.15 -->
     <block id="0x23" name="Wool" uname="minecraft:wool"> <!-- *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="1" name="Wool, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="1" name="Wool, Orange" />
@@ -275,10 +275,11 @@
     <block id="0x45" name="Lever" uname="minecraft:lever" color="0xd7d7b8" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x46" name="Pressure Plate, Stone" uname="minecraft:stone_pressure_plate" color="0xccccc6" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x47" name="Door, Iron" uname="minecraft:iron_door" color="0xc8cccc" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
-    <block id="0x48" name="Pressure Plate, Wooden" uname="minecraft:oak_pressure_plate" color="0xab9e57" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
+    <block id="0x48" name="Pressure Plate, Wooden" uname="minecraft:oak_pressure_plate;minecraft:wooden_pressure_plate" color="0xab9e57" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x49" name="Redstone Ore" uname="minecraft:redstone_ore" color="0xab2828" />
     <block id="0x4A" name="Glowing Redstone Ore" uname="minecraft:lit_redstone_ore" color="0xab2829" opaque="0" />
-    <block id="0x4B" name="Redstone Torch, Inactive" uname="minecraft:unlit_redstone_torch" color="0xac2828" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
+    <!-- todo: is 'minecraft:redstone_torch' lit or unlit? -->
+    <block id="0x4B" name="Redstone Torch, Inactive" uname="minecraft:unlit_redstone_torch;minecraft:redstone_torch" color="0xac2828" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x4C" name="Redstone Torch, Active" uname="minecraft:lit_redstone_torch" color="0xcc2828" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x4D" name="Button, Stone" uname="minecraft:stone_button" color="0xc9c9c9" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x4E" name="Snow (layer)" uname="minecraft:snow_layer" color="0xefefff" solid="0" opaque="0" spawnable="0" />
@@ -306,7 +307,7 @@
     <block id="0x5D" name="Redstone Repeater, Inactive" uname="minecraft:unpowered_repeater" color="0xea4c4c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
     <block id="0x5E" name="Redstone Repeater, Active" uname="minecraft:powered_repeater" color="0xea5c5c" opaque="0" spawnable="0" /> <!-- *I *S 0.14 -->
     <block id="0x5F" name="TBD - MCPE=Invisible Bedrock / MCPC=Stained Glass" uname="minecraft:invisiblebedrock" color="0x282828" />
-    <block id="0x60" name="Trapdoor" uname="minecraft:oak_trapdoor" color="0x9e9678" opaque="0" spawnable="0" /> <!-- *S -->
+    <block id="0x60" name="Trapdoor" uname="minecraft:oak_trapdoor;minecraft:trapdoor" color="0x9e9678" opaque="0" spawnable="0" /> <!-- *S -->
     <block id="0x61" name="Monster Egg" uname="minecraft:monster_egg" color="0xe6e6fa">
       <blockvariant blockdata="0x0" name="Monster Egg, Stone" />
       <blockvariant blockdata="0x1" name="Monster Egg, Cobblestone" />
@@ -390,7 +391,7 @@
     <block id="0x81" name="Emerald Ore" uname="minecraft:emerald_ore" color="0x77d17d" />
     <block id="0x82" name="Ender Chest" uname="minecraft:ender_chest" color="0x484848" /> <!-- 0.17 -->
     <block id="0x83" name="Tripwire Hook" uname="minecraft:tripwire_hook" color="0x454545" solid="0" /> <!-- *S 0.13 -->
-    <block id="0x84" name="Tripwire" uname="minecraft:tripwire" color="0xa7a7a7" solid="0" /> <!-- *I *S 0.13 -->
+    <block id="0x84" name="Tripwire" uname="minecraft:tripwire;minecraft:tripWire" color="0xa7a7a7" solid="0" /> <!-- *I *S 0.13 -->
     <block id="0x85" name="Block of Emerald" uname="minecraft:emerald_block" color="0x6dbc73" />
     <block id="0x86" name="Stairs, Spruce Wood" uname="minecraft:spruce_stairs" color="0x696c2d" spawnable="0"> <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Spruce Wood, East" />
@@ -445,7 +446,7 @@
     </block>
     <block id="0x8D" name="Carrot" uname="minecraft:carrots" color="0xe8a03a" solid="0" opaque="0" spawnable="0" />  <!-- *S *I -->
     <block id="0x8E" name="Potato" uname="minecraft:potatoes" color="0xb4af1c" solid="0" opaque="0" spawnable="0" /> <!-- *S *I -->
-    <block id="0x8F" name="Button, Wooden" uname="minecraft:oak_button" color="0xcfbe7a" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
+    <block id="0x8F" name="Button, Wooden" uname="minecraft:oak_button;minecraft:wooden_button" color="0xcfbe7a" solid="0" opaque="0" spawnable="0" /> <!-- *S 0.13 -->
     <block id="0x90" name="Mob Head" uname="minecraft:skull" color="0xe030e0" solid="0"> <!-- *I *S *E 0.13 todo - parse type and direction etc -->
       <blockvariant blockdata="0x01" name="Mob Head, On the floor" />
       <blockvariant blockdata="0x02" name="Mob Head, On a wall, facing North" />
@@ -626,7 +627,7 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="7" name="Carpet, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="7" name="Carpet, Black" />
     </block>
-    <block id="0xAC" name="Hardened Clay" uname="minecraft:terracotta" color="0xb75252" /> 
+    <block id="0xAC" name="Hardened Clay" uname="minecraft:terracotta;minecraft:hardened_clay" color="0xb75252" /> 
     <block id="0xAD" name="Block of Coal" uname="minecraft:coal_block" color="0x585858" />
     <block id="0xAE" name="Packed Ice" uname="minecraft:packed_ice" color="0x02cffd" opaque="0" />
     <block id="0xAF" name="Large Flowers" uname="minecraft:double_plant" color="0xe4208a" solid="0" opaque="0" spawnable="0"> <!-- *B -->
@@ -817,7 +818,7 @@
     </block>
     <block id="0xF8" name="Update Game Block (update!) [note 1]" uname="minecraft:info_update" /> <!-- todo -->
     <block id="0xF9" name="Update Game Block (ate!upd)" uname="minecraft:info_update2" /> <!-- todo -->
-    <block id="0xFA" name="TBD - Moving Block" uname="minecraft:movingblock" opaque="0" spawnable="0" /> <!-- *S *E 0.16? -->
+    <block id="0xFA" name="TBD - Moving Block" uname="minecraft:movingblock;minecraft:movingBlock" opaque="0" spawnable="0" /> <!-- *S *E 0.16? -->
     <block id="0xFB" name="Observer" uname="minecraft:observer" color="0xa13d3d" opaque="0" spawnable="0"> <!-- *S *E 0.15 -->
       <blockvariant blockdata="0x0" name="Observer (Down)" />
       <blockvariant blockdata="0x1" name="Observer (Up)" />

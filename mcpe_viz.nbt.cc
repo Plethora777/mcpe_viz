@@ -244,7 +244,7 @@ namespace mcpe_viz {
   }
 
 
-  int32_t parseNbtQuiet( const char* buf, int32_t bufLen, MyNbtTagList& tagList ) {
+  int32_t parseNbtQuiet( const char* buf, int32_t bufLen, int32_t numToRead, MyNbtTagList& tagList ) {
     std::istringstream is(std::string(buf,bufLen));
     nbt::io::stream_reader reader(is, endian::little);
 
@@ -254,8 +254,12 @@ namespace mcpe_viz {
     // read all tags
     MyNbtTag t;
     bool done = false;
+    int32_t numRead = 0;
     std::istream& pis = reader.get_istr();
     while ( !done && (pis) && (!pis.eof()) ) {
+      if ( numToRead > 0 && ++numRead >= numToRead ) {
+        done = true;
+      }
       try {
         // todo emplace_back?
         tagList.push_back(reader.read_tag());

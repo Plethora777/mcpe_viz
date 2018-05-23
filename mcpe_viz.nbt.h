@@ -26,7 +26,7 @@ namespace mcpe_viz {
   
   int32_t parseNbt( const char* hdr, const char* buf, int32_t bufLen, MyNbtTagList& tagList );
 
-  int32_t parseNbtQuiet( const char* buf, int32_t bufLen, MyNbtTagList& tagList );
+  int32_t parseNbtQuiet( const char* buf, int32_t bufLen, int32_t numToRead, MyNbtTagList& tagList );
     
   int32_t parseNbt_entity(int32_t dimensionId, const std::string& dimName, MyNbtTagList &tagList,
                       bool playerLocalFlag, bool playerRemoteFlag, const std::string& playerType, const std::string& playerId);

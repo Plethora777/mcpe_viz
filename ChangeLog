@@ -4,7 +4,11 @@ by Plethora777
   Twitter: [@Plethora777](https://twitter.com/Plethora777)
   Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
-Highlight: More fixes for beta MCPE v1.2.x
+Highlight: More fixes new new chunk format
+
+v0.0.38 - 2018.5.23
+Fixes for new new chunk version (v8)
+Does not address separate storage for water overlay
 
 v0.0.37 - 2018.4.14
 Fixed issue with parsing new paletted chunk format (bedrock appearing on y=15 etc)

@@ -719,11 +719,24 @@ namespace mcpe_viz {
     // we find the bit offset within that 4-byte word
     int bitOffset = (blockPos % blocksPerWord) * bitsPerBlock;
     int bitStart = wordStart * 4 * 8 + bitOffset;
-    return getBitsFromBytes(&p[2], bitStart, bitsPerBlock);
+    return getBitsFromBytes(p, bitStart, bitsPerBlock);
   }
   
 
-  inline int32_t setupBlockVars_v7(int32_t v, int32_t& blocksPerWord, int32_t& bitsPerBlock, bool& paddingFlag, int32_t& offsetBlockInfoList) {
+  // todomajor -- see tomcc gist re multiple storages in ONE cubick chunk in version == 8
+  
+  inline int32_t setupBlockVars_v7(const char* cdata, int32_t& blocksPerWord, int32_t& bitsPerBlock, bool& paddingFlag, int32_t& offsetBlockInfoList, int32_t& extraOffset) {
+
+    int32_t v = -1;
+
+    if ( cdata[0] == 0x01 ) {
+      v = cdata[1];
+    } else {
+      // this is version 8+, cdata[1] contains the number of storage groups in this cubic chunk (can be more than 1)
+      v = cdata[2];
+      extraOffset = 1;
+    }
+    
     switch (v) {
     case 0x02:
         blocksPerWord = 32;
@@ -772,6 +785,7 @@ namespace mcpe_viz {
         logger.msg(kLogError, "Unknown chunk cdata[1] size = %d\n",(int)v);
         return -1;
     }
+    
     //    logger.msg(kLogInfo, "setupBlockVars_v7 v=%d bpw=%d bpb=%d pf=%d ob=%d\n", v, blocksPerWord, bitsPerBlock, (int)paddingFlag, offsetBlockInfoList);
     return 0;
   }  
@@ -786,15 +800,16 @@ namespace mcpe_viz {
     int32_t bitsPerBlock = -1;
     bool paddingFlag = false;
     int32_t offsetBlockInfoList = -1;
+    int32_t extraOffset = -1;
     
-    if ( setupBlockVars_v7(cdata[1], blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList) != 0 ) {
+    if ( setupBlockVars_v7(cdata, blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList, extraOffset) != 0 ) {
       return -1;
     }
 
     // read chunk palette and associate old-school block id's
     MyNbtTagList tagList;
-    int xoff = offsetBlockInfoList + 6;
-    parseNbtQuiet(&cdata[xoff], cdata_size-xoff, tagList);
+    int xoff = offsetBlockInfoList + 6 + extraOffset;
+    parseNbtQuiet(&cdata[xoff], cdata_size-xoff, cdata[offsetBlockInfoList + 3], tagList);
     
     std::vector<int32_t> chunkBlockPalette_BlockId(tagList.size());
     std::vector<int32_t> chunkBlockPalette_BlockData(tagList.size());
@@ -829,7 +844,7 @@ namespace mcpe_viz {
       for (int32_t cy=0; cy < 16; cy++) {
         for ( int32_t cx=0; cx < 16; cx++) {
           for ( int32_t cz=0; cz < 16; cz++ ) {
-            paletteBlockId = getBlockId_LevelDB_v7(cdata, blocksPerWord, bitsPerBlock, cx,cz,cy);
+            paletteBlockId = getBlockId_LevelDB_v7(&cdata[2 + extraOffset], blocksPerWord, bitsPerBlock, cx,cz,cy);
 
             // look up blockId
             //todonow error checking
@@ -1565,15 +1580,33 @@ namespace mcpe_viz {
     int32_t bitsPerBlock = -1;
     bool paddingFlag = false;
     int32_t offsetBlockInfoList = -1;
+    int32_t extraOffset = -1;
     
-    if ( setupBlockVars_v7(cdata[1], blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList) != 0 ) {
+    //logger.msg(kLogWarning,"hey -- cdata %02x %02x %02x\n", cdata[0], cdata[1], cdata[2]);
+    
+    if ( setupBlockVars_v7(cdata, blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList, extraOffset) != 0 ) {
       return -1;
     }
       
       // read chunk palette and associate old-school block id's
       MyNbtTagList tagList;
-      int xoff = offsetBlockInfoList + 6;
-      parseNbtQuiet(&cdata[xoff], cdata_size-xoff, tagList);
+      int xoff = offsetBlockInfoList + 6 + extraOffset;
+      // debug
+      if ( false ) {
+        logger.msg(kLogWarning,"hey -- cdata[0..2] = %02x %02x %02x // blocksPerWord=%02x bitsPerBlock=%02x maxPal=%.0lf // before nbt = %02x %02x %02x %02x %02x %02x\n"
+                   , (int)cdata[0], (int)cdata[1], (int)cdata[2]
+                   , blocksPerWord, bitsPerBlock
+                   , pow(2.0, (double)bitsPerBlock)
+                   , (unsigned int)cdata[offsetBlockInfoList + 0] & 0xff
+                   , (unsigned int)cdata[offsetBlockInfoList + 1] & 0xff
+                   , (unsigned int)cdata[offsetBlockInfoList + 2] & 0xff
+                   , (unsigned int)cdata[offsetBlockInfoList + 3] & 0xff
+                   , (unsigned int)cdata[offsetBlockInfoList + 4] & 0xff
+                   , (unsigned int)cdata[offsetBlockInfoList + 5] & 0xff
+                   );
+      }
+      parseNbtQuiet(&cdata[xoff], cdata_size-xoff, cdata[offsetBlockInfoList + 3], tagList);
+      //parseNbt("chunk-palette",&cdata[xoff], cdata_size-xoff, tagList);
 
       std::vector<int32_t> chunkBlockPalette_BlockId(tagList.size());
       std::vector<int32_t> chunkBlockPalette_BlockData(tagList.size());
@@ -1606,7 +1639,7 @@ namespace mcpe_viz {
       for (int32_t cy=0; cy < 16; cy++) {
         for ( int32_t cx=0; cx < 16; cx++) {
           for ( int32_t cz=0; cz < 16; cz++ ) {
-            paletteBlockId = getBlockId_LevelDB_v7(cdata, blocksPerWord, bitsPerBlock, cx,cz,cy);
+            paletteBlockId = getBlockId_LevelDB_v7(&cdata[2 + extraOffset], blocksPerWord, bitsPerBlock, cx,cz,cy);
 
             // look up blockId
             //todonow error checking

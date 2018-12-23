@@ -288,6 +288,7 @@
     <block id="0x51" name="Cactus" uname="minecraft:cactus" color="0x116713" opaque="0" spawnable="0" />
     <block id="0x52" name="Clay (block)" uname="minecraft:clay" color="0x91aeb4" />
     <block id="0x53" name="Sugar Cane" uname="minecraft:reeds" color="0x4ee547" solid="0" opaque="0" spawnable="0" />
+    <block id="0x54" name="Jukebox" uname="minecraft:jukebox" color="0x060602" opaque="0" spawnable="0" />
     <block id="0x55" name="Fence" uname="minecraft:fence" color="0xbc8a16" opaque="0" spawnable="0">
       <!-- todo this is a guess - it's not on the wiki; in MCPC it looks like they have diff blockid's for each wood type -->
       <blockvariant blockdata="0x0" name="Fence, Oak Wood" />
@@ -487,8 +488,12 @@
       <blockvariant blockdata="0x0" name="Quartz" />
       <blockvariant blockdata="0x1" name="Quartz, Chiseled" />
       <blockvariant blockdata="0x2" name="Quartz, Pillar (Vertical)" />
+      <blockvariant blockdata="0x3" name="Quartz, Smooth" />
+      <blockvariant blockdata="0x5" name="Quartz, Chiseled (East/West)" />
       <blockvariant blockdata="0x6" name="Quartz, Pillar (East/West)" />
       <blockvariant blockdata="0xa" name="Quartz, Pillar (North/South)" />
+      <blockvariant blockdata="0xd" name="Quartz, Chiseled (all side texture)" />
+      <blockvariant blockdata="0xe" name="Quartz, Pillar (all side texture)" />
     </block>
     <block id="0x9C" name="Stairs, Quartz" uname="minecraft:quartz_stairs" color="0xe8e7e7" spawnable="0"> <!-- *S -->
       <blockvariant blockdata="0x0" name="Stairs, Quartz, East" />
@@ -695,7 +700,7 @@
       <blockvariant blockdata="0x6" name="Purpur, Pillar (East/West)" />
       <blockvariant blockdata="0xa" name="Purpur, Pillar (North/South)" />
     </block>
-    <block id="0xCB" name="Stairs, Purpur" color="0xf4c4f4" spawnable="0"> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
+    <block id="0xCB" name="Stairs, Purpur" uname= "minecraft:purpur_stairs" color="0xf4c4f4" spawnable="0"> <!-- *S --> <!-- 0.17 --> <!-- todo color -->
       <blockvariant blockdata="0x0" name="Stairs, Purpur, East" />
       <blockvariant blockdata="0x1" name="Stairs, Purpur, West" />
       <blockvariant blockdata="0x2" name="Stairs, Purpur, South" />
@@ -713,7 +718,9 @@
     <block id="0xD2" name="Allow Block" uname="minecraft:allow" spawnable="0" /> <!-- EDU -->
     <block id="0xD3" name="Deny Block" uname="minecraft:deny" spawnable="0" /> <!-- EDU -->
     <block id="0xD4" name="Border Block" uname="minecraft:border_block" spawnable="0" /> <!-- EDU -->
+    <block id="0xD6" name="Bubble Column" uname="minecraft:bubble_column" color="0x02cffd" liquid="1" solid="0" opaque="0" spawnable="0" />
     <block id="0xD5" name="Magma Block" uname="minecraft:magma" color="0xd65c0c" />
+    <block id="0xD6" name="Nether wart Block" uname="minecraft:nether_wart_block" color="0xd65c0c" />
     <block id="0xD7" name="Red Nether Brick" uname="minecraft:red_nether_brick" color="0x230203" />
     <block id="0xD8" name="Bone Block" uname="minecraft:bone_block" color="0xdddddd" />
     <block id="0xDA" name="Shulker Box" uname="minecraft:shulker_box">
@@ -827,7 +834,52 @@
       <blockvariant blockdata="0x4" name="Observer (East)" />
       <blockvariant blockdata="0x5" name="Observer (West)" />
     </block>
+    <block id="0xFD" name="Bamboo" uname="minecraft:bamboo" color="0x6de0ae" /> <!-- todo -->
+    <block id="0xFE" name="Bamboo Sapling" uname="minecraft:bamboo_sapling" color="0x66bd97" /> <!-- todo -->
     <block id="0xFF" name="info_reserved6" uname="minecraft:reserved6" /> <!-- todo -->
+
+    <block id="0x101" name="Prismarine Stairs" uname="minecraft:prismarine_stairs" color="0x1c7955" />
+    <block id="0x102" name="Dark Prismarine Stairs" uname="minecraft:dark_prismarine_stairs" color="0x165039" />
+    <block id="0x103" name="Prismarine Brick Stairs" uname="minecraft:prismarine_brick_stairs" color="0x0c774e" />
+    <block id="0x104" name="Stripped Spruce Log" uname="minecraft:stripped_spruce_log" color="0x9f794d" />
+    <block id="0x105" name="Stripped Birch Log" uname="minecraft:stripped_birch_log" color="0xc49c6d" />
+    <block id="0x106" name="Stripped Jungle Log" uname="minecraft:stripped_jungle_log" color="0xb8792f" />
+    <block id="0x107" name="Stripped Acacia Log" uname="minecraft:stripped_acacia_log" color="0xbd6907" />
+    <block id="0x108" name="Stripped Dark Oak Log" uname="minecraft:stripped_dark_oak_log" color="0x5d390f" />
+    <block id="0x109" name="Stripped Oak Log" uname="minecraft:stripped_oak_log" color="0xa47845" />
+    <block id="0x10a" name="Blue Ice" uname="minecraft:blue_ice" color="0x6acaea" />
+    <!-- todo skipped element_XXX blocks -->
+    <block id="0x181" name="Seagrass" uname="minecraft:seagrass" color="0x3fe743" />
+    <block id="0x182" name="Coral" uname="minecraft:coral" color="0xd53452" />
+    <block id="0x183" name="Coral Block" uname="minecraft:coral_block" color="0xc42442" />
+    <block id="0x184" name="Coral Fan" uname="minecraft:coral_fan" color="0xa85060" />
+    <block id="0x185" name="Dead Coral Fan" uname="minecraft:coral_fan_dead" color="0x5a3d43" />
+    <block id="0x186" name="Coral Fan (hang)" uname="minecraft:coral_fan_hang" color="0xa85062" />
+    <block id="0x187" name="Coral Fan (hang2)" uname="minecraft:coral_fan_hang2" color="0xa85063" />
+    <block id="0x188" name="Coral Fan (hang3)" uname="minecraft:coral_fan_hang3" color="0xa85064" />
+    <block id="0x189" name="Kelp" uname="minecraft:kelp" color="0x0f5a28" />
+    <block id="0x18a" name="Dried Kelp Block" uname="minecraft:dried_kelp_block" color="0x08762c" />
+    <block id="0x18b" name="Button, Acacia" uname="minecraft:acacia_button" color="0xbd680c" />
+    <block id="0x18c" name="Button, Birch" uname="minecraft:birch_button" color="0xd6a775" />
+    <block id="0x18d" name="Button, Dark Oak" uname="minecraft:dark_oak_button" color="0x90714f" />
+    <block id="0x18e" name="Button, Jungle" uname="minecraft:jungle_button" color="0x865b2e" />
+    <block id="0x18f" name="Button, Spruce" uname="minecraft:spruce_button" color="0x684014" />
+    <block id="0x190" name="Trapdoor, Acacia" uname="minecraft:acacia_trapdoor" color="0xc7b5a1" />
+    <block id="0x191" name="Trapdoor, Birch" uname="minecraft:birch_trapdoor" color="0xd5b28b" />
+    <block id="0x192" name="Trapdoor, Dark Oak" uname="minecraft:dark_oak_trapdoor" color="0x9f8971" />
+    <block id="0x193" name="Trapdoor, Jungle" uname="minecraft:jungle_trapdoor" color="0xa58057" />
+    <block id="0x194" name="Trapdoor, Spruce" uname="minecraft:spruce_trapdoor" color="0x795f44" />
+    <block id="0x195" name="Pressure Plate, Acacia" uname="minecraft:acacia_pressure_plate" color="0xc7b5a2" />
+    <block id="0x196" name="Pressure Plate, Birch" uname="minecraft:birch_pressure_plate" color="0xd5b28c" />
+    <block id="0x197" name="Pressure Plate, Dark Oak" uname="minecraft:dark_oak_pressure_plate" color="0x9f8972" />
+    <block id="0x198" name="Pressure Plate, Jungle" uname="minecraft:jungle_pressure_plate" color="0xa58058" />
+    <block id="0x199" name="Pressure Plate, Spruce" uname="minecraft:spruce_pressure_plate" color="0x795f45" />
+    <block id="0x19a" name="Carved Pumpkin" uname="minecraft:carved_pumpkin" color="0xd18415" />
+    <block id="0x19b" name="Sea Pickle" uname="minecraft:sea_pickle" color="0x41c247" />
+    <block id="0x19c" name="Conduit" uname="minecraft:conduit" color="0x5e6062" />
+    <block id="0x19e" name="Turtle Egg" uname="minecraft:turtle_egg" color="0x4d8845" />
+    <block id="0x19f" name="Bubble Column" uname="minecraft:bubble_column" color="0xa4cccd" />
+    <block id="0x1a0" name="Barrier" uname="minecraft:barrier" color="0xf80a31" />
   </blocklist>
 
   <!--
@@ -839,469 +891,484 @@
       
       todo: some items use 'damage' field to store info
   -->
+  <!-- todo search on (uname="minecraft:") for items that need attention -->
   <itemlist>
-    <item id="0x100" name="Iron Shovel" /> <!-- *D -->
-    <item id="0x101" name="Iron Pickaxe" /> <!-- *D -->
-    <item id="0x102" name="Iron Axe" /> <!-- *D -->
-    <item id="0x103" name="Flint and Steel" /> <!-- *D -->
-    <item id="0x104" name="Apple" />
-    <item id="0x105" name="Bow" /> <!-- *D -->
-    <item id="0x106" name="Arrow">
-      <itemvariant extradata="0" name="Arrow" />
-      <itemvariant extradata="6" name="Arrow of Night Vision (0:22)" />
-      <itemvariant extradata="7" name="Arrow of Night Vision (1:00)" />
-      <itemvariant extradata="8" name="Arrow of Invisibility (0:22)" />
-      <itemvariant extradata="9" name="Arrow of Invisibility (1:00)" />
-      <itemvariant extradata="10" name="Arrow of Jump Boost (0:22)" />
-      <itemvariant extradata="11" name="Arrow of Jump Boost (1:00)" />
-      <itemvariant extradata="12" name="Arrow of Jump Boost II (0:11)" />
-      <itemvariant extradata="13" name="Arrow of Fire Resistance (0:22)" />
-      <itemvariant extradata="14" name="Arrow of Fire Resistance (1:00)" />
-      <itemvariant extradata="15" name="Arrow of Speed (0:22)" />
-      <itemvariant extradata="16" name="Arrow of Speed (1:00)" />
-      <itemvariant extradata="17" name="Arrow of Speed II (0:11)" />
-      <itemvariant extradata="18" name="Arrow of Slowness (0:11)" />
-      <itemvariant extradata="19" name="Arrow of Slowness (0:30)" />
-      <itemvariant extradata="20" name="Arrow of Water Breathing (0:22)" />
-      <itemvariant extradata="21" name="Arrow of Water Breathing (1:00)" />
-      <itemvariant extradata="22" name="Arrow of Instant Health" />
-      <itemvariant extradata="23" name="Arrow of Instant Health II" />
-      <itemvariant extradata="24" name="Arrow of Instant Damage" />
-      <itemvariant extradata="25" name="Arrow of Instant Damage II" />
-      <itemvariant extradata="26" name="Arrow of Poison (0:05)" />
-      <itemvariant extradata="27" name="Arrow of Poison (0:15)" />
-      <itemvariant extradata="28" name="Arrow of Poison II (0:02)" />
-      <itemvariant extradata="29" name="Arrow of Regeneration (0:05)" />
-      <itemvariant extradata="30" name="Arrow of Regeneration (0:15)" />
-      <itemvariant extradata="31" name="Arrow of Regeneration II (0:02)" />
-      <itemvariant extradata="32" name="Arrow of Strength (0:22)" />
-      <itemvariant extradata="33" name="Arrow of Strength (1:00)" />
-      <itemvariant extradata="34" name="Arrow of Strength II (0:11)" />
-      <itemvariant extradata="35" name="Arrow of Weakness (0:11)" />
-      <itemvariant extradata="36" name="Arrow of Weakness (0:30)" />
+    <item id="0x100" name="Iron Shovel" uname="minecraft:iron_shovel" /> <!-- *D -->
+    <item id="0x101" name="Iron Pickaxe" uname="minecraft:iron_pickaxe" /> <!-- *D -->
+    <item id="0x102" name="Iron Axe" uname="minecraft:iron_axe" /> <!-- *D -->
+    <item id="0x103" name="Flint and Steel" uname="minecraft:flint_and_steel" /> <!-- *D -->
+    <item id="0x104" name="Apple" uname="minecraft:apple" />
+    <item id="0x105" name="Bow" uname="minecraft:bow" /> <!-- *D -->
+    <item id="0x106" name="Arrow" uname="minecraft:arrow">
+      <itemvariant extradata="0" name="Arrow" uname="minecraft:" />
+      <itemvariant extradata="6" name="Arrow of Night Vision (0:22)" uname="minecraft:" />
+      <itemvariant extradata="7" name="Arrow of Night Vision (1:00)" uname="minecraft:" />
+      <itemvariant extradata="8" name="Arrow of Invisibility (0:22)" uname="minecraft:" />
+      <itemvariant extradata="9" name="Arrow of Invisibility (1:00)" uname="minecraft:" />
+      <itemvariant extradata="10" name="Arrow of Jump Boost (0:22)" uname="minecraft:" />
+      <itemvariant extradata="11" name="Arrow of Jump Boost (1:00)" uname="minecraft:" />
+      <itemvariant extradata="12" name="Arrow of Jump Boost II (0:11)" uname="minecraft:" />
+      <itemvariant extradata="13" name="Arrow of Fire Resistance (0:22)" uname="minecraft:" />
+      <itemvariant extradata="14" name="Arrow of Fire Resistance (1:00)" uname="minecraft:" />
+      <itemvariant extradata="15" name="Arrow of Speed (0:22)" uname="minecraft:" />
+      <itemvariant extradata="16" name="Arrow of Speed (1:00)" uname="minecraft:" />
+      <itemvariant extradata="17" name="Arrow of Speed II (0:11)" uname="minecraft:" />
+      <itemvariant extradata="18" name="Arrow of Slowness (0:11)" uname="minecraft:" />
+      <itemvariant extradata="19" name="Arrow of Slowness (0:30)" uname="minecraft:" />
+      <itemvariant extradata="20" name="Arrow of Water Breathing (0:22)" uname="minecraft:" />
+      <itemvariant extradata="21" name="Arrow of Water Breathing (1:00)" uname="minecraft:" />
+      <itemvariant extradata="22" name="Arrow of Instant Health" uname="minecraft:" />
+      <itemvariant extradata="23" name="Arrow of Instant Health II" uname="minecraft:" />
+      <itemvariant extradata="24" name="Arrow of Instant Damage" uname="minecraft:" />
+      <itemvariant extradata="25" name="Arrow of Instant Damage II" uname="minecraft:" />
+      <itemvariant extradata="26" name="Arrow of Poison (0:05)" uname="minecraft:" />
+      <itemvariant extradata="27" name="Arrow of Poison (0:15)" uname="minecraft:" />
+      <itemvariant extradata="28" name="Arrow of Poison II (0:02)" uname="minecraft:" />
+      <itemvariant extradata="29" name="Arrow of Regeneration (0:05)" uname="minecraft:" />
+      <itemvariant extradata="30" name="Arrow of Regeneration (0:15)" uname="minecraft:" />
+      <itemvariant extradata="31" name="Arrow of Regeneration II (0:02)" uname="minecraft:" />
+      <itemvariant extradata="32" name="Arrow of Strength (0:22)" uname="minecraft:" />
+      <itemvariant extradata="33" name="Arrow of Strength (1:00)" uname="minecraft:" />
+      <itemvariant extradata="34" name="Arrow of Strength II (0:11)" uname="minecraft:" />
+      <itemvariant extradata="35" name="Arrow of Weakness (0:11)" uname="minecraft:" />
+      <itemvariant extradata="36" name="Arrow of Weakness (0:30)" uname="minecraft:" />
     </item>
-    <item id="0x107" name="Coal"> <!-- *B -->
-      <itemvariant extradata="0" name="Coal" />
-      <itemvariant extradata="1" name="Charcoal" />
+    <item id="0x107" name="Coal" uname="minecraft:coal"> <!-- *B -->
+      <itemvariant extradata="0" name="Coal" uname="minecraft:" />
+      <itemvariant extradata="1" name="Charcoal" uname="minecraft:" />
     </item>
-    <item id="0x108" name="Diamond" />
-    <item id="0x109" name="Iron Ingot" />
-    <item id="0x10A" name="Gold Ingot" />
-    <item id="0x10B" name="Iron Sword" /> <!-- *D -->
-    <item id="0x10C" name="Wooden Sword" /> <!-- *D -->
-    <item id="0x10D" name="Wooden Shovel" /> <!-- *D -->
-    <item id="0x10E" name="Wooden Pickaxe" /> <!-- *D -->
-    <item id="0x10F" name="Wooden Axe" /> <!-- *D -->
-    <item id="0x110" name="Stone Sword" /> <!-- *D -->
-    <item id="0x111" name="Stone Shovel" /> <!-- *D -->
-    <item id="0x112" name="Stone Pickaxe" /> <!-- *D -->
-    <item id="0x113" name="Stone Axe" /> <!-- *D -->
-    <item id="0x114" name="Diamond Sword" /> <!-- *D -->
-    <item id="0x115" name="Diamond Shovel" /> <!-- *D -->
-    <item id="0x116" name="Diamond Pickaxe" /> <!-- *D -->
-    <item id="0x117" name="Diamond Axe" /> <!-- *D -->
-    <item id="0x118" name="Stick" />
-    <item id="0x119" name="Bowl" />
-    <item id="0x11A" name="Mushroom Stew" />
-    <item id="0x11B" name="Gold Sword" /> <!-- *D -->
-    <item id="0x11C" name="Gold Shovel" /> <!-- *D -->
-    <item id="0x11D" name="Gold Pickaxe" /> <!-- *D -->
-    <item id="0x11E" name="Gold Axe" /> <!-- *D -->
-    <item id="0x11F" name="String" />
-    <item id="0x120" name="Feather" />
-    <item id="0x121" name="Gunpowder" />
-    <item id="0x122" name="Wooden Hoe" /> <!-- *D -->
-    <item id="0x123" name="Stone Hoe" /> <!-- *D -->
-    <item id="0x124" name="Iron Hoe" /> <!-- *D -->
-    <item id="0x125" name="Diamond Hoe" /> <!-- *D -->
-    <item id="0x126" name="Gold Hoe" />
-    <item id="0x127" name="Seeds" />
-    <item id="0x128" name="Wheat" />
-    <item id="0x129" name="Bread" />
-    <item id="0x12A" name="Leather Cap" /> <!-- *D -->
-    <item id="0x12B" name="Leather Tunic" /> <!-- *D -->
-    <item id="0x12C" name="Leather Pants" /> <!-- *D -->
-    <item id="0x12D" name="Leather Boots" /> <!-- *D -->
-    <item id="0x12E" name="Chain Helmet" /> <!-- *D -->
-    <item id="0x12F" name="Chain Chestplate" /> <!-- *D -->
-    <item id="0x130" name="Chain Leggings" /> <!-- *D -->
-    <item id="0x131" name="Chain Boots" /> <!-- *D -->
-    <item id="0x132" name="Iron Helmet" /> <!-- *D -->
-    <item id="0x133" name="Iron Chestplate" /> <!-- *D -->
-    <item id="0x134" name="Iron Leggings" /> <!-- *D -->
-    <item id="0x135" name="Iron Boots" /> <!-- *D -->
-    <item id="0x136" name="Diamond Helmet" /> <!-- *D -->
-    <item id="0x137" name="Diamond Chestplate" /> <!-- *D -->
-    <item id="0x138" name="Diamond Leggings" /> <!-- *D -->
-    <item id="0x139" name="Diamond Boots" /> <!-- *D -->
-    <item id="0x13A" name="Golden Helmet" /> <!-- *D -->
-    <item id="0x13B" name="Golden Chestplate" /> <!-- *D -->
-    <item id="0x13C" name="Golden Leggings" /> <!-- *D -->
-    <item id="0x13D" name="Golden Boots" /> <!-- *D -->
-    <item id="0x13E" name="Flint" />
-    <item id="0x13F" name="Porkchop, Raw" />
-    <item id="0x140" name="Porkchop, Cooked" />
-    <item id="0x141" name="Painting" />
-    <item id="0x142" name="Golden Apple"> <!-- *B -->
-      <itemvariant extradata="0" name="Golden Apple" />
-      <itemvariant extradata="1" name="Golden Apple, Enchanted" />
+    <item id="0x108" name="Diamond" uname="minecraft:diamond" />
+    <item id="0x109" name="Iron Ingot" uname="minecraft:iron_ingot" />
+    <item id="0x10A" name="Gold Ingot" uname="minecraft:gold_ingot" />
+    <item id="0x10B" name="Iron Sword" uname="minecraft:iron_sword" /> <!-- *D -->
+    <item id="0x10C" name="Wooden Sword" uname="minecraft:wooden_sword" /> <!-- *D -->
+    <item id="0x10D" name="Wooden Shovel" uname="minecraft:wooden_shovel" /> <!-- *D -->
+    <item id="0x10E" name="Wooden Pickaxe" uname="minecraft:wooden_pickaxe" /> <!-- *D -->
+    <item id="0x10F" name="Wooden Axe" uname="minecraft:wooden_axe" /> <!-- *D -->
+    <item id="0x110" name="Stone Sword" uname="minecraft:stone_sword" /> <!-- *D -->
+    <item id="0x111" name="Stone Shovel" uname="minecraft:stone_shovel" /> <!-- *D -->
+    <item id="0x112" name="Stone Pickaxe" uname="minecraft:stone_pickaxe" /> <!-- *D -->
+    <item id="0x113" name="Stone Axe" uname="minecraft:stone_axe" /> <!-- *D -->
+    <item id="0x114" name="Diamond Sword" uname="minecraft:diamond_sword" /> <!-- *D -->
+    <item id="0x115" name="Diamond Shovel" uname="minecraft:diamond_shovel" /> <!-- *D -->
+    <item id="0x116" name="Diamond Pickaxe" uname="minecraft:diamond_pickaxe" /> <!-- *D -->
+    <item id="0x117" name="Diamond Axe" uname="minecraft:diamond_axe" /> <!-- *D -->
+    <item id="0x118" name="Stick" uname="minecraft:stick" />
+    <item id="0x119" name="Bowl" uname="minecraft:bowl" />
+    <item id="0x11A" name="Mushroom Stew" uname="minecraft:mushroom_stew" />
+    <item id="0x11B" name="Gold Sword" uname="minecraft:gold_sword" /> <!-- *D -->
+    <item id="0x11C" name="Gold Shovel" uname="minecraft:gold_shovel" /> <!-- *D -->
+    <item id="0x11D" name="Gold Pickaxe" uname="minecraft:gold_pickaxe" /> <!-- *D -->
+    <item id="0x11E" name="Gold Axe" uname="minecraft:gold_axe" /> <!-- *D -->
+    <item id="0x11F" name="String" uname="minecraft:string" />
+    <item id="0x120" name="Feather" uname="minecraft:leather" />
+    <item id="0x121" name="Gunpowder" uname="minecraft:gunpowder" />
+    <item id="0x122" name="Wooden Hoe" uname="minecraft:wooden_hoe" /> <!-- *D -->
+    <item id="0x123" name="Stone Hoe" uname="minecraft:stone_hoe" /> <!-- *D -->
+    <item id="0x124" name="Iron Hoe" uname="minecraft:iron_hoe" /> <!-- *D -->
+    <item id="0x125" name="Diamond Hoe" uname="minecraft:diamond_hoe" /> <!-- *D -->
+    <item id="0x126" name="Gold Hoe" uname="minecraft:gold_hoe" />
+    <item id="0x127" name="Seeds" uname="minecraft:wheat_seeds" />
+    <item id="0x128" name="Wheat" uname="minecraft:wheat" />
+    <item id="0x129" name="Bread" uname="minecraft:bread" />
+    <item id="0x12A" name="Leather Cap" uname="minecraft:leather_helmet" /> <!-- *D -->
+    <item id="0x12B" name="Leather Tunic" uname="minecraft:leather_chestplate" /> <!-- *D -->
+    <item id="0x12C" name="Leather Pants" uname="minecraft:leather_leggings" /> <!-- *D -->
+    <item id="0x12D" name="Leather Boots" uname="minecraft:leather_boots" /> <!-- *D -->
+    <item id="0x12E" name="Chain Helmet" uname="minecraft:chainmail_helmet" /> <!-- *D -->
+    <item id="0x12F" name="Chain Chestplate" uname="minecraft:chainmail_chestplate" /> <!-- *D -->
+    <item id="0x130" name="Chain Leggings" uname="minecraft:chainmail_leggings" /> <!-- *D -->
+    <item id="0x131" name="Chain Boots" uname="minecraft:chainmail_boots" /> <!-- *D -->
+    <item id="0x132" name="Iron Helmet" uname="minecraft:iron_helmet" /> <!-- *D -->
+    <item id="0x133" name="Iron Chestplate" uname="minecraft:iron_chestplate" /> <!-- *D -->
+    <item id="0x134" name="Iron Leggings" uname="minecraft:iron_leggings" /> <!-- *D -->
+    <item id="0x135" name="Iron Boots" uname="minecraft:iron_boots" /> <!-- *D -->
+    <item id="0x136" name="Diamond Helmet" uname="minecraft:diamond_helmet" /> <!-- *D -->
+    <item id="0x137" name="Diamond Chestplate" uname="minecraft:diamond_chestplate" /> <!-- *D -->
+    <item id="0x138" name="Diamond Leggings" uname="minecraft:diamond_leggings" /> <!-- *D -->
+    <item id="0x139" name="Diamond Boots" uname="minecraft:diamond_boots" /> <!-- *D -->
+    <item id="0x13A" name="Golden Helmet" uname="minecraft:golden_helmet" /> <!-- *D -->
+    <item id="0x13B" name="Golden Chestplate" uname="minecraft:golden_chestplate" /> <!-- *D -->
+    <item id="0x13C" name="Golden Leggings" uname="minecraft:golden_leggings" /> <!-- *D -->
+    <item id="0x13D" name="Golden Boots" uname="minecraft:golden_boots" /> <!-- *D -->
+    <item id="0x13E" name="Flint" uname="minecraft:flint" />
+    <item id="0x13F" name="Porkchop, Raw" uname="minecraft:porkchop" />
+    <item id="0x140" name="Porkchop, Cooked" uname="minecraft:cooked_porkchop" />
+    <item id="0x141" name="Painting" uname="minecraft:painting" />
+    <item id="0x142" name="Golden Apple"  uname="minecraft:golden_apple"> <!-- *B -->
+      <itemvariant extradata="0" name="Golden Apple" uname="minecraft:" />
+      <itemvariant extradata="1" name="Golden Apple, Enchanted" uname="minecraft:" />
     </item>
-    <item id="0x143" name="Sign" />
-    <item id="0x144" name="Door, Oak" />
-    <item id="0x145" name="Bucket">
-      <itemvariant extradata="0x0" name="Bucket, Empty" />
-      <itemvariant extradata="0x1" name="Bucket, Milk" />
-      <itemvariant extradata="0x8" name="Bucket, Water" />
-      <itemvariant extradata="0xa" name="Bucket, Lava" />
+    <item id="0x143" name="Sign" uname="minecraft:sign" />
+    <item id="0x144" name="Door, Oak" uname="minecraft:wooden_door" />
+    <item id="0x145" name="Bucket" uname="minecraft:bucket">
+      <itemvariant extradata="0x0" name="Bucket, Empty" uname="minecraft:" />
+      <itemvariant extradata="0x1" name="Bucket, Milk" uname="minecraft:" />
+      <itemvariant extradata="0x8" name="Bucket, Water" uname="minecraft:" />
+      <itemvariant extradata="0xa" name="Bucket, Lava" uname="minecraft:" />
     </item>
-    <item id="0x146" name="TBD - Water Bucket" />
-    <item id="0x147" name="TBD - Lava Bucket" />
-    <item id="0x148" name="Minecart" />
-    <item id="0x149" name="Saddle" />
-    <item id="0x14A" name="Door, Iron" />
-    <item id="0x14B" name="Redstone" />
-    <item id="0x14C" name="Snowball" />
-    <item id="0x14D" name="Boat" >
-      <itemvariant extradata="0x0" name="Boat, Oak Wood" />
-      <itemvariant extradata="0x1" name="Boat, Spruce Wood" />
-      <itemvariant extradata="0x2" name="Boat, Birch Wood" />
-      <itemvariant extradata="0x3" name="Boat, Jungle Wood" />
-      <itemvariant extradata="0x4" name="Boat, Acacia Wood" />
-      <itemvariant extradata="0x5" name="Boat, Dark Oak aWood" />
+    <item id="0x146" name="TBD - Water Bucket" uname="minecraft:" />
+    <item id="0x147" name="TBD - Lava Bucket" uname="minecraft:" />
+    <item id="0x148" name="Minecart" uname="minecraft:minecart" />
+    <item id="0x149" name="Saddle" uname="minecraft:saddle" />
+    <item id="0x14A" name="Door, Iron" uname="minecraft:iron_door" />
+    <item id="0x14B" name="Redstone" uname="minecraft:redstone" />
+    <item id="0x14C" name="Snowball" uname="minecraft:snowball" />
+    <item id="0x14D" name="Boat" uname="minecraft:boat">
+      <itemvariant extradata="0x0" name="Boat, Oak Wood" uname="minecraft:" />
+      <itemvariant extradata="0x1" name="Boat, Spruce Wood" uname="minecraft:" />
+      <itemvariant extradata="0x2" name="Boat, Birch Wood" uname="minecraft:" />
+      <itemvariant extradata="0x3" name="Boat, Jungle Wood" uname="minecraft:" />
+      <itemvariant extradata="0x4" name="Boat, Acacia Wood" uname="minecraft:" />
+      <itemvariant extradata="0x5" name="Boat, Dark Oak aWood" uname="minecraft:" />
     </item>
-    <item id="0x14E" name="Leather" />
-    <item id="0x14F" name="TBD - Milk" />
-    <item id="0x150" name="Brick" />
-    <item id="0x151" name="Clay" />
-    <item id="0x152" name="Sugar Cane" />
-    <item id="0x153" name="Paper" />
-    <item id="0x154" name="Book" />
-    <item id="0x155" name="Slimeball" />
-    <item id="0x156" name="Minecart, Chest" />
-    <item id="0x158" name="Egg" />
-    <item id="0x159" name="Compass" />
-    <item id="0x15A" name="Fishing Rod" />
-    <item id="0x15B" name="Clock" />
-    <item id="0x15C" name="Glowstone Dust" />
-    <item id="0x15D" name="Fish, Raw"> <!-- *B -->
-      <itemvariant extradata="0" name="Fish, Raw" />
-      <itemvariant extradata="1" name="Salmon, Raw" />
-      <itemvariant extradata="2" name="Clownfish" />
-      <itemvariant extradata="3" name="Pufferfish" />
+    <item id="0x14E" name="Leather" uname="minecraft:leather" />
+    <item id="0x14F" name="Kelp" uname="minecraft:kelp" />
+    <item id="0x150" name="Brick" uname="minecraft:brick" />
+    <item id="0x151" name="Clay" uname="minecraft:clay_ball" />
+    <item id="0x152" name="Sugar Cane" uname="minecraft:reeds" />
+    <item id="0x153" name="Paper" uname="minecraft:paper" />
+    <item id="0x154" name="Book" uname="minecraft:book" />
+    <item id="0x155" name="Slimeball" uname="minecraft:slimeball" />
+    <item id="0x156" name="Minecart, Chest" uname="minecraft:chest_minecart" />
+    <item id="0x158" name="Egg" uname="minecraft:egg" />
+    <item id="0x159" name="Compass" uname="minecraft:compass" />
+    <item id="0x15A" name="Fishing Rod" uname="minecraft:fishing_rod" />
+    <item id="0x15B" name="Clock" uname="minecraft:clock" />
+    <item id="0x15C" name="Glowstone Dust" uname="minecraft:glowstone_dust" />
+    <item id="0x15D" name="Fish, Raw" uname="minecraft:fish"> <!-- *B -->
+      <itemvariant extradata="0" name="Fish, Raw" uname="minecraft:" />
+      <itemvariant extradata="1" name="Salmon, Raw" uname="minecraft:" />
+      <itemvariant extradata="2" name="Clownfish" uname="minecraft:" />
+      <itemvariant extradata="3" name="Pufferfish" uname="minecraft:" />
     </item>
     <!-- todo - is this valid? -->
-    <item id="0x15E" name="Fish, Cooked"> <!-- *B -->
-      <itemvariant extradata="0" name="Fish, Cooked" />
-      <itemvariant extradata="1" name="Salmon, Cooked" />
-      <itemvariant extradata="2" name="Clownfish, Cooked?" />
-      <itemvariant extradata="3" name="Pufferfish, COoked?" />
+    <item id="0x15E" name="Fish, Cooked" uname="minecraft:cooked_fish"> <!-- *B -->
+      <itemvariant extradata="0" name="Fish, Cooked" uname="minecraft:" />
+      <itemvariant extradata="1" name="Salmon, Cooked" uname="minecraft:" />
+      <itemvariant extradata="2" name="Clownfish, Cooked?" uname="minecraft:" />
+      <itemvariant extradata="3" name="Pufferfish, COoked?" uname="minecraft:" />
     </item>
-    <item id="0x15F" name="Dye"> <!-- *B -->
-      <itemvariant extradata="0x0" name="Ink Sac" />
-      <itemvariant extradata="0x1" name="Rose Red" />
-      <itemvariant extradata="0x2" name="Cactus Green" />
-      <itemvariant extradata="0x3" name="Cocoa Beans" />
-      <itemvariant extradata="0x4" name="Lapis Lazuli" />
-      <itemvariant extradata="0x5" name="Dye, Purple" />
-      <itemvariant extradata="0x6" name="Dye, Cyan" />
-      <itemvariant extradata="0x7" name="Dye, Light Gray" />
-      <itemvariant extradata="0x8" name="Dye, Gray" />
-      <itemvariant extradata="0x9" name="Dye, Pink" />
-      <itemvariant extradata="0xa" name="Dye, Lime" />
-      <itemvariant extradata="0xb" name="Dandelion Yellow" />
-      <itemvariant extradata="0xc" name="Dye, Light Blue" />
-      <itemvariant extradata="0xd" name="Dye, Magenta" />
-      <itemvariant extradata="0xe" name="Dye, Orange" />
-      <itemvariant extradata="0xf" name="Bone Meal" />
+    <item id="0x15F" name="Dye" uname="minecraft:dye"> <!-- *B -->
+      <itemvariant extradata="0x0" name="Ink Sac" uname="minecraft:" />
+      <itemvariant extradata="0x1" name="Rose Red" uname="minecraft:" />
+      <itemvariant extradata="0x2" name="Cactus Green" uname="minecraft:" />
+      <itemvariant extradata="0x3" name="Cocoa Beans" uname="minecraft:" />
+      <itemvariant extradata="0x4" name="Lapis Lazuli" uname="minecraft:" />
+      <itemvariant extradata="0x5" name="Dye, Purple" uname="minecraft:" />
+      <itemvariant extradata="0x6" name="Dye, Cyan" uname="minecraft:" />
+      <itemvariant extradata="0x7" name="Dye, Light Gray" uname="minecraft:" />
+      <itemvariant extradata="0x8" name="Dye, Gray" uname="minecraft:" />
+      <itemvariant extradata="0x9" name="Dye, Pink" uname="minecraft:" />
+      <itemvariant extradata="0xa" name="Dye, Lime" uname="minecraft:" />
+      <itemvariant extradata="0xb" name="Dandelion Yellow" uname="minecraft:" />
+      <itemvariant extradata="0xc" name="Dye, Light Blue" uname="minecraft:" />
+      <itemvariant extradata="0xd" name="Dye, Magenta" uname="minecraft:" />
+      <itemvariant extradata="0xe" name="Dye, Orange" uname="minecraft:" />
+      <itemvariant extradata="0xf" name="Bone Meal" uname="minecraft:" />
     </item>
-    <item id="0x160" name="Bone" />
-    <item id="0x161" name="Sugar" />
-    <item id="0x162" name="Cake" />
-    <item id="0x163" name="Bed" />
-    <item id="0x164" name="Redstone Repeater" />
-    <item id="0x165" name="Cookie" />
-    <item id="0x166" name="Map, Filled" /> <!-- todo more data to harvest here? -->
-    <item id="0x167" name="Shears" /> <!-- *D -->
-    <item id="0x168" name="Melon" />
-    <item id="0x169" name="Pumpkin Seeds" />
-    <item id="0x16A" name="Melon Seeds" />
-    <item id="0x16B" name="Beef, Raw" />
-    <item id="0x16C" name="Steak" />
-    <item id="0x16D" name="Chicken, Raw" />
-    <item id="0x16E" name="Chicken, Cooked" />
-    <item id="0x16F" name="Rotten Flesh" />
-    <item id="0x170" name="Ender Pearl" />
-    <item id="0x171" name="Blaze Rod" />
-    <item id="0x172" name="Ghast Tear" />
-    <item id="0x173" name="Gold Nugget" />
-    <item id="0x174" name="Nether Wart" />
+    <item id="0x160" name="Bone" uname="minecraft:bone" />
+    <item id="0x161" name="Sugar" uname="minecraft:sugar" />
+    <item id="0x162" name="Cake" uname="minecraft:cake" />
+    <item id="0x163" name="Bed" uname="minecraft:bed" />
+    <item id="0x164" name="Redstone Repeater" uname="minecraft:repeater" />
+    <item id="0x165" name="Cookie" uname="minecraft:cookie" />
+    <item id="0x166" name="Map, Filled" uname="minecraft:map_filled" /> <!-- todo more data to harvest here? -->
+    <item id="0x167" name="Shears" uname="minecraft:shears" /> <!-- *D -->
+    <item id="0x168" name="Melon" uname="minecraft:melon" />
+    <item id="0x169" name="Pumpkin Seeds" uname="minecraft:pumpkin_seeds" />
+    <item id="0x16A" name="Melon Seeds" uname="minecraft:melon_seeds" />
+    <item id="0x16B" name="Beef, Raw" uname="minecraft:beef" />
+    <item id="0x16C" name="Steak" uname="minecraft:cooked_beef" />
+    <item id="0x16D" name="Chicken, Raw" uname="minecraft:chicken" />
+    <item id="0x16E" name="Chicken, Cooked" uname="minecraft:cooked_chicken" />
+    <item id="0x16F" name="Rotten Flesh" uname="minecraft:rotten_flesh" />
+    <item id="0x170" name="Ender Pearl" uname="minecraft:ender_pearl" />
+    <item id="0x171" name="Blaze Rod" uname="minecraft:blaze_rod" />
+    <item id="0x172" name="Ghast Tear" uname="minecraft:ghast_tear" />
+    <item id="0x173" name="Gold Nugget" uname="minecraft:gold_nugget" />
+    <item id="0x174" name="Nether Wart" uname="minecraft:nether_wart" />
     <!-- todobig parse potions - is this complete? -->
-    <item id="0x175" name="Potion"> <!-- *B -->
-      <itemvariant extradata="0x00" name="Water Bottle" />
-      <itemvariant extradata="0x01" name="Mundane Potion" />
-      <itemvariant extradata="0x02" name="Mundane Potion" />
-      <itemvariant extradata="0x03" name="Thick Potion" />
-      <itemvariant extradata="0x04" name="Awkward Potion" />
-      <itemvariant extradata="0x05" name="Potion of Night Vision (3:00)" />
-      <itemvariant extradata="0x06" name="Potion of Night Vision (8:00)" />
-      <itemvariant extradata="0x07" name="Potion of Invisibility (3:00)" />
-      <itemvariant extradata="0x08" name="Potion of Invisibility (8:00)" />
-      <itemvariant extradata="0x09" name="Potion of Leaping (3:00)" />
-      <itemvariant extradata="0x0A" name="Potion of Leaping (8:00)" />
-      <itemvariant extradata="0x0B" name="Potion of Leaping II (1:30)" />
-      <itemvariant extradata="0x0C" name="Potion of Fire Resistance (3:00)" />
-      <itemvariant extradata="0x0D" name="Potion of Fire Resistance (8:00)" />
-      <itemvariant extradata="0x0E" name="Potion of Swiftness (3:00)" />
-      <itemvariant extradata="0x0F" name="Potion of Swiftness (8:00)" />
-      <itemvariant extradata="0x10" name="Potion of Swiftness II (1:30)" />
-      <itemvariant extradata="0x11" name="Potion of Slowness (1:30)" />
-      <itemvariant extradata="0x12" name="Potion of Slowness (4:00)" />
-      <itemvariant extradata="0x13" name="Potion of Water Breathing (3:00)" />
-      <itemvariant extradata="0x14" name="Potion of Water Breathing (8:00)" />
-      <itemvariant extradata="0x15" name="Potion of Healing" />
-      <itemvariant extradata="0x16" name="Potion of Healing II" />
-      <itemvariant extradata="0x17" name="Potion of Harming" />
-      <itemvariant extradata="0x18" name="Potion of Harming II" />
-      <itemvariant extradata="0x19" name="Potion of Poison (0:45)" />
-      <itemvariant extradata="0x1a" name="Potion of Poison (2:00)" />
-      <itemvariant extradata="0x1b" name="Potion of Poison II (0:22)" />
-      <itemvariant extradata="0x1c" name="Potion of Regeneration (0:45)" />
-      <itemvariant extradata="0x1d" name="Potion of Regeneration (2:00)" />
-      <itemvariant extradata="0x1e" name="Potion of Regeneration II (0:22)" />
-      <itemvariant extradata="0x1f" name="Potion of Strength (3:00)" />
-      <itemvariant extradata="0x20" name="Potion of Strength (8:00)" />
-      <itemvariant extradata="0x21" name="Potion of Strength II (1:30)" />
-      <itemvariant extradata="0x22" name="Potion of Weakness (1:30)" />
-      <itemvariant extradata="0x23" name="Potion of Weakness (4:00)" />
+    <item id="0x175" name="Potion" uname="minecraft:potion"> <!-- *B -->
+      <itemvariant extradata="0x00" name="Water Bottle" uname="minecraft:" />
+      <itemvariant extradata="0x01" name="Mundane Potion" uname="minecraft:" />
+      <itemvariant extradata="0x02" name="Mundane Potion" uname="minecraft:" />
+      <itemvariant extradata="0x03" name="Thick Potion" uname="minecraft:" />
+      <itemvariant extradata="0x04" name="Awkward Potion" uname="minecraft:" />
+      <itemvariant extradata="0x05" name="Potion of Night Vision (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x06" name="Potion of Night Vision (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x07" name="Potion of Invisibility (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x08" name="Potion of Invisibility (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x09" name="Potion of Leaping (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0A" name="Potion of Leaping (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0B" name="Potion of Leaping II (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x0C" name="Potion of Fire Resistance (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0D" name="Potion of Fire Resistance (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0E" name="Potion of Swiftness (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0F" name="Potion of Swiftness (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x10" name="Potion of Swiftness II (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x11" name="Potion of Slowness (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x12" name="Potion of Slowness (4:00)" uname="minecraft:" />
+      <itemvariant extradata="0x13" name="Potion of Water Breathing (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x14" name="Potion of Water Breathing (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x15" name="Potion of Healing" uname="minecraft:" />
+      <itemvariant extradata="0x16" name="Potion of Healing II" uname="minecraft:" />
+      <itemvariant extradata="0x17" name="Potion of Harming" uname="minecraft:" />
+      <itemvariant extradata="0x18" name="Potion of Harming II" uname="minecraft:" />
+      <itemvariant extradata="0x19" name="Potion of Poison (0:45)" uname="minecraft:" />
+      <itemvariant extradata="0x1a" name="Potion of Poison (2:00)" uname="minecraft:" />
+      <itemvariant extradata="0x1b" name="Potion of Poison II (0:22)" uname="minecraft:" />
+      <itemvariant extradata="0x1c" name="Potion of Regeneration (0:45)" uname="minecraft:" />
+      <itemvariant extradata="0x1d" name="Potion of Regeneration (2:00)" uname="minecraft:" />
+      <itemvariant extradata="0x1e" name="Potion of Regeneration II (0:22)" uname="minecraft:" />
+      <itemvariant extradata="0x1f" name="Potion of Strength (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x20" name="Potion of Strength (8:00)" uname="minecraft:" />
+      <itemvariant extradata="0x21" name="Potion of Strength II (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x22" name="Potion of Weakness (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x23" name="Potion of Weakness (4:00)" uname="minecraft:" />
     </item>
-    <item id="0x176" name="Glass Bottle" />
-    <item id="0x177" name="Spider Eye" />
-    <item id="0x178" name="Fermented Spider Eye" />
-    <item id="0x179" name="Blaze Powder" />
-    <item id="0x17A" name="Magma Cream" />
-    <item id="0x17B" name="Brewing Stand" />
-    <item id="0x17C" name="Cauldron" />
-    <item id="0x17D" name="Eye of Ender" />
-    <item id="0x17E" name="Glistering Melon" />
-    <item id="0x17F" name="Spawn Egg"> <!-- *B -->
+    <item id="0x176" name="Glass Bottle" uname="minecraft:glass_bottle" />
+    <item id="0x177" name="Spider Eye" uname="minecraft:spider_eye" />
+    <item id="0x178" name="Fermented Spider Eye" uname="minecraft:fermented_spider_eye" />
+    <item id="0x179" name="Blaze Powder" uname="minecraft:blaze_powder" />
+    <item id="0x17A" name="Magma Cream" uname="minecraft:magma_cream" />
+    <item id="0x17B" name="Brewing Stand" uname="minecraft:brewing_stand" />
+    <item id="0x17C" name="Cauldron" uname="minecraft:cauldron" />
+    <item id="0x17D" name="Eye of Ender" uname="minecraft:ender_eye" />
+    <item id="0x17E" name="Glistering Melon" uname="minecraft:speckled_melon" />
+    <item id="0x17F" name="Spawn Egg" uname="minecraft:spawn_egg"> <!-- *B -->
       <!-- todo jocopa3 has a lot more here - sync up -->
-      <itemvariant extradata="0x0A" name="Spawn Egg, Chicken" />
-      <itemvariant extradata="0x0B" name="Spawn Egg, Cow" />
-      <itemvariant extradata="0x0C" name="Spawn Egg, Pig" />
-      <itemvariant extradata="0x0D" name="Spawn Egg, Sheep" />
-      <itemvariant extradata="0x0E" name="Spawn Egg, Wolf" />
-      <itemvariant extradata="0x0F" name="Spawn Egg, Villager" />
-      <itemvariant extradata="0x10" name="Spawn Egg, Mooshroom" />
-      <itemvariant extradata="0x11" name="Spawn Egg, Squid" />
-      <itemvariant extradata="0x12" name="Spawn Egg, Rabbit" />
-      <itemvariant extradata="0x13" name="Spawn Egg, Bat" />
-      <itemvariant extradata="0x14" name="Spawn Egg, Iron Golem" /> <!-- Empty Egg -->
-      <itemvariant extradata="0x15" name="Spawn Egg, Snow Golem" /> <!-- Empty Egg -->
-      <itemvariant extradata="0x16" name="Spawn Egg, Ocelot" />
-      <itemvariant extradata="0x17" name="Spawn Egg, Horse" />
-      <itemvariant extradata="0x18" name="Spawn Egg, Donkey" />
-      <itemvariant extradata="0x19" name="Spawn Egg, Mule" />
-      <itemvariant extradata="0x1A" name="Spawn Egg, Skeleton Horse" />
-      <itemvariant extradata="0x1B" name="Spawn Egg, Zombie Horse" />
-      <itemvariant extradata="0x1C" name="Spawn Egg, Polarbear" />
-      <itemvariant extradata="0x20" name="Spawn Egg, Zombie " />
-      <itemvariant extradata="0x21" name="Spawn Egg, Creeper" />
-      <itemvariant extradata="0x22" name="Spawn Egg, Skeleton" />
-      <itemvariant extradata="0x23" name="Spawn Egg, Spider" />
-      <itemvariant extradata="0x24" name="Spawn Egg, Zombie Pigman" />
-      <itemvariant extradata="0x25" name="Spawn Egg, Slime" />
-      <itemvariant extradata="0x26" name="Spawn Egg, Enderman" />
-      <itemvariant extradata="0x27" name="Spawn Egg, Silverfish" />
-      <itemvariant extradata="0x28" name="Spawn Egg, Cave Spider" />
-      <itemvariant extradata="0x29" name="Spawn Egg, Ghast" />
-      <itemvariant extradata="0x2A" name="Spawn Egg, Magma Cube" />
-      <itemvariant extradata="0x2B" name="Spawn Egg, Blaze" />
-      <itemvariant extradata="0x2C" name="Spawn Egg, Zombie Villager" />
-      <itemvariant extradata="0x2D" name="Spawn Egg, Witch" />
-      <itemvariant extradata="0x2E" name="Spawn Egg, Stray" />
-      <itemvariant extradata="0x2F" name="Spawn Egg, Husk" />
-      <itemvariant extradata="0x30" name="Spawn Egg, Wither Skeleton" />
-      <itemvariant extradata="0x31" name="Spawn Egg, Guardian" />
-      <itemvariant extradata="0x32" name="Spawn Egg, Elder Guardian" />
-      <itemvariant extradata="0x33" name="Spawn Egg, NPC" /> <!-- EDU -->
-      <itemvariant extradata="0x34" name="Spawn Egg, Wither" /> <!-- Invalid Item -->
-      <itemvariant extradata="0x35" name="Spawn Egg, Dragon" /> <!-- Invalid Item -->
-      <itemvariant extradata="0x36" name="Spawn Egg, Shulker" />
-      <itemvariant extradata="0x37" name="Spawn Egg, Endermite" />
-      <itemvariant extradata="0x38" name="Spawn Egg, Learn to Code Mascot" /> <!-- EDU -->
+      <itemvariant extradata="0x0A" name="Spawn Egg, Chicken" uname="minecraft:" />
+      <itemvariant extradata="0x0B" name="Spawn Egg, Cow" uname="minecraft:" />
+      <itemvariant extradata="0x0C" name="Spawn Egg, Pig" uname="minecraft:" />
+      <itemvariant extradata="0x0D" name="Spawn Egg, Sheep" uname="minecraft:" />
+      <itemvariant extradata="0x0E" name="Spawn Egg, Wolf" uname="minecraft:" />
+      <itemvariant extradata="0x0F" name="Spawn Egg, Villager" uname="minecraft:" />
+      <itemvariant extradata="0x10" name="Spawn Egg, Mooshroom" uname="minecraft:" />
+      <itemvariant extradata="0x11" name="Spawn Egg, Squid" uname="minecraft:" />
+      <itemvariant extradata="0x12" name="Spawn Egg, Rabbit" uname="minecraft:" />
+      <itemvariant extradata="0x13" name="Spawn Egg, Bat" uname="minecraft:" />
+      <itemvariant extradata="0x14" name="Spawn Egg, Iron Golem" uname="minecraft:" /> <!-- Empty Egg -->
+      <itemvariant extradata="0x15" name="Spawn Egg, Snow Golem" uname="minecraft:" /> <!-- Empty Egg -->
+      <itemvariant extradata="0x16" name="Spawn Egg, Ocelot" uname="minecraft:" />
+      <itemvariant extradata="0x17" name="Spawn Egg, Horse" uname="minecraft:" />
+      <itemvariant extradata="0x18" name="Spawn Egg, Donkey" uname="minecraft:" />
+      <itemvariant extradata="0x19" name="Spawn Egg, Mule" uname="minecraft:" />
+      <itemvariant extradata="0x1A" name="Spawn Egg, Skeleton Horse" uname="minecraft:" />
+      <itemvariant extradata="0x1B" name="Spawn Egg, Zombie Horse" uname="minecraft:" />
+      <itemvariant extradata="0x1C" name="Spawn Egg, Polarbear" uname="minecraft:" />
+      <itemvariant extradata="0x20" name="Spawn Egg, Zombie " uname="minecraft:" />
+      <itemvariant extradata="0x21" name="Spawn Egg, Creeper" uname="minecraft:" />
+      <itemvariant extradata="0x22" name="Spawn Egg, Skeleton" uname="minecraft:" />
+      <itemvariant extradata="0x23" name="Spawn Egg, Spider" uname="minecraft:" />
+      <itemvariant extradata="0x24" name="Spawn Egg, Zombie Pigman" uname="minecraft:" />
+      <itemvariant extradata="0x25" name="Spawn Egg, Slime" uname="minecraft:" />
+      <itemvariant extradata="0x26" name="Spawn Egg, Enderman" uname="minecraft:" />
+      <itemvariant extradata="0x27" name="Spawn Egg, Silverfish" uname="minecraft:" />
+      <itemvariant extradata="0x28" name="Spawn Egg, Cave Spider" uname="minecraft:" />
+      <itemvariant extradata="0x29" name="Spawn Egg, Ghast" uname="minecraft:" />
+      <itemvariant extradata="0x2A" name="Spawn Egg, Magma Cube" uname="minecraft:" />
+      <itemvariant extradata="0x2B" name="Spawn Egg, Blaze" uname="minecraft:" />
+      <itemvariant extradata="0x2C" name="Spawn Egg, Zombie Villager" uname="minecraft:" />
+      <itemvariant extradata="0x2D" name="Spawn Egg, Witch" uname="minecraft:" />
+      <itemvariant extradata="0x2E" name="Spawn Egg, Stray" uname="minecraft:" />
+      <itemvariant extradata="0x2F" name="Spawn Egg, Husk" uname="minecraft:" />
+      <itemvariant extradata="0x30" name="Spawn Egg, Wither Skeleton" uname="minecraft:" />
+      <itemvariant extradata="0x31" name="Spawn Egg, Guardian" uname="minecraft:" />
+      <itemvariant extradata="0x32" name="Spawn Egg, Elder Guardian" uname="minecraft:" />
+      <itemvariant extradata="0x33" name="Spawn Egg, NPC" uname="minecraft:" /> <!-- EDU -->
+      <itemvariant extradata="0x34" name="Spawn Egg, Wither" uname="minecraft:" /> <!-- Invalid Item -->
+      <itemvariant extradata="0x35" name="Spawn Egg, Dragon" uname="minecraft:" /> <!-- Invalid Item -->
+      <itemvariant extradata="0x36" name="Spawn Egg, Shulker" uname="minecraft:" />
+      <itemvariant extradata="0x37" name="Spawn Egg, Endermite" uname="minecraft:" />
+      <itemvariant extradata="0x38" name="Spawn Egg, Learn to Code Mascot" uname="minecraft:" /> <!-- EDU -->
     </item>
-    <item id="0x180" name="Bottle o' Enchanting" />
-    <item id="0x181" name="Fire Charge" /> <!-- 0.15 -->
-    <item id="0x182" name="Book and Quill" />
-    <item id="0x183" name="Written Book" />
-    <item id="0x184" name="Emerald" />
-    <item id="0x185" name="Item Frame" />
-    <item id="0x186" name="Flower Pot" />
-    <item id="0x187" name="Carrot" />
-    <item id="0x188" name="Potato" />
-    <item id="0x189" name="Baked Potato" />
-    <item id="0x18A" name="Poisonous Potato" />
-    <item id="0x18B" name="Map, Empty" /> <!-- *B? -->
-    <item id="0x18C" name="Golden Carrot" />
-    <item id="0x18D" name="Mob Head"> <!-- *B -->
-      <itemvariant extradata="0" name="Mob Head, Skeleton" />
-      <itemvariant extradata="1" name="Mob Head, Wither Skeleton" />
-      <itemvariant extradata="2" name="Mob Head, Zombie" />
-      <itemvariant extradata="3" name="Mob Head, Player" />
-      <itemvariant extradata="4" name="Mob Head, Creeper" />
-      <itemvariant extradata="5" name="Mob Head, Dragon" />
+    <item id="0x180" name="Bottle o' Enchanting" uname="minecraft:experience_bottle" />
+    <item id="0x181" name="Fire Charge" uname="minecraft:fireball" /> <!-- 0.15 -->
+    <item id="0x182" name="Book and Quill" uname="minecraft:writable_book" />
+    <item id="0x183" name="Written Book" uname="minecraft:written_book" />
+    <item id="0x184" name="Emerald" uname="minecraft:emerald" />
+    <item id="0x185" name="Item Frame" uname="minecraft:frame" />
+    <item id="0x186" name="Flower Pot" uname="minecraft:flower_pot" />
+    <item id="0x187" name="Carrot" uname="minecraft:carrot" />
+    <item id="0x188" name="Potato" uname="minecraft:potato" />
+    <item id="0x189" name="Baked Potato" uname="minecraft:baked_potato" />
+    <item id="0x18A" name="Poisonous Potato" uname="minecraft:poisonous_potato" />
+    <item id="0x18B" name="Map, Empty" uname="minecraft:emptymap" /> <!-- *B? -->
+    <item id="0x18C" name="Golden Carrot" uname="minecraft:golden_carrot" />
+    <item id="0x18D" name="Mob Head" uname="minecraft:skull"> <!-- *B -->
+      <itemvariant extradata="0" name="Mob Head, Skeleton" uname="minecraft:" />
+      <itemvariant extradata="1" name="Mob Head, Wither Skeleton" uname="minecraft:" />
+      <itemvariant extradata="2" name="Mob Head, Zombie" uname="minecraft:" />
+      <itemvariant extradata="3" name="Mob Head, Player" uname="minecraft:" />
+      <itemvariant extradata="4" name="Mob Head, Creeper" uname="minecraft:" />
+      <itemvariant extradata="5" name="Mob Head, Dragon" uname="minecraft:" />
     </item>
-    <item id="0x18E" name="Carrot on a Stick" /> <!-- 0.15 -->
-    <item id="0x18F" name="Nether Star" /> <!-- 0.16 -->
-    <item id="0x190" name="Pumpkin Pie" />
-    <item id="0x191" name="Firework Rocket" />
-    <item id="0x192" name="Firework Star" />
-    <item id="0x193" name="Enchanted Book" />
-    <item id="0x194" name="Redstone Comparator" />
-    <item id="0x195" name="Nether Brick" />
-    <item id="0x196" name="Nether Quartz" />
-    <item id="0x197" name="Minecart, TNT" />
-    <item id="0x198" name="Minecart, Hopper" />
-    <item id="0x199" name="Prismarine Shard" /> <!-- 0.16 -->
-    <item id="0x19A" name="Hopper" />
-    <item id="0x19B" name="Rabbit, Raw" />
-    <item id="0x19C" name="Rabbit, Cooked" />
-    <item id="0x19D" name="Rabbit Stew" />
-    <item id="0x19E" name="Rabbit's Foot" />
-    <item id="0x19F" name="Rabbit Hide" />
-    <item id="0x1A0" name="Horse Armor, Leather" /> <!-- 0.15 -->
-    <item id="0x1A1" name="Horse Armor, Iron" /> <!-- 0.15 -->
-    <item id="0x1A2" name="Horse Armor, Gold" /> <!-- 0.15 -->
-    <item id="0x1A3" name="Horse Armor, Diamond" /> <!-- 0.15 -->
-    <item id="0x1A4" name="Lead" /> <!-- 0.15 -->
-    <item id="0x1A5" name="Name Tag" /> <!-- 0.15 -->
-    <item id="0x1A6" name="Prismarine Crystals" /> <!-- 0.16 -->
-    <item id="0x1A7" name="Mutton, Raw" /> <!-- 0.15 -->
-    <item id="0x1A8" name="Mutton, Cooked" /> <!-- 0.15 -->
-    <item id="0x1A9" name="Armor Stand" />
-    <item id="0x1AA" name="End Crystal" /> <!-- 0.17 -->
-    <item id="0x1AB" name="Door, Spruce" />
-    <item id="0x1AC" name="Door, Birch" />
-    <item id="0x1AD" name="Door, Jungle" />
-    <item id="0x1AE" name="Door, Acacia" />
-    <item id="0x1AF" name="Door, Dark Oak" />
-    <item id="0x1B0" name="Chorus Fruit" /> <!-- 0.17 -->
-    <item id="0x1B1" name="Chorus Fruit, Popped" /> <!-- 0.17 -->
-    <item id="0x1B2" name="TBD - Beetroot (MCPC)" />
-    <item id="0x1B3" name="TBD - Beetroot Seeds (MCPC)" />
-    <item id="0x1B4" name="TBD - Beetroot Soup (MCPC)" />
-    <item id="0x1B5" name="Dragon Breath" /> <!-- 0.17 -->
+    <item id="0x18E" name="Carrot on a Stick" uname="minecraft:carrotonastick" /> <!-- 0.15 -->
+    <item id="0x18F" name="Nether Star" uname="minecraft:netherstar" /> <!-- 0.16 -->
+    <item id="0x190" name="Pumpkin Pie" uname="minecraft:pumpkin_pie" />
+    <item id="0x191" name="Firework Rocket" uname="minecraft:fireworks" />
+    <item id="0x192" name="Firework Star" uname="minecraft:fireworkscharge" />
+    <item id="0x193" name="Enchanted Book" uname="minecraft:enchanted_book" />
+    <item id="0x194" name="Redstone Comparator" uname="minecraft:comparator" />
+    <item id="0x195" name="Nether Brick" uname="minecraft:netherbrick" />
+    <item id="0x196" name="Nether Quartz" uname="minecraft:quartz" />
+    <item id="0x197" name="Minecart, TNT" uname="minecraft:tnt_minecart" />
+    <item id="0x198" name="Minecart, Hopper" uname="minecraft:hopper_minecart" />
+    <item id="0x199" name="Prismarine Shard" uname="minecraft:prismarine_shard" /> <!-- 0.16 -->
+    <item id="0x19A" name="Hopper" uname="minecraft:hopper" />
+    <item id="0x19B" name="Rabbit, Raw" uname="minecraft:rabbit" />
+    <item id="0x19C" name="Rabbit, Cooked" uname="minecraft:cooked_rabbit" />
+    <item id="0x19D" name="Rabbit Stew" uname="minecraft:rabbit_stew" />
+    <item id="0x19E" name="Rabbit's Foot" uname="minecraft:rabbit_foot" />
+    <item id="0x19F" name="Rabbit Hide" uname="minecraft:rabbit_hide" />
+    <item id="0x1A0" name="Horse Armor, Leather" uname="minecraft:horsearmorleather" /> <!-- 0.15 -->
+    <item id="0x1A1" name="Horse Armor, Iron" uname="minecraft:horsearmoriron" /> <!-- 0.15 -->
+    <item id="0x1A2" name="Horse Armor, Gold" uname="minecraft:horsearmorgold" /> <!-- 0.15 -->
+    <item id="0x1A3" name="Horse Armor, Diamond" uname="minecraft:horsearmordiamond" /> <!-- 0.15 -->
+    <item id="0x1A4" name="Lead" uname="minecraft:lead" /> <!-- 0.15 -->
+    <item id="0x1A5" name="Name Tag" uname="minecraft:nametag" /> <!-- 0.15 -->
+    <item id="0x1A6" name="Prismarine Crystals" uname="minecraft:prismarine_crystals" /> <!-- 0.16 -->
+    <item id="0x1A7" name="Mutton, Raw" uname="minecraft:muttonraw" /> <!-- 0.15 -->
+    <item id="0x1A8" name="Mutton, Cooked" uname="minecraft:muttoncooked" /> <!-- 0.15 -->
+    <item id="0x1A9" name="Armor Stand" uname="minecraft:armor_stand" />
+    <item id="0x1AA" name="End Crystal" uname="minecraft:end_crystal" /> <!-- 0.17 -->
+    <item id="0x1AB" name="Door, Spruce" uname="minecraft:spruce_door" />
+    <item id="0x1AC" name="Door, Birch" uname="minecraft:birch_door" />
+    <item id="0x1AD" name="Door, Jungle" uname="minecraft:jungle_door" />
+    <item id="0x1AE" name="Door, Acacia" uname="minecraft:acacia_door" />
+    <item id="0x1AF" name="Door, Dark Oak" uname="minecraft:dark_oak_door" />
+    <item id="0x1B0" name="Chorus Fruit" uname="minecraft:chorus_fruit" /> <!-- 0.17 -->
+    <item id="0x1B1" name="Chorus Fruit, Popped" uname="minecraft:chorus_fruit_popped" /> <!-- 0.17 -->
+    <item id="0x1B2" name="TBD - Beetroot (MCPC)" uname="minecraft:" />
+    <item id="0x1B3" name="TBD - Beetroot Seeds (MCPC)" uname="minecraft:" />
+    <item id="0x1B4" name="TBD - Beetroot Soup (MCPC)" uname="minecraft:" />
+    <item id="0x1B5" name="Dragon Breath" uname="minecraft:dragon_breath" /> <!-- 0.17 -->
     <!-- todo parse potions -->
-    <item id="0x1B6" name="Splash Potion"> <!-- *B -->
-      <itemvariant extradata="0x00" name="Splash Water Bottle" />
-      <itemvariant extradata="0x01" name="Splash Mundane Potion" />
-      <itemvariant extradata="0x02" name="Splash Mundane Potion" />
-      <itemvariant extradata="0x03" name="Splash Thick Potion" />
-      <itemvariant extradata="0x04" name="Splash Awkward Potion" />
-      <itemvariant extradata="0x05" name="Splash Potion of Night Vision (2:15)" />
-      <itemvariant extradata="0x06" name="Splash Potion of Night Vision (6:00)" />
-      <itemvariant extradata="0x07" name="Splash Potion of Invisibility (2:15)" />
-      <itemvariant extradata="0x08" name="Splash Potion of Invisibility (6:00)" />
-      <itemvariant extradata="0x09" name="Splash Potion of Leaping (2:15)" />
-      <itemvariant extradata="0x0A" name="Splash Potion of Leaping (6:00)" />
-      <itemvariant extradata="0x0B" name="Splash Potion of Leaping II (1:07)" />
-      <itemvariant extradata="0x0C" name="Splash Potion of Fire Resistance (2:15)" />
-      <itemvariant extradata="0x0D" name="Splash Potion of Fire Resistance (6:00)" />
-      <itemvariant extradata="0x0E" name="Splash Potion of Swiftness (2:15)" />
-      <itemvariant extradata="0x0F" name="Splash Potion of Swiftness (6:00)" />
-      <itemvariant extradata="0x10" name="Splash Potion of Swiftness II (1:07)" />
-      <itemvariant extradata="0x11" name="Splash Potion of Slowness (1:07)" />
-      <itemvariant extradata="0x12" name="Splash Potion of Slowness (3:00)" />
-      <itemvariant extradata="0x13" name="Splash Potion of Water Breathing (2:15)" />
-      <itemvariant extradata="0x14" name="Splash Potion of Water Breathing (6:00)" />
-      <itemvariant extradata="0x15" name="Splash Potion of Healing" />
-      <itemvariant extradata="0x16" name="Splash Potion of Healing II" />
-      <itemvariant extradata="0x17" name="Splash Potion of Harming" />
-      <itemvariant extradata="0x18" name="Splash Potion of Harming II" />
-      <itemvariant extradata="0x19" name="Splash Potion of Poison (0:33)" />
-      <itemvariant extradata="0x1a" name="Splash Potion of Poison (1:30)" />
-      <itemvariant extradata="0x1b" name="Splash Potion of Poison II (0:16)" />
-      <itemvariant extradata="0x1c" name="Splash Potion of Regeneration (0:38)" />
-      <itemvariant extradata="0x1d" name="Splash Potion of Regeneration (1:30)" />
-      <itemvariant extradata="0x1e" name="Splash Potion of Regeneration II (0:16)" />
-      <itemvariant extradata="0x1f" name="Splash Potion of Strength (2:15)" />
-      <itemvariant extradata="0x20" name="Splash Potion of Strength (6:00)" />
-      <itemvariant extradata="0x21" name="Splash Potion of Strength II (1:07)" />
-      <itemvariant extradata="0x22" name="Splash Potion of Weakness (1:07)" />
-      <itemvariant extradata="0x23" name="Splash Potion of Weakness (3:00)" />
+    <item id="0x1B6" name="Splash Potion" uname="minecraft:splash_potion"> <!-- *B -->
+      <itemvariant extradata="0x00" name="Splash Water Bottle" uname="minecraft:" />
+      <itemvariant extradata="0x01" name="Splash Mundane Potion" uname="minecraft:" />
+      <itemvariant extradata="0x02" name="Splash Mundane Potion" uname="minecraft:" />
+      <itemvariant extradata="0x03" name="Splash Thick Potion" uname="minecraft:" />
+      <itemvariant extradata="0x04" name="Splash Awkward Potion" uname="minecraft:" />
+      <itemvariant extradata="0x05" name="Splash Potion of Night Vision (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x06" name="Splash Potion of Night Vision (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x07" name="Splash Potion of Invisibility (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x08" name="Splash Potion of Invisibility (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x09" name="Splash Potion of Leaping (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x0A" name="Splash Potion of Leaping (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0B" name="Splash Potion of Leaping II (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x0C" name="Splash Potion of Fire Resistance (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x0D" name="Splash Potion of Fire Resistance (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0E" name="Splash Potion of Swiftness (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x0F" name="Splash Potion of Swiftness (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x10" name="Splash Potion of Swiftness II (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x11" name="Splash Potion of Slowness (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x12" name="Splash Potion of Slowness (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x13" name="Splash Potion of Water Breathing (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x14" name="Splash Potion of Water Breathing (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x15" name="Splash Potion of Healing" uname="minecraft:" />
+      <itemvariant extradata="0x16" name="Splash Potion of Healing II" uname="minecraft:" />
+      <itemvariant extradata="0x17" name="Splash Potion of Harming" uname="minecraft:" />
+      <itemvariant extradata="0x18" name="Splash Potion of Harming II" uname="minecraft:" />
+      <itemvariant extradata="0x19" name="Splash Potion of Poison (0:33)" uname="minecraft:" />
+      <itemvariant extradata="0x1a" name="Splash Potion of Poison (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x1b" name="Splash Potion of Poison II (0:16)" uname="minecraft:" />
+      <itemvariant extradata="0x1c" name="Splash Potion of Regeneration (0:38)" uname="minecraft:" />
+      <itemvariant extradata="0x1d" name="Splash Potion of Regeneration (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x1e" name="Splash Potion of Regeneration II (0:16)" uname="minecraft:" />
+      <itemvariant extradata="0x1f" name="Splash Potion of Strength (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x20" name="Splash Potion of Strength (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x21" name="Splash Potion of Strength II (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x22" name="Splash Potion of Weakness (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x23" name="Splash Potion of Weakness (3:00)" uname="minecraft:" />
     </item>    
-    <item id="0x1B9" name="Lingering Potion"> <!-- *B --> <!-- 0.17 -->
+    <item id="0x1B9" name="Lingering Potion" uname="minecraft:lingering_potion"> <!-- *B --> <!-- 0.17 -->
       <!-- todo these are copied from splash, not checked yet -->
-      <itemvariant extradata="0x00" name="Lingering Water Bottle" />
-      <itemvariant extradata="0x01" name="Lingering Mundane Potion" />
-      <itemvariant extradata="0x02" name="Lingering Mundane Potion" />
-      <itemvariant extradata="0x03" name="Lingering Thick Potion" />
-      <itemvariant extradata="0x04" name="Lingering Awkward Potion" />
-      <itemvariant extradata="0x05" name="Lingering Potion of Night Vision (2:15)" />
-      <itemvariant extradata="0x06" name="Lingering Potion of Night Vision (6:00)" />
-      <itemvariant extradata="0x07" name="Lingering Potion of Invisibility (2:15)" />
-      <itemvariant extradata="0x08" name="Lingering Potion of Invisibility (6:00)" />
-      <itemvariant extradata="0x09" name="Lingering Potion of Leaping (2:15)" />
-      <itemvariant extradata="0x0A" name="Lingering Potion of Leaping (6:00)" />
-      <itemvariant extradata="0x0B" name="Lingering Potion of Leaping II (1:07)" />
-      <itemvariant extradata="0x0C" name="Lingering Potion of Fire Resistance (2:15)" />
-      <itemvariant extradata="0x0D" name="Lingering Potion of Fire Resistance (6:00)" />
-      <itemvariant extradata="0x0E" name="Lingering Potion of Swiftness (2:15)" />
-      <itemvariant extradata="0x0F" name="Lingering Potion of Swiftness (6:00)" />
-      <itemvariant extradata="0x10" name="Lingering Potion of Swiftness II (1:07)" />
-      <itemvariant extradata="0x11" name="Lingering Potion of Slowness (1:07)" />
-      <itemvariant extradata="0x12" name="Lingering Potion of Slowness (3:00)" />
-      <itemvariant extradata="0x13" name="Lingering Potion of Water Breathing (2:15)" />
-      <itemvariant extradata="0x14" name="Lingering Potion of Water Breathing (6:00)" />
-      <itemvariant extradata="0x15" name="Lingering Potion of Healing" />
-      <itemvariant extradata="0x16" name="Lingering Potion of Healing II" />
-      <itemvariant extradata="0x17" name="Lingering Potion of Harming" />
-      <itemvariant extradata="0x18" name="Lingering Potion of Harming II" />
-      <itemvariant extradata="0x19" name="Lingering Potion of Poison (0:33)" />
-      <itemvariant extradata="0x1a" name="Lingering Potion of Poison (1:30)" />
-      <itemvariant extradata="0x1b" name="Lingering Potion of Poison II (0:16)" />
-      <itemvariant extradata="0x1c" name="Lingering Potion of Regeneration (0:38)" />
-      <itemvariant extradata="0x1d" name="Lingering Potion of Regeneration (1:30)" />
-      <itemvariant extradata="0x1e" name="Lingering Potion of Regeneration II (0:16)" />
-      <itemvariant extradata="0x1f" name="Lingering Potion of Strength (2:15)" />
-      <itemvariant extradata="0x20" name="Lingering Potion of Strength (6:00)" />
-      <itemvariant extradata="0x21" name="Lingering Potion of Strength II (1:07)" />
-      <itemvariant extradata="0x22" name="Lingering Potion of Weakness (1:07)" />
-      <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" />
+      <itemvariant extradata="0x00" name="Lingering Water Bottle" uname="minecraft:" />
+      <itemvariant extradata="0x01" name="Lingering Mundane Potion" uname="minecraft:" />
+      <itemvariant extradata="0x02" name="Lingering Mundane Potion" uname="minecraft:" />
+      <itemvariant extradata="0x03" name="Lingering Thick Potion" uname="minecraft:" />
+      <itemvariant extradata="0x04" name="Lingering Awkward Potion" uname="minecraft:" />
+      <itemvariant extradata="0x05" name="Lingering Potion of Night Vision (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x06" name="Lingering Potion of Night Vision (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x07" name="Lingering Potion of Invisibility (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x08" name="Lingering Potion of Invisibility (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x09" name="Lingering Potion of Leaping (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x0A" name="Lingering Potion of Leaping (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0B" name="Lingering Potion of Leaping II (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x0C" name="Lingering Potion of Fire Resistance (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x0D" name="Lingering Potion of Fire Resistance (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x0E" name="Lingering Potion of Swiftness (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x0F" name="Lingering Potion of Swiftness (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x10" name="Lingering Potion of Swiftness II (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x11" name="Lingering Potion of Slowness (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x12" name="Lingering Potion of Slowness (3:00)" uname="minecraft:" />
+      <itemvariant extradata="0x13" name="Lingering Potion of Water Breathing (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x14" name="Lingering Potion of Water Breathing (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x15" name="Lingering Potion of Healing" uname="minecraft:" />
+      <itemvariant extradata="0x16" name="Lingering Potion of Healing II" uname="minecraft:" />
+      <itemvariant extradata="0x17" name="Lingering Potion of Harming" uname="minecraft:" />
+      <itemvariant extradata="0x18" name="Lingering Potion of Harming II" uname="minecraft:" />
+      <itemvariant extradata="0x19" name="Lingering Potion of Poison (0:33)" uname="minecraft:" />
+      <itemvariant extradata="0x1a" name="Lingering Potion of Poison (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x1b" name="Lingering Potion of Poison II (0:16)" uname="minecraft:" />
+      <itemvariant extradata="0x1c" name="Lingering Potion of Regeneration (0:38)" uname="minecraft:" />
+      <itemvariant extradata="0x1d" name="Lingering Potion of Regeneration (1:30)" uname="minecraft:" />
+      <itemvariant extradata="0x1e" name="Lingering Potion of Regeneration II (0:16)" uname="minecraft:" />
+      <itemvariant extradata="0x1f" name="Lingering Potion of Strength (2:15)" uname="minecraft:" />
+      <itemvariant extradata="0x20" name="Lingering Potion of Strength (6:00)" uname="minecraft:" />
+      <itemvariant extradata="0x21" name="Lingering Potion of Strength II (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x22" name="Lingering Potion of Weakness (1:07)" uname="minecraft:" />
+      <itemvariant extradata="0x23" name="Lingering Potion of Weakness (3:00)" uname="minecraft:" />
     </item>    
-    <item id="0x1BB" name="Minecart with Command Block" />
-    <item id="0x1BC" name="Elytra" /> <!-- *B --> <!-- 0.17 -->
-    <item id="0x1BD" name="Shulker Shell" />
-    <item id="0x1BE" name="Banner" />
-    <item id="0x1C2" name="Totem of Undying" />
-    <item id="0x1C4" name="Iron Nugget" />
-    <item id="0x1C6" name="Chalkboard" > <!-- EDU -->
-      <itemvariant extradata="0x0" name="1x1 Chalkboard" /> <!-- EDU -->
-      <itemvariant extradata="0x1" name="2x1 Chalkboard" /> <!-- EDU -->
-      <itemvariant extradata="0x2" name="3x1 Chalkboard" /> <!-- EDU -->
+    <item id="0x1BA" name="Sparkler" uname="minecraft:sparkler" />
+    <item id="0x1BB" name="Minecart with Command Block" uname="minecraft:command_block_minecart" />
+    <item id="0x1BC" name="Elytra" uname="minecraft:elytra" /> <!-- *B --> <!-- 0.17 -->
+    <item id="0x1BD" name="Shulker Shell" uname="minecraft:shulker_shell" />
+    <item id="0x1BE" name="Banner" uname="minecraft:banner" />
+    <item id="0x1BF" name="Eye Drops" uname="minecraft:eye_drop" />
+    <item id="0x1C0" name="White Balloon" uname="minecraft:balloon" />
+    <item id="0x1C1" name="Super Fertilizer" uname="minecraft:super_fertilizer" />
+    <item id="0x1C2" name="Totem of Undying" uname="minecraft:totem" />
+    <item id="0x1C3" name="Bleach" uname="minecraft:bleach" />
+    <item id="0x1C4" name="Iron Nugget" uname="minecraft:iron_nugget" />
+    <item id="0x1C5" name="Ice Bomb" uname="minecraft:ice_bomb" />
+    <item id="0x1C6" name="Chalkboard" uname="minecraft:"> <!-- EDU -->
+      <itemvariant extradata="0x0" name="1x1 Chalkboard" uname="minecraft:" /> <!-- EDU -->
+      <itemvariant extradata="0x1" name="2x1 Chalkboard" uname="minecraft:" /> <!-- EDU -->
+      <itemvariant extradata="0x2" name="3x1 Chalkboard" uname="minecraft:" /> <!-- EDU -->
     </item> 
-    <item id="0x1C8" name="Portfolio" /> <!-- EDU -->
-    <item id="0x1C9" name="Beetroot" />
-    <item id="0x1CA" name="Beetroot Seeds" />
-    <item id="0x1CB" name="Beetroot Soup" />
-    <item id="0x1CC" name="Salmon, Raw" /> <!-- *B -->
-    <item id="0x1CD" name="Clownfish, Raw" /> <!-- *B -->
-    <item id="0x1CE" name="Pufferfish, Raw" /> <!-- *B -->
-    <item id="0x1CF" name="Salmon, Cooked" /> <!-- *B -->
-    <item id="0x1D2" name="Apple, Enchanted" />
-    <item id="0x1F2" name="Camera" /> <!-- EDU -->
-    <item id="0x1F4" name="Record, 13" />
-    <item id="0x1F5" name="Record, Cat" />
-    <item id="0x1F6" name="Record, Blocks" />
-    <item id="0x1F7" name="Record, Chirp" />
-    <item id="0x1F8" name="Record, Far" />
-    <item id="0x1F9" name="Record, Mall" />
-    <item id="0x1FA" name="Record, Mellohi" />
-    <item id="0x1FB" name="Record, Stal" />
-    <item id="0x1FC" name="Record, Strad" />
-    <item id="0x1FD" name="Record, Ward" />
-    <item id="0x1FE" name="Record, 11" />
-    <item id="0x1FF" name="Record, Wait" />
+    <item id="0x1C7" name="Trident" uname="minecraft:trident" />
+    <item id="0x1C8" name="Portfolio" uname="minecraft:" /> <!-- EDU -->
+    <item id="0x1C9" name="Beetroot" uname="minecraft:beetroot" />
+    <item id="0x1CA" name="Beetroot Seeds" uname="minecraft:beetroot_seeds" />
+    <item id="0x1CB" name="Beetroot Soup" uname="minecraft:beetroot_soup" />
+    <item id="0x1CC" name="Salmon, Raw" uname="minecraft:salmon" /> <!-- *B -->
+    <item id="0x1CD" name="Clownfish, Raw" uname="minecraft:clownfish" /> <!-- *B -->
+    <item id="0x1CE" name="Pufferfish, Raw" uname="minecraft:pufferfish" /> <!-- *B -->
+    <item id="0x1CF" name="Salmon, Cooked" uname="minecraft:cooked_salmon" /> <!-- *B -->
+    <item id="0x1D0" name="Dried Kelp" uname="minecraft:dried_kelp" />
+    <item id="0x1D1" name="Nautilus Shell" uname="minecraft:nautilus_shell" />
+    <item id="0x1D2" name="Apple, Enchanted" uname="minecraft:appleenchanted" />
+    <item id="0x1D3" name="Heart of the Sea" uname="minecraft:heart_of_the_sea" />
+    <item id="0x1D4" name="Scute" uname="minecraft:scute" />
+    <item id="0x1D5" name="Turtle Shell" uname="minecraft:turtle_shell" />
+    <item id="0x1D6" name="Phantom Membrane" uname="minecraft:phantom_membrane" />
+    <item id="0x1F3" name="Salt" uname="minecraft:compound" />
+    <item id="0x1F2" name="Camera" uname="minecraft:" /> <!-- EDU -->
+    <item id="0x1F4" name="Record, 13" uname="minecraft:record_13" />
+    <item id="0x1F5" name="Record, Cat" uname="minecraft:record_cat" />
+    <item id="0x1F6" name="Record, Blocks" uname="minecraft:record_blocks" />
+    <item id="0x1F7" name="Record, Chirp" uname="minecraft:record_chirp" />
+    <item id="0x1F8" name="Record, Far" uname="minecraft:record_far" />
+    <item id="0x1F9" name="Record, Mall" uname="minecraft:record_mall" />
+    <item id="0x1FA" name="Record, Mellohi" uname="minecraft:record_mellohi" />
+    <item id="0x1FB" name="Record, Stal" uname="minecraft:record_stal" />
+    <item id="0x1FC" name="Record, Strad" uname="minecraft:record_strad" />
+    <item id="0x1FD" name="Record, Ward" uname="minecraft:record_ward" />
+    <item id="0x1FE" name="Record, 11" uname="minecraft:record_11" />
+    <item id="0x1FF" name="Record, Wait" uname="minecraft:record_wait" />
   </itemlist>
 
   <!--
@@ -1309,106 +1376,119 @@
       
       entitylist: mcpe entities
       id - mcpe entity id (hex)
-      ids - mcpe entity id (string)
+      uname - mcpe entity id (string)
       name - name of entity
       etype - entity type (P=Peaceful; H=Hostile; O=Object)
   -->
   <entitylist>
     <entity id="0x01" name="Empty" />
-    <entity id="0x0A" ids="minecraft:chicken" name="Chicken" etype="P" />
-    <entity id="0x0B" ids="minecraft:cow" name="Cow" etype="P" />
-    <entity id="0x0C" ids="minecraft:pig" name="Pig" etype="P" />
-    <entity id="0x0D" ids="minecraft:sheep" name="Sheep" etype="P" />
-    <entity id="0x0E" ids="minecraft:wolf" name="Wolf" etype="P" />
-    <entity id="0x0F" ids="minecraft:villager" name="Villager" etype="P" />
-    <entity id="0x10" ids="minecraft:mooshroom" name="Mooshroom" etype="P" />
-    <entity id="0x11" ids="minecraft:squid" name="Squid" etype="P" />
-    <entity id="0x12" ids="minecraft:rabbit" name="Rabbit" etype="P" />  <!-- 0.13 todo correct? -->
-    <entity id="0x13" ids="minecraft:bat" name="Bat" etype="P" />
-    <entity id="0x14" ids="minecraft:iron_golem" name="Iron Golem" etype="P" />
-    <entity id="0x15" ids="minecraft:snow_golem" name="Snow Golem" etype="P" />
-    <entity id="0x16" ids="minecraft:ocelot" name="Ocelot" etype="P" />
-    <entity id="0x17" ids="minecraft:horse" name="Horse" etype="P" /> <!-- 0.15 -->
-    <entity id="0x18" ids="minecraft:donkey" name="Donkey" etype="P" /> <!-- 0.15 -->
-    <entity id="0x19" ids="minecraft:mule" name="Mule" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1a" ids="minecraft:skeleton_horse" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1b" ids="minecraft:zombie_horse" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
-    <entity id="0x1c" ids="minecraft:polar_bear" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
-    <entity id="0x1d" ids="minecraft:llama" name="Llama" etype="P" >
+    <entity id="0x0A" uname="minecraft:chicken" name="Chicken" etype="P" />
+    <entity id="0x0B" uname="minecraft:cow" name="Cow" etype="P" />
+    <entity id="0x0C" uname="minecraft:pig" name="Pig" etype="P" />
+    <entity id="0x0D" uname="minecraft:sheep" name="Sheep" etype="P" />
+    <entity id="0x0E" uname="minecraft:wolf" name="Wolf" etype="P" />
+    <entity id="0x0F" uname="minecraft:villager" name="Villager" etype="P" />
+    <entity id="0x10" uname="minecraft:mooshroom" name="Mooshroom" etype="P" />
+    <entity id="0x11" uname="minecraft:squid" name="Squid" etype="P" />
+    <entity id="0x12" uname="minecraft:rabbit" name="Rabbit" etype="P" />  <!-- 0.13 todo correct? -->
+    <entity id="0x13" uname="minecraft:bat" name="Bat" etype="P" />
+    <entity id="0x14" uname="minecraft:iron_golem" name="Iron Golem" etype="P" />
+    <entity id="0x15" uname="minecraft:snow_golem" name="Snow Golem" etype="P" />
+    <entity id="0x16" uname="minecraft:ocelot" name="Ocelot" etype="P" />
+    <entity id="0x17" uname="minecraft:horse" name="Horse" etype="P" /> <!-- 0.15 -->
+    <entity id="0x18" uname="minecraft:donkey" name="Donkey" etype="P" /> <!-- 0.15 -->
+    <entity id="0x19" uname="minecraft:mule" name="Mule" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1a" uname="minecraft:skeleton_horse" name="Horse, Skeleton" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1b" uname="minecraft:zombie_horse" name="Horse, Zombie" etype="P" /> <!-- 0.15 -->
+    <entity id="0x1c" uname="minecraft:polar_bear" name="Polar Bear" etype="P" /> <!-- 0.16 --> <!-- todo not peaceful or hostile? -->
+    <entity id="0x1d" uname="minecraft:llama" name="Llama" etype="P" >
       <entityvariant extradata="0x0" name="Llama, Creamy" />
       <entityvariant extradata="0x1" name="Llama, White" />
       <entityvariant extradata="0x2" name="Llama, Brown" />
       <entityvariant extradata="0x3" name="Llama, Gray" />
     </entity>
-    <entity id="0x1E" ids="minecraft:parrot" name="Parrot" etype="P" >
+    <entity id="0x1E" uname="minecraft:parrot" name="Parrot" etype="P" >
       <entityvariant extradata="0x0" name="Parrot, Red" />
       <entityvariant extradata="0x1" name="Parrot, Blue" />
       <entityvariant extradata="0x2" name="Parrot, Green" />
       <entityvariant extradata="0x3" name="Parrot, Cyan" />
       <entityvariant extradata="0x4" name="Parrot, Silver" />
     </entity>
-    <entity id="0x20" ids="minecraft:zombie" name="Zombie" etype="H" />
-    <entity id="0x21" ids="minecraft:creeper" name="Creeper" etype="H" />
-    <entity id="0x22" ids="minecraft:skeleton" name="Skeleton" etype="H" />
-    <entity id="0x23" ids="minecraft:spider" name="Spider" etype="H" />
-    <entity id="0x24" ids="minecraft:zombie_pigman" name="Zombie Pigman" etype="H" />
-    <entity id="0x25" ids="minecraft:slime" name="Slime" etype="H" />
-    <entity id="0x26" ids="minecraft:enderman" name="Enderman" etype="H" />
-    <entity id="0x27" ids="minecraft:silverfish" name="Silverfish" etype="H" />
-    <entity id="0x28" ids="minecraft:cave_spider" name="Cave Spider" etype="H" />
-    <entity id="0x29" ids="minecraft:ghast" name="Ghast" etype="H" />
-    <entity id="0x2A" ids="minecraft:magma_cube" name="Magma Cube" etype="H" />
-    <entity id="0x2B" ids="minecraft:blaze" name="Blaze" etype="H" />
-    <entity id="0x2C" ids="minecraft:zombie_villager" name="Zombie Villager" etype="H" />
-    <entity id="0x2D" ids="minecraft:witch" name="Witch" etype="H" />
-    <entity id="0x2E" ids="minecraft:stray" name="Stray" etype="H" /> <!-- 0.15 -->
-    <entity id="0x2F" ids="minecraft:husk" name="Husk" etype="H" /> <!-- 0.15 -->
-    <entity id="0x30" ids="minecraft:wither_skeleton" name="Skeleton, Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x31" ids="minecraft:guardian" name="Guardian" etype="H" /> <!-- 0.16 -->
-    <entity id="0x32" ids="minecraft:elder_guardian" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
-    <entity id="0x33" ids="minecraft:npc" name="NPC" etype="P" /> <!-- EDU -->
-    <entity id="0x34" ids="minecraft:wither" name="Wither" etype="H" /> <!-- 0.16 -->
-    <entity id="0x35" ids="minecraft:ender_dragon" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
-    <entity id="0x36" ids="minecraft:shulker" name="Shulker" etype="H" /> <!-- 0.17 -->
-    <entity id="0x37" ids="minecraft:endermite" name="Endermite" etype="H" /> <!-- 0.17 -->
-    <entity id="0x38" ids="minecraft:learn_to_code_mascot" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
-    <entity id="0x3D" ids="minecraft:armor_stand" name="Armor Stand" etype="P" />
-    <entity id="0x3E" ids="minecraft:tripod_camera" name="TripodCamera" /> <!-- EDU -->
-    <entity id="0x3F" ids="minecraft:player" name="The Player" etype="P" />
-    <entity id="0x40" ids="minecraft:item" name="Dropped item" />
-    <entity id="0x41" ids="minecraft:tnt" name="Primed TNT" />
-    <entity id="0x42" ids="minecraft:falling_block" name="Falling block" />
-    <entity id="0x44" ids="minecraft:xp_bottle" name="Experience Potion" />
-    <entity id="0x45" ids="minecraft:xp_orb" name="Experience Orb" />    <!-- note: reverse engineered by me -->
-    <entity id="0x46" ids="minecraft:eye_of_ender_signal" name="Eye of Ender" /> 
-    <entity id="0x47" ids="minecraft:ender_crystal" name="Ender Crystal" /> 
-    <entity id="0x4C" ids="minecraft:shulker_bullet" name="Shulker Bullet" />
-    <entity id="0x4D" ids="minecraft:fishing_hook" name="Fishing Rod hook" />
-    <entity id="0x4e" ids="minecraft:chalkboard" name="Chalkboard" /> <!-- EDU -->
-    <entity id="0x4F" ids="minecraft:dragon_fireball" name="Dragon Fireball" />
-    <entity id="0x50" ids="minecraft:arrow" name="Shot arrow" />
-    <entity id="0x51" ids="minecraft:snowball" name="Thrown snowball" />
-    <entity id="0x52" ids="minecraft:egg" name="Thrown egg" />
-    <entity id="0x53" ids="minecraft:painting" name="Painting" />
-    <entity id="0x54" ids="minecraft:minecart" name="Minecart" />
-    <entity id="0x55" ids="minecraft:large_fireball" name="Ghast firecharge" />
-    <entity id="0x56" ids="minecraft:splash_potion" name="Thrown Potion" />
-    <entity id="0x57" ids="minecraft:ender_pearl" name="Thrown Ender Pearl" />
-    <entity id="0x58" ids="minecraft:leash_knot" name="Leash Fence Knot" />
-    <entity id="0x59" ids="minecraft:wither_skull" name="Wither Skull" />
-    <entity id="0x5a" ids="minecraft:boat" name="Boat" />
-    <entity id="0x5d" ids="minecraft:lightning_bolt" name="Lightning Bolt" />
-    <entity id="0x5e" ids="minecraft:small_fireball" name="Blaze fireball" />
-    <entity id="0x5f" ids="minecraft:area_effect_cloud" name="Area Effect Cloud" /> 
-    <entity id="0x60" ids="minecraft:hopper_minecart" name="Minecart with Hopper" />
-    <entity id="0x61" ids="minecraft:tnt_minecart" name="Minecart with TNT" />
-    <entity id="0x62" ids="minecraft:chest_minecart" name="Minecart with Chest" />
-    <entity id="0x64" ids="minecraft:command_block_minecart" name="Minecart with Command Block" />
-    <entity id="0x65" ids="minecraft:lingering_potion" name="Lingering Potion" /> 
-    <entity id="0x66" ids="minecraft:llama_spit" name="Llama Spit" /> 
-    <entity id="0x67" ids="minecraft:evocation_fang" name="Evocation Fangs" /> 
-    <entity id="0x68" ids="minecraft:evocation_illager" name="Evoker" etype="H" /> 
-    <entity id="0x69" ids="minecraft:vex" name="Vex" etype="H" /> 
+    <entity id="0x1F" uname="minecraft:dolphin" name="Dolphin" etype="P" />
+    <entity id="0x20" uname="minecraft:zombie" name="Zombie" etype="H" />
+    <entity id="0x21" uname="minecraft:creeper" name="Creeper" etype="H" />
+    <entity id="0x22" uname="minecraft:skeleton" name="Skeleton" etype="H" />
+    <entity id="0x23" uname="minecraft:spider" name="Spider" etype="H" />
+    <entity id="0x24" uname="minecraft:zombie_pigman" name="Zombie Pigman" etype="H" />
+    <entity id="0x25" uname="minecraft:slime" name="Slime" etype="H" />
+    <entity id="0x26" uname="minecraft:enderman" name="Enderman" etype="H" />
+    <entity id="0x27" uname="minecraft:silverfish" name="Silverfish" etype="H" />
+    <entity id="0x28" uname="minecraft:cave_spider" name="Cave Spider" etype="H" />
+    <entity id="0x29" uname="minecraft:ghast" name="Ghast" etype="H" />
+    <entity id="0x2A" uname="minecraft:magma_cube" name="Magma Cube" etype="H" />
+    <entity id="0x2B" uname="minecraft:blaze" name="Blaze" etype="H" />
+    <entity id="0x2C" uname="minecraft:zombie_villager" name="Zombie Villager" etype="H" />
+    <entity id="0x2D" uname="minecraft:witch" name="Witch" etype="H" />
+    <entity id="0x2E" uname="minecraft:stray" name="Stray" etype="H" /> <!-- 0.15 -->
+    <entity id="0x2F" uname="minecraft:husk" name="Husk" etype="H" /> <!-- 0.15 -->
+    <entity id="0x30" uname="minecraft:wither_skeleton" name="Skeleton, Wither" etype="H" /> <!-- 0.16 -->
+    <entity id="0x31" uname="minecraft:guardian" name="Guardian" etype="H" /> <!-- 0.16 -->
+    <entity id="0x32" uname="minecraft:elder_guardian" name="Guardian, Elder" etype="H" /> <!-- 0.16 -->
+    <entity id="0x33" uname="minecraft:npc" name="NPC" etype="P" /> <!-- EDU -->
+    <entity id="0x34" uname="minecraft:wither" name="Wither" etype="H" /> <!-- 0.16 -->
+    <entity id="0x35" uname="minecraft:ender_dragon" name="Ender Dragon" etype="H" /> <!-- 0.17 -->
+    <entity id="0x36" uname="minecraft:shulker" name="Shulker" etype="H" /> <!-- 0.17 -->
+    <entity id="0x37" uname="minecraft:endermite" name="Endermite" etype="H" /> <!-- 0.17 -->
+    <entity id="0x38" uname="minecraft:learn_to_code_mascot" name="LearnToCodeMascot" etype="P" /> <!-- EDU -->
+    <entity id="0x39" uname="minecraft:vindicator" name="Vindicator" etype="H" />
+    <entity id="0x3D" uname="minecraft:armor_stand" name="Armor Stand" etype="P" />
+    <entity id="0x3E" uname="minecraft:tripod_camera" name="TripodCamera" /> <!-- EDU -->
+    <entity id="0x3F" uname="minecraft:player" name="The Player" etype="P" />
+    <entity id="0x40" uname="minecraft:item" name="Dropped item" />
+    <entity id="0x41" uname="minecraft:tnt" name="Primed TNT" />
+    <entity id="0x42" uname="minecraft:falling_block" name="Falling block" />
+    <entity id="0x43" uname="minecraft:moving_block" name="Moving Block" />
+    <entity id="0x44" uname="minecraft:xp_bottle" name="Experience Potion" />
+    <entity id="0x45" uname="minecraft:xp_orb" name="Experience Orb" />    <!-- note: reverse engineered by me -->
+    <entity id="0x46" uname="minecraft:eye_of_ender_signal" name="Eye of Ender" /> 
+    <entity id="0x47" uname="minecraft:ender_crystal" name="Ender Crystal" />
+    <entity id="0x48" uname="minecraft:fireworks_rocket" name="Firework Rocket" />
+    <entity id="0x49" uname="minecraft:thrown_trident" name="Trident" />
+    <entity id="0x4A" uname="minecraft:turtle" name="Turtle" etype="P" />
+    <entity id="0x4C" uname="minecraft:shulker_bullet" name="Shulker Bullet" />
+    <entity id="0x4D" uname="minecraft:fishing_hook" name="Fishing Rod hook" />
+    <entity id="0x4e" uname="minecraft:chalkboard" name="Chalkboard" /> <!-- EDU -->
+    <entity id="0x4F" uname="minecraft:dragon_fireball" name="Dragon Fireball" />
+    <entity id="0x50" uname="minecraft:arrow" name="Shot arrow" />
+    <entity id="0x51" uname="minecraft:snowball" name="Thrown snowball" />
+    <entity id="0x52" uname="minecraft:egg" name="Thrown egg" />
+    <entity id="0x53" uname="minecraft:painting" name="Painting" />
+    <entity id="0x54" uname="minecraft:minecart" name="Minecart" />
+    <entity id="0x55" uname="minecraft:large_fireball" name="Ghast firecharge" />
+    <entity id="0x56" uname="minecraft:splash_potion" name="Thrown Potion" />
+    <entity id="0x57" uname="minecraft:ender_pearl" name="Thrown Ender Pearl" />
+    <entity id="0x58" uname="minecraft:leash_knot" name="Leash Fence Knot" />
+    <entity id="0x59" uname="minecraft:wither_skull" name="Wither Skull" />
+    <entity id="0x5a" uname="minecraft:boat" name="Boat" />
+    <entity id="0x5d" uname="minecraft:lightning_bolt" name="Lightning Bolt" />
+    <entity id="0x5e" uname="minecraft:small_fireball" name="Blaze fireball" />
+    <entity id="0x5f" uname="minecraft:area_effect_cloud" name="Area Effect Cloud" /> 
+    <entity id="0x60" uname="minecraft:hopper_minecart" name="Minecart with Hopper" />
+    <entity id="0x61" uname="minecraft:tnt_minecart" name="Minecart with TNT" />
+    <entity id="0x62" uname="minecraft:chest_minecart" name="Minecart with Chest" />
+    <entity id="0x64" uname="minecraft:command_block_minecart" name="Minecart with Command Block" />
+    <entity id="0x65" uname="minecraft:lingering_potion" name="Lingering Potion" /> 
+    <entity id="0x66" uname="minecraft:llama_spit" name="Llama Spit" /> 
+    <entity id="0x67" uname="minecraft:evocation_fang" name="Evocation Fangs" /> 
+    <entity id="0x68" uname="minecraft:evocation_illager" name="Evoker" etype="H" /> 
+    <entity id="0x69" uname="minecraft:vex" name="Vex" etype="H" />  
+    <entity id="0x6C" uname="minecraft:pufferfish" name="Pufferfish" etype="P" />
+    <entity id="0x6D" uname="minecraft:salmon" name="Salmon" etype="P" />
+    <entity id="0x6E" uname="minecraft:drowned" name="Drowned" etype="H" />
+    <entity id="0x6F" uname="minecraft:tropicalfish" name="Tropical Fish" etype="P" />
+    <entity id="0x70" uname="minecraft:cod" name="Cod" etype="P" />
+    <entity id="0x7A" uname="minecraft:cat" name="Cat" etype="P" />
+    <entity id="0x7B" uname="minecraft:panda" name="Panda" etype="P" />
   </entitylist>
 
   <!--
@@ -1432,57 +1512,70 @@
     <biome id="0x09" name="The End" color="0xd1d28a" />
     <biome id="0x0a" name="Frozen Ocean" color="0x0cf5ed" />
     <biome id="0x0b" name="Frozen River" color="0xabedeb" />
-    <biome id="0x0c" name="Ice Plains" color="0xf0f0f0" />
-    <biome id="0x0d" name="Ice Mountains" color="0xe0e0e0" />
-    <biome id="0x0e" name="Mushroom Island" color="0xff1c1c" />
-    <biome id="0x0f" name="Mushroom Island Shore" color="0xff5050" />
+    <biome id="0x0c" name="Snowy Tundra" color="0xf0f0f0" />
+    <biome id="0x0d" name="Snowy Mountains" color="0xe0e0e0" />
+    <biome id="0x0e" name="Mushroom Fields" color="0xff1c1c" />
+    <biome id="0x0f" name="Mushroom Fields Shore" color="0xff5050" />
     <biome id="0x10" name="Beach" color="0xffd37e" />
     <biome id="0x11" name="Desert Hills" color="0xd6cd63" />
-    <biome id="0x12" name="Forest Hills" color="0x2e6535" />
+    <biome id="0x12" name="Wooded Hills" color="0x2e6535" />
     <biome id="0x13" name="Taiga Hills" color="0x8ead8c" />
-    <biome id="0x14" name="Extreme Hills Edge" color="0x909090" />
+    <biome id="0x14" name="Mountain Edge" color="0x909090" />
     <biome id="0x15" name="Jungle" color="0x04a51e" />
     <biome id="0x16" name="Jungle Hills" color="0x036c14" />
     <biome id="0x17" name="Jungle Edge" color="0x21ab38" />
     <biome id="0x18" name="Deep Ocean" color="0x3644d8" />
-    <biome id="0x19" name="Stone Beach" color="0x808080" />
-    <biome id="0x1a" name="Cold Beach" color="0xe0e0ff" />
+    <biome id="0x19" name="Stone Shoew" color="0x808080" />
+    <biome id="0x1a" name="Snowy Beach" color="0xe0e0ff" />
     <biome id="0x1b" name="Birch Forest" color="0x8af98f" />
     <biome id="0x1c" name="Birch Forest Hills" color="0x90e294" />
-    <biome id="0x1d" name="Roofed Forest" color="0x1f7b23" />
-    <biome id="0x1e" name="Cold Taiga" color="0xd0d0f0" />
-    <biome id="0x1f" name="Cold Taiga Hills" color="0xa0a0c0" />
-    <biome id="0x20" name="Mega Taiga" color="0x45390a" />
-    <biome id="0x21" name="Mega Taiga Hills" color="0x76641b" />
-    <biome id="0x22" name="Extreme Hills+" color="0xb0b0b0" />
+    <biome id="0x1d" name="Dark Forest" color="0x1f7b23" />
+    <biome id="0x1e" name="Snowy Taiga" color="0xd0d0f0" />
+    <biome id="0x1f" name="Snowy Taiga Hills" color="0xa0a0c0" />
+    <biome id="0x20" name="Giant Tree Taiga" color="0x45390a" />
+    <biome id="0x21" name="Giant Tree Taiga Hills" color="0x76641b" />
+    <biome id="0x22" name="Wooded Mountains" color="0xb0b0b0" />
     <biome id="0x23" name="Savanna" color="0x80b21f" />
     <biome id="0x24" name="Savanna Plateau" color="0x9ac548" />
-    <biome id="0x25" name="Mesa" color="0xb75252" />
-    <biome id="0x26" name="Mesa Plateau F" color="0xb76666" />
-    <biome id="0x27" name="Mesa Plateau" color="0xb87474" />
+    <biome id="0x25" name="Badlands" color="0xb75252" />
+    <biome id="0x26" name="Wooded Badlands Plateau" color="0xb76666" />
+    <biome id="0x27" name="Badlands Plateau" color="0xb87474" />
+    <biome id="0x28" name="Small End Islands" color="0xd2cf7d" />
+    <biome id="0x29" name="End Midlands" color="0xaaa750" />
+    <biome id="0x2a" name="End Highlands" color="0xe0dd93" />
+    <biome id="0x2b" name="End Barrens" color="0xaaa761" />
+    <biome id="0x2c" name="Warm Ocean" color="0x838ade" />
+    <biome id="0x2d" name="Lukewarm Ocean" color="0x6770cb" />
+    <biome id="0x2e" name="Cold Ocean" color="0xa1a6d1" />
+    <biome id="0x2f" name="Deep Warm Ocean" color="0x1c268b" />
+    <biome id="0x30" name="Deep Lukewarm Ocean" color="0x2833a8" />
+    <biome id="0x31" name="Deep Cold Ocean" color="0x7b7fab" />
+    <biome id="0x32" name="Deep Frozen Ocean" color="0xa8aabe" />
     <biome id="0x7f" name="The Void" color="0x202020" />
     <biome id="0x80" name="Plains M" color="0x2faf51" />
     <biome id="0x81" name="Sunflower Plains" color="0xf8f12c" />
-    <biome id="0x82" name="Desert M" color="0xb8b270" />
-    <biome id="0x83" name="Extreme Hills M" color="0xc0c0c0" />
+    <biome id="0x82" name="Desert Lakes" color="0xb8b270" />
+    <biome id="0x83" name="Gravelly Mountains" color="0xc0c0c0" />
     <biome id="0x84" name="Flower Forest" color="0xfd893c" />
-    <biome id="0x85" name="Taiga M" color="0x84c280" />
-    <biome id="0x86" name="Swampland M" color="0x936396" />
-    <biome id="0x8c" name="Ice Plains Spikes" color="0x02cffd" />
-    <biome id="0x95" name="Jungle M" color="0x14e736" />
-    <biome id="0x97" name="JungleEdge M" color="0x3ada54" />
-    <biome id="0x9b" name="Birch Forest M" color="0x9de2a0" />
-    <biome id="0x9c" name="Birch Forest Hills M" color="0x83bb85" />
-    <biome id="0x9d" name="Roofed Forest M" color="0x15901a" />
-    <biome id="0x9e" name="Cold Taiga M" color="0x9090b0" />
-    <biome id="0xa0" name="Mega Spruce Taiga" color="0x538a4d" />
-    <biome id="0xa1" name="Redwood Taiga Hills M" color="0x576c54" />
-    <biome id="0xa2" name="Extreme Hills+ M" color="0xd0d0d0" />
-    <biome id="0xa3" name="Savanna M" color="0x96b25e" />
-    <biome id="0xa4" name="Savanna Plateau M" color="0x7f9652" />
-    <biome id="0xa5" name="Mesa (Bryce)" color="0xd18383" />
-    <biome id="0xa6" name="Mesa Plateau F M" color="0xd19292" />
-    <biome id="0xa7" name="Mesa Plateau M" color="0xb87e7e" />
+    <biome id="0x85" name="Taiga Mountains" color="0x84c280" />
+    <biome id="0x86" name="Swamp Hills" color="0x936396" />
+    <biome id="0x8c" name="Ice Spikes" color="0x02cffd" />
+    <biome id="0x95" name="Modified Jungle" color="0x14e736" />
+    <biome id="0x97" name="Modified Jungle Edge" color="0x3ada54" />
+    <biome id="0x9b" name="Tall Birch Forest" color="0x9de2a0" />
+    <biome id="0x9c" name="Tall Birch Hills" color="0x83bb85" />
+    <biome id="0x9d" name="Dark Forest Hills" color="0x15901a" />
+    <biome id="0x9e" name="Snowy Taiga Mountains" color="0x9090b0" />
+    <biome id="0xa0" name="Giant Spruce Taiga" color="0x538a4d" />
+    <biome id="0xa1" name="Giant Spruce Taiga Hills" color="0x576c54" />
+    <biome id="0xa2" name="Gravelly Mountains+" color="0xd0d0d0" />
+    <biome id="0xa3" name="Shattered Savana" color="0x96b25e" />
+    <biome id="0xa4" name="Shattered Savanna Plateau" color="0x7f9652" />
+    <biome id="0xa5" name="Eroded Badlands" color="0xd18383" />
+    <biome id="0xa6" name="Modified Wooded Badlands Plateau" color="0xd19292" />
+    <biome id="0xa7" name="Modified Badlands Plateau" color="0xb87e7e" />
+    <biome id="0xa8" name="Bamboo Jungle" color="0x58d0a4" />
+    <biome id="0xa9" name="Bamboo Jungle Hills" color="0x20a776" />
   </biomelist>
 
   <!--

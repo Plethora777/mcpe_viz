@@ -513,10 +513,23 @@ namespace mcpe_viz {
       if ( iitem.has_key("Slot", nbt::tag_type::Byte) ) {
         slot = iitem["Slot"].as<nbt::tag_byte>().get();
       }
+
+      // pre-0.1.8? id-based instead of name-based
       if ( iitem.has_key("id", nbt::tag_type::Short) ) {
         id = iitem["id"].as<nbt::tag_short>().get();
       }
 
+      //todozooz - "Block" stores info on blocks - is it interesting?
+      if ( iitem.has_key("Block", nbt::tag_type::Short) ) {
+      }
+
+      // post-0.1.8? name-based instead of id-based
+      if ( iitem.has_key("Name", nbt::tag_type::String) ) {
+        std::string name = iitem["Name"].as<nbt::tag_string>().get();
+        id = findIdByItemName(name);
+      }
+      
+      
       // todo - other fields? 
 
       // look for item enchantment
@@ -565,7 +578,8 @@ namespace mcpe_viz {
       }
         
       s = "\"Name\":";
-      if ( id >= 0 && id <= 255 ) {
+//todozooz
+      if ( id >= 0 && id < 256 ) {
         s += "\"" + getBlockName(id,damage) + "\"";
       } else {
         std::string iname = getItemName(id, damage);
@@ -605,6 +619,7 @@ namespace mcpe_viz {
 
       // check for icon image
       char urlImage[1025];
+//todozooz
       if ( id < 256 ) {
         sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, damage);
       } else {
@@ -613,6 +628,7 @@ namespace mcpe_viz {
 
       if ( ! file_exists(urlImage) ) {
         // check for non-variant
+//todozooz
         if ( id < 256 ) {
           sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, 0);
         } else {
@@ -660,7 +676,8 @@ namespace mcpe_viz {
         
       std::string s = "[";
 
-      if ( id >= 0 && id <= 255 ) {
+//todozooz
+      if ( id >= 0 && id < 256 ) {
         s += "Block:" + getBlockName(id,damage);
       } else {
         s += "Item:" + getItemName(id, damage);
@@ -1222,7 +1239,13 @@ namespace mcpe_viz {
       return 0;
     }
     int32_t addMobSpawner ( nbt::tag_compound &tc ) {
-      entityId = tc["EntityId"].as<nbt::tag_int>().get();
+      if ( tc.has_key("EntityId") ) {
+        entityId = tc["EntityId"].as<nbt::tag_int>().get();
+      }
+      else if ( tc.has_key("EntityIdentifier") ) {
+        std::string entityName = tc["EntityIdentifier"].as<nbt::tag_string>().get();
+        entityId = findEntityByUname(entityInfoList, entityName);
+      }
       // todo - how to interpret entityId? (e.g. 0xb22 -- 0x22 is skeleton, what is 0xb?)
       // todo - any of these interesting?
       /*
@@ -1541,17 +1564,30 @@ namespace mcpe_viz {
         // as of (at least) v1.2.x some mobs have string id's... sigh
         std::string ids = tc["id"].as<nbt::tag_string>().get();
         // lookup ids in entityinfolist
-        int32_t idFind = findIdString(entityInfoList, ids);
+        int32_t idFind = findEntityByUname(entityInfoList, ids);
         if ( idFind >= 0 ) { 
           entity->idFull = idFind;
           entity->idShort = entity->idFull & 0xFF;
         } else {
-          logger.msg(kLogInfo1,"WARNING: Did not find idString for entity id (%s)\n", ids.c_str());
+          logger.msg(kLogInfo1,"WARNING: Did not find uname for entity id (%s)\n", ids.c_str());
+        }
+      }
+      else if(tc.has_key("identifier")) {
+        std::string identifier = tc["identifier"].as<nbt::tag_string>().get();
+        int32_t idFindFinally = findEntityByUname(entityInfoList, identifier);
+        //slogger.msg(kLogWarning, "Identifier is: %s", identifier.c_str());
+        if (identifier != "minecraft:gravel") {
+          entity->idFull = idFindFinally;
+          entity->idShort = entity->idFull;
+        }
+        else {
+          entity->idFull = 0x0D;
+          entity->idShort = entity->idFull;
         }
       }
       else {
         // todonow -this appears to happen for maps
-        logger.msg(kLogInfo1,"WARNING: Did not find id or idString for entity! Weird.\n");
+        logger.msg(kLogInfo1,"WARNING: Did not find id or uname for entity! Weird.\n");
       }
       
       // todo - diff entities have other fields:
@@ -1772,7 +1808,10 @@ namespace mcpe_viz {
         
       // stuff I found:
       entity->checkOtherProp(tc, "SpawnedByNight");
-        
+
+      entity->checkOtherProp(tc, "identifier");
+      entity->checkOtherProp(tc, "Name");
+      
       logger.msg(kLogInfo1, "%sParsedEntity: %s\n", dimName.c_str(), entity->toString(actualDimensionId).c_str());
 
       std::string geojson = entity->toGeoJSON(actualDimensionId);
@@ -1837,6 +1876,7 @@ namespace mcpe_viz {
               nbt::tag_compound iitem = iter.as<nbt::tag_compound>();
               tileEntity->addItem(iitem);
             }
+
             parseFlag = true;
           }
         }

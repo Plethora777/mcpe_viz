@@ -10,6 +10,13 @@
   To build it, use cmake
 
 
+  todozooz
+  * update web ui for new mobs / objects / entities
+  * block or item based on ID is no longer valid?! (search on 256 in nbt code)
+  
+  maybe?
+  * move from xml to json?
+  * ui for mobs from xml instead of hard-coded?
 
   todohere
 
@@ -250,7 +257,7 @@ namespace mcpe_viz {
   int32_t palRedBlackGreen[256];
 
   // info lists (from XML)
-  BlockInfo blockInfoList[256];
+  BlockInfo blockInfoList[512];
   ItemInfoList itemInfoList;
   EntityInfoList entityInfoList;
   BiomeInfoList biomeInfoList;
@@ -912,15 +919,39 @@ namespace mcpe_viz {
   }
 
 
-  int32_t findIdString(const EntityInfoList &m, std::string& ids) {
+  int32_t findEntityByUname(const EntityInfoList &m, std::string& un) {
+    // convert search key to lower case
+    std::string uname = un;
+    std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
     for (EntityInfoList::const_iterator it=m.begin(); it!=m.end(); ++it)
-      if ( it->second->idString == ids ) {
+      if ( it->second->uname == uname ) {
         return it->first;
       }
     return -1;
   }
-  
 
+  int32_t findIdByItemName(std::string& uname) {
+    for (ItemInfoList::const_iterator it=itemInfoList.begin(); it!=itemInfoList.end(); ++it)
+      if ( it->second->uname == uname ) {
+        return it->first;
+      }
+    return 0;
+  }
+  
+  //todozooz - we already have a func like this?
+  int32_t findIdByBlockName(std::string& k) {
+    int32_t temp = 0;
+    for (const auto& it : blockInfoList ) {
+      for ( const auto& u : it.unameList ) {
+        if ( u == k ) {
+          temp = it.id;
+        }
+      }
+    }
+    return temp;
+  }
+
+  
   // todobig - it would be nice to do something like this, but unique_ptr stands in the way...
 #if 0
   BlockInfo* getBlockInfo(int32_t id, int32_t blockData) {
@@ -945,8 +976,10 @@ namespace mcpe_viz {
   }
 #endif
 
-  int32_t getBlockByUname(const std::string& uname, int32_t& blockId, int32_t& blockData) {
-
+  int32_t getBlockByUname(const std::string& un, int32_t& blockId, int32_t& blockData) {
+    // convert search key to lower case
+    std::string uname = un;
+    std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
     for (const auto& it : blockInfoList ) {
       for ( const auto& u : it.unameList ) {
         if ( u == uname ) {
@@ -1003,13 +1036,13 @@ namespace mcpe_viz {
           }
         }
         // todo err
-        slogger.msg(kLogWarning, "getItemName failed to find variant id=%d extradata=%d\n", id, extraData);
+        slogger.msg(kLogWarning, "getItemName failed to find variant id=%d (0x%x) extradata=%d (0x%x)\n", id, id, extraData, extraData);
       } else {
         return itemInfoList[id]->name;
       }
     }
     
-    slogger.msg(kLogWarning, "getItemName failed to find id=%d extradata=%d\n", id, extraData);
+    slogger.msg(kLogWarning, "getItemName failed to find variant id=%d (0x%x) extradata=%d (0x%x)\n", id, id, extraData, extraData);
     char tmpstring[256];
     sprintf(tmpstring,"(Unknown-item-id-%d-data-%d)", id, extraData);
     return std::string(tmpstring);
@@ -1165,7 +1198,7 @@ namespace mcpe_viz {
       chunkZ = tchunkZ;
       chunkFormatVersion = 2;
       
-      int16_t histogramBlock[256];
+      int16_t histogramBlock[512];
       int16_t histogramBiome[256];
       memset(histogramBlock, 0, sizeof(histogramBlock));
       memset(histogramBiome, 0, sizeof(histogramBiome));
@@ -1360,7 +1393,7 @@ namespace mcpe_viz {
         logger.msg(kLogInfo1,"\n");
       }
       logger.msg(kLogInfo1,"Block Histogram:\n");
-      for (int32_t i=0; i < 256; i++) {
+      for (int32_t i=0; i < 512; i++) {
         if ( histogramBlock[i] > 0 ) {
           logger.msg(kLogInfo1,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBlock[i], blockInfoList[i].name.c_str());
         }
@@ -1396,7 +1429,7 @@ namespace mcpe_viz {
       chunkFormatVersion = 3;
       
       // todonow todostopper - this is problematic for cubic chunks
-      int16_t histogramBlock[256];
+      int16_t histogramBlock[512];
       int16_t histogramBiome[256];
       memset(histogramBlock, 0, sizeof(histogramBlock));
       memset(histogramBiome, 0, sizeof(histogramBiome));
@@ -1514,7 +1547,7 @@ namespace mcpe_viz {
           logger.msg(kLogInfo1,"\n");
         }
         logger.msg(kLogInfo1,"Block Histogram:\n");
-        for (int32_t i=0; i < 256; i++) {
+        for (int32_t i=0; i < 512; i++) {
           if ( histogramBlock[i] > 0 ) {
             logger.msg(kLogInfo1,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBlock[i], blockInfoList[i].name.c_str());
           }
@@ -1551,7 +1584,7 @@ namespace mcpe_viz {
       chunkFormatVersion = 7;
       
       // todonow todostopper - this is problematic for cubic chunks
-      int16_t histogramBlock[256];
+      int16_t histogramBlock[512];
       int16_t histogramBiome[256];
       memset(histogramBlock, 0, sizeof(histogramBlock));
       memset(histogramBiome, 0, sizeof(histogramBiome));
@@ -1740,7 +1773,7 @@ namespace mcpe_viz {
           logger.msg(kLogInfo1,"\n");
         }
         logger.msg(kLogInfo1,"Block Histogram:\n");
-        for (int32_t i=0; i < 256; i++) {
+        for (int32_t i=0; i < 512; i++) {
           if ( histogramBlock[i] > 0 ) {
             logger.msg(kLogInfo1,"%s-hg: %02x: %6d (%s)\n", dimName.c_str(), i, histogramBlock[i], blockInfoList[i].name.c_str());
           }
@@ -2609,7 +2642,7 @@ namespace mcpe_viz {
       
       // report items that need to have their color set properly (in the XML file)
       if ( imageMode == kImageModeTerrain ) {
-        for (int32_t i=0; i < 256; i++) {
+        for (int32_t i=0; i < 512; i++) {
           if ( blockInfoList[i].colorSetNeedCount ) {
             slogger.msg(kLogInfo1,"    Need pixel color for: 0x%x '%s' (%d)\n", i, blockInfoList[i].name.c_str(), blockInfoList[i].colorSetNeedCount);
           }
@@ -3823,7 +3856,7 @@ namespace mcpe_viz {
       doOutput_Schematic(db);
     
       // reset
-      for (int32_t i=0; i < 256; i++) {
+      for (int32_t i=0; i < 512; i++) {
         blockInfoList[i].colorSetNeedCount = 0;
       }
 
@@ -4916,7 +4949,7 @@ namespace mcpe_viz {
                 );
             
         fprintf(fp,"var blockColorLUT = {\n");
-        for (int32_t i=0; i < 256; i++) {
+        for (int32_t i=0; i < 512; i++) {
           if ( blockInfoList[i].hasVariants() ) {
             // we need to get blockdata
             for (const auto& itbv : blockInfoList[i].variantList) {
@@ -5040,7 +5073,7 @@ namespace mcpe_viz {
       std::vector< std::unique_ptr<ColorInfo> > webColorList;
 
       webColorList.clear();
-      for (int32_t i=0; i < 256; i++) {
+      for (int32_t i=0; i < 512; i++) {
         if ( blockInfoList[i].hasVariants() ) {
           for (const auto& itbv : blockInfoList[i].variantList) {
             webColorList.push_back( std::unique_ptr<ColorInfo>
@@ -5414,7 +5447,7 @@ namespace mcpe_viz {
     
     // initialize lists
     // todobig - others?
-    for (int32_t i=0; i < 256; i++) {
+    for (int32_t i=0; i < 512; i++) {
       sprintf(tmpstring,"(unknown-id-0x%02x)", i);
       blockInfoList[i].setName(tmpstring);
       blockInfoList[i].valid = false;
@@ -5465,7 +5498,7 @@ namespace mcpe_viz {
     std::string dirDest = control.dirFindImagesOut;
 
     // clear block list
-    for (int i=0; i < 256; i++) {
+    for (int i=0; i < 512; i++) {
       if ( blockInfoList[i].isValid() ) {
         if ( blockInfoList[i].hasVariants() ) {
           for (const auto& itbv : blockInfoList[i].variantList) {
@@ -5510,7 +5543,7 @@ namespace mcpe_viz {
             
             bool found = false;
 
-            if ( blockId < 256 ) {
+            if ( blockId < 512 ) {
               // it's a block, look it up
               
               if ( blockInfoList[blockId].isValid() ) {
@@ -5572,7 +5605,7 @@ namespace mcpe_viz {
 
     // check blocks
     slogger.msg(kLogInfo1,"\n** BLOCK SUMMARY **\n");
-    for (int i=0; i < 256; i++) {
+    for (int i=0; i < 512; i++) {
       if ( blockInfoList[i].isValid() ) {
         if ( blockInfoList[i].hasVariants() ) {
           for (const auto& itbv : blockInfoList[i].variantList) {
@@ -5619,7 +5652,7 @@ namespace mcpe_viz {
     // process found blocks
     // todobig - might be faster/cooler to make a sprite sheet
     char fnDest[1025];
-    for (int i=0; i < 256; i++) {
+    for (int i=0; i < 512; i++) {
       if ( blockInfoList[i].isValid() ) {
         if ( blockInfoList[i].hasVariants() ) {
           for (const auto& itbv : blockInfoList[i].variantList) {

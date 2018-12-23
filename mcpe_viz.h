@@ -13,7 +13,9 @@
 #include <map>
 
 namespace mcpe_viz {
-    
+
+  //todozooz - MAX_BLOCK_ID MAX_ITEM_ID etc
+  
   const int32_t kColorDefault = 0xff00ff;  
 
   // todo ugly globals
@@ -172,7 +174,7 @@ namespace mcpe_viz {
     }
   };
   
-  extern BlockInfo blockInfoList[256];
+  extern BlockInfo blockInfoList[512];
 
   //BlockInfo* getBlockInfo(int32_t id, int32_t blockData);
   std::string getBlockName(int32_t id, int32_t blockdata);
@@ -183,13 +185,15 @@ namespace mcpe_viz {
   class ItemInfo {
   public:
     std::string name;
+    std::string uname;
     int32_t extraData;
     std::vector< std::unique_ptr<ItemInfo> > variantList;
     int32_t userVar1;
     std::string userString1;
     
-    ItemInfo(const char* n) {
+    ItemInfo(const char* n, const char* un) {
       setName(n);
+      setUname(un);
       extraData = 0;
       variantList.clear();
       userVar1 = 0;
@@ -198,6 +202,11 @@ namespace mcpe_viz {
 
     ItemInfo& setName (const std::string& s) {
       name = std::string(s);
+      return *this;
+    }
+
+    ItemInfo& setUname (const std::string& un) {
+      uname = std::string(un);
       return *this;
     }
 
@@ -216,8 +225,8 @@ namespace mcpe_viz {
       extraData = ed;
     }
     
-    ItemInfo& addVariant(int32_t ed, const std::string& n) {
-      std::unique_ptr<ItemInfo> iv(new ItemInfo(n.c_str()));
+    ItemInfo& addVariant(int32_t ed, const std::string& n, const std::string& un) {
+      std::unique_ptr<ItemInfo> iv(new ItemInfo(n.c_str(), un.c_str()));
       iv->setExtraData(ed);
       variantList.push_back( std::move(iv) );
       return *(variantList.back());
@@ -233,13 +242,13 @@ namespace mcpe_viz {
   
   class EntityInfo {
   public:
-    std::string idString;
+    std::string uname;
     std::string name;
     std::string etype;
     
-    EntityInfo(const std::string& n, const std::string& is, const std::string& e ) {
+    EntityInfo(const std::string& n, const std::string& un, const std::string& e ) {
       setName(n);
-      setIdString(is);
+      setUname(un);
       setEtype(e);
     }
 
@@ -248,8 +257,8 @@ namespace mcpe_viz {
       return *this;
     }
 
-    EntityInfo& setIdString (const std::string& s) {
-      idString = std::string(s);
+    EntityInfo& setUname (const std::string& s) {
+      uname = std::string(s);
       return *this;
     }
 
@@ -262,9 +271,10 @@ namespace mcpe_viz {
   typedef std::map<int, std::unique_ptr<EntityInfo> > EntityInfoList;
   extern EntityInfoList entityInfoList;
   bool has_key(const EntityInfoList &m, int32_t k);
-  int32_t findIdString(const EntityInfoList &m, std::string& ids);
-
-
+  int32_t findEntityByUname(const EntityInfoList &m, std::string& un);
+  int32_t findIdByItemName(std::string& uname);
+  int32_t findIdByBlockName(std::string& uname);
+  
   class BiomeInfo {
   public:
     std::string name;

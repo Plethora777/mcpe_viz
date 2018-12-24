@@ -930,25 +930,29 @@ namespace mcpe_viz {
     return -1;
   }
 
-  int32_t findIdByItemName(std::string& uname) {
-    for (ItemInfoList::const_iterator it=itemInfoList.begin(); it!=itemInfoList.end(); ++it)
+  int32_t findIdByItemName(std::string& un) {
+    std::string uname = un;
+    std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
+    for (ItemInfoList::const_iterator it=itemInfoList.begin(); it!=itemInfoList.end(); ++it) {
       if ( it->second->uname == uname ) {
         return it->first;
       }
-    return 0;
+    }
+    return -1;
   }
   
   //todozooz - we already have a func like this?
-  int32_t findIdByBlockName(std::string& k) {
-    int32_t temp = 0;
+  int32_t findIdByBlockName(std::string& un) {
+    std::string uname = un;
+    std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
     for (const auto& it : blockInfoList ) {
       for ( const auto& u : it.unameList ) {
-        if ( u == k ) {
-          temp = it.id;
+        if ( u == uname ) {
+          return it.id;
         }
       }
     }
-    return temp;
+    return -1;
   }
 
   
@@ -1129,7 +1133,7 @@ namespace mcpe_viz {
   public:
     // todobig - move to private?
     int32_t chunkX, chunkZ;
-    uint8_t blocks[16][16];
+    uint16_t blocks[16][16];
     uint8_t data[16][16];
     uint32_t grassAndBiome[16][16];
     uint8_t topBlockY[16][16];
@@ -1388,7 +1392,7 @@ namespace mcpe_viz {
         for (int32_t cx=0; cx<16; cx++) {
           rawData = grassAndBiome[cx][cz];
           biomeId = (uint8_t)(rawData & 0xFF);
-          logger.msg(kLogInfo1,"%02x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
+          logger.msg(kLogInfo1,"%03x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
         }
         logger.msg(kLogInfo1,"\n");
       }
@@ -1542,7 +1546,7 @@ namespace mcpe_viz {
           for (int32_t cx=0; cx<16; cx++) {
             rawData = grassAndBiome[cx][cz];
             biomeId = (uint8_t)(rawData & 0xFF);
-            logger.msg(kLogInfo1,"%02x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
+            logger.msg(kLogInfo1,"%03x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
           }
           logger.msg(kLogInfo1,"\n");
         }
@@ -1768,7 +1772,7 @@ namespace mcpe_viz {
           for (int32_t cx=0; cx<16; cx++) {
             rawData = grassAndBiome[cx][cz];
             biomeId = (uint8_t)(rawData & 0xFF);
-            logger.msg(kLogInfo1,"%02x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
+            logger.msg(kLogInfo1,"%03x:%x:%02x ", (int)blocks[cx][cz], (int)data[cx][cz], (int)biomeId);
           }
           logger.msg(kLogInfo1,"\n");
         }
@@ -2039,9 +2043,9 @@ namespace mcpe_viz {
     Histogram histogramGlobalBlock;
     Histogram histogramGlobalBiome;
 
-    bool fastBlockForceTopList[256];
-    bool fastBlockHideList[256];
-    bool fastBlockToGeoJSONList[256];
+    bool fastBlockForceTopList[512];
+    bool fastBlockHideList[512];
+    bool fastBlockToGeoJSONList[512];
 
     // convenience vars from world object
     std::string worldName;
@@ -2083,7 +2087,7 @@ namespace mcpe_viz {
     }
                       
     void updateFastLists() {
-      for (int32_t bid=0; bid < 256; bid++) {
+      for (int32_t bid=0; bid < 512; bid++) {
         fastBlockHideList[bid] = vectorContains(blockHideList, bid);
         fastBlockForceTopList[bid] = vectorContains(blockForceTopList, bid);
         fastBlockToGeoJSONList[bid] = vectorContains(blockToGeoJSONList, bid);

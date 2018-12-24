@@ -185,6 +185,7 @@ namespace mcpe_viz {
   class ItemInfo {
   public:
     std::string name;
+    //todozoo - unameList?
     std::string uname;
     int32_t extraData;
     std::vector< std::unique_ptr<ItemInfo> > variantList;
@@ -242,6 +243,7 @@ namespace mcpe_viz {
   
   class EntityInfo {
   public:
+    //todozoo - unameList?
     std::string uname;
     std::string name;
     std::string etype;

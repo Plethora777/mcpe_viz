@@ -961,7 +961,7 @@
     <item id="0x11D" name="Gold Pickaxe" uname="minecraft:gold_pickaxe" /> <!-- *D -->
     <item id="0x11E" name="Gold Axe" uname="minecraft:gold_axe" /> <!-- *D -->
     <item id="0x11F" name="String" uname="minecraft:string" />
-    <item id="0x120" name="Feather" uname="minecraft:leather" />
+    <item id="0x120" name="Feather" uname="minecraft:feather" />
     <item id="0x121" name="Gunpowder" uname="minecraft:gunpowder" />
     <item id="0x122" name="Wooden Hoe" uname="minecraft:wooden_hoe" /> <!-- *D -->
     <item id="0x123" name="Stone Hoe" uname="minecraft:stone_hoe" /> <!-- *D -->
@@ -1029,7 +1029,7 @@
     <item id="0x152" name="Sugar Cane" uname="minecraft:reeds" />
     <item id="0x153" name="Paper" uname="minecraft:paper" />
     <item id="0x154" name="Book" uname="minecraft:book" />
-    <item id="0x155" name="Slimeball" uname="minecraft:slimeball" />
+    <item id="0x155" name="Slimeball" uname="minecraft:slime_ball" />
     <item id="0x156" name="Minecart, Chest" uname="minecraft:chest_minecart" />
     <item id="0x158" name="Egg" uname="minecraft:egg" />
     <item id="0x159" name="Compass" uname="minecraft:compass" />
@@ -1073,7 +1073,7 @@
     <item id="0x163" name="Bed" uname="minecraft:bed" />
     <item id="0x164" name="Redstone Repeater" uname="minecraft:repeater" />
     <item id="0x165" name="Cookie" uname="minecraft:cookie" />
-    <item id="0x166" name="Map, Filled" uname="minecraft:map_filled" /> <!-- todo more data to harvest here? -->
+    <item id="0x166" name="Map, Filled" uname="minecraft:map" /> <!-- todo more data to harvest here? -->
     <item id="0x167" name="Shears" uname="minecraft:shears" /> <!-- *D -->
     <item id="0x168" name="Melon" uname="minecraft:melon" />
     <item id="0x169" name="Pumpkin Seeds" uname="minecraft:pumpkin_seeds" />
@@ -1227,7 +1227,7 @@
     <item id="0x1A2" name="Horse Armor, Gold" uname="minecraft:horsearmorgold" /> <!-- 0.15 -->
     <item id="0x1A3" name="Horse Armor, Diamond" uname="minecraft:horsearmordiamond" /> <!-- 0.15 -->
     <item id="0x1A4" name="Lead" uname="minecraft:lead" /> <!-- 0.15 -->
-    <item id="0x1A5" name="Name Tag" uname="minecraft:nametag" /> <!-- 0.15 -->
+    <item id="0x1A5" name="Name Tag" uname="minecraft:name_tag" /> <!-- 0.15 -->
     <item id="0x1A6" name="Prismarine Crystals" uname="minecraft:prismarine_crystals" /> <!-- 0.16 -->
     <item id="0x1A7" name="Mutton, Raw" uname="minecraft:muttonraw" /> <!-- 0.15 -->
     <item id="0x1A8" name="Mutton, Cooked" uname="minecraft:muttoncooked" /> <!-- 0.15 -->

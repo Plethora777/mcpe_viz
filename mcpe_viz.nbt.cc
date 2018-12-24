@@ -484,6 +484,8 @@ namespace mcpe_viz {
   public:
     bool valid;
     bool armorFlag;
+    bool blockFlag;
+    bool nameBasedFlag;
     int32_t id;
     int32_t slot;
     int32_t damage;
@@ -496,6 +498,8 @@ namespace mcpe_viz {
     void clear() {
       valid = false;
       armorFlag = false;
+      blockFlag = false;
+      nameBasedFlag = false;
       id = -1;
       slot = -1;
       damage = -1;
@@ -520,15 +524,24 @@ namespace mcpe_viz {
       }
 
       //todozooz - "Block" stores info on blocks - is it interesting?
-      if ( iitem.has_key("Block", nbt::tag_type::Short) ) {
+      if ( iitem.has_key("Block", nbt::tag_type::Compound) ) {
+        blockFlag = true;
       }
 
       // post-0.1.8? name-based instead of id-based
       if ( iitem.has_key("Name", nbt::tag_type::String) ) {
+        nameBasedFlag = true;
         std::string name = iitem["Name"].as<nbt::tag_string>().get();
-        id = findIdByItemName(name);
+        if ( name.length() > 0 ) {
+          id = findIdByItemName(name);
+          if ( id < 0 && blockFlag ) {
+            id = findIdByBlockName(name);
+          }
+          if (id < 0 ) {
+            slogger.msg(kLogWarning, "Did not find uname '%s' (item parse)\n", name.c_str());
+          }
+        }
       }
-      
       
       // todo - other fields? 
 
@@ -555,7 +568,9 @@ namespace mcpe_viz {
           }
         }
       }
-      valid = true;
+      if ( id >= 0 ) {
+        valid = true;
+      }
       return 0;
     }
     
@@ -578,12 +593,20 @@ namespace mcpe_viz {
       }
         
       s = "\"Name\":";
-//todozooz
-      if ( id >= 0 && id < 256 ) {
-        s += "\"" + getBlockName(id,damage) + "\"";
+      if ( nameBasedFlag ) {
+        if ( blockFlag ) {
+          s += "\"" + getBlockName(id,damage) + "\"";
+        } else {
+          std::string iname = getItemName(id, damage);
+          s += "\"" + iname + "\"";
+        }
       } else {
-        std::string iname = getItemName(id, damage);
-        s += "\"" + iname + "\"";
+        if ( id >= 0 && id < 256 ) {
+          s += "\"" + getBlockName(id,damage) + "\"";
+        } else {
+          std::string iname = getItemName(id, damage);
+          s += "\"" + iname + "\"";
+        }
       }
       list.push_back(s);
 
@@ -619,21 +642,28 @@ namespace mcpe_viz {
 
       // check for icon image
       char urlImage[1025];
-//todozooz
-      if ( id < 256 ) {
-        sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, damage);
+      char urlImageGeneric[1025];
+      if ( nameBasedFlag ) {
+        if ( blockFlag ) {
+          sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, damage);
+          sprintf(urlImageGeneric,"images/mcpe_viz.block.%d.%d.png", id, 0);
+        } else {
+          sprintf(urlImage,"images/mcpe_viz.item.%d.%d.png", id, damage);
+          sprintf(urlImageGeneric,"images/mcpe_viz.item.%d.%d.png", id, 0);
+        }
       } else {
-        sprintf(urlImage,"images/mcpe_viz.item.%d.%d.png", id, damage);
+        if ( id < 256 ) {
+          sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, damage);
+          sprintf(urlImageGeneric,"images/mcpe_viz.block.%d.%d.png", id, 0);
+        } else {
+          sprintf(urlImage,"images/mcpe_viz.item.%d.%d.png", id, damage);
+          sprintf(urlImageGeneric,"images/mcpe_viz.item.%d.%d.png", id, 0);
+        }
       }
 
       if ( ! file_exists(urlImage) ) {
         // check for non-variant
-//todozooz
-        if ( id < 256 ) {
-          sprintf(urlImage,"images/mcpe_viz.block.%d.%d.png", id, 0);
-        } else {
-          sprintf(urlImage,"images/mcpe_viz.item.%d.%d.png", id, 0);
-        }
+        strcpy(urlImage, urlImageGeneric);
       }
       
       if ( file_exists(dirExec + "/" + urlImage) ) {
@@ -676,13 +706,20 @@ namespace mcpe_viz {
         
       std::string s = "[";
 
-//todozooz
-      if ( id >= 0 && id < 256 ) {
-        s += "Block:" + getBlockName(id,damage);
+      if ( nameBasedFlag ) {
+        if ( blockFlag ) {
+          s += "Block:" + getBlockName(id,damage);
+        } else {
+          s += "Item:" + getItemName(id, damage);
+        }
       } else {
-        s += "Item:" + getItemName(id, damage);
+        if ( id >= 0 && id < 256 ) {
+          s += "Block:" + getBlockName(id,damage);
+        } else {
+          s += "Item:" + getItemName(id, damage);
+        }
       }
-
+      
       if ( damage >= 0 ) {
         sprintf(tmpstring," Damage=%d", damage);
         s += tmpstring;

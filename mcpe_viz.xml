@@ -880,6 +880,9 @@
     <block id="0x19e" name="Turtle Egg" uname="minecraft:turtle_egg" color="0x4d8845" />
     <block id="0x19f" name="Bubble Column" uname="minecraft:bubble_column" color="0xa4cccd" />
     <block id="0x1a0" name="Barrier" uname="minecraft:barrier" color="0xf80a31" />
+
+    <!-- todo - **NOTE** totally invented block-id's follow - max allowed block id is 0x1ff -->
+    <block id="0x1f0" name="Scaffolding" uname="minecraft:scaffolding" color="0xc5b023" />
   </blocklist>
 
   <!--
@@ -956,10 +959,10 @@
     <item id="0x118" name="Stick" uname="minecraft:stick" />
     <item id="0x119" name="Bowl" uname="minecraft:bowl" />
     <item id="0x11A" name="Mushroom Stew" uname="minecraft:mushroom_stew" />
-    <item id="0x11B" name="Gold Sword" uname="minecraft:gold_sword" /> <!-- *D -->
-    <item id="0x11C" name="Gold Shovel" uname="minecraft:gold_shovel" /> <!-- *D -->
-    <item id="0x11D" name="Gold Pickaxe" uname="minecraft:gold_pickaxe" /> <!-- *D -->
-    <item id="0x11E" name="Gold Axe" uname="minecraft:gold_axe" /> <!-- *D -->
+    <item id="0x11B" name="Gold Sword" uname="minecraft:golden_sword" /> <!-- *D -->
+    <item id="0x11C" name="Gold Shovel" uname="minecraft:golden_shovel" /> <!-- *D -->
+    <item id="0x11D" name="Gold Pickaxe" uname="minecraft:golden_pickaxe" /> <!-- *D -->
+    <item id="0x11E" name="Gold Axe" uname="minecraft:golden_axe" /> <!-- *D -->
     <item id="0x11F" name="String" uname="minecraft:string" />
     <item id="0x120" name="Feather" uname="minecraft:feather" />
     <item id="0x121" name="Gunpowder" uname="minecraft:gunpowder" />
@@ -967,7 +970,7 @@
     <item id="0x123" name="Stone Hoe" uname="minecraft:stone_hoe" /> <!-- *D -->
     <item id="0x124" name="Iron Hoe" uname="minecraft:iron_hoe" /> <!-- *D -->
     <item id="0x125" name="Diamond Hoe" uname="minecraft:diamond_hoe" /> <!-- *D -->
-    <item id="0x126" name="Gold Hoe" uname="minecraft:gold_hoe" />
+    <item id="0x126" name="Gold Hoe" uname="minecraft:golden_hoe" />
     <item id="0x127" name="Seeds" uname="minecraft:wheat_seeds" />
     <item id="0x128" name="Wheat" uname="minecraft:wheat" />
     <item id="0x129" name="Bread" uname="minecraft:bread" />

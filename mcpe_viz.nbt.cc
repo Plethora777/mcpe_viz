@@ -533,9 +533,24 @@ namespace mcpe_viz {
         nameBasedFlag = true;
         std::string name = iitem["Name"].as<nbt::tag_string>().get();
         if ( name.length() > 0 ) {
-          id = findIdByItemName(name);
-          if ( id < 0 && blockFlag ) {
+          if ( blockFlag ) {
+            // try block first
             id = findIdByBlockName(name);
+            if ( id < 0 ) {
+              id = findIdByItemName(name);
+              if ( id >= 0 ) {
+                blockFlag = false;
+              }
+            }
+          } else {
+            // try item first
+            id = findIdByItemName(name);
+            if ( id < 0 ) {
+              id = findIdByBlockName(name);
+              if ( id >= 0 ) {
+                blockFlag = true;
+              }
+            }
           }
           if (id < 0 ) {
             slogger.msg(kLogWarning, "Did not find uname '%s' (item parse)\n", name.c_str());
@@ -597,14 +612,14 @@ namespace mcpe_viz {
         if ( blockFlag ) {
           s += "\"" + getBlockName(id,damage) + "\"";
         } else {
-          std::string iname = getItemName(id, damage);
+          std::string iname = getItemName(id, damage, nameBasedFlag);
           s += "\"" + iname + "\"";
         }
       } else {
         if ( id >= 0 && id < 256 ) {
           s += "\"" + getBlockName(id,damage) + "\"";
         } else {
-          std::string iname = getItemName(id, damage);
+          std::string iname = getItemName(id, damage, nameBasedFlag);
           s += "\"" + iname + "\"";
         }
       }
@@ -710,13 +725,13 @@ namespace mcpe_viz {
         if ( blockFlag ) {
           s += "Block:" + getBlockName(id,damage);
         } else {
-          s += "Item:" + getItemName(id, damage);
+          s += "Item:" + getItemName(id, damage, nameBasedFlag);
         }
       } else {
         if ( id >= 0 && id < 256 ) {
           s += "Block:" + getBlockName(id,damage);
         } else {
-          s += "Item:" + getItemName(id, damage);
+          s += "Item:" + getItemName(id, damage, nameBasedFlag);
         }
       }
       

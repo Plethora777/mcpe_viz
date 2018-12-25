@@ -238,7 +238,7 @@ namespace mcpe_viz {
   extern ItemInfoList itemInfoList;
   bool has_key(const ItemInfoList &m, int32_t k);
 
-  std::string getItemName(int32_t id, int32_t extraData);
+  std::string getItemName(int32_t id, int32_t extraData, bool nameBasedFlag);
   
   
   class EntityInfo {

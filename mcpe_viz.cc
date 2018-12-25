@@ -1017,20 +1017,21 @@ namespace mcpe_viz {
             return iter->name;
           }
         }
-        // todo err
-        slogger.msg(kLogWarning, "getBlockName failed to find variant id=%d blockdata=%d\n", id, blockdata);
+        // warn about missing variant, but return parent's name
+        slogger.msg(kLogWarning, "getBlockName failed to find variant id=%d (0x%x) blockdata=%d (0x%x)\n", id, id, blockdata, blockdata);
+        return blockInfoList[id].name;
       } else {
         return blockInfoList[id].name;
       }
     }
     
-    slogger.msg(kLogWarning, "getBlockName failed to find id=%d blockdata=%d\n", id, blockdata);
+    slogger.msg(kLogWarning, "getBlockName failed to find id=%d (0x%x) blockdata=%d (0x%x)\n", id, id, blockdata, blockdata);
     char tmpstring[256];
     sprintf(tmpstring,"(Unknown-block-id-%d-data-%d)", id, blockdata);
     return std::string(tmpstring);
   }
   
-  std::string getItemName(int32_t id, int32_t extraData) {
+  std::string getItemName(int32_t id, int32_t extraData, bool nameBasedFlag) {
     if ( has_key(itemInfoList, id) ) {
       if ( itemInfoList[id]->hasVariants() ) {
         for ( const auto& iter : itemInfoList[id]->variantList ) {
@@ -1039,14 +1040,15 @@ namespace mcpe_viz {
             return iter->name;
           }
         }
-        // todo err
-        slogger.msg(kLogWarning, "getItemName failed to find variant id=%d (0x%x) extradata=%d (0x%x)\n", id, id, extraData, extraData);
+        // warn about missing variant, but return parent's name
+        slogger.msg(kLogWarning, "getItemName failed to find variant id=%d (0x%x) extradata=%d (0x%x) nbf=%d\n", id, id, extraData, extraData, (int)nameBasedFlag);
+        return itemInfoList[id]->name;
       } else {
         return itemInfoList[id]->name;
       }
     }
     
-    slogger.msg(kLogWarning, "getItemName failed to find variant id=%d (0x%x) extradata=%d (0x%x)\n", id, id, extraData, extraData);
+    slogger.msg(kLogWarning, "getItemName failed to find id=%d (0x%x) extradata=%d (0x%x) nbf=%d\n", id, id, extraData, extraData, (int)nameBasedFlag);
     char tmpstring[256];
     sprintf(tmpstring,"(Unknown-item-id-%d-data-%d)", id, extraData);
     return std::string(tmpstring);
@@ -4621,8 +4623,8 @@ namespace mcpe_viz {
             {
               // this record is not very interesting, we usually hide it
               // note: it would be interesting if this is not == 2 (as of MCPE 0.12.x it is always 2)
-              if ( control.verboseFlag || ((cdata[0] != 2) && (cdata[0] != 3)) ) { 
-                if ( cdata[0] != 2 ) { 
+              if ( control.verboseFlag || ((cdata[0] != 2) && (cdata[0] != 3) && (cdata[0] != 9)) ) {
+                if ( cdata[0] != 2 && cdata[0] != 9 ) { 
                   logger.msg(kLogInfo1,"WARNING: UNKNOWN CHUNK VERSION!  %s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));
                 } else {
                   logger.msg(kLogInfo1,"%s 0x76 chunk (world format version): v=%d\n", dimName.c_str(), (int)(cdata[0]));

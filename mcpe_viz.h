@@ -185,8 +185,7 @@ namespace mcpe_viz {
   class ItemInfo {
   public:
     std::string name;
-    //todozoo - unameList?
-    std::string uname;
+    std::vector<std::string> unameList;
     int32_t extraData;
     std::vector< std::unique_ptr<ItemInfo> > variantList;
     int32_t userVar1;
@@ -207,7 +206,8 @@ namespace mcpe_viz {
     }
 
     ItemInfo& setUname (const std::string& un) {
-      uname = std::string(un);
+      unameList = mysplit(un,';');
+      // todonow - update a dictionary for unames?
       return *this;
     }
 
@@ -243,9 +243,8 @@ namespace mcpe_viz {
   
   class EntityInfo {
   public:
-    //todozoo - unameList?
-    std::string uname;
     std::string name;
+    std::vector<std::string> unameList;
     std::string etype;
     
     EntityInfo(const std::string& n, const std::string& un, const std::string& e ) {
@@ -260,7 +259,7 @@ namespace mcpe_viz {
     }
 
     EntityInfo& setUname (const std::string& s) {
-      uname = std::string(s);
+      unameList = mysplit(s,';');
       return *this;
     }
 

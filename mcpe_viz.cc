@@ -845,9 +845,11 @@ namespace mcpe_viz {
       }
           
       memset(emuchunk,0,NUM_BYTES_CHUNK_V3);
-      
+
+      //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
       // iterate over chunk space
-      uint8_t paletteBlockId, blockId, blockData;
+      uint8_t paletteBlockId, blockData;
+      int32_t blockId;
       for (int32_t cy=0; cy < 16; cy++) {
         for ( int32_t cx=0; cx < 16; cx++) {
           for ( int32_t cz=0; cz < 16; cz++ ) {
@@ -923,25 +925,29 @@ namespace mcpe_viz {
     // convert search key to lower case
     std::string uname = un;
     std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
-    for (EntityInfoList::const_iterator it=m.begin(); it!=m.end(); ++it)
-      if ( it->second->uname == uname ) {
-        return it->first;
+    for (const auto& it : m) {
+      for ( const auto& u : it.second->unameList ) {
+        if ( u == uname ) {
+          return it.first;
+        }
       }
+    }
     return -1;
   }
 
   int32_t findIdByItemName(std::string& un) {
     std::string uname = un;
     std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
-    for (ItemInfoList::const_iterator it=itemInfoList.begin(); it!=itemInfoList.end(); ++it) {
-      if ( it->second->uname == uname ) {
-        return it->first;
+    for (const auto& it : itemInfoList) {
+      for ( const auto& u : it.second->unameList ) {
+        if ( u == uname ) {
+          return it.first;
+        }
       }
     }
     return -1;
   }
   
-  //todozooz - we already have a func like this?
   int32_t findIdByBlockName(std::string& un) {
     std::string uname = un;
     std::transform(uname.begin(), uname.end(), uname.begin(), ::tolower);
@@ -1135,6 +1141,7 @@ namespace mcpe_viz {
   public:
     // todobig - move to private?
     int32_t chunkX, chunkZ;
+    //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
     uint16_t blocks[16][16];
     uint8_t data[16][16];
     uint32_t grassAndBiome[16][16];
@@ -1654,27 +1661,41 @@ namespace mcpe_viz {
         // check tagList
         if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
           nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
-          std::string bname = tc["name"].as<nbt::tag_string>().get();
-          int bdata = tc["val"].as<nbt::tag_short>().get();
 
-          int32_t blockId, blockData;
-          if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
-            chunkBlockPalette_BlockId[i] = blockId;
-            // todonow - correct?
-            chunkBlockPalette_BlockData[i] = bdata;
-          } else {
-            logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
-            // todonow - reasonable?
-            chunkBlockPalette_BlockId[i] = 0;
-            chunkBlockPalette_BlockData[i] = 0;
+          bool processedFlag = false;
+          if ( tc.has_key("name", nbt::tag_type::String) ) {
+            std::string bname = tc["name"].as<nbt::tag_string>().get();
+            if ( tc.has_key("val", nbt::tag_type::Short) ) {
+              int bdata = tc["val"].as<nbt::tag_short>().get();
+              
+              int32_t blockId, blockData;
+              if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+                chunkBlockPalette_BlockId[i] = blockId;
+                // todonow - correct?
+                chunkBlockPalette_BlockData[i] = bdata;
+              } else {
+                logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+                // todonow - reasonable?
+                chunkBlockPalette_BlockId[i] = 0;
+                chunkBlockPalette_BlockData[i] = 0;
+              }
+              processedFlag = true;
+            }
+          }
+          if ( ! processedFlag ) {
+            slogger.msg(kLogError,"(Safe) Did not find 'name' and/or 'val' tags in a chunk palette! (i=%d) (len=%d)\n"
+                        , (int)i, (int)tagList.size() );
+            //todozooz - dump tc to screen log
           }
         } else {
           logger.msg(kLogWarning,"Unexpected NBT format in _do_chunk_v7\n");
         }
       }
           
+      //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
       // iterate over chunk space
-      uint8_t paletteBlockId, blockId, blockData, biomeId;
+      uint8_t paletteBlockId, blockData, biomeId;
+      int32_t blockId;
       for (int32_t cy=0; cy < 16; cy++) {
         for ( int32_t cx=0; cx < 16; cx++) {
           for ( int32_t cz=0; cz < 16; cz++ ) {
@@ -2585,7 +2606,8 @@ namespace mcpe_viz {
                   }
                   if ( ! vfound ) {
                     // todo - warn once per id/blockdata or the output volume could get ridiculous
-                    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG1\n"
+                    slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                                , blockid, blockid
                                 , blockInfoList[blockid].name.c_str()
                                 , blockdata
                                 , blockdata
@@ -3159,7 +3181,9 @@ namespace mcpe_viz {
       };
         
       int32_t foundCt = 0, notFoundCt2 = 0;
-      uint8_t blockid, blockdata;
+      //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
+      uint8_t blockdata;
+      int32_t blockid;
           
       // we operate on sets of 16 rows (which is one chunk high) of image z
       int32_t runCt = 0;
@@ -3236,11 +3260,13 @@ namespace mcpe_viz {
                       }
                       if ( ! vfound ) {
                         // todo - warn once per id/blockdata or the output volume could get ridiculous
-                        slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG2\n"
+                        slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                                    , blockid, blockid
                                     , blockInfoList[blockid].name.c_str()
                                     , blockdata
                                     , blockdata
                                     );
+
                         // since we did not find the variant, use the parent block's color
                         color = blockInfoList[blockid].color;
                       }
@@ -3359,7 +3385,8 @@ namespace mcpe_viz {
                           }
                           if ( ! vfound ) {
                             // todo - warn once per id/blockdata or the output volume could get ridiculous
-                            slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG3\n"
+                            slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                                        , blockid, blockid
                                         , blockInfoList[blockid].name.c_str()
                                         , blockdata
                                         , blockdata
@@ -3562,11 +3589,13 @@ namespace mcpe_viz {
                     }
                     if ( ! vfound ) {
                       // todo - warn once per id/blockdata or the output volume could get ridiculous
-                      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block(%s) with blockdata=%d (0x%x) MSG4\n"
+                      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                                  , blockid, blockid
                                   , blockInfoList[blockid].name.c_str()
                                   , blockdata
                                   , blockdata
                                   );
+
                       // since we did not find the variant, use the parent block's color
                       color = blockInfoList[blockid].color;
                     }

@@ -223,10 +223,11 @@ namespace mcpe_viz {
       catch (std::exception& e) {
         // check for eof which means all is well
         if ( ! pis.eof() ) {
-          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s)\n"
+          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s) (buflen=%d) (parseNbt)\n"
                   , e.what()
                   , pis.eof() ? "true" : "false"
                   , (pis) ? "true" : "false"
+                  , bufLen
                   );
         }
         done = true;
@@ -267,10 +268,11 @@ namespace mcpe_viz {
       catch (std::exception& e) {
         // check for eof which means all is well
         if ( ! pis.eof() ) {
-          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s)\n"
+          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s) (buflen=%d) (parseNbtQuiet)\n"
                   , e.what()
                   , pis.eof() ? "true" : "false"
                   , (pis) ? "true" : "false"
+                  , bufLen
                   );
         }
         done = true;

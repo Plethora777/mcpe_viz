@@ -6,6 +6,11 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.42 - 2018.12.25
+More fixes for new name-based items and blocks
+Detect and avoid problems with block palette in new chunk format
+XML - More fixes for unames and variants; items and entites can have multiple unames
+
 v0.0.41 - 2018.12.25
 More fixes for new name-based items and blocks
 Better detection of block vs item in inventories etc

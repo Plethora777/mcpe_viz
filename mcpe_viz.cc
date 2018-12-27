@@ -616,6 +616,29 @@ namespace mcpe_viz {
     }
   }
 
+  // todozooz - this is getting crazy
+  uint8_t getBlockData_LevelDB_v3__fake_v7(const int16_t* p, size_t plen, int32_t x, int32_t z, int32_t y) {
+    int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
+    int32_t off2 = off / 2;
+    int32_t mod2 = off % 2;
+    // todonow - temp test to find bug
+    size_t tmp_offset = (16*16*16) + 1 + off2;
+    if ( tmp_offset >= plen ) {
+      if ( control.verboseFlag ) {
+        slogger.msg(kLogError,"getBlockData_LevelDB_v3 get data out of bounds! (%d >= %d) (%d %d %d)\n"
+                    , (int32_t)tmp_offset, (int32_t)plen, x,z,y);
+      }
+      return 0;
+    }
+    int32_t v = p[tmp_offset];
+    //int32_t v = p[(16*16*16) + 1 + off2];
+    if ( mod2 == 0 ) {
+      return v & 0x0f;
+    } else {
+      return (v & 0xf0) >> 4;
+    }
+  }
+
   // a block opacity value? (e.g. glass is 0xf, water is semi (0xc) and an opaque block is 0x0)
   uint8_t getBlockSkyLight_LevelDB_v3(const char* p, size_t plen, int32_t x, int32_t z, int32_t y) {
     int32_t off = _calcOffsetBlock_LevelDB_v3(x,z,y);
@@ -797,7 +820,7 @@ namespace mcpe_viz {
     return 0;
   }  
   
-  int32_t convertChunkV7toV3(const char* cdata, size_t cdata_size, char* emuchunk) {
+  int32_t convertChunkV7toV3(const char* cdata, size_t cdata_size, int16_t* emuchunk) {
     // we have a v7 chunk and we want to unpack it into a v3-like chunk
     // determine location of chunk palette
     
@@ -844,7 +867,7 @@ namespace mcpe_viz {
         }
       }
           
-      memset(emuchunk,0,NUM_BYTES_CHUNK_V3);
+    memset(emuchunk,0,NUM_BYTES_CHUNK_V3*sizeof(int16_t));
 
       //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
       // iterate over chunk space
@@ -3128,14 +3151,11 @@ namespace mcpe_viz {
       slogger.msg(kLogInfo1,"    Writing all images in one pass\n");
           
       std::string svalue;
-      const char* ochunk = nullptr;
-      const char* pchunk = nullptr;
-      size_t ochunk_size;
       
       int32_t color;
       const char *pcolor = (const char*)&color;
 
-      char* emuchunk = new char[NUM_BYTES_CHUNK_V3];
+      int16_t* emuchunk = new int16_t[NUM_BYTES_CHUNK_V3];
       
       // create png helpers
       PngWriter png[MAX_BLOCK_HEIGHT + 1];
@@ -3217,9 +3237,12 @@ namespace mcpe_viz {
           if ( dstatus.ok() ) {
 
             // we got a pre-0.17 chunk
+            const char* ochunk = nullptr;
+            const char* pchunk = nullptr;
+            
             pchunk = svalue.data();
             ochunk = pchunk;
-            ochunk_size = svalue.size();
+            // size_t ochunk_size = svalue.size();
             foundCt++;
             
             // we step through the chunk in the natural order to speed things up
@@ -3329,18 +3352,25 @@ namespace mcpe_viz {
                 cubicFoundCount++;
 
                 // we got a post-0.17 cubic chunk
-                pchunk = svalue.data();
-                ochunk_size = svalue.size();
+                const int16_t* ochunk = nullptr;
+                const int16_t* pchunk = nullptr;
+                
+                pchunk = (int16_t*)svalue.data();
+                size_t ochunk_size = svalue.size();
                 ochunk = pchunk;
                 foundCt++;
 
                 // determine if it is a v7 chunk and process accordingly
                 if ( pchunk[0] != 0x0 ) {
                   // we have a v7 chunk - emulate v3
-                  convertChunkV7toV3(pchunk, ochunk_size, emuchunk);
+                  convertChunkV7toV3(svalue.data(), ochunk_size, emuchunk);
                   pchunk = emuchunk;
                   ochunk = emuchunk;
                   ochunk_size = NUM_BYTES_CHUNK_V3;
+                } else {
+                  //todozooz - we cannot proceed?!
+                  slogger.msg(kLogError,"Expected post-0.17 chunk but did not find it?!\n");
+                  continue;
                 }
                 
                 // the first byte is not interesting to us (it is version #?)
@@ -3369,11 +3399,12 @@ namespace mcpe_viz {
                                3);
                         
                       } else {
-                        
+
+                        //todozooz - crash here - probably because 16b -> 8b
                         if ( blockInfoList[blockid].hasVariants() ) {
                           // we need to get blockdata
 
-                          blockdata = getBlockData_LevelDB_v3(ochunk, ochunk_size, cx,cz,ccy);
+                          blockdata = getBlockData_LevelDB_v3__fake_v7(ochunk, ochunk_size, cx,cz,ccy);
                           
                           bool vfound = false;
                           for (const auto& itbv : blockInfoList[blockid].variantList) {

@@ -6,6 +6,9 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.43 - 2018.12.26
+Fix for crash on --html-all
+
 v0.0.42 - 2018.12.25
 More fixes for new name-based items and blocks
 Detect and avoid problems with block palette in new chunk format

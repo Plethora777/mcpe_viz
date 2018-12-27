@@ -846,39 +846,39 @@ namespace mcpe_viz {
     
     for ( size_t i=0; i < tagList.size(); i++ ) { 
       // check tagList
-        if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
-          nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
-          std::string bname = tc["name"].as<nbt::tag_string>().get();
-          int bdata = tc["val"].as<nbt::tag_short>().get();
-
-          int32_t blockId, blockData;
-          if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
-            chunkBlockPalette_BlockId[i] = blockId;
-            // todonow - correct?
-            chunkBlockPalette_BlockData[i] = bdata;
-          } else {
-            logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
-            // todonow - reasonable?
-            chunkBlockPalette_BlockId[i] = 0;
-            chunkBlockPalette_BlockData[i] = 0;
-          }
+      if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
+        nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
+        std::string bname = tc["name"].as<nbt::tag_string>().get();
+        int bdata = tc["val"].as<nbt::tag_short>().get();
+        
+        int32_t blockId, blockData;
+        if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+          chunkBlockPalette_BlockId[i] = blockId;
+          // todonow - correct?
+          chunkBlockPalette_BlockData[i] = bdata;
         } else {
-          logger.msg(kLogWarning,"Unexpected NBT format in _do_chunk_v7\n");
+          logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+          // todonow - reasonable?
+          chunkBlockPalette_BlockId[i] = 0;
+          chunkBlockPalette_BlockData[i] = 0;
         }
+      } else {
+        logger.msg(kLogWarning,"Unexpected NBT format in _do_chunk_v7\n");
       }
-          
+    }
+    
     memset(emuchunk,0,NUM_BYTES_CHUNK_V3*sizeof(int16_t));
-
-      //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
-      // iterate over chunk space
-      uint8_t paletteBlockId, blockData;
-      int32_t blockId;
-      for (int32_t cy=0; cy < 16; cy++) {
-        for ( int32_t cx=0; cx < 16; cx++) {
-          for ( int32_t cz=0; cz < 16; cz++ ) {
-            paletteBlockId = getBlockId_LevelDB_v7(&cdata[2 + extraOffset], blocksPerWord, bitsPerBlock, cx,cz,cy);
-
-            // look up blockId
+    
+    //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
+    // iterate over chunk space
+    uint8_t paletteBlockId, blockData;
+    int32_t blockId;
+    for (int32_t cy=0; cy < 16; cy++) {
+      for ( int32_t cx=0; cx < 16; cx++) {
+        for ( int32_t cz=0; cz < 16; cz++ ) {
+          paletteBlockId = getBlockId_LevelDB_v7(&cdata[2 + extraOffset], blocksPerWord, bitsPerBlock, cx,cz,cy);
+          
+          // look up blockId
             //todonow error checking
             if ( paletteBlockId < chunkBlockPalette_BlockId.size() ) {
               blockId = chunkBlockPalette_BlockId[paletteBlockId];
@@ -3352,29 +3352,34 @@ namespace mcpe_viz {
                 cubicFoundCount++;
 
                 // we got a post-0.17 cubic chunk
-                const int16_t* ochunk = nullptr;
-                const int16_t* pchunk = nullptr;
-                
-                pchunk = (int16_t*)svalue.data();
+
+                const char*    rchunk = svalue.data();
+                const int16_t* pchunk_word = (int16_t*)svalue.data();
+                const char*    pchunk_byte = (char*)svalue.data();
                 size_t ochunk_size = svalue.size();
-                ochunk = pchunk;
+                const int16_t* ochunk_word = pchunk_word;
+                const char*    ochunk_byte = pchunk_byte;
+                bool wordModeFlag = false;
                 foundCt++;
 
                 // determine if it is a v7 chunk and process accordingly
-                if ( pchunk[0] != 0x0 ) {
+                if ( rchunk[0] != 0x0 ) {
                   // we have a v7 chunk - emulate v3
-                  convertChunkV7toV3(svalue.data(), ochunk_size, emuchunk);
-                  pchunk = emuchunk;
-                  ochunk = emuchunk;
+                  convertChunkV7toV3(rchunk, ochunk_size, emuchunk);
+                  wordModeFlag = true;
+                  pchunk_word = emuchunk;
+                  ochunk_word = emuchunk;
                   ochunk_size = NUM_BYTES_CHUNK_V3;
                 } else {
                   //todozooz - we cannot proceed?!
-                  slogger.msg(kLogError,"Expected post-0.17 chunk but did not find it?!\n");
-                  continue;
+                  //slogger.msg(kLogError,"Expected post-0.17 chunk but did not find it?!\n");
+                  //continue;
+                  wordModeFlag = false;
                 }
                 
                 // the first byte is not interesting to us (it is version #?)
-                pchunk++;
+                pchunk_word++;
+                pchunk_byte++;
                 
                 // we step through the chunk in the natural order to speed things up
                 for (int32_t cx=0; cx < 16; cx++) {
@@ -3384,7 +3389,12 @@ namespace mcpe_viz {
                       int32_t cy = cubicy*16 + ccy;
 
                       // todo - if we use this, we get blockdata errors... somethings not right
-                      blockid = *(pchunk++);
+                      if ( wordModeFlag ) {
+                        blockid = *(pchunk_word++);
+                      } else {
+                        blockid = *(pchunk_byte++);
+                      }
+                      
                       // blockid = getBlockId_LevelDB_v3(ochunk, cx,cz,ccy);
                       
                       if ( blockid == 0 && (cy > currTopBlockY) && (dimId != kDimIdNether) ) {
@@ -3401,32 +3411,46 @@ namespace mcpe_viz {
                       } else {
 
                         //todozooz - crash here - probably because 16b -> 8b
-                        if ( blockInfoList[blockid].hasVariants() ) {
-                          // we need to get blockdata
+                        if ( blockid >= 0 && blockid < 512 ) {
+                          if ( blockInfoList[blockid].hasVariants() ) {
+                            // we need to get blockdata
 
-                          blockdata = getBlockData_LevelDB_v3__fake_v7(ochunk, ochunk_size, cx,cz,ccy);
-                          
-                          bool vfound = false;
-                          for (const auto& itbv : blockInfoList[blockid].variantList) {
-                            if ( itbv->blockdata == blockdata ) {
-                              vfound = true;
-                              color = itbv->color;
-                              break;
+                            if ( wordModeFlag ) {
+                              blockdata = getBlockData_LevelDB_v3__fake_v7(ochunk_word, ochunk_size, cx,cz,ccy);
+                            } else {
+                              blockdata = getBlockData_LevelDB_v3(ochunk_byte, ochunk_size, cx,cz,ccy);
                             }
-                          }
-                          if ( ! vfound ) {
-                            // todo - warn once per id/blockdata or the output volume could get ridiculous
-                            slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
-                                        , blockid, blockid
-                                        , blockInfoList[blockid].name.c_str()
-                                        , blockdata
-                                        , blockdata
-                                        );
-                            // since we did not find the variant, use the parent block's color
+                            
+                            bool vfound = false;
+                            for (const auto& itbv : blockInfoList[blockid].variantList) {
+                              if ( itbv->blockdata == blockdata ) {
+                                vfound = true;
+                                color = itbv->color;
+                                break;
+                              }
+                            }
+                            if ( ! vfound ) {
+                              // todo - warn once per id/blockdata or the output volume could get ridiculous
+                              slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                                          , blockid, blockid
+                                          , blockInfoList[blockid].name.c_str()
+                                          , blockdata
+                                          , blockdata
+                                          );
+                              // since we did not find the variant, use the parent block's color
+                              color = blockInfoList[blockid].color;
+                            }
+                          } else {
                             color = blockInfoList[blockid].color;
                           }
                         } else {
-                          color = blockInfoList[blockid].color;
+                          // bad blockid
+                          slogger.msg(kLogError,"Invalid blockid=%d (cubicy=%d) (%d %d %d)\n"
+                                      , blockid
+                                      , cubicy, cx, cz, cy
+                                      );
+                          // set an unused color
+                          color = 0xf010d0;
                         }
                         
 #ifdef PIXEL_COPY_MEMCPY

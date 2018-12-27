@@ -6,6 +6,9 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.44 - 2018.12.27
+Another fix for crash on --html-all.  It's still a bit broken in some cases but hopefully will not crash.
+
 v0.0.43 - 2018.12.26
 Fix for crash on --html-all
 

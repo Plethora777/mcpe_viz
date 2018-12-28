@@ -6,6 +6,10 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.45 - 2018.12.28
+Report unmapped remote player id's to the user (make it easier for people to add new playerid mappings)
+Moved water creatures to a separate list on passive mobs; Added Cod, Dolphin and Turtle
+
 v0.0.44 - 2018.12.27
 Another fix for crash on --html-all.  It's still a bit broken in some cases but hopefully will not crash.
 

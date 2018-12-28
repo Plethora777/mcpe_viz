@@ -967,6 +967,10 @@ namespace mcpe_viz {
         } else {
           sprintf(tmpstring,"\"playerName\":\"*UNKNOWN*\"");
           list.push_back(std::string(tmpstring));
+          // we log it to screen so that people have an easier time adding new player name mappings
+          if ( playerId.length() > 0 ) {
+            slogger.msg(kLogInfo1,"INFO: Unmapped remote player: %s\n", playerId.c_str());
+          }
         }
       } else {
         // list.push_back(std::string("\"player\":\"false\""));

@@ -6,6 +6,11 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.46 - 2018.12.28
+Fix for repeated "NBT exception" on worlds with mixed old and new chunk format
+Moved "ERROR: Invalid blockid=" from screen log to log file -- underlying issue still needs to be fixed
+Fix Turtle id in web ui
+
 v0.0.45 - 2018.12.28
 Report unmapped remote player id's to the user (make it easier for people to add new playerid mappings)
 Moved water creatures to a separate list on passive mobs; Added Cod, Dolphin and Turtle

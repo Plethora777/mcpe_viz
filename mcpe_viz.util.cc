@@ -616,6 +616,25 @@ namespace mcpe_viz {
     }
     return tokens;
   }
+
+
+  void dumpBuffer( const char* header, const char* buf, size_t bufLen) {
+    fprintf(stderr,"%s  (hex):\n",header);
+    for (size_t i=0; i<bufLen; i++) {
+      fprintf(stderr,"%02x ",buf[i]);
+    }
+    fprintf(stderr,"\n");
+
+    fprintf(stderr,"%s (char):\n",header);
+    for (size_t i=0; i<bufLen; i++) {
+      if ( isprint(buf[i]) ) {
+        fputc(buf[i],stderr);
+      } else {
+        fputc('.',stderr);
+      }
+    }
+    fprintf(stderr,"\n");
+  }
   
 } // namespace mcpe_viz
 

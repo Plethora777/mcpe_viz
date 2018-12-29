@@ -276,28 +276,28 @@ namespace mcpe_viz {
   leveldb::ReadOptions levelDbReadOptions;
 
   enum OutputType : int32_t {
-    kDoOutputNone = -2,
-    kDoOutputAll = -1
+                             kDoOutputNone = -2,
+                             kDoOutputAll = -1
   };
 
   enum HeightMode : int32_t {
-    kHeightModeTop = 0,
-    kHeightModeLevelDB = 1
+                             kHeightModeTop = 0,
+                             kHeightModeLevelDB = 1
   };
 
   // output image types
   enum ImageModeType : int32_t {
-    kImageModeTerrain = 0,
-    kImageModeBiome = 1,
-    kImageModeGrass = 2,
-    kImageModeHeightCol = 3,
-    kImageModeHeightColGrayscale = 4,
-    kImageModeBlockLight = 5,
-    kImageModeSkyLight = 6,
-    kImageModeSlimeChunksMCPC = 7,
-    kImageModeHeightColAlpha = 8,
-    kImageModeShadedRelief = 9,
-    kImageModeSlimeChunksMCPE = 10
+                                kImageModeTerrain = 0,
+                                kImageModeBiome = 1,
+                                kImageModeGrass = 2,
+                                kImageModeHeightCol = 3,
+                                kImageModeHeightColGrayscale = 4,
+                                kImageModeBlockLight = 5,
+                                kImageModeSkyLight = 6,
+                                kImageModeSlimeChunksMCPC = 7,
+                                kImageModeHeightColAlpha = 8,
+                                kImageModeShadedRelief = 9,
+                                kImageModeSlimeChunksMCPE = 10
   };
 
 
@@ -761,6 +761,7 @@ namespace mcpe_viz {
 
     if ( cdata[0] == 0x01 ) {
       v = cdata[1];
+      extraOffset = 0;
     } else {
       // this is version 8+, cdata[1] contains the number of storage groups in this cubic chunk (can be more than 1)
       v = cdata[2];
@@ -769,51 +770,51 @@ namespace mcpe_viz {
     
     switch (v) {
     case 0x02:
-        blocksPerWord = 32;
-        bitsPerBlock = 1;
-        offsetBlockInfoList = 512;
-        break;
-      case 0x04:
-        blocksPerWord = 16;
-        bitsPerBlock = 2;
-        offsetBlockInfoList = 1024;
-        break;
-      case 0x06:
-        blocksPerWord = 10;
-        bitsPerBlock = 3;
-        paddingFlag = true;
-        offsetBlockInfoList = 1640;
-        break;
-      case 0x08:
-        blocksPerWord = 8;
-        bitsPerBlock = 4;
-        offsetBlockInfoList = 2048;
-        break;
-      case 0x0a:
-        blocksPerWord = 6;
-        bitsPerBlock = 5;
-        paddingFlag = true;
-        offsetBlockInfoList = 2732;
-        break;
-      case 0x0c:
-        blocksPerWord = 5;
-        bitsPerBlock = 6;
-        paddingFlag = true;
-        offsetBlockInfoList = 3280;
-        break;
-      case 0x10:
-        blocksPerWord = 4;
-        bitsPerBlock = 8;
-        offsetBlockInfoList = (4096 / blocksPerWord) * 4;
-        break;
-      case 0x20:
-        blocksPerWord = 2;
-        bitsPerBlock = 16;
-        offsetBlockInfoList = (4096 / blocksPerWord) * 4;
-        break;
-      default:
-        logger.msg(kLogError, "Unknown chunk cdata[1] size = %d\n",(int)v);
-        return -1;
+      blocksPerWord = 32;
+      bitsPerBlock = 1;
+      offsetBlockInfoList = 512;
+      break;
+    case 0x04:
+      blocksPerWord = 16;
+      bitsPerBlock = 2;
+      offsetBlockInfoList = 1024;
+      break;
+    case 0x06:
+      blocksPerWord = 10;
+      bitsPerBlock = 3;
+      paddingFlag = true;
+      offsetBlockInfoList = 1640;
+      break;
+    case 0x08:
+      blocksPerWord = 8;
+      bitsPerBlock = 4;
+      offsetBlockInfoList = 2048;
+      break;
+    case 0x0a:
+      blocksPerWord = 6;
+      bitsPerBlock = 5;
+      paddingFlag = true;
+      offsetBlockInfoList = 2732;
+      break;
+    case 0x0c:
+      blocksPerWord = 5;
+      bitsPerBlock = 6;
+      paddingFlag = true;
+      offsetBlockInfoList = 3280;
+      break;
+    case 0x10:
+      blocksPerWord = 4;
+      bitsPerBlock = 8;
+      offsetBlockInfoList = (4096 / blocksPerWord) * 4;
+      break;
+    case 0x20:
+      blocksPerWord = 2;
+      bitsPerBlock = 16;
+      offsetBlockInfoList = (4096 / blocksPerWord) * 4;
+      break;
+    default:
+      logger.msg(kLogError, "Unknown chunk cdata[1] size = %d\n",(int)v);
+      return -1;
     }
     
     //    logger.msg(kLogInfo, "setupBlockVars_v7 v=%d bpw=%d bpb=%d pf=%d ob=%d\n", v, blocksPerWord, bitsPerBlock, (int)paddingFlag, offsetBlockInfoList);
@@ -831,6 +832,8 @@ namespace mcpe_viz {
     bool paddingFlag = false;
     int32_t offsetBlockInfoList = -1;
     int32_t extraOffset = -1;
+
+    memset(emuchunk,0,NUM_BYTES_CHUNK_V3*sizeof(int16_t));
     
     if ( setupBlockVars_v7(cdata, blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList, extraOffset) != 0 ) {
       return -1;
@@ -867,8 +870,6 @@ namespace mcpe_viz {
       }
     }
     
-    memset(emuchunk,0,NUM_BYTES_CHUNK_V3*sizeof(int16_t));
-    
     //todozooz -- new 16-bit block-id's (instead of 8-bit) are a BIG issue - this needs attention here
     // iterate over chunk space
     uint8_t paletteBlockId, blockData;
@@ -879,35 +880,35 @@ namespace mcpe_viz {
           paletteBlockId = getBlockId_LevelDB_v7(&cdata[2 + extraOffset], blocksPerWord, bitsPerBlock, cx,cz,cy);
           
           // look up blockId
-            //todonow error checking
-            if ( paletteBlockId < chunkBlockPalette_BlockId.size() ) {
-              blockId = chunkBlockPalette_BlockId[paletteBlockId];
-              blockData = chunkBlockPalette_BlockData[paletteBlockId];
-            } else {
-              blockId = 0;
-              blockData = 0;
-              logger.msg(kLogWarning,"Found chunk palette id out of range %d (size=%d)\n", paletteBlockId, (int)chunkBlockPalette_BlockId.size());
-            }
+          //todonow error checking
+          if ( paletteBlockId < chunkBlockPalette_BlockId.size() ) {
+            blockId = chunkBlockPalette_BlockId[paletteBlockId];
+            blockData = chunkBlockPalette_BlockData[paletteBlockId];
+          } else {
+            blockId = 0;
+            blockData = 0;
+            logger.msg(kLogWarning,"Found chunk palette id out of range %d (size=%d)\n", paletteBlockId, (int)chunkBlockPalette_BlockId.size());
+          }
 
-            int32_t bdoff = _calcOffsetBlock_LevelDB_v3(cx,cz,cy);
+          int32_t bdoff = _calcOffsetBlock_LevelDB_v3(cx,cz,cy);
 
-            emuchunk[bdoff+1] = blockId;
+          emuchunk[bdoff+1] = blockId;
 
-            // put block data
-            int32_t bdoff2 = bdoff / 2;
-            int32_t bdmod2 = bdoff % 2;
-            // todonow - temp test to find bug
-            size_t tmp_offset = (16*16*16) + 1 + bdoff2;
-            if ( bdmod2 == 0 ) {
-              emuchunk[tmp_offset] |= (blockData & 0x0f);
-            } else {
-              emuchunk[tmp_offset] |= (blockData & 0x0f) << 4;
-            }
+          // put block data
+          int32_t bdoff2 = bdoff / 2;
+          int32_t bdmod2 = bdoff % 2;
+          // todonow - temp test to find bug
+          size_t tmp_offset = (16*16*16) + 1 + bdoff2;
+          if ( bdmod2 == 0 ) {
+            emuchunk[tmp_offset] |= (blockData & 0x0f);
+          } else {
+            emuchunk[tmp_offset] |= (blockData & 0x0f) << 4;
           }
         }
       }
-      return 0;
     }
+    return 0;
+  }
     
   
   
@@ -1645,17 +1646,17 @@ namespace mcpe_viz {
       }
 
       // determine location of chunk palette
-    int32_t blocksPerWord = -1;
-    int32_t bitsPerBlock = -1;
-    bool paddingFlag = false;
-    int32_t offsetBlockInfoList = -1;
-    int32_t extraOffset = -1;
+      int32_t blocksPerWord = -1;
+      int32_t bitsPerBlock = -1;
+      bool paddingFlag = false;
+      int32_t offsetBlockInfoList = -1;
+      int32_t extraOffset = -1;
     
-    //logger.msg(kLogWarning,"hey -- cdata %02x %02x %02x\n", cdata[0], cdata[1], cdata[2]);
+      //logger.msg(kLogWarning,"hey -- cdata %02x %02x %02x\n", cdata[0], cdata[1], cdata[2]);
     
-    if ( setupBlockVars_v7(cdata, blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList, extraOffset) != 0 ) {
-      return -1;
-    }
+      if ( setupBlockVars_v7(cdata, blocksPerWord, bitsPerBlock, paddingFlag, offsetBlockInfoList, extraOffset) != 0 ) {
+        return -1;
+      }
       
       // read chunk palette and associate old-school block id's
       MyNbtTagList tagList;
@@ -3371,9 +3372,6 @@ namespace mcpe_viz {
                   ochunk_word = emuchunk;
                   ochunk_size = NUM_BYTES_CHUNK_V3;
                 } else {
-                  //todozooz - we cannot proceed?!
-                  //slogger.msg(kLogError,"Expected post-0.17 chunk but did not find it?!\n");
-                  //continue;
                   wordModeFlag = false;
                 }
                 
@@ -3445,10 +3443,12 @@ namespace mcpe_viz {
                           }
                         } else {
                           // bad blockid
-                          slogger.msg(kLogError,"Invalid blockid=%d (cubicy=%d) (%d %d %d)\n"
-                                      , blockid
-                                      , cubicy, cx, cz, cy
-                                      );
+                          //todozooz todostopper - we get a lot of these around row 4800 of world 'another1'
+                          logger.msg(kLogError,"Invalid blockid=%d (image %d %d) (cc %d %d %d)\n"
+                                     , blockid
+                                     , imageX, imageZ
+                                     , cx, cz, cy
+                                     );
                           // set an unused color
                           color = 0xf010d0;
                         }
@@ -4050,13 +4050,13 @@ namespace mcpe_viz {
       //create a 40 mb cache (we use this on ~1gb devices)
       dbOptions->block_cache = leveldb::NewLRUCache(40 * 1024 * 1024);
       
-	//create a 4mb write buffer, to improve compression and touch the disk less
+      //create a 4mb write buffer, to improve compression and touch the disk less
       dbOptions->write_buffer_size = 4 * 1024 * 1024;
       
       //disable internal logging. The default logger will still print out things to a file
       dbOptions->info_log = new NullLogger();
 
-	//use the new raw-zip compressor to write (and read)
+      //use the new raw-zip compressor to write (and read)
       dbOptions->compressors[0] = new leveldb::ZlibCompressorRaw(-1);
       
       //also setup the old, slower compressor for backwards compatibility. This will only be used to read old compressed blocks.
@@ -4730,7 +4730,7 @@ namespace mcpe_viz {
                 //logger.msg(kLogInfo1, "WARNING: UNKNOWN Byte 0 of 0x2f chunk: b0=[%d 0x%02x]\n", (int)cdata[0], (int)cdata[0]);
                 dimDataList[chunkDimId]->addChunk(7, chunkX, chunkY, chunkZ, cdata, cdata_size);
               } else {
-                if ( cdata_size != 6145 ) {
+                if ( cdata_size != 6145 && cdata_size != 10241 ) {
                   logger.msg(kLogInfo1, "WARNING: UNKNOWN cdata_size=%d of 0x2f chunk\n", (int)cdata_size);
                 }                
                 dimDataList[chunkDimId]->addChunk(chunkFormatVersion, chunkX, chunkY, chunkZ, cdata, cdata_size);
@@ -5855,64 +5855,64 @@ namespace mcpe_viz {
   int32_t parse_args ( int argc, char **argv ) {
 
     static struct option longoptlist[] = {
-      {"db", required_argument, NULL, 'D'},
-      {"out", required_argument, NULL, 'O'},
+                                          {"db", required_argument, NULL, 'D'},
+                                          {"out", required_argument, NULL, 'O'},
 
-      {"xml", required_argument, NULL, 'X'},
-      {"log", required_argument, NULL, 'L'},
+                                          {"xml", required_argument, NULL, 'X'},
+                                          {"log", required_argument, NULL, 'L'},
 
-      {"detail", no_argument, NULL, '@'},
+                                          {"detail", no_argument, NULL, '@'},
 
-      {"hide-top", required_argument, NULL, 'H'},
-      {"force-top", required_argument, NULL, 'F'},
-      {"geojson-block", required_argument, NULL, '+'},
+                                          {"hide-top", required_argument, NULL, 'H'},
+                                          {"force-top", required_argument, NULL, 'F'},
+                                          {"geojson-block", required_argument, NULL, '+'},
 
-      {"check-spawn", required_argument, NULL, 'C'},
-      {"check-spawnable", required_argument, NULL, 'C'},
+                                          {"check-spawn", required_argument, NULL, 'C'},
+                                          {"check-spawnable", required_argument, NULL, 'C'},
 
-      {"schematic", required_argument, NULL, 'Z'},
-      {"schematic-get", required_argument, NULL, 'Z'},
+                                          {"schematic", required_argument, NULL, 'Z'},
+                                          {"schematic-get", required_argument, NULL, 'Z'},
     
-      {"all-image", optional_argument, NULL, 'A'},
-      {"biome", optional_argument, NULL, 'B'},
-      {"grass", optional_argument, NULL, 'g'},
-      {"height-col", optional_argument, NULL, 'd'},
-      {"height-col-gs", optional_argument, NULL, '#'},
-      {"height-col-alpha", optional_argument, NULL, 'a'},
-      {"shaded-relief", optional_argument, NULL, 'S'},
-      {"blocklight", optional_argument, NULL, 'b'},
-      {"skylight", optional_argument, NULL, 's'},
-      {"slime-chunk", optional_argument, NULL, '%'},
+                                          {"all-image", optional_argument, NULL, 'A'},
+                                          {"biome", optional_argument, NULL, 'B'},
+                                          {"grass", optional_argument, NULL, 'g'},
+                                          {"height-col", optional_argument, NULL, 'd'},
+                                          {"height-col-gs", optional_argument, NULL, '#'},
+                                          {"height-col-alpha", optional_argument, NULL, 'a'},
+                                          {"shaded-relief", optional_argument, NULL, 'S'},
+                                          {"blocklight", optional_argument, NULL, 'b'},
+                                          {"skylight", optional_argument, NULL, 's'},
+                                          {"slime-chunk", optional_argument, NULL, '%'},
     
-      {"slices", optional_argument, NULL, '('},
+                                          {"slices", optional_argument, NULL, '('},
 
-      {"movie", optional_argument, NULL, 'M'},
-      {"movie-dim", required_argument, NULL, '*'},
+                                          {"movie", optional_argument, NULL, 'M'},
+                                          {"movie-dim", required_argument, NULL, '*'},
         
-      {"grid", optional_argument, NULL, 'G'},
+                                          {"grid", optional_argument, NULL, 'G'},
 
-      {"html", no_argument, NULL, ')'},
-      {"html-most", no_argument, NULL, '='},
-      {"html-all", no_argument, NULL, '_'},
-      {"no-force-geojson", no_argument, NULL, ':'},
+                                          {"html", no_argument, NULL, ')'},
+                                          {"html-most", no_argument, NULL, '='},
+                                          {"html-all", no_argument, NULL, '_'},
+                                          {"no-force-geojson", no_argument, NULL, ':'},
 
-      {"auto-tile", no_argument, NULL, ']'},
-      {"tiles", optional_argument, NULL, '['},
+                                          {"auto-tile", no_argument, NULL, ']'},
+                                          {"tiles", optional_argument, NULL, '['},
 
-      {"shortrun", no_argument, NULL, '$'}, // this is just for testing
-      {"colortest", no_argument, NULL, '!'}, // this is just for testing
+                                          {"shortrun", no_argument, NULL, '$'}, // this is just for testing
+                                          {"colortest", no_argument, NULL, '!'}, // this is just for testing
 
-      {"flush", no_argument, NULL, 'f'},
+                                          {"flush", no_argument, NULL, 'f'},
 
-      {"leveldb-filter", required_argument, NULL, '<'},
-      {"leveldb-block-size", required_argument, NULL, '>'},
+                                          {"leveldb-filter", required_argument, NULL, '<'},
+                                          {"leveldb-block-size", required_argument, NULL, '>'},
 
-      {"find-images", required_argument, NULL, '"'},
+                                          {"find-images", required_argument, NULL, '"'},
       
-      {"verbose", no_argument, NULL, 'v'},
-      {"quiet", no_argument, NULL, 'q'},
-      {"help", no_argument, NULL, 'h'},
-      {NULL, no_argument, NULL, 0}
+                                          {"verbose", no_argument, NULL, 'v'},
+                                          {"quiet", no_argument, NULL, 'q'},
+                                          {"help", no_argument, NULL, 'h'},
+                                          {NULL, no_argument, NULL, 0}
     };
 
     int32_t option_index = 0;

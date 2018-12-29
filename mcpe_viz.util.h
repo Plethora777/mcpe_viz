@@ -61,7 +61,7 @@ namespace mcpe_viz {
   
   bool vectorContains( const std::vector<int> &v, int32_t i );
 
-  
+  void dumpBuffer( const char* header, const char* buf, size_t bufLen);
 
   enum LogType : int32_t {
     // todobig - be more clever about this

@@ -1034,6 +1034,9 @@ namespace mcpe_viz {
       }
     }
 
+    // force to "air"
+    blockId = 0;
+    blockData = 0;
     slogger.msg(kLogWarning, "getBlockByUname failed to find uname=%s\n", uname.c_str());
     return -1;
   }
@@ -3408,7 +3411,6 @@ namespace mcpe_viz {
                         
                       } else {
 
-                        //todozooz - crash here - probably because 16b -> 8b
                         if ( blockid >= 0 && blockid < 512 ) {
                           if ( blockInfoList[blockid].hasVariants() ) {
                             // we need to get blockdata
@@ -3443,7 +3445,7 @@ namespace mcpe_viz {
                           }
                         } else {
                           // bad blockid
-                          //todozooz todostopper - we get a lot of these around row 4800 of world 'another1'
+                          //todozooz todostopper - we get a lot of these w/ negative blockid around row 4800 of world 'another1'
                           logger.msg(kLogError,"Invalid blockid=%d (image %d %d) (cc %d %d %d)\n"
                                      , blockid
                                      , imageX, imageZ

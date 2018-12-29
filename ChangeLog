@@ -6,6 +6,9 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.47 - 2018.12.29
+Forgot to build win32 + win64 for v46 :)
+
 v0.0.46 - 2018.12.28
 Fix for repeated "NBT exception" on worlds with mixed old and new chunk format
 Moved "ERROR: Invalid blockid=" from screen log to log file -- underlying issue still needs to be fixed

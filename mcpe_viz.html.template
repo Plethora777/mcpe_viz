@@ -125,7 +125,7 @@
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="109">Salmon</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="17">Squid</a></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="111">Tropical Fish</a></li>
-	    <li><a href="#" class="entityToggle" data-type="P" data-id="74">TUrtle</a></li>
+	    <li><a href="#" class="entityToggle" data-type="P" data-id="74">Turtle</a></li>
 	    <li role="separator" class="divider"></li>
 	    <li><a href="#" class="entityToggle" data-type="P" data-id="63">Player</a></li>
 	    <li role="separator" class="divider"></li>

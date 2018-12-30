@@ -223,12 +223,16 @@ namespace mcpe_viz {
       catch (std::exception& e) {
         // check for eof which means all is well
         if ( ! pis.eof() ) {
-          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s) (buflen=%d) (parseNbt)\n"
+          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s) (tc=%d) (pos=%d) (buflen=%d) (parseNbt)\n"
                   , e.what()
                   , pis.eof() ? "true" : "false"
                   , (pis) ? "true" : "false"
+                  , (int)tagList.size()
+                  , (int)pis.tellg()
                   , bufLen
                   );
+          // todo - testing
+          //dumpBuffer("nbt-buffer", buf, bufLen);
         }
         done = true;
       }
@@ -268,13 +272,16 @@ namespace mcpe_viz {
       catch (std::exception& e) {
         // check for eof which means all is well
         if ( ! pis.eof() ) {
-          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s) (buflen=%d) (parseNbtQuiet)\n"
+          fprintf(stderr, "NBT exception: (%s) (eof=%s) (is=%s) (tc=%d) (pos=%d) (buflen=%d) (parseNbtQuiet)\n"
                   , e.what()
                   , pis.eof() ? "true" : "false"
                   , (pis) ? "true" : "false"
+                  , (int)tagList.size()
+                  , (int)pis.tellg()
                   , bufLen
                   );
-          // testing: dumpBuffer("nbt-buffer", buf, bufLen);
+          // todo - testing
+          //dumpBuffer("nbt-buffer", buf, bufLen);
         }
         done = true;
       }

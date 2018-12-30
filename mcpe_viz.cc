@@ -813,7 +813,8 @@ namespace mcpe_viz {
       offsetBlockInfoList = (4096 / blocksPerWord) * 4;
       break;
     default:
-      logger.msg(kLogError, "Unknown chunk cdata[1] size = %d\n",(int)v);
+      slogger.msg(kLogError, "Unknown chunk cdata[1] value = %d\n",(int)v);
+      logger.msg(kLogError, "Unknown chunk cdata[1] value = %d\n",(int)v);
       return -1;
     }
     
@@ -851,19 +852,31 @@ namespace mcpe_viz {
       // check tagList
       if ( tagList[i].second->get_type() == nbt::tag_type::Compound ) {
         nbt::tag_compound tc = tagList[i].second->as<nbt::tag_compound>();
-        std::string bname = tc["name"].as<nbt::tag_string>().get();
-        int bdata = tc["val"].as<nbt::tag_short>().get();
-        
-        int32_t blockId, blockData;
-        if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
-          chunkBlockPalette_BlockId[i] = blockId;
-          // todonow - correct?
-          chunkBlockPalette_BlockData[i] = bdata;
-        } else {
-          logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
-          // todonow - reasonable?
-          chunkBlockPalette_BlockId[i] = 0;
-          chunkBlockPalette_BlockData[i] = 0;
+
+        bool processedFlag = false;
+        if ( tc.has_key("name", nbt::tag_type::String) ) {
+          std::string bname = tc["name"].as<nbt::tag_string>().get();
+          if ( tc.has_key("val", nbt::tag_type::Short) ) {
+            int bdata = tc["val"].as<nbt::tag_short>().get();
+            
+            int32_t blockId, blockData;
+            if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+              chunkBlockPalette_BlockId[i] = blockId;
+              // todonow - correct?
+              chunkBlockPalette_BlockData[i] = bdata;
+            } else {
+              logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+              // todonow - reasonable?
+              chunkBlockPalette_BlockId[i] = 0;
+              chunkBlockPalette_BlockData[i] = 0;
+            }
+            processedFlag = true;
+          }
+        }
+        if ( ! processedFlag ) {
+          slogger.msg(kLogError,"(Safe) Did not find 'name' and/or 'val' tags in a chunk palette! (i=%d) (len=%d)\n"
+                      , (int)i, (int)tagList.size() );
+          //todozooz - dump tc to screen log
         }
       } else {
         logger.msg(kLogWarning,"Unexpected NBT format in _do_chunk_v7\n");
@@ -3287,7 +3300,7 @@ namespace mcpe_viz {
                       }
                       if ( ! vfound ) {
                         // todo - warn once per id/blockdata or the output volume could get ridiculous
-                        slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                        slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG2\n"
                                     , blockid, blockid
                                     , blockInfoList[blockid].name.c_str()
                                     , blockdata
@@ -3367,6 +3380,7 @@ namespace mcpe_viz {
                 foundCt++;
 
                 // determine if it is a v7 chunk and process accordingly
+                //todozooz - here is where it gets weird
                 if ( rchunk[0] != 0x0 ) {
                   // we have a v7 chunk - emulate v3
                   convertChunkV7toV3(rchunk, ochunk_size, emuchunk);
@@ -3376,6 +3390,7 @@ namespace mcpe_viz {
                   ochunk_size = NUM_BYTES_CHUNK_V3;
                 } else {
                   wordModeFlag = false;
+                  // slogger.msg(kLogWarning,"Found a non-v7 chunk\n");
                 }
                 
                 // the first byte is not interesting to us (it is version #?)
@@ -3393,7 +3408,9 @@ namespace mcpe_viz {
                       if ( wordModeFlag ) {
                         blockid = *(pchunk_word++);
                       } else {
-                        blockid = *(pchunk_byte++);
+                        //todozooz - getting blockid manually fixes issue
+                        // blockid = *(pchunk_byte++);
+                        blockid = getBlockId_LevelDB_v3(ochunk_byte, cx,cz,ccy);
                       }
                       
                       // blockid = getBlockId_LevelDB_v3(ochunk, cx,cz,ccy);
@@ -3431,7 +3448,7 @@ namespace mcpe_viz {
                             }
                             if ( ! vfound ) {
                               // todo - warn once per id/blockdata or the output volume could get ridiculous
-                              slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                              slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG3\n"
                                           , blockid, blockid
                                           , blockInfoList[blockid].name.c_str()
                                           , blockdata
@@ -3446,13 +3463,13 @@ namespace mcpe_viz {
                         } else {
                           // bad blockid
                           //todozooz todostopper - we get a lot of these w/ negative blockid around row 4800 of world 'another1'
-                          logger.msg(kLogError,"Invalid blockid=%d (image %d %d) (cc %d %d %d)\n"
+                          slogger.msg(kLogError,"Invalid blockid=%d (image %d %d) (cc %d %d %d)\n"
                                      , blockid
                                      , imageX, imageZ
                                      , cx, cz, cy
                                      );
                           // set an unused color
-                          color = 0xf010d0;
+                          color = htobe32(0xf010d0);
                         }
                         
 #ifdef PIXEL_COPY_MEMCPY
@@ -3646,7 +3663,7 @@ namespace mcpe_viz {
                     }
                     if ( ! vfound ) {
                       // todo - warn once per id/blockdata or the output volume could get ridiculous
-                      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG1\n"
+                      slogger.msg(kLogInfo1,"WARNING: Did not find block variant for block (id=%d (0x%x) '%s') with blockdata=%d (0x%x) MSG4\n"
                                   , blockid, blockid
                                   , blockInfoList[blockid].name.c_str()
                                   , blockdata

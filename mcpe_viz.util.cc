@@ -621,7 +621,7 @@ namespace mcpe_viz {
   void dumpBuffer( const char* header, const char* buf, size_t bufLen) {
     fprintf(stderr,"%s  (hex):\n",header);
     for (size_t i=0; i<bufLen; i++) {
-      fprintf(stderr,"%02x ",buf[i]);
+      fprintf(stderr,"%02x ",(uint8_t)buf[i] & 0xff);
     }
     fprintf(stderr,"\n");
 

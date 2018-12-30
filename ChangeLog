@@ -6,6 +6,9 @@ by Plethora777
 
 Highlight: Fixes for new betas
 
+v0.0.48 - 2018.12.30
+More fixes for crashing on --html-all
+
 v0.0.47 - 2018.12.29
 Forgot to build win32 + win64 for v46 :)
 

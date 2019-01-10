@@ -4183,17 +4183,22 @@ namespace mcpe_viz {
       return 0;
     }
     
-    int32_t dbOpen(const std::string& dirDb) {
-      // todobig - leveldb read-only? snapshot?
-      slogger.msg(kLogInfo1,"DB Open: dir=%s\n",dirDb.c_str());
-      leveldb::Status dstatus = leveldb::DB::Open(*dbOptions, std::string(dirDb+"/db"), &db);
-      slogger.msg(kLogInfo1,"DB Open Status: %s (block_size=%d bloom_filter_bits=%d)\n", dstatus.ToString().c_str(), control.leveldbBlockSize, control.leveldbFilter); fflush(stderr);
-      if (!dstatus.ok()) {
-        slogger.msg(kLogInfo1,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
-        exit(-2);
-      }
-      return 0;
+int32_t dbOpen(const std::string& dirDb) {
+  // todobig - leveldb read-only? snapshot?
+  slogger.msg(kLogInfo1,"DB Open: dir=%s\n",dirDb.c_str());
+  leveldb::Status dstatus = leveldb::DB::Open(*dbOptions, std::string(dirDb+"/db"), &db);
+  slogger.msg(kLogInfo1,"DB Open Status: %s (block_size=%d bloom_filter_bits=%d)\n", dstatus.ToString().c_str(), control.leveldbBlockSize, control.leveldbFilter); fflush(stderr);
+  if (!dstatus.ok()) {
+    slogger.msg(kLogInfo1,"ERROR: LevelDB operation returned status=%s\n",dstatus.ToString().c_str());
+    leveldb::Options options_;
+
+    leveldb::Status flag = leveldb::RepairDB(std::string(dirDb+"/db"), options_);
+    if(!flag.ok()){
+      exit(-2);
     }
+  }
+  return 0;
+}
 
     int32_t dbClose() {
       if ( db != nullptr ) {

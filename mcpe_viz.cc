@@ -5940,7 +5940,11 @@ namespace mcpe_viz {
 
     control.init();
 
+#if defined(__NetBSD__)
+    while ((optc = getopt_long (argc, argv, "", longoptlist, &option_index)) != -1) {
+#else
     while ((optc = getopt_long_only (argc, argv, "", longoptlist, &option_index)) != -1) {
+#endif
       switch (optc) {
       case 'O':
         control.fnOutputBase = optarg;

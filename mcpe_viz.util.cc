@@ -24,10 +24,17 @@
 #if defined(WIN32)
 #include <windows.h>
 #else 
+#if defined(__NetBSD__)
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/sendfile.h>
+#endif
 #endif
 #endif
 
@@ -253,6 +260,21 @@ namespace mcpe_viz {
     int result = fcopyfile(input, output, 0, COPYFILE_ALL);
     // todobig - would need to investigate what fcopyfile returns
 #else
+#if defined(__NetBSD__)
+    //NetBSD doesn't have sendfile(2).
+    struct stat fileinfo; // = {0};
+    void *fmem = NULL;
+    int result = fstat(input, &fileinfo);
+    if ( result == 0 ) {
+      fmem = mmap(NULL, fileinfo.st_size, PROT_READ, MAP_FILE | MAP_SHARED, input, 0);
+    }
+    if ( fmem != NULL ) {
+      result = write(output, fmem, fileinfo.st_size);
+      munmap(fmem, fileinfo.st_size);
+    } else {
+      result = -1;
+    }
+#else
     //sendfile will work with non-socket output (i.e. regular file) on Linux 2.6.33+
     off_t bytesCopied = 0;
     struct stat fileinfo; // = {0};
@@ -260,6 +282,7 @@ namespace mcpe_viz {
     if ( result == 0 ) {
       result = sendfile(output, input, &bytesCopied, fileinfo.st_size);
     }
+#endif
     if ( result >= 0 ) {
       ret = 0;
     } else {

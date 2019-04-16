@@ -430,6 +430,20 @@
     <block id="0x8B" name="Cobblestone Wall" uname="minecraft:cobblestone_wall" color="0xb0b0b0" opaque="0" spawnable="0">
       <blockvariant blockdata="0x0" name="Cobblestone Wall" />
       <blockvariant blockdata="0x1" name="Cobblestone Wall, Mossy" />
+      <!-- added by oshouki -->
+      <blockvariant blockdata="0x2" name="Granite Wall" />
+      <blockvariant blockdata="0x3" name="Diorite Wall" />
+      <blockvariant blockdata="0x4" name="Andesite Wall" />
+      <blockvariant blockdata="0x5" name="Sandstone Wall" />
+      <blockvariant blockdata="0x6" name="Brick Wall" />
+      <blockvariant blockdata="0x7" name="Stone Brick Wall" />
+      <blockvariant blockdata="0x8" name="Mossy Stone Brick Wall" />
+      <blockvariant blockdata="0x9" name="End Stone Brick Wall" />
+      <blockvariant blockdata="0xa" name="Nether Brick Wall" />
+      <blockvariant blockdata="0xb" name="Prismarine Wall" />
+      <blockvariant blockdata="0xc" name="Red Sandstone Wall" />
+      <blockvariant blockdata="0xd" name="Red Nether Brick Wall" />
+      <!-- end of // added by oshouki -->
     </block>
     <block id="0x8C" name="Flower Pot" uname="minecraft:flower_pot" color="0xdd9924" solid="0" opaque="0" spawnable="0"> <!-- *I *E -->
       <blockvariant blockdata="0x0" name="Flower Pot, Empty" />
@@ -911,8 +925,78 @@
     <block id="0x19f" name="Bubble Column" uname="minecraft:bubble_column" color="0xa4cccd" />
     <block id="0x1a0" name="Barrier" uname="minecraft:barrier" color="0xf80a31" />
 
+    <!-- added by oshouki // used same colors as their respective source blocks, or otherwise made up. -->
+    <block id="0x1a1" name="Different Stone-type Slabs" uname="minecraft:stone_slab3" color="0xded99e">
+      <blockvariant blockdata="0x0" name="Slab, End Stone Brick" />                      
+      <blockvariant blockdata="0x1" name="Slab, Smooth Red Sandstone" />                
+      <blockvariant blockdata="0x2" name="Slab, Polished Andesite" />                    
+      <blockvariant blockdata="0x3" name="Slab, Andesite" />                            
+      <blockvariant blockdata="0x4" name="Slab, Diorite" />                             
+      <blockvariant blockdata="0x5" name="Slab, Polished Diorite" />                   
+      <blockvariant blockdata="0x6" name="Slab, Granite" />                              
+      <blockvariant blockdata="0x7" name="Slab, Polished Granite" />                     
+      <blockvariant blockdata="0x8" name="Slab, Upper End Stone Brick" />              
+      <blockvariant blockdata="0x9" name="Slab, Upper Smooth Red Sandstone" />          
+      <blockvariant blockdata="0xa" name="Slab, Upper Polished Andesite" />           
+      <blockvariant blockdata="0xb" name="Slab, Upper Andesite" />                     
+      <blockvariant blockdata="0xc" name="Slab, Upper Diorite" />                     
+      <blockvariant blockdata="0xd" name="Slab, Upper Polished Diorite" />            
+      <blockvariant blockdata="0xe" name="Slab, Upper Granite" />                      
+      <blockvariant blockdata="0xf" name="Slab, Upper Polished Granite" />            
+    </block>                                                                                      
+    
     <!-- todo - **NOTE** totally invented block-id's follow - max allowed block id is 0x1ff -->
+    <!-- edited by oshouki //updated id value from wiki
+      <block id="0x1a4" name="Scaffolding" uname="minecraft:scaffolding" color="0xc5b023" />   -->
     <block id="0x1f0" name="Scaffolding" uname="minecraft:scaffolding" color="0xc5b023" />
+    
+    <!-- added by oshouki // used same colors as their respective source blocks, or otherwise made up. -->
+    <block id="0x1a5" name="More Stone-type Slabs" uname="minecraft:stone_slab4" color="0x8a9e90">      
+      <blockvariant blockdata="0x0" name="Slab, Mossy Stone Brick" />                                                  
+      <blockvariant blockdata="0x1" name="Slab, Smooth Quartz" />                                            
+      <blockvariant blockdata="0x2" name="Slab, Stone" />                                                                
+      <blockvariant blockdata="0x3" name="Slab, Cut Sandstone" />                                                        
+      <blockvariant blockdata="0x4" name="Slab, Cut Red Sandstone" />                                                    
+      <blockvariant blockdata="0x8" name="Slab, Upper Mossy Stone Brick" />                                              
+      <blockvariant blockdata="0x9" name="Slab, Upper Smooth Quartz" />                                                  
+      <blockvariant blockdata="0xa" name="Slab, Upper Stone" />            
+      <blockvariant blockdata="0xb" name="Slab, Upper Cut Sandstone" />        
+      <blockvariant blockdata="0xc" name="Slab, Upper Cut Red Sandstone" />    
+    </block>                                                                                                               
+    <block id="0x1a6" name="Different Double Stone-type Slabs" uname="minecraft:double_stone_slab3" color="0xded99e">
+      <blockvariant blockdata="0x0" name="Double Slab, End Stone Brick" />
+      <blockvariant blockdata="0x1" name="Double Slab, Smooth Red Sandstone" />
+      <blockvariant blockdata="0x2" name="Double Slab, Polished Andesite" />
+      <blockvariant blockdata="0x3" name="Double Slab, Andesite" />
+      <blockvariant blockdata="0x4" name="Double Slab, Diorite" />
+      <blockvariant blockdata="0x5" name="Double Slab, Polished Diorite" />
+      <blockvariant blockdata="0x6" name="Double Slab, Granite" />
+      <blockvariant blockdata="0x7" name="Double Slab, Polished Granite" />
+    </block>
+    <block id="0x1a7" name="More Double Stone-type Slabs" uname="minecraft:double_stone_slab4" color="0x8a9e90">
+      <blockvariant blockdata="0x0" name="Double Slab, Mossy Stone Brick" />
+      <blockvariant blockdata="0x1" name="Double Slab, Smooth Quartz" />    
+      <blockvariant blockdata="0x2" name="Double Slab, Stone" />            
+      <blockvariant blockdata="0x3" name="Double Slab, Cut Sandstone" />    
+      <blockvariant blockdata="0x4" name="Double Slab, Cut Red Sandstone" />
+    </block>
+    <block id="0x1a8" name="Granite Stairs" uname="minecraft:granite_stairs" color="0xA48B87" />
+    <block id="0x1a9" name="Diorite Stairs" uname="minecraft:diorite_stairs" color="0xC3C3C3" />
+    <block id="0x1aa" name="Andesite Stairs" uname="minecraft:andesite_stairs" color="0x8C8C8C" />
+    <block id="0x1ab" name="Polished Granite Stairs" uname="minecraft:polished_granite_stairs" color="0xA48B87" />
+    <block id="0x1ac" name="Polished Diorite Stairs" uname="minecraft:polished_diorite_stairs" color="0xC3C3C3" />
+    <block id="0x1ad" name="Polished Andesite Stairs" uname="minecraft:polished_andesite_stairs" color="0x8C8C8C" />
+    <block id="0x1ae" name="Mossy Stone Brick Stairs" uname="minecraft:mossy_stone_brick_stairs" color="0x8a9e90" />
+    <block id="0x1af" name="Smooth Red Sandstone Stairs" uname="minecraft:smooth_red_sandstone_stairs" color="0xcdbe86" />
+    <block id="0x1b0" name="Smooth Sandstone Stairs" uname="minecraft:smooth_sandstone_stairs" color="0xfbf8b4" />
+    <block id="0x1b1" name="End Stone Brick Stairs" uname="minecraft:end_brick_stairs" color="0xded99e" />
+    <block id="0x1b2" name="Mossy Cobblestone Stairs" uname="minecraft:mossy_cobblestone_stairs" color="0x8a9e90" />
+    <block id="0x1b3" name="Stone Stairs" uname="minecraft:normal_stone_stairs" color="0xa0a0a0" />
+    <block id="0x1b6" name="Smooth Stone" uname="minecraft:smooth_stone" color="0xd4d4d4" />
+    <block id="0x1b7" name="Red Nether Brick Stairs" uname="minecraft:red_nether_brick_stairs" color="0x230203" />
+    <block id="0x1b8" name="Smooth Quartz Stairs" uname="minecraft:smooth_quartz_stairs" color="0xfafafa" />
+    
+
   </blocklist>
 
   <!--
@@ -1375,7 +1459,11 @@
       <itemvariant extradata="0x26" name="Lingering Potion of Turtle Master (0:40)" uname="minecraft:" />
       <itemvariant extradata="0x27" name="Lingering Potion of Turtle Master II (0:20)" uname="minecraft:" />
     </item>    
-    <item id="0x1BA" name="Sparkler" uname="minecraft:sparkler" />
+  <!-- edited by oshouki // mcpe 1.10 Shield id conflicts with Sparkler, but I can't craft Sparklers, so item may have been removed in 1.10. No info on wiki, though. -->
+    <!-- <item id="0x1BA" name="Sparkler" uname="minecraft:sparkler" /> -->
+    <item id="0x1BA" name="Shield" uname="minecraft:shield" />
+  <!-- end of // edited by oshouki -->
+    
     <item id="0x1BB" name="Minecart with Command Block" uname="minecraft:command_block_minecart" />
     <item id="0x1BC" name="Elytra" uname="minecraft:elytra" /> <!-- *B --> <!-- 0.17 -->
     <item id="0x1BD" name="Shulker Shell" uname="minecraft:shulker_shell" />
@@ -1406,6 +1494,10 @@
     <item id="0x1D2" name="Apple, Enchanted" uname="minecraft:appleenchanted" />
     <item id="0x1D3" name="Heart of the Sea" uname="minecraft:heart_of_the_sea" />
     <item id="0x1D4" name="Scute" uname="minecraft:scute" />
+
+    <!-- added by oshouki -->
+    <item id="0x1D7" name="Crossbow" uname="minecraft:crossbow" />
+    
     <!-- todo not sure about turtle_helmet -->
     <item id="0x1D5" name="Turtle Shell" uname="minecraft:turtle_shell;minecraft:turtle_shell_piece;minecraft:turtle_helmet" />
     <item id="0x1D6" name="Phantom Membrane" uname="minecraft:phantom_membrane" />

@@ -5,7 +5,7 @@
       and:         http://minecraft.gamepedia.com/Data_values#Block_IDs
       and:         http://minecraft.gamepedia.com/Opacity
       and:         https://gist.github.com/jocopa3/f8c9f9158ede0e9d057781188ba440f5
-      
+
       blocklist: mcpe blocks
       id - mcpe block id (hex)
       name - pretty name of block (used for labels etc)
@@ -15,16 +15,16 @@
       opaque - flag for opaque/non-opaque (default is opaque)
       liquid - flag for liquid/non-liquid (default is non-liquid)
       spawnable - flag for if a mob can spawn on the block ABOVE this block (default is spawnable)
-      
+
       can have variants with these fields:
       blockdata - blockdata value for this variant
       name - name for variant
       color - color for variant (otherwise it will be based on containing block element)
-      
+
       note: *I *S *E *D etc are markers for blocks that have more info in block_data or damage etc
       note: it is important for the web ui that colors are unique (e.g. jshint out1.js)
       note: items with "TBD" in their name need investigation re MCPE value/name vs MCPC
-      
+
       todo - would be cool to find a definitive list of colors for blocks
       todo - could rip images from apk and get an avg color?
       todo - add variants for stairs (e/w/s/n + upside-down)
@@ -187,6 +187,8 @@
       <blockvariant blockdata="0x6" name="White Tulip" />
       <blockvariant blockdata="0x7" name="Pink Tulip" />
       <blockvariant blockdata="0x8" name="Oxeye Daisy" />
+      <blockvariant blockdata="0x9" name="Cornflower" />
+      <blockvariant blockdata="0xa" name="Lily of the Valley" />
     </block>
     <block id="0x27" name="Brown Mushroom" uname="minecraft:brown_mushroom" color="0xcaa762" solid="0" opaque="0" spawnable="0" />
     <block id="0x28" name="Red Mushroom" uname="minecraft:red_mushroom" color="0xfe9c9c" solid="0" opaque="0" spawnable="0" />
@@ -615,7 +617,7 @@
       <blockvariant blockdata="0x2" color="0x006060" name="Prismarine, Bricks" /> <!-- 0.16 -->
     </block>
     <block id="0xA9" name="Sea Lantern" uname="minecraft:sealantern" color="0x00cccc" opaque="1" spawnable="1" /> <!-- *S 0.16 --> <!-- todo color -->
-    <block id="0xAA" name="Hay Bale" uname="minecraft:hay_block" color="0xd8d385" /> 
+    <block id="0xAA" name="Hay Bale" uname="minecraft:hay_block" color="0xd8d385" />
     <block id="0xAB" name="Carpet" uname="minecraft:carpet" solid="0" opaque="0" spawnable="0"> <!-- *S *B -->
       <blockvariant blockdata="0x0" color="0xDDDDDD" dcolor="7" name="Carpet, White" />
       <blockvariant blockdata="0x1" color="0xDB7D3E" dcolor="7" name="Carpet, Orange" />
@@ -634,7 +636,7 @@
       <blockvariant blockdata="0xe" color="0x963430" dcolor="7" name="Carpet, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="7" name="Carpet, Black" />
     </block>
-    <block id="0xAC" name="Hardened Clay" uname="minecraft:terracotta;minecraft:hardened_clay" color="0xb75252" /> 
+    <block id="0xAC" name="Hardened Clay" uname="minecraft:terracotta;minecraft:hardened_clay" color="0xb75252" />
     <block id="0xAD" name="Block of Coal" uname="minecraft:coal_block" color="0x585858" />
     <block id="0xAE" name="Packed Ice" uname="minecraft:packed_ice" color="0x02cffd" opaque="0" />
     <block id="0xAF" name="Large Flowers" uname="minecraft:double_plant" color="0xe4208a" solid="0" opaque="0" spawnable="0"> <!-- *B -->
@@ -713,7 +715,7 @@
       <blockvariant blockdata="0xd" color="0x35461B" dcolor="2" name="Hardened Stained Glass Pane, Green" />
       <blockvariant blockdata="0xe" color="0x963430" dcolor="2" name="Hardened Stained Glass Pane, Red" />
       <blockvariant blockdata="0xf" color="0x191616" dcolor="2" name="Hardened Stained Glass Pane, Black" />
-    </block>    
+    </block>
     <block id="0xC0" name="Heat Block" uname="minecraft:chemical_heat" color="0xfc5c1e" />
     <block id="0xC1" name="Door, Spruce" uname="minecraft:spruce_door" color="0x805f0d" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
     <block id="0xC2" name="Door, Birch" uname="minecraft:birch_door" color="0x77622e" solid="0" opaque="0" spawnable="0" /> <!-- *S *I 0.13 -->
@@ -917,11 +919,11 @@
 
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
-      
+
       itemlist: mcpe items
       id - mcpe item id (hex)
       name - name of item
-      
+
       todo: some items use 'damage' field to store info
   -->
   <!-- todo search on (uname="minecraft:") for items that need attention -->
@@ -1331,7 +1333,7 @@
       <itemvariant extradata="0x25" name="Splash Potion of Turtle Master (0:20)" uname="minecraft:" />
       <itemvariant extradata="0x26" name="Splash Potion of Turtle Master (0:40)" uname="minecraft:" />
       <itemvariant extradata="0x27" name="Splash Potion of Turtle Master II (0:20)" uname="minecraft:" />
-    </item>    
+    </item>
     <item id="0x1B9" name="Lingering Potion" uname="minecraft:lingering_potion"> <!-- *B --> <!-- 0.17 -->
       <!-- todo these are copied from splash, not checked yet -->
       <itemvariant extradata="0x00" name="Lingering Water Bottle" uname="minecraft:" />
@@ -1374,7 +1376,7 @@
       <itemvariant extradata="0x25" name="Lingering Potion of Turtle Master (0:20)" uname="minecraft:" />
       <itemvariant extradata="0x26" name="Lingering Potion of Turtle Master (0:40)" uname="minecraft:" />
       <itemvariant extradata="0x27" name="Lingering Potion of Turtle Master II (0:20)" uname="minecraft:" />
-    </item>    
+    </item>
     <item id="0x1BA" name="Sparkler" uname="minecraft:sparkler" />
     <item id="0x1BB" name="Minecart with Command Block" uname="minecraft:command_block_minecart" />
     <item id="0x1BC" name="Elytra" uname="minecraft:elytra" /> <!-- *B --> <!-- 0.17 -->
@@ -1391,7 +1393,7 @@
       <itemvariant extradata="0x0" name="1x1 Chalkboard" uname="minecraft:" /> <!-- EDU -->
       <itemvariant extradata="0x1" name="2x1 Chalkboard" uname="minecraft:" /> <!-- EDU -->
       <itemvariant extradata="0x2" name="3x1 Chalkboard" uname="minecraft:" /> <!-- EDU -->
-    </item> 
+    </item>
     <item id="0x1C7" name="Trident" uname="minecraft:trident" />
     <item id="0x1C8" name="Portfolio" uname="minecraft:" /> <!-- EDU -->
     <item id="0x1C9" name="Beetroot" uname="minecraft:beetroot" />
@@ -1427,7 +1429,7 @@
 
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values_%28Pocket_Edition%29
-      
+
       entitylist: mcpe entities
       id - mcpe entity id (hex)
       uname - mcpe entity id (string)
@@ -1504,7 +1506,7 @@
     <entity id="0x43" uname="minecraft:moving_block" name="Moving Block" />
     <entity id="0x44" uname="minecraft:xp_bottle" name="Experience Potion" />
     <entity id="0x45" uname="minecraft:xp_orb" name="Experience Orb" />    <!-- note: reverse engineered by me -->
-    <entity id="0x46" uname="minecraft:eye_of_ender_signal" name="Eye of Ender" /> 
+    <entity id="0x46" uname="minecraft:eye_of_ender_signal" name="Eye of Ender" />
     <entity id="0x47" uname="minecraft:ender_crystal" name="Ender Crystal" />
     <entity id="0x48" uname="minecraft:fireworks_rocket" name="Firework Rocket" />
     <entity id="0x49" uname="minecraft:thrown_trident" name="Trident" />
@@ -1526,16 +1528,16 @@
     <entity id="0x5a" uname="minecraft:boat" name="Boat" />
     <entity id="0x5d" uname="minecraft:lightning_bolt" name="Lightning Bolt" />
     <entity id="0x5e" uname="minecraft:small_fireball" name="Blaze fireball" />
-    <entity id="0x5f" uname="minecraft:area_effect_cloud" name="Area Effect Cloud" /> 
+    <entity id="0x5f" uname="minecraft:area_effect_cloud" name="Area Effect Cloud" />
     <entity id="0x60" uname="minecraft:hopper_minecart" name="Minecart with Hopper" />
     <entity id="0x61" uname="minecraft:tnt_minecart" name="Minecart with TNT" />
     <entity id="0x62" uname="minecraft:chest_minecart" name="Minecart with Chest" />
     <entity id="0x64" uname="minecraft:command_block_minecart" name="Minecart with Command Block" />
-    <entity id="0x65" uname="minecraft:lingering_potion" name="Lingering Potion" /> 
-    <entity id="0x66" uname="minecraft:llama_spit" name="Llama Spit" /> 
-    <entity id="0x67" uname="minecraft:evocation_fang" name="Evocation Fangs" /> 
-    <entity id="0x68" uname="minecraft:evocation_illager" name="Evoker" etype="H" /> 
-    <entity id="0x69" uname="minecraft:vex" name="Vex" etype="H" />  
+    <entity id="0x65" uname="minecraft:lingering_potion" name="Lingering Potion" />
+    <entity id="0x66" uname="minecraft:llama_spit" name="Llama Spit" />
+    <entity id="0x67" uname="minecraft:evocation_fang" name="Evocation Fangs" />
+    <entity id="0x68" uname="minecraft:evocation_illager" name="Evoker" etype="H" />
+    <entity id="0x69" uname="minecraft:vex" name="Vex" etype="H" />
     <entity id="0x6C" uname="minecraft:pufferfish" name="Pufferfish" etype="P" />
     <entity id="0x6D" uname="minecraft:salmon" name="Salmon" etype="P" />
     <entity id="0x6E" uname="minecraft:drowned" name="Drowned" etype="H" />
@@ -1547,7 +1549,7 @@
 
   <!--
       mostly from: http://minecraft.gamepedia.com/Data_values#Biome_IDs
-      
+
       biomelist: mcpe biomes
       id - mcpe biome id (hex)
       name - name of entity

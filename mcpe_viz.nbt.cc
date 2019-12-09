@@ -344,7 +344,7 @@ namespace mcpe_viz {
       // todo - how to report invalid in geojson?
       // if ( valid ) {
       std::ostringstream str;
-      if ( std::isnan(x) || std::isnan(y) ) {
+      if ( std::isnan((double)x) || std::isnan((double)y) ) {
         // we don't put out anything because "NaN" is not valid JSON
         str << "";
       } else {
@@ -392,7 +392,7 @@ namespace mcpe_viz {
       // todo - how to report invalid in geojson?
       // if ( valid ) {
       std::ostringstream str;
-      if ( std::isnan(x) || std::isnan(y) || std::isnan(z) ) {
+      if ( std::isnan((double)x) || std::isnan((double)y) || std::isnan((double)z) ) {
         // we don't put out anything because "NaN" is not valid JSON
         str << "";
       } else {

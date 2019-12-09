@@ -10,12 +10,12 @@
 #include <stdio.h>
 #include <libxml/xmlreader.h>
 #include <sys/types.h>
-#include <dirent.h>
-#include <unistd.h>
 #include <sstream>
 
 // ugliness to support fast file copies :)
 #if defined(__APPLE__) || defined(__FreeBSD__)
+#include <dirent.h>
+#include <unistd.h>
 #include <copyfile.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -23,7 +23,11 @@
 #else
 #if defined(WIN32)
 #include <windows.h>
+#include <direct.h>
+#include "dirent.h"
 #else 
+#include <dirent.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -67,17 +71,21 @@ namespace mcpe_viz {
   // these hacks work around "const char*" problems
   std::string mybasename( const std::string& fn ) {
     char tmpstring[1025];
-    memset(tmpstring,0,1025);
-    strncpy(tmpstring,fn.c_str(),1024);
-    std::string ret( basename(tmpstring) );
+    char tmpstring2[1025];
+    memset(tmpstring, 0, 1025);
+    memset(tmpstring2, 0, 1025);
+    _splitpath(fn.c_str(), NULL, NULL, tmpstring, tmpstring2);
+    strcat(tmpstring, tmpstring2);
+    std::string ret( tmpstring );
     return ret;
   }
 
   std::string mydirname( const std::string& fn ) {
     char tmpstring[1025];
     memset(tmpstring,0,1025);
-    strncpy(tmpstring,fn.c_str(),1024);
-    std::string ret( dirname(tmpstring) );
+    _splitpath(fn.c_str(), tmpstring, tmpstring+2, NULL, NULL);
+    tmpstring[1] = ':';
+    std::string ret( tmpstring );
     return ret;
   }
 
@@ -308,8 +316,8 @@ namespace mcpe_viz {
     double r = (double)red / 255.0;
     double g = (double)green / 255.0;
     double b = (double)blue / 255.0;
-    double vmax = std::max(std::max(r, g), b);
-    double vmin = std::min(std::min(r, g), b);
+    double vmax = max(max(r, g), b);
+    double vmin = min(min(r, g), b);
     double delta = vmax - vmin;
     hue = 0.0;
     brightness = vmax;
@@ -542,7 +550,7 @@ namespace mcpe_viz {
   int32_t local_mkdir(const std::string& path) {
     // todobig - check if dir exists first?
 #if defined(WIN32) || defined(WIN64)
-    return mkdir(path.c_str());
+    return _mkdir(path.c_str());
 #else
     return mkdir(path.c_str(),0755);
 #endif

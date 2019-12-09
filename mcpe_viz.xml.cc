@@ -44,22 +44,22 @@ namespace mcpe_viz {
     valid = false;
     xmlChar* prop = xmlGetProp(cur,p);
     if ( prop ) {
-      if ( strcasecmp((char*)prop,"true") == 0 ) {
+      if ( _stricmp((char*)prop,"true") == 0 ) {
         valid = true;
         xmlFree(prop);
         return true;
       }
-      if ( strcasecmp((char*)prop,"1") == 0 ) {
+      if (_stricmp((char*)prop,"1") == 0 ) {
         valid = true;
         xmlFree(prop);
         return true;
       }
-      if ( strcasecmp((char*)prop,"false") == 0 ) {
+      if (_stricmp((char*)prop,"false") == 0 ) {
         valid = true;
         xmlFree(prop);
         return false;
       }
-      if ( strcasecmp((char*)prop,"0") == 0 ) {
+      if (_stricmp((char*)prop,"0") == 0 ) {
         valid = true;
         xmlFree(prop);
         return false;

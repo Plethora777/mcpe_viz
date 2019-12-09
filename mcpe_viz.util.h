@@ -20,7 +20,7 @@
 #include <string.h>
 #include <png.h>
 #include <sys/stat.h>
-#include <libgen.h>
+//#include <libgen.h>
 #include <math.h>
 #include <cerrno>
 #include "mcpe_viz.version.h"
@@ -119,7 +119,7 @@ namespace mcpe_viz {
     
     // from: http://stackoverflow.com/questions/12573968/how-to-use-gccs-printf-format-attribute-with-c11-variadic-templates
     // make gcc check calls to this function like it checks printf et al
-    __attribute__((format(printf, 3, 4)))
+//    __attribute__((format(printf, 3, 4)))
       int32_t msg (int32_t levelMask, const char *fmt, ...) {
       // check if we care about this message
       if ( (levelMask & logLevelMask) || (levelMask & kLogFatalError) ) {

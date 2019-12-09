@@ -207,9 +207,14 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#ifdef WIN32
+#include "getopt.h"
+#include "dirent.h"
+#else
 #include <getopt.h>
-#include <math.h>
 #include <dirent.h>
+#endif
+#include <math.h>
 
 #include <random>
 
@@ -856,25 +861,25 @@ namespace mcpe_viz {
         bool processedFlag = false;
         if ( tc.has_key("name", nbt::tag_type::String) ) {
           std::string bname = tc["name"].as<nbt::tag_string>().get();
+          int bdata = 0;
           if ( tc.has_key("val", nbt::tag_type::Short) ) {
-            int bdata = tc["val"].as<nbt::tag_short>().get();
-            
-            int32_t blockId, blockData;
-            if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
-              chunkBlockPalette_BlockId[i] = blockId;
-              // todonow - correct?
-              chunkBlockPalette_BlockData[i] = bdata;
-            } else {
-              logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
-              // todonow - reasonable?
-              chunkBlockPalette_BlockId[i] = 0;
-              chunkBlockPalette_BlockData[i] = 0;
-            }
-            processedFlag = true;
+            bdata = tc["val"].as<nbt::tag_short>().get();
           }
+          int32_t blockId, blockData;
+          if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+            chunkBlockPalette_BlockId[i] = blockId;
+            // todonow - correct?
+            chunkBlockPalette_BlockData[i] = bdata;
+          } else {
+            logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+            // todonow - reasonable?
+            chunkBlockPalette_BlockId[i] = 0;
+            chunkBlockPalette_BlockData[i] = 0;
+          }
+          processedFlag = true;
         }
         if ( ! processedFlag ) {
-          slogger.msg(kLogError,"(Safe) Did not find 'name' and/or 'val' tags in a chunk palette! (i=%d) (len=%d)\n"
+          slogger.msg(kLogError,"(Safe) Did not find 'name' tag in a chunk palette! (i=%d) (len=%d)\n"
                       , (int)i, (int)tagList.size() );
           //todozooz - dump tc to screen log
         }
@@ -1147,12 +1152,12 @@ namespace mcpe_viz {
               int32_t tx2,int32_t ty2,int32_t tz2,
               const char* fnSchematic) {
       // we order the coordinates here so it's easier later
-      x1 = std::min(tx1,tx2);
-      x2 = std::max(tx1,tx2);
-      y1 = std::min(ty1,ty2);
-      y2 = std::max(ty1,ty2);
-      z1 = std::min(tz1,tz2);
-      z2 = std::max(tz1,tz2);
+      x1 = min(tx1,tx2);
+      x2 = max(tx1,tx2);
+      y1 = min(ty1,ty2);
+      y2 = max(ty1,ty2);
+      z1 = min(tz1,tz2);
+      z2 = max(tz1,tz2);
       fn = fnSchematic;
     }
 
@@ -1705,25 +1710,25 @@ namespace mcpe_viz {
           bool processedFlag = false;
           if ( tc.has_key("name", nbt::tag_type::String) ) {
             std::string bname = tc["name"].as<nbt::tag_string>().get();
+            int bdata = 0;
             if ( tc.has_key("val", nbt::tag_type::Short) ) {
-              int bdata = tc["val"].as<nbt::tag_short>().get();
-              
-              int32_t blockId, blockData;
-              if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
-                chunkBlockPalette_BlockId[i] = blockId;
-                // todonow - correct?
-                chunkBlockPalette_BlockData[i] = bdata;
-              } else {
-                logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
-                // todonow - reasonable?
-                chunkBlockPalette_BlockId[i] = 0;
-                chunkBlockPalette_BlockData[i] = 0;
-              }
-              processedFlag = true;
+              bdata = tc["val"].as<nbt::tag_short>().get();
             }
+            int32_t blockId, blockData;
+            if ( getBlockByUname(bname, blockId, blockData) == 0 ) {
+              chunkBlockPalette_BlockId[i] = blockId;
+              // todonow - correct?
+              chunkBlockPalette_BlockData[i] = bdata;
+            } else {
+              logger.msg(kLogWarning,"Did not find block uname '%s' in XML file\n", bname.c_str());
+              // todonow - reasonable?
+              chunkBlockPalette_BlockId[i] = 0;
+              chunkBlockPalette_BlockData[i] = 0;
+            }
+            processedFlag = true;
           }
           if ( ! processedFlag ) {
-            slogger.msg(kLogError,"(Safe) Did not find 'name' and/or 'val' tags in a chunk palette! (i=%d) (len=%d)\n"
+            slogger.msg(kLogError,"(Safe) Did not find 'name' tag in a chunk palette! (i=%d) (len=%d)\n"
                         , (int)i, (int)tagList.size() );
             //todozooz - dump tc to screen log
           }
@@ -2203,10 +2208,10 @@ namespace mcpe_viz {
     }
     
     void addToChunkBounds(int32_t chunkX, int32_t chunkZ) {
-      minChunkX = std::min(minChunkX, chunkX);
-      maxChunkX = std::max(maxChunkX, chunkX);
-      minChunkZ = std::min(minChunkZ, chunkZ);
-      maxChunkZ = std::max(maxChunkZ, chunkZ);
+      minChunkX = min(minChunkX, chunkX);
+      maxChunkX = max(maxChunkX, chunkX);
+      minChunkZ = min(minChunkZ, chunkZ);
+      maxChunkZ = max(maxChunkZ, chunkZ);
     }
 
     int32_t getMinChunkX() { return minChunkX; }
@@ -4961,7 +4966,7 @@ namespace mcpe_viz {
       if ( fp ) {
         time_t xtime = time(NULL);
         char timebuf[256];
-        ctime_r(&xtime, timebuf);
+        ctime_s(timebuf, sizeof(timebuf), &xtime);
         // todo - this is hideous.
         // fix time string
         char *p = strchr(timebuf,'\n');

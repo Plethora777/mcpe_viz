@@ -11,7 +11,7 @@ option(MCPE_VIZ_PROFILE "Build profile version" OFF)
 # old flags: -fno-builtin-memcmp -pthread
 
 # cflags useful for all builds
-add_definitions(-Wall -Wextra -Wshadow -Wpointer-arith -Wdisabled-optimization -std=c++11 -DDLLX=)
+add_definitions(-DDLLX=)
 
 if(MCPE_VIZ_WIN32)
 
@@ -79,7 +79,7 @@ else()
   endif()
 endif()
 
-add_executable(mcpe_viz mcpe_viz.cc mcpe_viz.xml.cc mcpe_viz.nbt.cc mcpe_viz.util.cc)
+add_executable(mcpe_viz mcpe_viz.cc mcpe_viz.xml.cc mcpe_viz.nbt.cc mcpe_viz.util.cc getopt.c)
 
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -91,20 +91,18 @@ include_directories(${PNG_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR
 # setup include dirs and lib dirs for each build type
 # set win32/win64 builds to use static libs when possible
 if(MCPE_VIZ_WIN32)
-  include_directories(libnbtplusplus/wbuild .)
   target_link_libraries(mcpe_viz
-    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/wbuild/libleveldb.a
-    ${PROJECT_SOURCE_DIR}/libnbtplusplus/wbuild/libnbt++.a
+    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/Win32/Release/leveldb.lib
+    ${PROJECT_SOURCE_DIR}/libnbtplusplus/build32/Release/nbt++.lib
     ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
   # 2016.01.30 - disabled
   #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)
   #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_END_STATIC 1)
   #set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 elseif(MCPE_VIZ_WIN64)
-  include_directories(libnbtplusplus/wbuild64 .)
   target_link_libraries(mcpe_viz
-    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/wbuild64/libleveldb.a
-    ${PROJECT_SOURCE_DIR}/libnbtplusplus/wbuild64/libnbt++.a
+    ${PROJECT_SOURCE_DIR}/leveldb-mcpe/x64/Release/leveldb.lib
+    ${PROJECT_SOURCE_DIR}/libnbtplusplus/build64/Release/nbt++.lib
     ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${LIBXML2_LIBRARIES})
   # 2016.01.30 - disabled
   #set_target_properties(mcpe_viz PROPERTIES LINK_SEARCH_START_STATIC 1)

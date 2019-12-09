@@ -1,3 +1,34 @@
+# MCPE Viz for Visual Studio
+by Marzipan42
+
+Fork of Plethora777's MCPE Viz with mods to compile using Microsoft Visual Studio 2019
+
+If you just want to run the compiled program:
+* grab mcpe_viz_helper.win32.zip if you have 32-bit Windows or mcpe_viz_helper.win64.zip if you have 64-bit Windows
+* expand the zip file and run mcpe_viz_helper.exe
+* program requires the latest version of the Microsoft Visual C 2019 Runtime installed on your machine.  32-bit installer is at https://aka.ms/vs/16/release/vc_redist.x86.exe,
+64-bit installer is at https://aka.ms/vs/16/release/vc_redist.x64.exe
+* program will not run on Windows XP - sorry!
+
+If you want to compile yourself, read on.
+
+Compilation tested on: Windows 10 64-bit v1909, Visual Studio 2019 Professional 16.4.0
+
+To build, do the following from a cmd.exe window:
+* git clone https://github.com/marzipan42/mcpe_viz.git
+* cd mcpe_viz
+* powershell .\\_01_mygetdeps.ps1
+  * downloads leveldb-mcpe, libnbtplusplus, libxml2, libpng, zlib
+* _02_mybuild.bat > mybuildlog.txt 2>&1
+  * builds dependencies and mcpe_viz, final output goes in mcpe_viz_helper.win32 and mcpe_viz_helper.win64 directories
+  * note that mcpe_viz_helper is not being built fresh - the compiled exe and required dll's have simply been copied from Plethora777's mcpe_viz_helper.winXX.zip files
+* _03_myclean.bat
+  * this removes all intermediate build files but leaves the mcpe_viz_helper.winXX directories
+  
+Note that compilation on any other platform (Mingw, Linux, Mac, VS before 2019) is probably broken in this fork.
+
+Original MCPE Viz README follows...
+---
 # MCPE Viz
 by Plethora777 -- Twitter: [@Plethora777](https://twitter.com/Plethora777) -- Reddit: [/u/Plethora777](https://www.reddit.com/user/Plethora777/)
 
